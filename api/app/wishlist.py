@@ -185,23 +185,31 @@ def buy_one(wish_id: int, body: Buy | None = None):
         return move_to_inventory(conn, wish, clean_shop(body))
 
 
+# "Is this supply already on the wishlist?" - same brand + code, or same name if it has no code.
+ON_WISHLIST = """EXISTS (SELECT 1 FROM wishlist w
+                  WHERE (w.brand_id = s.brand_id AND w.product_code = s.product_code)
+                     OR (s.product_code IS NULL AND w.name = s.name))"""
+
+
+def wish_from_supplies(conn, where, params=(), notes=None):
+    """Copy supplies onto the wishlist (skipping ones already there): same details, 1 wanted,
+    the last price paid as the expected price. Returns [{wish_id, name}] for those added."""
+    return conn.execute(f"""
+        INSERT INTO wishlist (brand_id, product_code, name, category_id, paint_type, finish,
+                              size, qty_wanted, est_price, notes)
+        SELECT s.brand_id, s.product_code, s.name, s.category_id, s.paint_type, s.finish,
+               s.size, 1, s.unit_price, %s
+        FROM supplies s JOIN v_supplies v USING (supply_id)
+        WHERE ({where}) AND NOT {ON_WISHLIST}
+        RETURNING wish_id, name""", (notes, *params)).fetchall()
+
+
 @router.post("/wishlist/restock")
 def wish_for_restock():
     """Put everything that needs attention - Out, or Low (e.g. your last bottle is nearly
-    empty) - onto the wishlist, skipping ones already there. Copies its details; the last
-    price paid becomes the expected price."""
+    empty) - onto the wishlist, skipping ones already there."""
     with db() as conn:
-        added = conn.execute("""
-            INSERT INTO wishlist (brand_id, product_code, name, category_id, paint_type, finish,
-                                  size, qty_wanted, est_price)
-            SELECT s.brand_id, s.product_code, s.name, s.category_id, s.paint_type, s.finish,
-                   s.size, 1, s.unit_price
-            FROM supplies s JOIN v_supplies v USING (supply_id)
-            WHERE v.stock_status IN ('Out', 'Low')
-              AND NOT EXISTS (SELECT 1 FROM wishlist w
-                              WHERE (w.brand_id = s.brand_id AND w.product_code = s.product_code)
-                                 OR (s.product_code IS NULL AND w.name = s.name))
-            RETURNING wish_id, name""").fetchall()
+        added = wish_from_supplies(conn, "v.stock_status IN ('Out', 'Low')")
     return {"added": len(added), "names": [r["name"] for r in added]}
 
 

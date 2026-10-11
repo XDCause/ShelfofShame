@@ -36,6 +36,7 @@ export const api = {
   adjustQty: (id, delta, extra = {}) => request(`/supplies/${id}/adjust`, json('POST', { delta, ...extra })),
   deleteSupply: (id) => request(`/supplies/${id}`, { method: 'DELETE' }),
   supplyHistory: (id, limit = 20) => request(`/supplies/${id}/history?limit=${limit}`),
+  addSupplyToWishlist: (id) => request(`/supplies/${id}/wishlist`, { method: 'POST' }),
   recentHistory: (limit = 50) => request(`/history?limit=${limit}`),
   wishRestock: () => request('/wishlist/restock', { method: 'POST' }),
 

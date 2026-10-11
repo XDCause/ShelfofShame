@@ -200,6 +200,7 @@ th.thumb-col, td.thumb-col { width: 56px; padding: 6px 4px 6px 10px; }
 .stock-count { display: flex; flex-direction: column; align-items: center; min-width: 3.5em; }
 .stock-count strong { font-size: 1.6rem; font-variant-numeric: tabular-nums; }
 .stock-value { flex-basis: 100%; }
+.wish-action { flex-basis: 100%; }
 
 .quick-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
 

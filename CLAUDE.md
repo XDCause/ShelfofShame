@@ -241,6 +241,22 @@ DBeaver, psql, and the one-off import script.
    - Not picked (could revisit): install as phone app (PWA), import Tamiya's kit paint list,
      "used on" models in paint panels, "Wanted" kit status, off-PC backup copy, activity feed.
    - Tests: 80 API, 26 browser steps.
+3l. **Inventory -> wishlist** - DONE (2026-10-12).
+   - **Automatic**: when a change takes an item from OK to Low/Out (condition -> Nearly empty /
+     Empty / Dried out on the last one, or -1 to 0), `auto_wishlist()` in main.py adds it to the
+     wishlist with notes "Added automatically: running low / out of stock". Only on that
+     transition (stock_status before vs after, same transaction), so removing it from the
+     wishlist while still low doesn't bring it back. PATCH and adjust replies carry
+     `auto_wish_id`; Undo sends `remove_wish_id` to take it back off (if not ticked).
+   - **Manual**: POST /api/supplies/{id}/wishlist (409 if already there) = ItemPanel's
+     "+ Add to wishlist" (shows "On wishlist ✓" once there). Supplies carry `on_wishlist`
+     (wishlist.ON_WISHLIST: brand+code match, or name when no code); list shows an
+     "On wishlist" tag. Shared insert: wishlist.wish_from_supplies() (also used by /restock).
+   - Tests: 84 API, 27 browser steps.
+   - **Open issue told to the user**: Tailscale access blocked - firewall rule "Hobby Inventory
+     web (8080)" has RemoteAddress LocalSubnet; the Tailscale interface is 100.76.51.75/32, so
+     the phone (100.118.29.60) is outside it. Fix (admin): Set-NetFirewallRule -DisplayName
+     "Hobby Inventory web (8080)" -RemoteAddress LocalSubnet,100.64.0.0/10. Check whether done.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

@@ -61,6 +61,50 @@ def test_items_needing_attention_go_onto_the_wishlist_once(client, make_supply):
     assert client.post("/api/wishlist/restock").json()["added"] == 0
 
 
+def wishes(client):
+    return {w["name"]: w for w in client.get("/api/wishlist").json()}
+
+
+def test_running_low_puts_it_on_the_wishlist_automatically(client, make_supply):
+    s = make_supply(name="Acrylic XF1 Flat Black", qty_on_hand=1, condition="Opened", unit_price="3.95")
+    r = client.patch(f"/api/supplies/{s['supply_id']}", json={"condition": "Nearly empty"}).json()
+    assert r["stock_status"] == "Low" and r["auto_wish_id"] and r["on_wishlist"] is True
+    wish = wishes(client)["Acrylic XF1 Flat Black"]
+    assert wish["notes"] == "Added automatically: running low" and float(wish["est_price"]) == 3.95
+
+    # Still low: further changes don't add it again, even after you remove it
+    client.delete(f"/api/wishlist/{wish['wish_id']}")
+    r = client.patch(f"/api/supplies/{s['supply_id']}", json={"condition": "Empty"}).json()
+    assert r["auto_wish_id"] is None and wishes(client) == {}
+
+
+def test_using_the_last_one_adds_it_and_undo_takes_it_off(client, make_supply):
+    s = make_supply(name="Masking Tape 10mm", qty_on_hand=1, purchase_date="2026-01-05")
+    used = client.post(f"/api/supplies/{s['supply_id']}/adjust", json={"delta": -1}).json()
+    assert used["stock_status"] == "Out" and used["auto_wish_id"]
+    assert wishes(client)["Masking Tape 10mm"]["notes"] == "Added automatically: out of stock"
+
+    client.post(f"/api/supplies/{s['supply_id']}/adjust", json={
+        "delta": 1, "undo": True, "purchase_date": "2026-01-05", "remove_wish_id": used["auto_wish_id"]})
+    assert wishes(client) == {}
+
+
+def test_changes_that_stay_ok_add_nothing(client, make_supply):
+    s = make_supply(qty_on_hand=2, condition="Opened")
+    assert client.post(f"/api/supplies/{s['supply_id']}/adjust", json={"delta": -1}).json()["auto_wish_id"] is None
+    assert client.patch(f"/api/supplies/{s['supply_id']}", json={"notes": "x"}).json()["auto_wish_id"] is None
+    assert wishes(client) == {}
+
+
+def test_add_to_wishlist_button(client, make_supply):
+    s = make_supply(name="Acrylic XF7 Flat Red", qty_on_hand=1, unit_price="3.95")
+    assert s["on_wishlist"] is False
+    r = client.post(f"/api/supplies/{s['supply_id']}/wishlist")
+    assert r.status_code == 201 and r.json()["on_wishlist"] is True
+    assert client.post(f"/api/supplies/{s['supply_id']}/wishlist").status_code == 409
+    assert client.post("/api/supplies/999/wishlist").status_code == 404
+
+
 def test_filters_by_ticked(client, ids):
     w = add_wish(client, ids)
     add_wish(client, ids, product_code="T81703", name="Other")

@@ -48,13 +48,16 @@ export default function App() {
 
   // After any -/+ (list or panel): "Used one: XF-1 · Undo". Undo puts back the quantity AND the
   // last-purchased date (+1 sets it to today), and is logged as "undo" in the stock history.
-  const adjusted = useCallback((before, delta) => {
-    showToast(`${delta < 0 ? 'Used one' : 'Added one'}: ${before.name}`, {
+  // If the change put the item on the wishlist (it just ran out), Undo takes it back off.
+  const adjusted = useCallback((before, delta, autoWishId = null) => {
+    const wished = autoWishId ? ' · added to your wishlist' : ''
+    showToast(`${delta < 0 ? 'Used one' : 'Added one'}: ${before.name}${wished}`, {
       label: 'Undo',
       run: async () => {
         setToast(null)
         try {
-          await api.adjustQty(before.supply_id, -delta, { undo: true, purchase_date: before.purchase_date })
+          await api.adjustQty(before.supply_id, -delta,
+            { undo: true, purchase_date: before.purchase_date, remove_wish_id: autoWishId })
           setUndoKey((n) => n + 1)
           changed()
         } catch (e) {

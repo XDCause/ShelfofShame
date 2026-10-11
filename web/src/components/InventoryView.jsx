@@ -80,7 +80,7 @@ export default function InventoryView({ lookups, refreshKey, onOpen, onAdd, onAd
       const updated = await api.adjustQty(row.supply_id, delta)
       setAll((rs) => rs.map((r) => (r.supply_id === updated.supply_id ? updated : r)))
       setError('')
-      onAdjusted(row, delta) // "Used one: ... · Undo"
+      onAdjusted(row, delta, updated.auto_wish_id) // "Used one: ... · Undo"
     } catch (e) {
       setError(`${row.name}: ${e.message}`)
     }
@@ -247,12 +247,13 @@ export default function InventoryView({ lookups, refreshKey, onOpen, onAdd, onAd
   )
 }
 
-// Condition, plus a Low / Out badge only when it applies.
+// Condition, plus a Low / Out badge only when it applies, and "On wishlist" when it is.
 function Condition({ row }) {
   return (
     <span className="condition">
       {row.condition ?? <span className="muted">—</span>}
       {row.stock_status !== 'OK' && <span className={`badge ${row.stock_status.toLowerCase()}`}>{row.stock_status}</span>}
+      {row.on_wishlist && <span className="tag">On wishlist</span>}
     </span>
   )
 }

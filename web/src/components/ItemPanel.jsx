@@ -39,12 +39,25 @@ export default function ItemPanel({ supplyId, lookups, reloadKey, onClose, onCha
     setTimeout(() => setSaved(''), 1800)
   }
 
-  // Save one or more fields straight away.
+  // Save one or more fields straight away. If that made it Low/Out, the API put it on the
+  // wishlist - say so.
   const save = async (changes) => {
     setError('')
     try {
-      show(await api.updateSupply(supplyId, changes))
-      flash()
+      const updated = await api.updateSupply(supplyId, changes)
+      show(updated)
+      flash(updated.auto_wish_id ? 'Saved ✓ · added to your wishlist' : 'Saved ✓')
+      onChanged()
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+
+  const addToWishlist = async () => {
+    setError('')
+    try {
+      show(await api.addSupplyToWishlist(supplyId))
+      flash('Added to your wishlist ✓')
       onChanged()
     } catch (e) {
       setError(e.message)
@@ -61,9 +74,10 @@ export default function ItemPanel({ supplyId, lookups, reloadKey, onClose, onCha
     setError('')
     try {
       const before = item
-      show(await api.adjustQty(supplyId, delta))
+      const updated = await api.adjustQty(supplyId, delta)
+      show(updated)
       onChanged()
-      onAdjusted(before, delta) // "Used one: ... · Undo"
+      onAdjusted(before, delta, updated.auto_wish_id) // "Used one: ... · Undo"
     } catch (e) {
       setError(e.message)
     }
@@ -180,6 +194,11 @@ export default function ItemPanel({ supplyId, lookups, reloadKey, onClose, onCha
               {item.unit_price != null && (
                 <span className="muted small stock-value">{money(item.unit_price)} each · {money(item.total_value)}</span>
               )}
+              <span className="wish-action">
+                {item.on_wishlist
+                  ? <span className="tag ok">On wishlist ✓</span>
+                  : <button type="button" className="chip-btn" onClick={addToWishlist}>+ Add to wishlist</button>}
+              </span>
             </div>
           </section>
 

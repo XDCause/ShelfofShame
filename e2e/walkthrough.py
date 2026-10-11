@@ -89,12 +89,14 @@ def condition_low(page):
     expect(d).to_be_visible()
     shot(page, "d03_item_panel")
     d.locator(".condition-picker button", has_text="Nearly empty").click()
-    expect(d.locator(".save-flash")).to_contain_text("Saved")
+    expect(d.locator(".save-flash")).to_contain_text("added to your wishlist")  # automatic
     expect(d).to_contain_text("shows as Low")
+    expect(d.locator(".wish-action")).to_contain_text("On wishlist")
     page.keyboard.press("Escape")
     expect(page.get_by_role("button", name=re.compile("Needs attention"))).to_be_visible()
     row = page.locator("tr.row", has_text="Acrylic XF1 Flat Black")
     expect(row.locator("td.hide-xs .badge.low")).to_be_visible()
+    expect(row.locator("td.hide-xs .tag", has_text="On wishlist")).to_be_visible()
     shot(page, "d04_needs_attention", full=False)
 
 
@@ -255,6 +257,19 @@ def undo(page):
     page.keyboard.press("Escape")
 
 
+@step("Item panel: + Add to wishlist button")
+def add_to_wishlist_button(page):
+    page.get_by_role("tab", name="Inventory").click()
+    page.locator("tr.row", has_text="Acrylic XF7 Flat Red").click()
+    d = drawer(page)
+    d.get_by_role("button", name="+ Add to wishlist").click()
+    expect(d.locator(".wish-action")).to_contain_text("On wishlist")
+    page.keyboard.press("Escape")
+    page.get_by_role("tab", name="Wishlist").click()
+    expect(page.locator("article.wish-card", has_text="XF7 Flat Red")).to_be_visible()
+    page.get_by_role("tab", name="Inventory").click()
+
+
 @step("Duplicate check while typing a name")
 def duplicate_check(page):
     page.get_by_role("button", name="+ Add", exact=True).click()
@@ -352,7 +367,7 @@ with sync_playwright() as p:
     watch(desk, "desktop")
     for fn in (inventory_loads, search, chip, condition_low, plus_minus, notes, edit_details, manage_lists,
                add_lookup, add_to_wishlist, wishlist_buy, delete_bought, scan_owned, scan_unknown,
-               models, model_paste, add_model_hasegawa, undo, duplicate_check, wishlist_panel,
+               models, model_paste, add_model_hasegawa, undo, add_to_wishlist_button, duplicate_check, wishlist_panel,
                scalemates, fab_desktop, model_edit, lists_protect, no_panel):
         fn(desk)
     ctx = browser.new_context(**p.devices["iPhone 13"])
