@@ -12,18 +12,17 @@ const saveShop = (shop) => {
 }
 
 // The shopping list. Built for a phone in the shop: big photos, tap a card to tick it off,
-// then move everything ticked into inventory in one go.
-// `initialScan` = {result, photo} handed over from the Inventory page's "Add to wishlist".
-export default function WishlistView({ lookups, onChanged, initialScan }) {
+// then move everything ticked into inventory in one go. Adding/editing opens a side panel.
+export default function WishlistView({ lookups, onChanged }) {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [show, setShow] = useState('all')
-  const [formFor, setFormFor] = useState(initialScan ? null : undefined) // undefined = closed, null = new, object = editing
+  const [formFor, setFormFor] = useState(undefined) // undefined = closed, null = new, object = editing
   const [shop, setShop] = useState(readShop)
   const [confirmBuy, setConfirmBuy] = useState(false)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState(null)
-  const [scanned, setScanned] = useState(initialScan ?? null) // {result, photo} -> form pre-filled
+  const [scanned, setScanned] = useState(null) // {result, photo} -> form pre-filled
 
   const openForm = (wish, scan = null) => {
     setScanned(scan)
@@ -50,7 +49,10 @@ export default function WishlistView({ lookups, onChanged, initialScan }) {
     () => items.filter((w) => show === 'all' || (show === 'got' ? w.got_it : !w.got_it)),
     [items, show],
   )
-  const tickedValue = ticked.reduce((s, w) => s + Number(w.est_price ?? 0) * w.qty_wanted, 0)
+  const cost = (ws) => ws.reduce((s, w) => s + Number(w.est_price ?? 0) * w.qty_wanted, 0)
+  const tickedValue = cost(ticked)
+  const toFind = items.filter((w) => !w.got_it)
+  const unpriced = toFind.filter((w) => w.est_price == null).length
 
   // Tick/untick instantly on screen, then tell the API; undo on screen if the API says no.
   const toggle = async (wish) => {
@@ -95,6 +97,12 @@ export default function WishlistView({ lookups, onChanged, initialScan }) {
 
   return (
     <section className={ticked.length ? 'wishlist has-bar' : 'wishlist'}>
+      {items.length > 0 && (
+        <p className="summary">
+          <strong>{toFind.length}</strong> to find · about <strong>{money(cost(toFind))}</strong>
+          {unpriced > 0 && <span className="muted"> ({unpriced} without a price)</span>}
+        </p>
+      )}
       <div className="wish-head">
         <div className="progress" aria-label={`${ticked.length} of ${items.length} ticked`}>
           <span className="progress-text">
@@ -109,12 +117,10 @@ export default function WishlistView({ lookups, onChanged, initialScan }) {
             <button key={key} aria-pressed={show === key} onClick={() => setShow(key)}>{label}</button>
           ))}
         </div>
-        {formFor === undefined && (
-          <div className="head-buttons">
-            <ScanButton onBarcode={onBarcode} />
-            <button className="secondary" onClick={() => openForm(null)}>+ Add by hand</button>
-          </div>
-        )}
+        <div className="head-buttons">
+          <ScanButton onBarcode={onBarcode} />
+          <button className="secondary" onClick={() => openForm(null)}>+ Add</button>
+        </div>
       </div>
 
       {message && <p className={`alert ${message.type}`} role="status">{message.text}</p>}

@@ -145,7 +145,7 @@ def add_lookup(page):
     d = drawer(page)
     d.get_by_placeholder("e.g. XF-76 or 81776").fill("XF-2")
     d.get_by_role("button", name="Look up").click()
-    expect(d.get_by_label("Name / colour")).to_have_value(re.compile("XF-2"), timeout=45000)
+    expect(d.get_by_label("Name / colour")).to_have_value(re.compile("XF-?2"), timeout=45000)
     shot(page, "d06_add_panel_filled")
 
 
@@ -158,7 +158,7 @@ def add_to_wishlist(page):
 @step("Wishlist: tick, then move ticked into inventory")
 def wishlist_buy(page):
     page.get_by_role("tab", name="Wishlist").click()
-    card = page.locator("article.wish-card", has_text="XF-2")
+    card = page.locator("article.wish-card", has_text="XF2")
     expect(card).to_be_visible()
     shot(page, "d07_wishlist")
     card.locator(".wish-photo").click()
@@ -173,12 +173,12 @@ def wishlist_buy(page):
 @step("Bought item is in inventory with today's date; delete it")
 def delete_bought(page):
     page.get_by_role("tab", name="Inventory").click()
-    page.locator("tr.row", has_text="XF-2").click()
+    page.locator("tr.row", has_text="XF2 Flat White").click()
     d = drawer(page)
     expect(d.get_by_label("Last bought from")).to_have_value("E2E shop")
     d.get_by_role("button", name="Delete").click()
     page.get_by_role("button", name="Yes, delete").click()
-    expect(page.locator("tr.row", has_text="XF-2")).to_have_count(0)
+    expect(page.locator("tr.row", has_text="XF2 Flat White")).to_have_count(0)
 
 
 @step("Scan by typed barcode: owned paint opens its panel")
@@ -240,6 +240,54 @@ def add_model_hasegawa(page):
     page.keyboard.press("Escape")
 
 
+@step("Undo after + in the list puts it back (and is in the history)")
+def undo(page):
+    page.get_by_role("tab", name="Inventory").click()
+    row = page.locator("tr.row", has_text="Acrylic XF1 Flat Black")
+    row.get_by_role("button", name=re.compile("^Add one")).click()
+    expect(row.locator(".qty span")).to_have_text("2")
+    toast = page.locator(".toast")
+    expect(toast).to_contain_text("Added one: Acrylic XF1 Flat Black")
+    toast.get_by_role("button", name="Undo").click()
+    expect(row.locator(".qty span")).to_have_text("1")
+    row.click()
+    expect(drawer(page).locator(".history li").first).to_contain_text("undo")
+    page.keyboard.press("Escape")
+
+
+@step("Duplicate check while typing a name")
+def duplicate_check(page):
+    page.get_by_role("button", name="+ Add", exact=True).click()
+    d = drawer(page)
+    d.get_by_label("Name / colour").fill("Flat Black")
+    expect(d.locator(".similar")).to_contain_text("Acrylic XF1 Flat Black")
+    shot(page, "d13_duplicate_check")
+    page.keyboard.press("Escape")
+
+
+@step("Wishlist: total line and the side-panel form")
+def wishlist_panel(page):
+    page.get_by_role("tab", name="Wishlist").click()
+    page.locator(".wish-head").get_by_role("button", name="+ Add").click()
+    expect(drawer(page).locator(".drawer-head")).to_contain_text("Add to wishlist")
+    shot(page, "d14_wishlist_panel")
+    page.keyboard.press("Escape")
+
+
+@step("Model: Search Scalemates link")
+def scalemates(page):
+    page.get_by_role("tab", name="Models").click()
+    page.locator(".model-card", has_text="Zero").click()
+    link = drawer(page).get_by_role("link", name=re.compile("Search Scalemates"))
+    expect(link).to_have_attribute("href", re.compile(r"scalemates\.com/search\.php\?q=Tamiya"))
+    page.keyboard.press("Escape")
+
+
+@step("Floating Scan button is phone-only")
+def fab_desktop(page):
+    expect(page.locator(".fab")).to_be_hidden()
+
+
 @step("Model Edit details opens, saves and stays saved")
 def model_edit(page):
     page.locator(".model-card", has_text="P-40E").click()
@@ -275,8 +323,10 @@ def phone(page):
     assert gear["y"] < tabs["y"], f"gear y={gear['y']} should be above tabs y={tabs['y']}"
     size = page.get_by_label("Search").evaluate("e => getComputedStyle(e).fontSize")
     assert size == "16px", f"search box font {size} (iPhone zooms in below 16px)"
+    expect(page.locator(".fab")).to_be_visible()  # floating Scan button on phones
     page.locator("tr.row").first.click()
     expect(drawer(page)).to_be_visible()
+    expect(page.locator(".fab")).to_be_hidden()  # ...but not over an open panel
     page.wait_for_timeout(400)  # let the slide-in finish
     shot(page, "m02_item_panel", full=False)
     page.keyboard.press("Escape")
@@ -302,7 +352,8 @@ with sync_playwright() as p:
     watch(desk, "desktop")
     for fn in (inventory_loads, search, chip, condition_low, plus_minus, notes, edit_details, manage_lists,
                add_lookup, add_to_wishlist, wishlist_buy, delete_bought, scan_owned, scan_unknown,
-               models, model_paste, add_model_hasegawa, model_edit, lists_protect, no_panel):
+               models, model_paste, add_model_hasegawa, undo, duplicate_check, wishlist_panel,
+               scalemates, fab_desktop, model_edit, lists_protect, no_panel):
         fn(desk)
     ctx = browser.new_context(**p.devices["iPhone 13"])
     mob = ctx.new_page()

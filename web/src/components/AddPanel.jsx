@@ -3,6 +3,7 @@ import { api, imageUrl, uploadPhoto } from '../api.js'
 import Drawer from './Drawer.jsx'
 import { shrink } from './PhotoUpload.jsx'
 import ScanButton from './ScanButton.jsx'
+import SimilarItems from './SimilarItems.jsx'
 import SupplyFields, { applyResult, emptyForm, toPayload } from './SupplyFields.jsx'
 
 function scanMessage(r) {
@@ -28,6 +29,8 @@ export default function AddPanel({ lookups, scanned: initialScan, onClose, onAdd
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState('')
   const [message, setMessage] = useState(null)
+  const [supplies, setSupplies] = useState([]) // for "Already in your inventory"
+  useEffect(() => { api.listSupplies().then(setSupplies).catch(() => {}) }, [])
 
   const yourPhotoUrl = useMemo(() => (scan?.photo ? URL.createObjectURL(scan.photo) : null), [scan])
   useEffect(() => () => yourPhotoUrl && URL.revokeObjectURL(yourPhotoUrl), [yourPhotoUrl])
@@ -173,6 +176,11 @@ export default function AddPanel({ lookups, scanned: initialScan, onClose, onAdd
             {!photo && yourPhotoUrl && <p className="hint">Your photo will be saved as the item photo.</p>}
           </div>
         </div>
+      )}
+
+      {!owned && (
+        <SimilarItems supplies={supplies} name={form.name} productCode={form.product_code}
+          brandId={form.brand_id} onOpen={onOpen} />
       )}
 
       <form id="add-form" onSubmit={addToInventory}>

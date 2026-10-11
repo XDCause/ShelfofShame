@@ -12,7 +12,8 @@ const longDate = (iso) =>
 // Everything about one supply in a side panel. Everyday changes (stock, condition, reorder,
 // location, last purchased, notes) save as you make them; what the item IS sits behind
 // "Edit details".
-export default function ItemPanel({ supplyId, lookups, onClose, onChanged }) {
+// reloadKey changes when something outside the panel (an Undo) changed this item.
+export default function ItemPanel({ supplyId, lookups, reloadKey, onClose, onChanged, onAdjusted }) {
   const [item, setItem] = useState(null)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState('') // short "Saved" confirmation
@@ -31,7 +32,7 @@ export default function ItemPanel({ supplyId, lookups, onClose, onChanged }) {
 
   useEffect(() => {
     api.getSupply(supplyId).then(show).catch((e) => setError(e.message))
-  }, [supplyId])
+  }, [supplyId, reloadKey])
 
   const flash = (msg = 'Saved ✓') => {
     setSaved(msg)
@@ -59,8 +60,10 @@ export default function ItemPanel({ supplyId, lookups, onClose, onChanged }) {
   const adjust = async (delta) => {
     setError('')
     try {
+      const before = item
       show(await api.adjustQty(supplyId, delta))
       onChanged()
+      onAdjusted(before, delta) // "Used one: ... · Undo"
     } catch (e) {
       setError(e.message)
     }

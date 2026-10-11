@@ -4,11 +4,20 @@ import Drawer from './Drawer.jsx'
 import PhotoUpload from './PhotoUpload.jsx'
 import { Field } from './SupplyFields.jsx'
 
-const blank = { name: '', brand_id: '', product_code: '', scale: '', status: 'Not started' }
+const blank = { name: '', brand_id: '', product_code: '', scale: '', status: 'Not started', scalemates_url: '' }
 const fromModel = (m) => ({ name: m.name ?? '', brand_id: m.brand_id != null ? String(m.brand_id) : '',
-  product_code: m.product_code ?? '', scale: m.scale ?? '', status: m.status })
+  product_code: m.product_code ?? '', scale: m.scale ?? '', status: m.status,
+  scalemates_url: m.scalemates_url ?? '' })
 const toBody = (f) => ({ name: f.name.trim(), brand_id: f.brand_id ? Number(f.brand_id) : null,
-  product_code: f.product_code.trim() || null, scale: f.scale.trim() || null, status: f.status })
+  product_code: f.product_code.trim() || null, scale: f.scale.trim() || null, status: f.status,
+  scalemates_url: f.scalemates_url.trim() || null })
+
+// Opens Scalemates' own search in your browser (the app itself never fetches Scalemates).
+const scalematesSearch = (m) => {
+  const digits = (m.product_code ?? '').replace(/^\D+/, '')
+  const q = [m.brand, digits, m.name].filter(Boolean).join(' ')
+  return `https://www.scalemates.com/search.php?q=${encodeURIComponent(q)}`
+}
 
 // One model (kit): photo, status, notes and its paint checklist. Also used to add a new model
 // (modelId = null). Paints you own are ticked automatically; others can be ticked by hand.
@@ -176,6 +185,10 @@ export default function ModelPanel({ modelId, lookups, onClose, onChanged, onCre
                 {lookups.model_statuses.map((s) => <option key={s}>{s}</option>)}
               </select>
             </Field>
+            <Field label="Scalemates link" wide hint="Paste the kit's page address from scalemates.com">
+              <input type="url" value={form.scalemates_url} onChange={set('scalemates_url')}
+                placeholder="https://www.scalemates.com/kits/..." />
+            </Field>
           </fieldset>
         </form>
       </Drawer>
@@ -215,11 +228,17 @@ export default function ModelPanel({ modelId, lookups, onClose, onChanged, onCre
         <div>
           <h3 className="item-name">{model.name}</h3>
           <p className="item-sub">{[model.scale, model.brand, model.product_code].filter(Boolean).join(' · ')}</p>
-          {model.source_url && (
-            <a className="small" href={model.source_url} target="_blank" rel="noreferrer">
-              View on {model.brand === 'Hasegawa' ? 'hasegawa-model.co.jp' : 'tamiya.com'} ↗
-            </a>
-          )}
+          <div className="model-links">
+            {model.source_url && (
+              <a className="small" href={model.source_url} target="_blank" rel="noreferrer">
+                {model.brand === 'Hasegawa' ? 'hasegawa-model.co.jp' : 'tamiya.com'} ↗
+              </a>
+            )}
+            {model.scalemates_url
+              ? <a className="small" href={model.scalemates_url} target="_blank" rel="noreferrer">Scalemates ↗</a>
+              : <a className="small" href={scalematesSearch(model)} target="_blank" rel="noreferrer"
+                  title="Find it on Scalemates, then paste its address into Edit details">Search Scalemates ↗</a>}
+          </div>
         </div>
       </div>
 

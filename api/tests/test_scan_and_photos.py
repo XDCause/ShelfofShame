@@ -27,7 +27,7 @@ def test_catalogue_identifies_a_paint_never_seen_before(client, ids, fake_tamiya
                      "VALUES (%s, %s, 'T81776', 'test')", (XF76, ids["tamiya"]))
     r = client.get(f"/api/scan/{XF76}").json()
     assert r["match"] == "catalog" and r["product_code"] == "T81776"
-    assert r["suggested"]["name"] == "Acrylic Paint Mini XF-76 Gray Green (IJN)"
+    assert r["suggested"]["name"] == "Acrylic XF76 Gray Green (IJN)"
     assert r["suggested"]["category_id"] == ids["paint"] and r["has_image"] is True
     assert r["supply_id"] is None and r["owned_qty"] == 0
 

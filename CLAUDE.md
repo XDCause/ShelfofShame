@@ -220,6 +220,27 @@ DBeaver, psql, and the one-off import script.
    - Checked: Tamiya kit pages DO list paints ("Tamiya Colors for brush and airbrush painting":
      30 for 61108, codes like 000X1 / 00X10 / 0XF16, plus sprays 86512... and panel line
      accents) - a broad catalogue list (no XF-76), not curated. Offered as an idea.
+3k. **Ideas round 1** - DONE (2026-10-12). User picked 6 of 12 proposed ideas:
+   - **Names in the user's style**: `tamiya.your_style_name()` - Acrylic Minis become
+     "Acrylic XF2 Flat White" (matches their "Acrylic XF1 Flat Black"); used by suggest() and
+     model paint default names. Other titles just tidied (_nice_name + ACRONYMS).
+   - **Undo after -/+**: App-level toast "Used one / Added one: <name> · Undo" (6 s). Undo =
+     POST adjust {delta: -d, undo: true, purchase_date: <before>} -> reason 'undo', puts the
+     last-purchased date back (only if purchase_date is sent). ItemPanel reloads via reloadKey.
+   - **Floating Scan button** (phones <=700px only): bottom CENTRE (bottom-right covered the
+     list's + buttons), hidden while a drawer is open, lifted above the wishlist buy bar.
+     Owned -> ItemPanel, else AddPanel; unreadable photo -> AddPanel + toast.
+   - **Scalemates link per model**: `db/init/10_model_links.sql` models.scalemates_url
+     (validated to scalemates.com); Edit details field; "Scalemates ↗" link, else
+     "Search Scalemates ↗" opening their search in the user's browser. App never fetches it.
+   - **Wishlist side panel**: WishForm is now a Drawer (scan / Tamiya code first, like
+     AddPanel); WishlistView header "Scan barcode" + "+ Add"; summary "N to find · about $X
+     (M without a price)".
+   - **Duplicate check**: SimilarItems component (ignores filler words, XF-1 == XF1) in AddPanel
+     ("Already in your inventory ... Open") and WishForm ("You already own").
+   - Not picked (could revisit): install as phone app (PWA), import Tamiya's kit paint list,
+     "used on" models in paint panels, "Wanted" kit status, off-PC backup copy, activity feed.
+   - Tests: 80 API, 26 browser steps.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

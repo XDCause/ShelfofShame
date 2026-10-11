@@ -32,7 +32,8 @@ export const api = {
   getSupply: (id) => request(`/supplies/${id}`),
   createSupply: (data) => request('/supplies', json('POST', data)),
   updateSupply: (id, data) => request(`/supplies/${id}`, json('PATCH', data)),
-  adjustQty: (id, delta) => request(`/supplies/${id}/adjust`, json('POST', { delta })),
+  // extra: { undo: true, purchase_date } when reversing a mistaken -/+
+  adjustQty: (id, delta, extra = {}) => request(`/supplies/${id}/adjust`, json('POST', { delta, ...extra })),
   deleteSupply: (id) => request(`/supplies/${id}`, { method: 'DELETE' }),
   supplyHistory: (id, limit = 20) => request(`/supplies/${id}/history?limit=${limit}`),
   recentHistory: (limit = 50) => request(`/history?limit=${limit}`),

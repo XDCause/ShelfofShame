@@ -26,6 +26,22 @@ def test_every_kind_of_change_is_recorded_with_its_reason(client, make_supply):
     ]
 
 
+def test_undo_puts_quantity_and_last_purchased_back(client, make_supply):
+    s = make_supply(qty_on_hand=1, purchase_date="2026-01-05")
+    sid = s["supply_id"]
+    bought = client.post(f"/api/supplies/{sid}/adjust", json={"delta": 1}).json()
+    assert bought["purchase_date"] != "2026-01-05"  # +1 set it to today
+    undone = client.post(f"/api/supplies/{sid}/adjust",
+                         json={"delta": -1, "undo": True, "purchase_date": "2026-01-05"}).json()
+    assert (undone["qty_on_hand"], undone["purchase_date"]) == (1, "2026-01-05")
+    assert history(client, sid)[-2:] == [(1, 2, "bought"), (-1, 1, "undo")]
+
+    # Undoing a "used one" leaves the date alone when none is sent
+    client.post(f"/api/supplies/{sid}/adjust", json={"delta": -1})
+    again = client.post(f"/api/supplies/{sid}/adjust", json={"delta": 1, "undo": True}).json()
+    assert (again["qty_on_hand"], again["purchase_date"]) == (1, "2026-01-05")
+
+
 def test_history_survives_deleting_the_item(client, make_supply):
     s = make_supply(qty_on_hand=2, name="Doomed paint")
     client.delete(f"/api/supplies/{s['supply_id']}")

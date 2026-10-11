@@ -26,7 +26,7 @@ const countBy = (rows, key) => rows.reduce((m, r) => (r[key] ? { ...m, [r[key]]:
 // Scan: something you own opens its panel; anything else opens "Add a supply" pre-filled.
 // The whole list is loaded once and filtered here, so the chip counts always describe
 // everything you own, not just what's currently showing.
-export default function InventoryView({ lookups, refreshKey, onOpen, onAdd }) {
+export default function InventoryView({ lookups, refreshKey, onOpen, onAdd, onAdjusted }) {
   const [all, setAll] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -80,6 +80,7 @@ export default function InventoryView({ lookups, refreshKey, onOpen, onAdd }) {
       const updated = await api.adjustQty(row.supply_id, delta)
       setAll((rs) => rs.map((r) => (r.supply_id === updated.supply_id ? updated : r)))
       setError('')
+      onAdjusted(row, delta) // "Used one: ... · Undo"
     } catch (e) {
       setError(`${row.name}: ${e.message}`)
     }

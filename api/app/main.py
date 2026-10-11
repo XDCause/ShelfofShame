@@ -82,8 +82,13 @@ class SupplyPatch(BaseModel):
 
 class Adjust(BaseModel):
     """Change quantity by a relative amount, e.g. -1 = used one, +3 = bought three.
-    Adding stock also sets the last-purchased date to today."""
+    Adding stock also sets the last-purchased date to today.
+
+    undo = reversing a mistaken -/+: logged as 'undo', and the last-purchased date is set to
+    `purchase_date` (what it was before) instead of today."""
     delta: int = Field(description="Amount to add (negative to remove)")
+    undo: bool = False
+    purchase_date: date | None = None
 
 
 class LookupIn(BaseModel):
@@ -192,11 +197,19 @@ def update_supply(supply_id: int, body: SupplyPatch):
 def adjust_quantity(supply_id: int, body: Adjust):
     """Relative change done inside the database, so two quick clicks can't overwrite each other."""
     with db() as conn:
-        stock_reason(conn, "used" if body.delta < 0 else "bought")
-        conn.execute("""
-            UPDATE supplies SET qty_on_hand = qty_on_hand + %(delta)s,
-                   purchase_date = CASE WHEN %(delta)s > 0 THEN current_date ELSE purchase_date END
-            WHERE supply_id = %(id)s""", {"delta": body.delta, "id": supply_id})
+        if body.undo:
+            stock_reason(conn, "undo")
+            conn.execute("UPDATE supplies SET qty_on_hand = qty_on_hand + %s WHERE supply_id = %s",
+                         (body.delta, supply_id))
+            if "purchase_date" in body.model_fields_set:  # put the old date back (may be empty)
+                conn.execute("UPDATE supplies SET purchase_date = %s WHERE supply_id = %s",
+                             (body.purchase_date, supply_id))
+        else:
+            stock_reason(conn, "used" if body.delta < 0 else "bought")
+            conn.execute("""
+                UPDATE supplies SET qty_on_hand = qty_on_hand + %(delta)s,
+                       purchase_date = CASE WHEN %(delta)s > 0 THEN current_date ELSE purchase_date END
+                WHERE supply_id = %(id)s""", {"delta": body.delta, "id": supply_id})
         return fetch_supply(conn, supply_id)
 
 

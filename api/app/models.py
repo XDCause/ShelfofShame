@@ -21,6 +21,11 @@ STATUSES = ["Not started", "In progress", "On hold", "Finished"]
 Status = Literal[tuple(STATUSES)]
 
 
+def scalemates_url():
+    """A Scalemates kit page, opened in the user's browser (never fetched by the app)."""
+    return Field(None, pattern=r"^https?://(www\.)?scalemates\.com/\S+$")
+
+
 class ModelIn(BaseModel):
     name: str = Field(min_length=1)
     brand_id: int | None = None
@@ -28,6 +33,7 @@ class ModelIn(BaseModel):
     scale: str | None = None
     status: Status = "Not started"
     notes: str | None = None
+    scalemates_url: str | None = scalemates_url()
 
 
 class ModelPatch(BaseModel):
@@ -37,6 +43,7 @@ class ModelPatch(BaseModel):
     scale: str | None = None
     status: Status | None = None
     notes: str | None = None
+    scalemates_url: str | None = scalemates_url()
 
 
 class PaintsIn(BaseModel):
@@ -146,7 +153,7 @@ def default_name(conn, brand_id, code, typed):
         return row["name"]
     info = conn.execute("SELECT title FROM product_info WHERE brand_id = %s AND product_code = %s",
                         (brand_id, code)).fetchone()
-    return tamiya._nice_name(info["title"]) if info and info["title"] else typed
+    return tamiya.your_style_name(info["title"]) if info and info["title"] else typed
 
 
 # ---------------------------------------------------------------------------

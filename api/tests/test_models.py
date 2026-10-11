@@ -95,6 +95,16 @@ def test_models_list_status_and_delete(client, ids):
     assert client.get(f"/api/models/{b['model_id']}").status_code == 404
 
 
+def test_scalemates_link(client, ids):
+    model = make_model(client, ids)
+    url = "https://www.scalemates.com/kits/tamiya-61108-mitsubishi-a6m3-3a-zero-fighter-zeke--146095"
+    m = client.patch(f"/api/models/{model['model_id']}", json={"scalemates_url": url}).json()
+    assert m["scalemates_url"] == url
+    assert client.patch(f"/api/models/{model['model_id']}",
+                        json={"scalemates_url": "https://example.com/x"}).status_code == 422
+    assert client.patch(f"/api/models/{model['model_id']}", json={"scalemates_url": None}).json()["scalemates_url"] is None
+
+
 def test_removing_a_paint(client, ids):
     model = make_model(client, ids)
     m = client.post(f"/api/models/{model['model_id']}/paints", json={"text": "XF-1\nXF-2"}).json()

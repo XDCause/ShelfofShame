@@ -62,13 +62,26 @@ def test_normalise_barcode(raw, normalised):
 
 def test_suggestions_from_titles():
     s = tamiya.suggest("ACRYLIC PAINT MINI XF-1 FLAT BLACK", "Tamiya Color Acrylic Paint Mini", "Contents: 10ml")
-    assert s == {"name": "Acrylic Paint Mini XF-1 Flat Black", "category": "Paint",
+    assert s == {"name": "Acrylic XF1 Flat Black", "category": "Paint",
                  "paint_type": "Acrylic", "finish": "Flat / Matt", "size": "10ml"}
     tape = tamiya.suggest("MASKING TAPE 10mm", "Tamiya Craft Tools", "Contents: 18m")
     assert (tape["category"], tape["size"]) == ("Masking Tape", "18m")  # length, not width
     assert tamiya.suggest("ACRYLIC PAINT MINI X-35 SEMI GLOSS CLEAR", "", None)["finish"] == "Semi-gloss"
     assert tamiya.suggest("ACRYLIC PAINT MINI X-10 GUN METAL", "", None)["finish"] == "Metallic"
     assert tamiya._nice_name("SURFACE PRIMER L (GRAY)") == "Surface Primer L (Gray)"
+
+
+@pytest.mark.parametrize("title, name", [
+    # Acrylic Minis come out the way the user names them ("Acrylic XF1 Flat Black")
+    ("ACRYLIC PAINT MINI XF-2 FLAT WHITE", "Acrylic XF2 Flat White"),
+    ("ACRYLIC MINI X-35 SEMI GLOSS CLEAR", "Acrylic X35 Semi Gloss Clear"),
+    ("ACRYLIC PAINT MINI X-20A THINNER (10ml)", "Acrylic X20A Thinner"),
+    ("ACRYLIC PAINT MINI XF-76 GRAY GREEN (IJN)", "Acrylic XF76 Gray Green (IJN)"),
+    # everything else is just tidied
+    ("TAMIYA EXTRA-THIN CEMENT (40ml)", "Tamiya Extra-Thin Cement (40ml)"),
+])
+def test_names_in_the_users_style(title, name):
+    assert tamiya.your_style_name(title) == name
     assert tamiya._nice_name("ACRYLIC PAINT MINI XF-76 GRAY GREEN (IJN)") == \
         "Acrylic Paint Mini XF-76 Gray Green (IJN)"
     assert tamiya._nice_name("XF-82 OCEAN GRAY 2 (RAF)") == "XF-82 Ocean Gray 2 (RAF)"

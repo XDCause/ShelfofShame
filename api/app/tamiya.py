@@ -214,7 +214,7 @@ def suggest(title: str, series: str | None, description: str | None) -> dict:
             break
 
     return {
-        "name": _nice_name(title),
+        "name": your_style_name(title),
         "category": category,
         "paint_type": paint_type,
         "finish": finish,
@@ -225,6 +225,20 @@ def suggest(title: str, series: str | None, description: str | None) -> dict:
 # Abbreviations that must stay in capitals, e.g. "GRAY GREEN (IJN)" -> "Gray Green (IJN)".
 ACRONYMS = {"IJN", "IJA", "RAF", "RLM", "USN", "USAF", "USMC", "JGSDF", "JASDF", "JMSDF", "NATO",
             "IDF", "DAK", "WWII", "US", "UK", "LP", "TS", "PS", "AS", "RC", "LED", "PE", "UV", "HG"}
+
+
+# "ACRYLIC PAINT MINI XF-2 FLAT WHITE", "ACRYLIC MINI X-35 SEMI GLOSS CLEAR", "... X-20A THINNER (10ml)"
+ACRYLIC_MINI = re.compile(r"ACRYLIC\s+(?:PAINT\s+)?MINI\s+(XF|X)-(\d+[A-Z]?)\s+(.*?)\s*(?:\(\d+\s*ml\))?\s*$", re.I)
+
+
+def your_style_name(title: str) -> str:
+    """Names the way the user writes them: 'ACRYLIC PAINT MINI XF-2 FLAT WHITE' ->
+    'Acrylic XF2 Flat White' (like their 'Acrylic XF1 Flat Black'). Anything else is just
+    tidied: 'TAMIYA EXTRA-THIN CEMENT (40ml)' -> 'Tamiya Extra-Thin Cement (40ml)'."""
+    m = ACRYLIC_MINI.match(title.strip())
+    if m:
+        return f"Acrylic {m.group(1).upper()}{m.group(2).upper()} {_nice_name(m.group(3))}".strip()
+    return _nice_name(title)
 
 
 def _nice_name(title: str) -> str:
