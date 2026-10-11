@@ -4,7 +4,7 @@ import Drawer from './Drawer.jsx'
 import PhotoUpload from './PhotoUpload.jsx'
 import ScanButton from './ScanButton.jsx'
 import StockHistory from './StockHistory.jsx'
-import SupplyFields, { Choice, DETAIL_FIELDS, toForm, toPayload } from './SupplyFields.jsx'
+import SupplyFields, { DETAIL_FIELDS, toForm, toPayload } from './SupplyFields.jsx'
 
 const longDate = (iso) =>
   iso ? new Date(`${iso}T00:00`).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : ''
@@ -142,7 +142,7 @@ export default function ItemPanel({ supplyId, lookups, onClose, onChanged }) {
 
       {editing ? (
         <form id="details-form" onSubmit={saveDetails}>
-          <SupplyFields form={details} lookups={lookups}
+          <SupplyFields form={details} lookups={lookups} reorder
             set={(f) => (e) => setDetails((d) => ({ ...d, [f]: e.target.value }))} />
         </form>
       ) : (
@@ -178,22 +178,21 @@ export default function ItemPanel({ supplyId, lookups, onClose, onChanged }) {
             </div>
           </section>
 
-          <section className="panel-section quick-grid">
-            <label className="field">
-              <span className="field-label">Condition</span>
-              <Choice value={item.condition ?? ''} options={lookups.conditions}
-                onChange={(e) => save({ condition: e.target.value || null })} />
-            </label>
-            <div className="field">
-              <span className="field-label">Reorder at</span>
-              <div className="mini-stepper">
-                <button type="button" aria-label="Lower reorder level" disabled={!item.reorder_at}
-                  onClick={() => save({ reorder_at: Math.max(0, (item.reorder_at ?? 0) - 1) })}>−</button>
-                <span>{item.reorder_at ?? 0}</span>
-                <button type="button" aria-label="Raise reorder level"
-                  onClick={() => save({ reorder_at: (item.reorder_at ?? 0) + 1 })}>+</button>
-              </div>
+          <section className="panel-section">
+            <h4 className="section-title" id="condition-label">Condition</h4>
+            <div className="condition-picker" role="group" aria-labelledby="condition-label">
+              {lookups.conditions.map((c) => (
+                <button key={c} type="button" aria-pressed={item.condition === c}
+                  className={['Nearly empty', 'Empty', 'Dried out'].includes(c) ? 'warn' : ''}
+                  onClick={() => item.condition !== c && save({ condition: c })}>{c}</button>
+              ))}
             </div>
+            {item.qty_on_hand === 1 && ['Nearly empty', 'Empty', 'Dried out'].includes(item.condition) && (
+              <p className="hint">Your last one is {item.condition.toLowerCase()}, so it shows as Low.</p>
+            )}
+          </section>
+
+          <section className="panel-section quick-grid">
             <label className="field">
               <span className="field-label">Location</span>
               <select value={item.location_id ?? ''} onChange={(e) => save({ location_id: e.target.value ? Number(e.target.value) : null })}>

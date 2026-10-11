@@ -46,7 +46,7 @@ Browser -> web (nginx) -> api (FastAPI) -> db (PostgreSQL)
 | GET | `/api/scan/{barcode}` | Identify an item from its barcode number (known / catalog / Tamiya / unknown) |
 | GET | `/api/supplies/{id}/history` | Quantity changes for one supply, newest first |
 | GET | `/api/history` | Quantity changes across everything |
-| POST | `/api/wishlist/from-out-of-stock` | Put every out-of-stock supply on the wishlist |
+| POST | `/api/wishlist/restock` | Put everything that needs attention (Out or Low) on the wishlist |
 | PUT | `/api/product-barcode` | Remember a barcode `{"brand_id", "product_code", "barcode"}` |
 | GET | `/api/product-images/{id}` | A cached product photo |
 | PUT | `/api/product-photo?brand_id=&product_code=` | Your own photo for any item (image file as the body) |

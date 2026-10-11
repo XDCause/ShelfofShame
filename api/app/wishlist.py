@@ -185,10 +185,11 @@ def buy_one(wish_id: int, body: Buy | None = None):
         return move_to_inventory(conn, wish, clean_shop(body))
 
 
-@router.post("/wishlist/from-out-of-stock")
-def wish_for_out_of_stock():
-    """Put every supply that's Out of stock onto the wishlist (skipping ones already there).
-    Copies its details; the last price paid becomes the expected price."""
+@router.post("/wishlist/restock")
+def wish_for_restock():
+    """Put everything that needs attention - Out, or Low (e.g. your last bottle is nearly
+    empty) - onto the wishlist, skipping ones already there. Copies its details; the last
+    price paid becomes the expected price."""
     with db() as conn:
         added = conn.execute("""
             INSERT INTO wishlist (brand_id, product_code, name, category_id, paint_type, finish,
@@ -196,7 +197,7 @@ def wish_for_out_of_stock():
             SELECT s.brand_id, s.product_code, s.name, s.category_id, s.paint_type, s.finish,
                    s.size, 1, s.unit_price
             FROM supplies s JOIN v_supplies v USING (supply_id)
-            WHERE v.stock_status = 'Out'
+            WHERE v.stock_status IN ('Out', 'Low')
               AND NOT EXISTS (SELECT 1 FROM wishlist w
                               WHERE (w.brand_id = s.brand_id AND w.product_code = s.product_code)
                                  OR (s.product_code IS NULL AND w.name = s.name))

@@ -113,7 +113,7 @@ DBeaver, psql, and the one-off import script.
    - **Inventory scanning:** shared `ScanButton` component. Scan results include supply_id.
      Supply barcode shown = product_info.barcode, else the catalogue's. ScanButton uses a div,
      not a <form> (forms can't nest). Current scan behaviour: see 3f.
-   - **Out-of-stock -> wishlist:** POST /api/wishlist/from-out-of-stock; button on Inventory
+   - **Out-of-stock -> wishlist:** now POST /api/wishlist/restock (Out + Low, see 3g); button on Inventory
      when anything is Out; skips items already on the wishlist.
    - **Tests:** `run_tests.ps1` rebuilds `hobby_inventory_test` from db/init/*.sql, runs pytest in
      `docker compose run` with ./api mounted (live app untouched), tamiya.fetch faked; conftest
@@ -140,6 +140,22 @@ DBeaver, psql, and the one-off import script.
      (`db/init/07_remove_used_for.sql`; both were empty). Labels: purchase_date = "Last
      purchased", purchased_from = "Last bought from".
    - **+1 (adjust with delta > 0) sets purchase_date to today**; -1 leaves it alone.
+3g. **Condition-driven "Low" + quick filters** - DONE (2026-10-11). User picked all recommendations.
+   - Why: everything is qty 1 / reorder 0, so quantity never showed Low. **Condition is the
+     fuel gauge.** `db/init/08_condition_low.sql` (CREATE OR REPLACE VIEW): Low also when
+     qty = 1 and condition is Nearly empty / Empty / Dried out (a spare bottle keeps it OK).
+     "Needs attention" = Out or Low. POST /api/wishlist/restock adds all of those.
+   - Top of Inventory: the 5 stat boxes are gone. Now a summary line ("22 items · $142.90",
+     "showing N" + Clear when filtering) and tappable chips with counts: Needs attention (+ "Add
+     to wishlist"), conditions, categories. InventoryView loads ALL supplies once and filters
+     client-side (search also matches notes + barcode), so chip counts always describe
+     everything. Brand / Location dropdowns only render when 2+ values are in use; chip rows
+     only when 2+ values exist.
+   - List: Status column replaced by Condition (+ Low/Out badge only when it applies); rows
+     needing attention get an amber left edge. New sorts: condition, needs attention first.
+   - Item panel: Condition is a 3x2 grid of tap buttons (Nearly empty/Empty/Dried out shown
+     amber when selected) with a hint when that makes it Low. "Reorder at" moved out of quick
+     settings into Edit details (DETAIL_FIELDS; SupplyFields `reorder` prop).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

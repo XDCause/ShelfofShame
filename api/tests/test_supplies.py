@@ -20,6 +20,14 @@ def test_stock_status_rules(make_supply):
     assert make_supply(product_code="D", qty_on_hand=1, reorder_at=None)["stock_status"] == "OK"
 
 
+def test_last_bottle_running_out_counts_as_low(make_supply):
+    for i, condition in enumerate(["Nearly empty", "Empty", "Dried out"]):
+        assert make_supply(product_code=f"L{i}", qty_on_hand=1, condition=condition)["stock_status"] == "Low"
+    assert make_supply(product_code="H", qty_on_hand=1, condition="Half used")["stock_status"] == "OK"
+    # A spare in the cupboard: one nearly empty bottle isn't Low while there's a second
+    assert make_supply(product_code="S", qty_on_hand=2, condition="Nearly empty")["stock_status"] == "OK"
+
+
 def test_same_brand_and_code_twice_is_refused(client, make_supply, ids):
     make_supply()
     r = client.post("/api/supplies", json={"brand_id": ids["tamiya"], "product_code": "T81701",

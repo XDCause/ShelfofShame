@@ -51,9 +51,11 @@ export function applyResult(f, r) {
 
 // What the item is - the fields you rarely change after adding it.
 export const DETAIL_FIELDS = ['name', 'category_id', 'brand_id', 'product_code', 'paint_type',
-  'finish', 'size', 'unit_price']
+  'finish', 'size', 'unit_price', 'reorder_at']
 
-export default function SupplyFields({ form, set, lookups, stock = false }) {
+// stock: also show the stock fields (when adding). reorder: show "Reorder at" with the item
+// fields (when editing details - it's rarely changed, so it lives there, not in quick settings).
+export default function SupplyFields({ form, set, lookups, stock = false, reorder = false }) {
   return (
     <>
       <fieldset>
@@ -88,6 +90,7 @@ export default function SupplyFields({ form, set, lookups, stock = false }) {
         <Field label="Price ($)">
           <input type="number" min="0" step="0.01" inputMode="decimal" value={form.unit_price} onChange={set('unit_price')} />
         </Field>
+        {reorder && <ReorderField form={form} set={set} />}
       </fieldset>
 
       {stock && (
@@ -99,9 +102,7 @@ export default function SupplyFields({ form, set, lookups, stock = false }) {
           <Field label="Condition">
             <Choice value={form.condition} onChange={set('condition')} options={lookups.conditions} />
           </Field>
-          <Field label="Reorder at" hint="Shows as Low at or below this">
-            <input type="number" min="0" step="1" inputMode="numeric" value={form.reorder_at} onChange={set('reorder_at')} />
-          </Field>
+          <ReorderField form={form} set={set} />
           <Field label="Location">
             <select value={form.location_id} onChange={set('location_id')}>
               <option value="">—</option>
@@ -120,6 +121,14 @@ export default function SupplyFields({ form, set, lookups, stock = false }) {
         </fieldset>
       )}
     </>
+  )
+}
+
+function ReorderField({ form, set }) {
+  return (
+    <Field label="Reorder at" hint="Low when quantity drops to this (0 = only when your last one runs low)">
+      <input type="number" min="0" step="1" inputMode="numeric" value={form.reorder_at} onChange={set('reorder_at')} />
+    </Field>
   )
 }
 

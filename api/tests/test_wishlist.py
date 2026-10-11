@@ -47,16 +47,18 @@ def test_same_item_twice_on_the_wishlist_is_refused(client, ids):
     assert r.json()["detail"] == "That item is already on your wishlist."
 
 
-def test_out_of_stock_items_go_onto_the_wishlist_once(client, make_supply):
+def test_items_needing_attention_go_onto_the_wishlist_once(client, make_supply):
     make_supply(product_code="T81701", name="Empty one", qty_on_hand=0, unit_price="3.95")
-    make_supply(product_code="T81710", name="Still have it", qty_on_hand=1)
+    make_supply(product_code="T81702", name="Last bottle nearly empty", qty_on_hand=1, condition="Nearly empty")
+    make_supply(product_code="T81710", name="Still have it", qty_on_hand=1, condition="Opened")
 
-    first = client.post("/api/wishlist/from-out-of-stock").json()
-    assert first == {"added": 1, "names": ["Empty one"]}
-    wish = client.get("/api/wishlist").json()[0]
+    first = client.post("/api/wishlist/restock").json()
+    assert first["added"] == 2
+    assert sorted(first["names"]) == ["Empty one", "Last bottle nearly empty"]
+    wish = next(w for w in client.get("/api/wishlist").json() if w["name"] == "Empty one")
     assert float(wish["est_price"]) == 3.95
 
-    assert client.post("/api/wishlist/from-out-of-stock").json()["added"] == 0
+    assert client.post("/api/wishlist/restock").json()["added"] == 0
 
 
 def test_filters_by_ticked(client, ids):

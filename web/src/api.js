@@ -36,7 +36,7 @@ export const api = {
   deleteSupply: (id) => request(`/supplies/${id}`, { method: 'DELETE' }),
   supplyHistory: (id, limit = 20) => request(`/supplies/${id}/history?limit=${limit}`),
   recentHistory: (limit = 50) => request(`/history?limit=${limit}`),
-  wishOutOfStock: () => request('/wishlist/from-out-of-stock', { method: 'POST' }),
+  wishRestock: () => request('/wishlist/restock', { method: 'POST' }),
 
   listWishlist: (show = 'all') => request(`/wishlist?show=${show}`),
   addWish: (data) => request('/wishlist', json('POST', data)),

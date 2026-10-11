@@ -4,74 +4,80 @@ import ScanButton from './ScanButton.jsx'
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
-const EMPTY_FILTERS = { q: '', category: '', brand: '', status: '', location: '' }
+const NO_FILTERS = { attention: false, condition: '', category: '', brand: '', location: '' }
 const STATUS_ORDER = { Out: 0, Low: 1, OK: 2 }
+const CONDITION_ORDER = ['Sealed', 'Opened', 'Half used', 'Nearly empty', 'Empty', 'Dried out']
 
 const SORTS = {
   ref: { label: 'Newest first', by: (r) => r.supply_id, dir: -1 },
   name: { label: 'Name', by: (r) => r.name },
   category: { label: 'Category', by: (r) => r.category },
   brand: { label: 'Brand', by: (r) => r.brand ?? '' },
-  status: { label: 'Status (out first)', by: (r) => STATUS_ORDER[r.stock_status] },
-  qty: { label: 'Quantity', by: (r) => r.qty_on_hand, dir: -1 },
+  condition: { label: 'Condition (most used first)', by: (r) => -CONDITION_ORDER.indexOf(r.condition ?? '') },
+  status: { label: 'Needs attention first', by: (r) => STATUS_ORDER[r.stock_status] },
   value: { label: 'Value', by: (r) => Number(r.total_value ?? 0), dir: -1 },
   purchased: { label: 'Last purchased', by: (r) => r.purchase_date ?? '', dir: -1 },
 }
 
+// Count how many rows have each value of `key`, e.g. {Paint: 9, Thinner: 2}.
+const countBy = (rows, key) => rows.reduce((m, r) => (r[key] ? { ...m, [r[key]]: (m[r[key]] ?? 0) + 1 } : m), {})
+
 // The inventory list. Tap a row for everything about that item (opens a side panel).
 // Scan: something you own opens its panel; anything else opens "Add a supply" pre-filled.
+// The whole list is loaded once and filtered here, so the chip counts always describe
+// everything you own, not just what's currently showing.
 export default function InventoryView({ lookups, refreshKey, onOpen, onAdd }) {
-  const [filters, setFilters] = useState(EMPTY_FILTERS)
-  const [search, setSearch] = useState('') // what's typed; copied into filters.q after a pause
-  const [rows, setRows] = useState([])
+  const [all, setAll] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [search, setSearch] = useState('')
+  const [filters, setFilters] = useState(NO_FILTERS)
   const [sort, setSort] = useState('ref')
   const [notice, setNotice] = useState(null)
   const [photoJob, setPhotoJob] = useState(null) // {done, total, failed} while fetching photos
   const [reload, setReload] = useState(0)
 
-  // Debounce: wait until typing stops for 250 ms before searching, instead of one call per key.
   useEffect(() => {
-    const t = setTimeout(() => setFilters((f) => ({ ...f, q: search.trim() })), 250)
-    return () => clearTimeout(t)
-  }, [search])
-
-  useEffect(() => {
-    let current = true // ignore late answers from an older search
-    setLoading(true)
-    api.listSupplies(filters)
-      .then((data) => current && (setRows(data), setError('')))
+    let current = true
+    api.listSupplies()
+      .then((data) => current && (setAll(data), setError('')))
       .catch((e) => current && setError(e.message))
       .finally(() => current && setLoading(false))
     return () => { current = false }
-  }, [filters, refreshKey, reload])
+  }, [refreshKey, reload])
 
-  const sorted = useMemo(() => {
+  const counts = useMemo(() => ({
+    attention: all.filter((r) => r.stock_status !== 'OK').length,
+    condition: countBy(all, 'condition'),
+    category: countBy(all, 'category'),
+    brand: countBy(all, 'brand'),
+    location: countBy(all, 'location'),
+    value: all.reduce((s, r) => s + Number(r.total_value ?? 0), 0),
+  }), [all])
+
+  const rows = useMemo(() => {
+    const q = search.trim().toLowerCase()
     const { by, dir = 1 } = SORTS[sort]
-    return [...rows].sort((a, b) => {
-      const x = by(a), y = by(b)
-      return dir * (typeof x === 'number' ? x - y : String(x).localeCompare(String(y), undefined, { numeric: true }))
-    })
-  }, [rows, sort])
+    return all
+      .filter((r) => !q || [r.name, r.product_code, r.brand, r.category, r.notes, r.barcode]
+        .some((v) => v && String(v).toLowerCase().includes(q)))
+      .filter((r) => !filters.attention || r.stock_status !== 'OK')
+      .filter((r) => ['condition', 'category', 'brand', 'location'].every((k) => !filters[k] || r[k] === filters[k]))
+      .sort((a, b) => {
+        const x = by(a), y = by(b)
+        return dir * (typeof x === 'number' ? x - y : String(x).localeCompare(String(y), undefined, { numeric: true }))
+      })
+  }, [all, search, filters, sort])
 
-  const totals = useMemo(() => ({
-    items: rows.length,
-    units: rows.reduce((s, r) => s + r.qty_on_hand, 0),
-    value: rows.reduce((s, r) => s + Number(r.total_value ?? 0), 0),
-    out: rows.filter((r) => r.stock_status === 'Out').length,
-    low: rows.filter((r) => r.stock_status === 'Low').length,
-  }), [rows])
-
-  const missingPhotos = rows.filter((r) => r.brand === 'Tamiya' && r.product_code && !r.has_image)
-  const filtered = Object.values(filters).some(Boolean)
-  const setFilter = (name) => (e) => setFilters((f) => ({ ...f, [name]: e.target.value }))
-  const clearAll = () => { setSearch(''); setFilters(EMPTY_FILTERS) }
+  const filtering = search.trim() !== '' || Object.values(filters).some(Boolean)
+  const toggle = (key, value) => setFilters((f) => ({ ...f, [key]: f[key] === value ? NO_FILTERS[key] : value }))
+  const clearAll = () => { setSearch(''); setFilters(NO_FILTERS) }
+  const missingPhotos = all.filter((r) => r.brand === 'Tamiya' && r.product_code && !r.has_image)
 
   const adjust = async (row, delta) => {
     try {
       const updated = await api.adjustQty(row.supply_id, delta)
-      setRows((rs) => rs.map((r) => (r.supply_id === updated.supply_id ? updated : r)))
+      setAll((rs) => rs.map((r) => (r.supply_id === updated.supply_id ? updated : r)))
       setError('')
     } catch (e) {
       setError(`${row.name}: ${e.message}`)
@@ -84,10 +90,10 @@ export default function InventoryView({ lookups, refreshKey, onOpen, onAdd }) {
     else onAdd({ result, photo })
   }
 
-  const wishOutOfStock = async () => {
+  const restock = async () => {
     try {
-      const r = await api.wishOutOfStock()
-      setNotice(r.added ? `Added to wishlist: ${r.names.join(', ')}.` : 'Everything out of stock is already on your wishlist.')
+      const r = await api.wishRestock()
+      setNotice(r.added ? `Added to wishlist: ${r.names.join(', ')}.` : 'Everything that needs attention is already on your wishlist.')
     } catch (e) {
       setError(e.message)
     }
@@ -106,52 +112,73 @@ export default function InventoryView({ lookups, refreshKey, onOpen, onAdd }) {
     setReload((n) => n + 1)
   }
 
+  const conditions = CONDITION_ORDER.filter((c) => counts.condition[c])
+  const categories = Object.keys(counts.category).sort()
+
   return (
     <section>
-      <div className="stats">
-        <Stat label={filtered ? 'Matching' : 'Items'} value={totals.items} />
-        <Stat label="Units" value={totals.units} />
-        <Stat label="Value" value={money(totals.value)} />
-        <Stat label="Out" value={totals.out} tone={totals.out ? 'out' : ''} />
-        <Stat label="Low" value={totals.low} tone={totals.low ? 'low' : ''} />
-      </div>
-
       <div className="toolbar">
-        <input type="search" className="search" placeholder="Search name, code, brand, notes..."
+        <input type="search" className="search" placeholder="Search name, code, brand, notes, barcode..."
           value={search} onChange={(e) => setSearch(e.target.value)} aria-label="Search" />
         <ScanButton onBarcode={onBarcode} />
         <button type="button" className="secondary" onClick={() => onAdd(null)}>+ Add</button>
       </div>
 
+      <p className="summary">
+        <strong>{all.length}</strong> items · <strong>{money(counts.value)}</strong>
+        {filtering && <> · showing {rows.length} <button type="button" className="link" onClick={clearAll}>Clear</button></>}
+      </p>
+
+      <div className="chip-rows">
+        {counts.attention > 0 && (
+          <div className="chip-row">
+            <Chip on={filters.attention} tone="attention" onClick={() => toggle('attention', true)}
+              label="Needs attention" count={counts.attention} />
+            <button type="button" className="chip-btn" onClick={restock}>Add to wishlist</button>
+          </div>
+        )}
+        {conditions.length > 1 && (
+          <div className="chip-row" aria-label="Condition">
+            {conditions.map((c) => (
+              <Chip key={c} on={filters.condition === c} onClick={() => toggle('condition', c)} label={c} count={counts.condition[c]} />
+            ))}
+          </div>
+        )}
+        {categories.length > 1 && (
+          <div className="chip-row" aria-label="Category">
+            {categories.map((c) => (
+              <Chip key={c} on={filters.category === c} onClick={() => toggle('category', c)} label={c} count={counts.category[c]} />
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="filters">
-        <Select label="Category" value={filters.category} onChange={setFilter('category')} options={lookups.categories} />
-        <Select label="Brand" value={filters.brand} onChange={setFilter('brand')} options={lookups.brands} />
-        <Select label="Status" value={filters.status} onChange={setFilter('status')}
-          options={['OK', 'Low', 'Out'].map((name) => ({ name }))} />
-        <Select label="Location" value={filters.location} onChange={setFilter('location')} options={lookups.locations} />
+        {/* Only offered when they'd actually narrow the list (two or more values in use). */}
+        {Object.keys(counts.brand).length > 1 && (
+          <select value={filters.brand} onChange={(e) => setFilters((f) => ({ ...f, brand: e.target.value }))} aria-label="Brand">
+            <option value="">All brands</option>
+            {Object.keys(counts.brand).sort().map((b) => <option key={b} value={b}>{b} ({counts.brand[b]})</option>)}
+          </select>
+        )}
+        {Object.keys(counts.location).length > 1 && (
+          <select value={filters.location} onChange={(e) => setFilters((f) => ({ ...f, location: e.target.value }))} aria-label="Location">
+            <option value="">All locations</option>
+            {Object.keys(counts.location).sort().map((l) => <option key={l} value={l}>{l} ({counts.location[l]})</option>)}
+          </select>
+        )}
+        {missingPhotos.length > 0 && !photoJob && (
+          <button type="button" className="chip-btn" onClick={fetchPhotos}>
+            Get {missingPhotos.length} Tamiya photo{missingPhotos.length > 1 ? 's' : ''}
+          </button>
+        )}
         <label className="sort">
           <span className="muted small">Sort</span>
           <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort by">
             {Object.entries(SORTS).map(([k, s]) => <option key={k} value={k}>{s.label}</option>)}
           </select>
         </label>
-        {filtered && <button type="button" className="link" onClick={clearAll}>Clear filters</button>}
       </div>
-
-      {(totals.out > 0 || (missingPhotos.length > 0 && !photoJob)) && (
-        <div className="suggestions">
-          {totals.out > 0 && (
-            <button type="button" className="chip-btn" onClick={wishOutOfStock}>
-              Add {totals.out} out-of-stock to wishlist
-            </button>
-          )}
-          {missingPhotos.length > 0 && !photoJob && (
-            <button type="button" className="chip-btn" onClick={fetchPhotos}>
-              Get {missingPhotos.length} Tamiya photo{missingPhotos.length > 1 ? 's' : ''}
-            </button>
-          )}
-        </div>
-      )}
 
       {photoJob && (
         <p className={`alert ${photoJob.failed.length ? 'low' : 'ok'} small`} role="status">
@@ -171,16 +198,15 @@ export default function InventoryView({ lookups, refreshKey, onOpen, onAdd }) {
               <th className="thumb-col"><span className="visually-hidden">Photo</span></th>
               <th>Item</th>
               <th className="hide-sm">Category</th>
-              <th className="hide-md">Finish</th>
+              <th className="hide-xs">Condition</th>
               <th className="num">Stock</th>
-              <th className="hide-xs">Status</th>
               <th className="num hide-sm">Value</th>
             </tr>
           </thead>
           <tbody>
-            {sorted.map((r) => (
-              <tr key={r.supply_id} className="row" onClick={() => onOpen(r.supply_id)}
-                tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && onOpen(r.supply_id)}>
+            {rows.map((r) => (
+              <tr key={r.supply_id} className={r.stock_status === 'OK' ? 'row' : 'row attention'}
+                onClick={() => onOpen(r.supply_id)} tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && onOpen(r.supply_id)}>
                 <td className="thumb-col">
                   {r.has_image
                     ? <img className="thumb" src={imageUrl(r)} alt="" loading="lazy" />
@@ -190,11 +216,12 @@ export default function InventoryView({ lookups, refreshKey, onOpen, onAdd }) {
                   <span className="item-title">{r.name}</span>
                   <span className="item-meta">
                     {[r.brand, r.product_code, r.size].filter(Boolean).join(' · ')}
-                    <span className={`badge ${r.stock_status.toLowerCase()} show-xs`}>{r.stock_status}</span>
+                    {/* On phones the Condition column is hidden, so show it here instead */}
+                    <span className="show-xs"><Condition row={r} /></span>
                   </span>
                 </td>
                 <td className="hide-sm">{r.category}</td>
-                <td className="hide-md">{r.finish !== 'N/A' ? r.finish : ''}</td>
+                <td className="hide-xs"><Condition row={r} /></td>
                 <td className="num">
                   <span className="qty" onClick={(e) => e.stopPropagation()}>
                     <button aria-label={`Use one ${r.name}`} disabled={r.qty_on_hand <= 0} onClick={() => adjust(r, -1)}>−</button>
@@ -202,34 +229,33 @@ export default function InventoryView({ lookups, refreshKey, onOpen, onAdd }) {
                     <button aria-label={`Add one ${r.name}`} onClick={() => adjust(r, 1)}>+</button>
                   </span>
                 </td>
-                <td className="hide-xs"><span className={`badge ${r.stock_status.toLowerCase()}`}>{r.stock_status}</span></td>
                 <td className="num hide-sm">{money(r.total_value)}</td>
               </tr>
             ))}
           </tbody>
         </table>
         {!loading && rows.length === 0 && (
-          <p className="empty">{filtered ? 'Nothing matches. Try clearing the filters.' : 'No supplies yet. Scan or add your first one.'}</p>
+          <p className="empty">{filtering ? 'Nothing matches. Try clearing the filters.' : 'No supplies yet. Scan or add your first one.'}</p>
         )}
       </div>
     </section>
   )
 }
 
-function Stat({ label, value, tone = '' }) {
+// Condition, plus a Low / Out badge only when it applies.
+function Condition({ row }) {
   return (
-    <div className={`stat ${tone}`}>
-      <span className="stat-value">{value}</span>
-      <span className="stat-label">{label}</span>
-    </div>
+    <span className="condition">
+      {row.condition ?? <span className="muted">—</span>}
+      {row.stock_status !== 'OK' && <span className={`badge ${row.stock_status.toLowerCase()}`}>{row.stock_status}</span>}
+    </span>
   )
 }
 
-function Select({ label, value, onChange, options }) {
+function Chip({ label, count, on, onClick, tone = '' }) {
   return (
-    <select value={value} onChange={onChange} aria-label={label}>
-      <option value="">All {label === 'Status' ? 'statuses' : `${label.toLowerCase()}s`.replace('ys', 'ies')}</option>
-      {options.map((o) => <option key={o.name} value={o.name}>{o.name}</option>)}
-    </select>
+    <button type="button" className={`chip-filter ${tone}`} aria-pressed={on} onClick={onClick}>
+      {label} <span className="chip-count">{count}</span>
+    </button>
   )
 }
