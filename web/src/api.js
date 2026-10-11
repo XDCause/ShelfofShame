@@ -59,6 +59,8 @@ export const api = {
   updateModelPaint: (id, data) => request(`/model-paints/${id}`, json('PATCH', data)),
   deleteModelPaint: (id) => request(`/model-paints/${id}`, { method: 'DELETE' }),
   wishMissingPaints: (id) => request(`/models/${id}/wishlist`, { method: 'POST' }),
+  lookupHasegawa: (code, refresh = false) =>
+    request(`/lookup/hasegawa/${encodeURIComponent(code)}${refresh ? '?refresh=true' : ''}`),
 
   lookups: () => request('/lookups'),
   addLookup: (kind, name) => request(`/lookups/${kind}`, json('POST', { name })),

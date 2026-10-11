@@ -8,10 +8,11 @@ import re
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Response
+from fastapi.concurrency import run_in_threadpool
 from psycopg import sql
 from pydantic import BaseModel, Field
 
-from . import tamiya
+from . import hasegawa, tamiya
 from .db import db
 
 router = APIRouter(prefix="/api", tags=["models"])
@@ -241,6 +242,82 @@ def delete_paint(paint_id: int):
         if row is None:
             raise HTTPException(404, "Paint not found.")
         return fetch_model(conn, row["model_id"])
+
+
+@router.get("/lookup/hasegawa/{code}")
+async def lookup_hasegawa(code: str, refresh: bool = False):
+    """A Hasegawa kit by series code (JT86) or item number (09086 / HSG09086): name, scale and
+    box photo from hasegawa-model.co.jp. Cached in product_info under product code HSG<item>."""
+    parsed = hasegawa.normalise(code)
+    if parsed is None:
+        raise HTTPException(422, "Enter the series code (e.g. JT86) or item number (e.g. 09086) from the box.")
+    kind, value = parsed
+
+    with db() as conn:
+        # Add Hasegawa to your brands the first time you look one of their kits up.
+        conn.execute("INSERT INTO brands (name) VALUES ('Hasegawa') ON CONFLICT (name) DO NOTHING")
+        brand_id = conn.execute("SELECT brand_id FROM brands WHERE name = 'Hasegawa'").fetchone()["brand_id"]
+        cached = conn.execute(
+            "SELECT product_code, series FROM product_info WHERE brand_id = %s AND title IS NOT NULL "
+            "AND (product_code = %s OR series = %s)",
+            (brand_id, f"HSG{value}", value)).fetchone()
+
+    if cached and not refresh:
+        product_code = cached["product_code"]
+    else:
+        if kind == "series":
+            candidates = [value]
+        elif cached and cached["series"]:
+            candidates = [cached["series"]]
+        else:
+            candidates = hasegawa.series_for_item(value)
+            if not candidates:
+                raise HTTPException(404, f"Can't work out the page for item {value} from the number alone. "
+                                         "Enter the series code printed next to it on the box (e.g. JT86).")
+        info = None
+        for series in candidates:
+            try:
+                found = await run_in_threadpool(hasegawa.fetch, series)
+            except tamiya.NotFound:
+                continue
+            except tamiya.LookupFailed as e:
+                raise HTTPException(502, str(e))
+            # Typed an item number: the page must say it's that item, or it's the wrong kit.
+            if kind == "series" or found["item"] == value:
+                info = found
+                break
+        if info is None:
+            raise HTTPException(404, f"Hasegawa has no kit page for {value}.")
+
+        product_code = f"HSG{info['item']}" if info["item"] else f"HSG-{info['series'] or value}"
+        description = " · ".join(filter(None, [f"Item no {info['series']} ({info['item']})"
+                                               if info["series"] and info["item"] else None,
+                                               info["scale"] and f"Scale {info['scale']}",
+                                               info["category"]]))
+        with db() as conn:
+            conn.execute("""
+                INSERT INTO product_info (brand_id, product_code, title, series, description,
+                                          source_url, image, image_type)
+                VALUES (%(b)s, %(code)s, %(title)s, %(series)s, %(desc)s, %(url)s, %(image)s, %(type)s)
+                ON CONFLICT (brand_id, product_code) DO UPDATE SET
+                    title = EXCLUDED.title, series = EXCLUDED.series, description = EXCLUDED.description,
+                    source_url = EXCLUDED.source_url,
+                    image = COALESCE(EXCLUDED.image, product_info.image),
+                    image_type = COALESCE(EXCLUDED.image_type, product_info.image_type),
+                    fetched_at = now()""",
+                {"b": brand_id, "code": product_code, "title": info["title"], "series": info["series"],
+                 "desc": description or None, "url": info["source_url"], "image": info["image"],
+                 "type": info["image_type"]})
+
+    with db() as conn:
+        p = conn.execute("""
+            SELECT product_info_id, title, series, description, source_url,
+                   fetched_at AS photo_updated, (image IS NOT NULL) AS has_image
+            FROM product_info WHERE brand_id = %s AND product_code = %s""", (brand_id, product_code)).fetchone()
+    scale = re.search(r"Scale (1/\d+)", p["description"] or "")
+    return {**p, "brand_id": brand_id, "product_code": product_code, "series_code": p["series"],
+            "name": tamiya._nice_name(p["title"]), "scale": scale.group(1) if scale else None,
+            "from_cache": bool(cached) and not refresh}
 
 
 @router.post("/models/{model_id}/wishlist")

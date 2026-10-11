@@ -181,6 +181,25 @@ DBeaver, psql, and the one-off import script.
      A6M3/3A ZERO (ZEKE)), 9 paints from their list, all owned. Their list said X-10 Gun Metal
      was "still to buy", but SUP-0022 (T81510) is X-10 - told the user.
    - tamiya.TIMEOUT raised 15 -> 30 s (a kit page timed out once).
+3i. **Hasegawa kit lookup** - DONE (2026-10-11). For models only (not paints).
+   - Scalemates was considered (user's idea) and **rejected**: robots.txt disallows
+     /search.php and /products/img for general crawlers, they block many bots and have said
+     scrapers flood their servers, fetches got 403, data is community-contributed. Offered
+     instead: a "Scalemates link" field on models (not built yet - user chose Hasegawa first).
+   - Hasegawa: robots.txt only disallows /hsite/wp-admin/; no terms page found. Use **http://**
+     (their HTTPS certificate doesn't validate). Kit pages: /product_g/<series lower>/ with
+     #a_item_title, .pacimg (box art; srcset >= 600w preferred, else full size), .a_itemdate_r
+     ("Scale … 1:48", "Item no … JT86（09086）", "Category …"). Site search returns 500, so
+     item numbers are mapped to series codes: 072nn -> PTnn, 090nn/091nn -> JTnn (verified:
+     PT29 = 07229 F-2B, JT86 = 09086 P-40E) and the page's own item number MUST match.
+     Other numbers -> ask for the series code (e.g. HC71 = 21171).
+   - `app/hasegawa.py` (normalise, series_for_item, fetch, parse) + GET /api/lookup/hasegawa/{code}
+     in models.py (series code, item number or HSG<item>; adds brand "Hasegawa" on first use;
+     product_info row: product_code HSG<item>, series = series code, description "Item no ... ·
+     Scale 1/48 · Category"). ModelPanel: Tamiya | Hasegawa switch for kit lookup; photo
+     refresh + "View on" link work for both. Tests: test_hasegawa.py + trimmed fixture.
+   - User's next kit added as a model: **P-40E Warhawk, Hasegawa HSG09086 (JT86), 1/48**,
+     Not started, no paints yet. (The Zero is now In progress.)
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

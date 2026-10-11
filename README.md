@@ -11,6 +11,7 @@ subscriptions.
   of Tamiya Acrylic Mini paint barcodes
 - **Tamiya lookup**: type an item number or paint code (e.g. `XF-76`) to fill in the name,
   photo, size, paint type and finish from tamiya.com
+- **Kit lookup** for Tamiya (kit number) and Hasegawa (series code or item number from the box)
 - **Models**: your kits with a paint checklist (what each paint is for), ticked automatically
   for paints you own; paste a whole paint list at once; missing paints to the wishlist in one tap
 - Nightly backups and an automated API test suite
@@ -45,6 +46,7 @@ Browser -> web (nginx) -> api (FastAPI) -> db (PostgreSQL)
 | POST | `/api/wishlist/{id}/buy` | Bought it: move to inventory `{"purchased_from": "..."}` |
 | POST | `/api/wishlist/buy-ticked` | Move every ticked item to inventory |
 | GET | `/api/lookup/tamiya/{item}` | Product details + photo from tamiya.com (cached after first time) |
+| GET | `/api/lookup/hasegawa/{code}` | Hasegawa kit by series code (`JT86`) or item number (`09086`): name, scale, box art |
 | GET | `/api/scan/{barcode}` | Identify an item from its barcode number (known / catalog / Tamiya / unknown) |
 | GET | `/api/supplies/{id}/history` | Quantity changes for one supply, newest first |
 | GET | `/api/history` | Quantity changes across everything |

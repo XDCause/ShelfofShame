@@ -348,6 +348,7 @@ legend { font-weight: 650; color: var(--muted); font-size: 0.78rem; text-transfo
 .status-badge.s-finished { background: var(--ok-bg); color: var(--ok); }
 .status-badge.s-on-hold { background: var(--low-bg); color: var(--low); }
 .statuses { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.segmented.maker { margin: 6px 0 2px; }
 
 .checklist-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
 .checklist-head .section-title { margin: 0; }

@@ -19,6 +19,7 @@ export default function ModelPanel({ modelId, lookups, onClose, onChanged, onCre
   const [editing, setEditing] = useState(modelId == null)
   const [form, setForm] = useState(blank)
   const [kitCode, setKitCode] = useState('')
+  const [kitMaker, setKitMaker] = useState('Tamiya') // whose kit number it is
   const [kitFound, setKitFound] = useState(null)
   const [busy, setBusy] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -43,14 +44,22 @@ export default function ModelPanel({ modelId, lookups, onClose, onChanged, onCre
   const changedModel = (m, msg) => { show(m); onChanged(); if (msg) flash(msg) }
   const save = (data, msg = 'Saved ✓') => run(async () => changedModel(await api.updateModel(model.model_id, data), msg))
 
-  // Tamiya kit number -> name, scale and photo from tamiya.com.
+  // Kit number -> name, scale and box photo from the maker's website.
   const lookupKit = () => run(async () => {
     setBusy(true)
     try {
-      const r = await api.lookupTamiya(kitCode.trim())
-      // Kit titles look like "1/48 SCALE MITSUBISHI A6M3/3A ZERO (ZEKE)": split off the scale.
-      const scale = r.title?.match(/^\s*(1\/\d+)/)?.[1] ?? ''
-      const name = (r.suggested?.name ?? r.title ?? '').replace(/^\s*1\/\d+\s*(scale\s+)?/i, '')
+      let name, scale, r
+      if (kitMaker === 'Hasegawa') {
+        r = await api.lookupHasegawa(kitCode.trim()) // series code (JT86) or item number (09086)
+        name = r.name
+        scale = r.scale ?? ''
+        onChanged() // Hasegawa may have just been added to your brands
+      } else {
+        r = await api.lookupTamiya(kitCode.trim())
+        // Tamiya kit titles look like "1/48 SCALE MITSUBISHI A6M3/3A ZERO (ZEKE)": split off the scale.
+        scale = r.title?.match(/^\s*(1\/\d+)/)?.[1] ?? ''
+        name = (r.suggested?.name ?? r.title ?? '').replace(/^\s*1\/\d+\s*(scale\s+)?/i, '')
+      }
       setKitFound(r)
       setForm((f) => ({ ...f, name: name || f.name, scale: scale || f.scale,
         brand_id: String(r.brand_id), product_code: r.product_code }))
@@ -115,13 +124,26 @@ export default function ModelPanel({ modelId, lookups, onClose, onChanged, onCre
         {error && <p className="alert error" role="alert">{error}</p>}
         {!model && (
           <section className="panel-section">
+            <span className="field-label">Look up a kit (optional)</span>
+            <div className="segmented maker" role="group" aria-label="Kit maker">
+              {['Tamiya', 'Hasegawa'].map((m) => (
+                <button key={m} type="button" aria-pressed={kitMaker === m}
+                  onClick={() => { setKitMaker(m); setKitFound(null) }}>{m}</button>
+              ))}
+            </div>
             <div className="lookup-row">
               <label className="field">
-                <span className="field-label">Tamiya kit number (optional)</span>
-                <input value={kitCode} onChange={(e) => setKitCode(e.target.value)} placeholder="e.g. 61108"
+                <span className="field-label">
+                  {kitMaker === 'Hasegawa' ? 'Series code or item number from the box' : 'Kit number'}
+                </span>
+                <input value={kitCode} onChange={(e) => setKitCode(e.target.value)}
+                  placeholder={kitMaker === 'Hasegawa' ? 'e.g. JT86 or 09086' : 'e.g. 61108'}
+                  autoCapitalize="characters"
                   onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); lookupKit() } }} />
               </label>
-              <button type="button" className="secondary" onClick={lookupKit} disabled={busy || !kitCode.trim()}>Look up</button>
+              <button type="button" className="secondary" onClick={lookupKit} disabled={busy || !kitCode.trim()}>
+                {busy ? 'Looking up...' : 'Look up'}
+              </button>
             </div>
             {kitFound && (
               <div className="preview">
@@ -192,7 +214,11 @@ export default function ModelPanel({ modelId, lookups, onClose, onChanged, onCre
         <div>
           <h3 className="item-name">{model.name}</h3>
           <p className="item-sub">{[model.scale, model.brand, model.product_code].filter(Boolean).join(' · ')}</p>
-          {model.source_url && <a className="small" href={model.source_url} target="_blank" rel="noreferrer">View on tamiya.com ↗</a>}
+          {model.source_url && (
+            <a className="small" href={model.source_url} target="_blank" rel="noreferrer">
+              View on {model.brand === 'Hasegawa' ? 'hasegawa-model.co.jp' : 'tamiya.com'} ↗
+            </a>
+          )}
         </div>
       </div>
 
@@ -267,10 +293,14 @@ export default function ModelPanel({ modelId, lookups, onClose, onChanged, onCre
       <section className="panel-section">
         <h4 className="section-title">Photo</h4>
         <div className="photo-actions">
-          {model.brand === 'Tamiya' && model.product_code && (
+          {['Tamiya', 'Hasegawa'].includes(model.brand) && model.product_code && (
             <button type="button" className="secondary" disabled={busy}
-              onClick={() => run(async () => { await api.lookupTamiya(model.product_code, model.has_image); changedModel(await api.getModel(model.model_id), 'Photo updated ✓') })}>
-              {model.has_image ? 'Refresh from tamiya.com' : 'Get photo from tamiya.com'}
+              onClick={() => run(async () => {
+                const lookup = model.brand === 'Hasegawa' ? api.lookupHasegawa : api.lookupTamiya
+                await lookup(model.product_code, model.has_image)
+                changedModel(await api.getModel(model.model_id), 'Photo updated ✓')
+              })}>
+              {model.has_image ? 'Refresh photo' : 'Get photo'} from {model.brand === 'Hasegawa' ? 'hasegawa-model.co.jp' : 'tamiya.com'}
             </button>
           )}
           <PhotoUpload brandId={model.brand_id} productCode={model.product_code} hasPhoto={model.has_image}
