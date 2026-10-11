@@ -110,12 +110,13 @@ export default function ModelPanel({ modelId, lookups, onClose, onChanged, onCre
 
   // ---------------- Adding a model, or editing its details ----------------
   if (editing) {
+    // Keys: see ItemPanel - stops "Edit details" turning into a submit button mid-click.
     const footer = (
       <>
-        <button type="submit" form="model-form" className="primary" disabled={busy || !form.name.trim()}>
+        <button key="save" type="submit" form="model-form" className="primary" disabled={busy || !form.name.trim()}>
           {model ? 'Save details' : 'Add model'}
         </button>
-        <button type="button" className="link" onClick={() => (model ? setEditing(false) : onClose())}>Cancel</button>
+        <button key="cancel" type="button" className="link" onClick={() => (model ? setEditing(false) : onClose())}>Cancel</button>
       </>
     )
     const set = (f) => (e) => setForm((x) => ({ ...x, [f]: e.target.value }))
@@ -196,7 +197,7 @@ export default function ModelPanel({ modelId, lookups, onClose, onChanged, onCre
     </span>
   ) : (
     <>
-      <button type="button" className="secondary" onClick={() => { setForm(fromModel(model)); setEditing(true) }}>Edit details</button>
+      <button key="edit" type="button" className="secondary" onClick={() => { setForm(fromModel(model)); setEditing(true) }}>Edit details</button>
       <span className="spacer" />
       <button type="button" className="danger-link" onClick={() => setConfirmDelete(true)}>Delete</button>
     </>
@@ -245,14 +246,29 @@ export default function ModelPanel({ modelId, lookups, onClose, onChanged, onCre
         <ul className="checklist">
           {model.paints.map((p) => (
             <PaintRow key={p.model_paint_id} paint={p} onOpenSupply={onOpenSupply}
-              onChange={(data) => run(async () => changedModel(await api.updateModelPaint(p.model_paint_id, data)))}
+              onChange={(data) => {
+                // Show a tick straight away; the server's answer then replaces it (or the
+                // reload after an error puts it back).
+                if ('have_it' in data) {
+                  setModel((m) => ({ ...m, paints: m.paints.map((x) => (x.model_paint_id === p.model_paint_id
+                    ? { ...x, have_it: data.have_it, have: x.in_inventory || data.have_it } : x)) }))
+                }
+                run(async () => {
+                  try {
+                    changedModel(await api.updateModelPaint(p.model_paint_id, data))
+                  } catch (e) {
+                    show(await api.getModel(model.model_id))
+                    throw e
+                  }
+                })
+              }}
               onRemove={() => run(async () => changedModel(await api.deleteModelPaint(p.model_paint_id)))} />
           ))}
         </ul>
 
         {!pasting ? (
           <div className="add-paint">
-            <input list="inventory-codes" value={paint.text} placeholder="Paint: XF-76, or pick from inventory"
+            <input list="inventory-codes" value={paint.text} placeholder="Paint, e.g. XF-76"
               onChange={(e) => setPaint((x) => ({ ...x, text: e.target.value }))} aria-label="Paint" />
             <input value={paint.purpose} placeholder="What it's for" aria-label="What it's for"
               onChange={(e) => setPaint((x) => ({ ...x, purpose: e.target.value }))}
@@ -337,7 +353,9 @@ function PaintRow({ paint, onChange, onRemove, onOpenSupply }) {
           {!paint.have && !paint.on_wishlist && paint.product_code && <span className="tag warn">Need to buy</span>}
           {!paint.product_code && <span className="tag" title="No brand + code, so it can't be matched to your inventory">Not linked</span>}
         </div>
-        <input className="purpose" value={purpose} placeholder="What it's for"
+        {/* A textarea that grows with the text, so long descriptions wrap instead of being cut off. */}
+        <textarea className="purpose" value={purpose} placeholder="What it's for"
+          rows={Math.min(4, Math.max(1, Math.ceil(purpose.length / 42)))}
           onChange={(e) => setPurpose(e.target.value)}
           onBlur={() => purpose.trim() !== (paint.purpose ?? '') && onChange({ purpose: purpose.trim() || null })} />
       </div>

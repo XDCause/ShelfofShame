@@ -101,6 +101,7 @@ SUP-0001... numbering.
 | Back up now (also runs nightly at 2 am) | `.\backup.ps1` (keeps the newest 14 in `backups\`) |
 | Back up and copy elsewhere | `.\backup.ps1 -CopyTo "D:\Backups"` |
 | Run the automated tests (never touches real data) | `.\run_tests.ps1` (or `.\run_tests.ps1 -k wishlist`) |
+| Click through the whole app in a browser (desktop + iPhone) | `.\run_e2e.ps1` (backs up, runs, restores; screenshots in `e2e\out\`) |
 
 ## Restoring a backup
 

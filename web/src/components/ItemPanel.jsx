@@ -115,10 +115,12 @@ export default function ItemPanel({ supplyId, lookups, onClose, onChanged }) {
   }
 
   const canLink = item.brand_id && item.product_code
+  // The keys matter: without them React reuses the "Edit details" button as "Save details",
+  // turning it into a submit button mid-click, so the browser submits (saves) straight away.
   const footer = editing ? (
     <>
-      <button type="submit" form="details-form" className="primary" disabled={busy}>Save details</button>
-      <button type="button" className="link" onClick={() => setEditing(false)}>Cancel</button>
+      <button key="save" type="submit" form="details-form" className="primary" disabled={busy}>Save details</button>
+      <button key="cancel" type="button" className="link" onClick={() => setEditing(false)}>Cancel</button>
     </>
   ) : confirmDelete ? (
     <span className="confirm">
@@ -128,7 +130,7 @@ export default function ItemPanel({ supplyId, lookups, onClose, onChanged }) {
     </span>
   ) : (
     <>
-      <button type="button" className="secondary"
+      <button key="edit" type="button" className="secondary"
         onClick={() => { setDetails(toForm(item)); setEditing(true) }}>Edit details</button>
       <span className="spacer" />
       <button type="button" className="danger-link" onClick={() => setConfirmDelete(true)}>Delete</button>

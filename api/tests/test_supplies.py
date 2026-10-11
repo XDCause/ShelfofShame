@@ -90,6 +90,16 @@ def test_delete(client, make_supply):
     assert client.delete(f"/api/supplies/{s['supply_id']}").status_code == 404
 
 
+def test_uses_count_wishlist_and_models_too(client, ids):
+    """A brand used only by a model (or wishlist item) still counts as in use."""
+    vallejo = client.post("/api/lookups/brands", json={"name": "Vallejo"}).json()
+    client.post("/api/models", json={"name": "Some kit", "brand_id": vallejo["id"]})
+    client.post("/api/wishlist", json={"name": "A paint", "brand_id": vallejo["id"], "category_id": ids["paint"]})
+    uses = next(b for b in client.get("/api/lookups").json()["brands"] if b["name"] == "Vallejo")["uses"]
+    assert uses == 2
+    assert client.delete(f"/api/lookups/brands/{vallejo['id']}").status_code == 409
+
+
 def test_lookup_lists_add_remove_and_in_use_protection(client, make_supply, ids):
     added = client.post("/api/lookups/brands", json={"name": "Vallejo"}).json()
     assert client.post("/api/lookups/brands", json={"name": "Vallejo"}).status_code == 409

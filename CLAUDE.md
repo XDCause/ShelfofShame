@@ -200,6 +200,26 @@ DBeaver, psql, and the one-off import script.
      refresh + "View on" link work for both. Tests: test_hasegawa.py + trimmed fixture.
    - User's next kit added as a model: **P-40E Warhawk, Hasegawa HSG09086 (JT86), 1/48**,
      Not started, no paints yet. (The Zero is now In progress.)
+3j. **Run-through + bug hunt** - DONE (2026-10-11).
+   - New: `run_e2e.ps1` + `e2e/walkthrough.py` - Playwright (mcr.microsoft.com/playwright/python
+     :v1.47.0-jammy, pip installs playwright==1.47.0 at run time) on the hobby-inventory_default
+     network against http://web; 21 steps desktop + iPhone 13. It CHANGES data, so the runner
+     backs up first and always pg_restores that backup afterwards. Screenshots: e2e/out/
+     (git-ignored). Assertions are written against the user's real data (22 supplies, Zero, P-40E).
+     **Run it after UI changes** (and run_tests.ps1 after API changes).
+   - Bugs found + fixed: (1) "Edit details" saved and closed instantly in ItemPanel and
+     ModelPanel - React reused the Edit button DOM node as the submit "Save details" button
+     mid-click; fixed with distinct `key`s on footer buttons. (2) Manage lists `uses` counted
+     only supplies - now also wishlist, models, model_paints (LOOKUP_USERS in main.py).
+     (3) iPhone zoomed into inputs (<16px) - inputs 16px under 700px. (4) Scanned barcode was
+     silently not remembered when the new item had no brand+code - now reported.
+     (5) Phone header: gear wrapped onto its own line; chips stacked 4 rows - now title+gear row,
+     full-width tabs, chip rows scroll sideways. (6) Phone panels: big photo pushed controls
+     below the fold - now 88px photo beside the name. (7) Model paint "what it's for" was cut to
+     one line - auto-growing textarea. (8) Manual paint tick waited for the server - optimistic.
+   - Checked: Tamiya kit pages DO list paints ("Tamiya Colors for brush and airbrush painting":
+     30 for 61108, codes like 000X1 / 00X10 / 0XF16, plus sprays 86512... and panel line
+     accents) - a broad catalogue list (no XF-76), not curated. Offered as an idea.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

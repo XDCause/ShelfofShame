@@ -62,7 +62,11 @@ export default function AddPanel({ lookups, scanned: initialScan, onClose, onAdd
   // After saving: remember the scanned barcode and keep your photo if there's no other.
   const extras = async (brandId, productCode, hasImage) => {
     const problems = []
-    if (!scan || !brandId || !productCode) return problems
+    if (!scan) return problems
+    if (!brandId || !productCode) {
+      // A barcode is remembered against brand + code; without them it can't be.
+      return ['the barcode isn\'t remembered because the item has no brand and product code (add them with Edit details, then Link barcode)']
+    }
     try {
       await api.setBarcode(brandId, productCode, scan.result.barcode)
     } catch (e) {

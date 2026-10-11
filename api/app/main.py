@@ -31,6 +31,13 @@ LOOKUPS = {
     "categories": ("categories", "category_id"),
     "locations": ("storage_locations", "location_id"),
 }
+# Every table that refers to each list, so "uses" (and whether it can be removed) is right.
+# product_info isn't here: its cached photos are deleted along with an unused brand.
+LOOKUP_USERS = {
+    "brands": ["supplies", "wishlist", "models", "model_paints"],
+    "categories": ["supplies", "wishlist"],
+    "locations": ["supplies"],
+}
 
 # ---------------------------------------------------------------------------
 # Request bodies
@@ -231,15 +238,18 @@ def recent_history(limit: int = Query(50, ge=1, le=500)):
 # ---------------------------------------------------------------------------
 @app.get("/api/lookups")
 def lookups():
-    """Everything a form needs for its dropdowns. `uses` = how many supplies refer to it."""
+    """Everything a form needs for its dropdowns. `uses` = how many supplies, wishlist items,
+    models and model paints refer to it (anything in use can't be removed)."""
     result = {"paint_types": PAINT_TYPES, "finishes": FINISHES, "conditions": CONDITIONS,
               "priorities": PRIORITIES, "model_statuses": models.STATUSES}
     with db() as conn:
         for kind, (table, id_col) in LOOKUPS.items():
-            query = sql.SQL(
-                "SELECT t.{id} AS id, t.name, count(s.supply_id) AS uses FROM {table} t"
-                " LEFT JOIN supplies s ON s.{id} = t.{id} GROUP BY t.{id}, t.name ORDER BY t.name"
-            ).format(id=sql.Identifier(id_col), table=sql.Identifier(table))
+            counts = sql.SQL(" + ").join(
+                sql.SQL("(SELECT count(*) FROM {u} WHERE {u}.{id} = t.{id})").format(
+                    u=sql.Identifier(user), id=sql.Identifier(id_col))
+                for user in LOOKUP_USERS[kind])
+            query = sql.SQL("SELECT t.{id} AS id, t.name, {counts} AS uses FROM {table} t ORDER BY t.name").format(
+                id=sql.Identifier(id_col), table=sql.Identifier(table), counts=counts)
             result[kind] = conn.execute(query).fetchall()
     return result
 
