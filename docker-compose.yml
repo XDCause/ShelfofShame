@@ -1,0 +1,75 @@
+services:
+  db:
+    build: ./db
+    image: hobby-inventory-db:1.0
+    container_name: hobby-inventory-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      # 127.0.0.1 = reachable from this PC only (DBeaver, later the API), not the rest of your network.
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - hobby_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # $$ = pass a literal $ through to the container, so it uses the container's own env vars.
+      # -h 127.0.0.1 forces TCP, so we only report healthy once the real server is up,
+      # not the temporary socket-only server that runs the init scripts.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # FastAPI backend: the only service that connects to the database.
+  api:
+    build: ./api
+    image: hobby-inventory-api:1.0
+    container_name: hobby-inventory-api
+    restart: unless-stopped
+    environment:
+      DB_HOST: db      # the service name above; Docker's network resolves it
+      DB_PORT: "5432"  # Postgres's port inside the network (5433 is only for your PC)
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy  # don't start until Postgres accepts connections
+    ports:
+      # direct access: /api/docs, curl, later the MCP server.
+      # Both loopback addresses: browsers try "localhost" as IPv6 (::1) first.
+      - "127.0.0.1:${API_PORT:-8000}:8000"
+      - "[::1]:${API_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # React front end, served by nginx, which also forwards /api/* to the api service.
+  web:
+    build: ./web
+    image: hobby-inventory-web:1.0
+    container_name: hobby-inventory-web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      # No address = all interfaces (IPv4 + IPv6), so phones/tablets on the home network can
+      # reach it at http://<this PC's IP>:8080. Only the web app is exposed this way; the API
+      # (8000) and database (5433) stay on this PC only. Other devices reach the API via /api.
+      - "${WEB_PORT:-8080}:80"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  hobby_pgdata:
+    name: hobby_pgdata

@@ -1,0 +1,15 @@
+# Store text files with LF line endings in the repository; git converts on checkout as needed.
+* text=auto
+
+# Used inside Linux containers: always LF, even on Windows.
+*.sql text eol=lf
+*.sh  text eol=lf
+*.py  text eol=lf
+nginx.conf text eol=lf
+Dockerfile text eol=lf
+
+# Windows PowerShell scripts: CRLF.
+*.ps1 text eol=crlf
+
+# Saved web pages used as test fixtures are Shift_JIS: never touch their bytes.
+api/tests/fixtures/*.html binary

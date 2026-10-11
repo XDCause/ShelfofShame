@@ -1,0 +1,220 @@
+# Shelf of Shame - project notes for Claude
+
+**Project name: "Shelf of Shame"** (renamed from "Hobby Inventory" on 2026-10-11).
+GitHub: https://github.com/XDCause/ShelfofShame (PUBLIC - never commit .env, backups, or
+copied third-party pages). The user-visible name changed (app title, docs, API title,
+scraper User-Agents); internal names were deliberately KEPT to avoid migrating data: folder
+`hobby-inventory`, containers `hobby-inventory-*`, volume `hobby_pgdata`, database
+`hobby_inventory`, user `hobby`, localStorage key `hobby-inventory.lastShop`.
+Git author: XDCause <121413369+XDCause@users.noreply.github.com> (GitHub no-reply address, so
+the user's real email isn't published in commits).
+
+## Who / why
+The user is **learning full-stack integration** by building an inventory of their model-kit
+hobby supplies (paints, thinners, clears, primers, masking tape, glue, weathering, decals,
+brushes, airbrush parts, tools). Explain briefly what each piece does and why as you go.
+The point is learning, not just producing files.
+
+Environment: Windows 11, **Windows PowerShell 5.1**, Docker Desktop, DBeaver, Python 3.13.
+
+## Direction change (2026-10-11)
+**Excel is no longer a front end.** The spreadsheet was a one-time data source: it has been
+imported and the **database is now the source of truth**. Don't build Power Query / VBA
+integration. The user will decide later how to query the backend.
+
+## Architecture rule (do not break)
+```
+Browser -> web (React/Vite, nginx :8080) --\
+                                            +--> api (FastAPI :8000) --> db (PostgreSQL :5433)
+AI via MCP server (stage 6) ---------------/
+```
+**Only the API talks to PostgreSQL** in the finished app. Exceptions are admin/dev tools:
+DBeaver, psql, and the one-off import script.
+
+## Stages
+1. **PostgreSQL in Docker + schema** - DONE (2026-10-11)
+2. **Import the spreadsheet** - DONE (2026-10-11): 22 supplies, total value $142.90
+3. **Web app + API** - BUILT (2026-10-11), API smoke-tested; awaiting the user's first look in a browser.
+   User chose: build API and web together; front end in **React (Vite)**.
+   - Inventory tab (primary): search, filters (category/brand/status/location), sortable
+     table, totals, +/- quantity buttons, click a row for details.
+   - Add & Edit tab: supply form (add/edit/delete with inline confirm) + "Manage lists"
+     (add/remove brands, categories, locations; in-use entries can't be removed).
+3b. **Wishlist page** - BUILT (2026-10-11), API smoke-tested; awaiting user's first look.
+   - Phone-first cards with product photos; tap a card to tick it off in the shop; filters
+     All / To find / Ticked; "You own N" warning; bottom bar "Add N ticked to inventory".
+   - Moving to inventory: new supply (qty_wanted, reorder 0, Sealed, today, location Other,
+     est_price as unit_price, shop name) or, if brand+code already owned, qty is added instead.
+   - Tamiya lookup by item number scrapes tamiya.com (user says Tamiya allows it; no robots.txt
+     exists) - one page + one photo per lookup, cached in `product_info`, never re-fetched
+     unless `?refresh=true`. Other brands: manual entry, no photo yet.
+3c. **Photos in Inventory** - DONE for Tamiya (2026-10-11): thumbnail column, larger photo +
+   Tamiya description in the row details, photo + "Get/Refresh photo from tamiya.com" in the
+   edit form, and a "Get N Tamiya photos" button (sequential, 1 s pause) when any are missing.
+   Backfilled all 20 Tamiya supplies; every code matched the right product.
+   **Other brands are ad hoc (user's choice):** "Upload photo" (PhotoUpload component) in the
+   supply edit form and the wishlist edit form; on phones it offers the camera. Browser shrinks
+   to <=1000 px JPEG on a white background before upload. API: `PUT /api/product-photo?brand_id=&product_code=`
+   with the raw image as body (JPEG/PNG/WebP/GIF, <=5 MB), `DELETE` same URL removes it.
+   Milliput MIL3 and Microscale MI2 photos were supplied by the user and uploaded: 22/22 have photos.
+   Photo URLs carry `?v=<photo_updated>` (product_info.fetched_at) for cache-busting, because
+   images are served with a 1-day browser cache.
+   Noted typo for the user: SUP-0006 "Craft Bind 20g" is Tamiya "Craft Bond" (not changed).
+3d. **Barcode scan -> wishlist** - BUILT (2026-10-11), API tested; camera path awaits a real phone test.
+   User chose barcode only; **AI label reading is on hold** (options discussed: local Ollama
+   vision model, CPU-only on this laptop so ~30-90 s/photo; or cloud AI = first paid 3rd-party
+   dependency). Inventory-side scanning is planned next ("roll it out to inventory after").
+   - Wishlist: "Scan barcode" (file input, capture=environment; works over plain HTTP, unlike a
+     live viewfinder which would need HTTPS), "+ Add by hand", "Type a barcode".
+   - Decoding is in the browser (`web/src/barcode.js`): native BarcodeDetector if present, else
+     @zxing/library 0.21.3 (lazy-loaded chunk, ~417 KB), tries 3 sizes x 2 rotations.
+   - API `GET /api/scan/{barcode}`: checksum-validated (UPC-A -> EAN-13 with leading 0);
+     match "known" (product_info.barcode - reliable), "tamiya" (digits 8-12 happened to be a real
+     item number - a GUESS, UI says to check), or "unknown" (for 4950344 barcodes brand_id is
+     Tamiya and the form shows the item-number Look up box). Scanning stores nothing;
+     `PUT /api/product-barcode` stores it when the user saves the scanned item (the user's photo
+     is uploaded too if there's no manufacturer photo).
+   - Suggestions prefer the user's own details (supplies, then wishlist) over Tamiya's.
+   - `db/init/04_barcodes.sql`: product_info.barcode + partial UNIQUE index.
+   - **LESSON (user's first real test failed):** Tamiya barcodes do NOT reliably contain the item
+     number. 87038 cement = 4950344 87038 7, but Mini paints differ: 81510 X-10 = 4950344069002,
+     81701 XF-1 = 4950344069507. Never calculate barcodes; learn them. Calculated ones were
+     removed; the live DB holds only these 3 verified barcodes (X-10 read off the bottle by the
+     user, XF-1 from two retailer listings, 87038 from a retailer listing).
+   - **No automatic barcode -> item source exists** (checked 2026-10-11): tamiya.com pages don't
+     list barcodes; the free UPCitemdb API has no Tamiya paints; Mini paint barcodes are NOT
+     sequential (XF-1 06950, XF-10 06959, but XF-76 07005, X-22 06938 - release order with gaps).
+     Solution: first sighting = type the label's colour code. `tamiya.item_number()` maps
+     Acrylic Mini codes X-n -> 815nn, XF-n -> 817nn (exact; X-20A -> 81520), and the lookup warns
+     if Tamiya's title doesn't contain that code. Saving remembers the barcode.
+   - Possible later (user's choice): read the X/XF code off the same photo with in-browser OCR
+     (Tesseract.js, self-hosted ~10 MB language data, not AI) to skip the typing.
+   - **Barcode catalogue (user's idea, 2026-10-11):** `db/init/05_barcode_catalog.sql` table
+     `barcode_catalog` (barcode PK -> brand_id + product_code, source, source_url) filled by the
+     one-off importer `docker exec hobby-inventory-api python -m app.catalog_import [--refresh]`.
+     Source: rchobbyland.com.au Acrylic Mini pages (~104, found via their sitemap); spec table
+     gives SKU "81776-A00" + "Barcode #". Checked: robots.txt allows product pages, Crawl-delay 1
+     (we use 2 s); terms don't mention automated access, prohibit reproducing content - so we
+     store only barcode -> item facts. Never runs automatically; no runtime dependency on the shop.
+     Scan order: known (product_info) -> catalog -> digit guess -> unknown (type XF-76).
+3e. **Hardening + inventory scanning** - DONE (2026-10-11). User said YES to: git, nightly
+   backups, survive reboot, inventory scanning, out-of-stock -> wishlist, stock history,
+   automated API tests. User said NO to: MCP server (for now), HTTPS, login.
+   - **Git:** installed 2026-10-11 (Git for Windows 2.55). Repo pushed to GitHub (see top).
+   - **Backups:** `backup.ps1` (pg_dump -Fc inside the container + docker cp, so no BOM; keeps 14;
+     `-CopyTo` for an off-PC copy; logs to backups\backup.log). Scheduled task "Shelf of Shame
+     backup" daily 2 am, StartWhenAvailable (runs after wake if missed). Restore was tested into
+     a throwaway DB and matched the live data. Older backups\*.sql files (Out-File, have a BOM)
+     predate this - prefer the .dump files.
+   - **Reboot:** sleep on AC set to never (battery unchanged, 30 min). Docker Desktop autostart
+     confirmed working by the user. Lid-close may still sleep.
+   - **Stock history:** `db/init/06_stock_history.sql` - table stock_movements + trigger on
+     supplies (INSERT / UPDATE OF qty_on_hand / DELETE). Reason via
+     `set_config('app.stock_reason', ..., true)` (`db.stock_reason()`); unset = 'manual'.
+     Reasons: added, edited, used, bought, bought (wishlist), deleted, import, starting stock.
+     item_name snapshot; supply_id SET NULL on delete. API: GET /api/supplies/{id}/history,
+     GET /api/history. UI: StockHistory in Inventory row details.
+   - **Inventory scanning:** shared `ScanButton` component (Wishlist, Inventory, "Link barcode"
+     in the supply form). Inventory scan -> ScanHit panel: owned = photo + -1/+1 + Edit; not
+     owned = Add to inventory (SupplyForm prefilled, barcode + photo saved on create) / Add to
+     wishlist. Scan results include supply_id. SupplyForm for new items has a Tamiya
+     code/number Look up. Supply barcode shown = product_info.barcode, else the catalogue's.
+     ScanButton uses a div, not a <form> (it sits inside the supply form; forms can't nest).
+   - **Out-of-stock -> wishlist:** POST /api/wishlist/from-out-of-stock; button on Inventory
+     when anything is Out; skips items already on the wishlist.
+   - **Tests:** `run_tests.ps1` rebuilds `hobby_inventory_test` from db/init/*.sql, runs pytest in
+     `docker compose run` with ./api mounted (live app untouched), tamiya.fetch faked; conftest
+     refuses non-*_test DBs. 48 tests (supplies, history, wishlist, scan/photos, tamiya parsing
+     with saved real pages in api/tests/fixtures). **Run it after every API change.** The
+     suite found a real bug on its first run: "(IJN)" became "(Ijn)" -> ACRONYMS list in tamiya.py.
+4. ~~Excel reads via Power Query~~ - dropped
+5. ~~Excel writes via VBA buttons~~ - dropped
+6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"
+   and update stock
+
+DBeaver connection confirmed working (2026-10-11).
+
+## Current state
+- Folder: `C:\Users\xdhar\hobby-inventory`
+- `docker-compose.yml`: service `db`, image `hobby-inventory-db:1.0`, container
+  `hobby-inventory-db`, volume `hobby_pgdata`, port `127.0.0.1:5433 -> 5432`,
+  pg_isready healthcheck, `restart: unless-stopped`
+- `db/Dockerfile`: postgres:17-alpine, `TZ=Australia/Brisbane`, copies `db/init/`
+- `db/init/01_schema.sql`: lookup tables `categories`, `brands`, `storage_locations`;
+  table `supplies` (CHECK lists for paint_type/finish/condition, qty_on_hand >= 0,
+  UNIQUE(brand_id, product_code), updated_at trigger); view `v_supplies`
+  (names, `item_ref` SUP-0001, `stock_status` Out/Low/OK, `total_value`)
+- `db/init/02_seed.sql`: lookup values only (20 categories, 4 brands, 7 locations). No supplies.
+- `db/init/03_wishlist.sql`: **idempotent migration** (IF NOT EXISTS), also applied by hand to
+  the live DB on 2026-10-11. Tables `wishlist` (UNIQUE brand+code, priority High/Normal/Low,
+  got_it flag, updated_at trigger) and `product_info` (scraped title/series/description +
+  photo as BYTEA, UNIQUE brand+code, cascade-deletes with brand). Pattern for future schema
+  changes: new numbered idempotent file in db/init, `pg_dump` backup, then pipe into psql.
+- `backups/` (git-ignored): `pg_dump --clean --if-exists` files.
+- `scripts/import_spreadsheet.py`: reads the **Supplies** and **Lists** sheets of
+  `C:\Users\xdhar\Downloads\Hobby_Supplies_Inventory.xlsx`; adds missing categories/brands
+  (it added Milliput, Microscale); upserts on (brand, product_code); keeps SUP-#### numbers as
+  supply_id and resets the SERIAL sequence; one transaction; applies `FINISH_FIXES`
+  (XF-64/76/71 -> Flat / Matt, X-10 Gun Metal -> Metallic). Other sheets (Summary, FMP) ignored.
+- `api/`: FastAPI. `app/main.py` (supplies, lookups), `app/db.py` (connection, enum lists,
+  error mapping), `app/wishlist.py` (APIRouter: wishlist, buy/buy-ticked, Tamiya lookup,
+  `/api/product-images/{id}`), `app/tamiya.py` (scraper: httpx + BeautifulSoup, pages are
+  Shift_JIS -> decode cp932; `suggest()` guesses name/category/paint type/finish/size).
+  Connects to `db:5432` inside the Docker network.
+  Pydantic models validate input; enum lists (PAINT_TYPES/FINISHES/CONDITIONS) must match the
+  SQL CHECK constraints. DB errors are mapped to 409/422 with friendly messages
+  (CONSTRAINT_MESSAGES). One connection per request, no pool (fine at this scale).
+  Docs at `/api/docs`. Routes all start with `/api` so nginx can forward them unchanged.
+- `web/`: React 19 + Vite 6, multi-stage Dockerfile (node build -> nginx). `nginx.conf` proxies
+  `/api/` to `api:8000` via Docker DNS (resolver 127.0.0.11), so no CORS is needed.
+  `src/api.js` = all fetch calls; components: InventoryView, SupplyForm, ListsManager,
+  WishlistView (+ WishCard), WishForm. Last shop name is remembered in localStorage.
+  `package-lock.json` was generated in a node:22-alpine container (no Node on the host).
+- New-supply form defaults to the user's conventions: qty 1, reorder 0, Sealed, today, location Other.
+- `.venv` (git-ignored) with `requirements.txt`: openpyxl, psycopg[binary] (import script only)
+- `.env` (git-ignored) holds DB name/user/password/port; `.env.example` is the template
+- `start.ps1`: checks Docker, `docker compose up -d --build`, waits for healthy, prints details
+- Port 5433 chosen because a stopped, unrelated `councils-postgres-1` container claims 5432.
+
+## Data conventions (user decisions, 2026-10-11)
+- Product codes are Tamiya-style **catalogue numbers** (`T81701`), not bottle codes (`XF-1`).
+  The bottle code appears in the name ("Acrylic XF1 Flat Black").
+- **Brands are kept small**: only Tamiya, Milliput, Microscale, Other (the Lists tab). The user
+  removed the 17 unused brands from the long default list. Add brands only as they're actually used.
+- Storage is `Other` for everything: physical storage locations aren't set up yet.
+- Normal stock is qty 1, reorder_at 0, so items show "Out" at 0 and never "Low".
+
+## Gotchas learned
+- **Init scripts run only when the volume is empty.** Editing `db/init/*.sql` does nothing to
+  an existing DB. **The DB now holds the real data**: never `docker compose down -v` without a
+  `pg_dump` backup first. Schema changes should be ALTER/migration scripts.
+- **DBeaver "no tables"**: check the connection's Database field is `hobby_inventory`, not `postgres`.
+  `pg_stat_activity.datname` shows which DB each client is really on.
+- **PowerShell 5.1 + `$ErrorActionPreference = 'Stop'`** turns docker's stderr output
+  (warnings, build progress) into fatal errors. Check `$LASTEXITCODE` instead.
+- Keep `.ps1` files ASCII-only (5.1 reads BOM-less UTF-8 as ANSI).
+- **`localhost` resolves to `::1` (IPv6) first on this PC**, and the user's browser doesn't fall
+  back to 127.0.0.1. The api port is published on BOTH `127.0.0.1` and `[::1]`.
+- **The web app is deliberately on the home network** (user request, 2026-10-11): port 8080 is
+  published on all interfaces, so phones etc. use `http://10.0.0.33:8080` (PC's Wi-Fi IP; may
+  change via DHCP). API (8000) and DB (5433) stay loopback-only. There is **no login**: anyone
+  on the Wi-Fi can view and edit. The user confirmed the Wi-Fi is **their own private network**,
+  so that's acceptable. Windows had it marked "Public"; the user was advised to switch it to
+  Private (needs admin). Docker Desktop's firewall Allow rules (`com.docker.backend`) cover 8080. PowerShell's Invoke-WebRequest does fall back, so test `http://[::1]:PORT`
+  explicitly when checking browser access.
+- `nextval()` consumes a sequence number. To inspect, read `<seq>.last_value` instead.
+- VS Code's generic SQL linter flags `BEGIN;` as an error. It's valid PostgreSQL; ignore it.
+- Changing anything in `db/` rebuilds the db image and recreates the container. Data is safe
+  (it's in the volume), and init scripts don't re-run on a non-empty volume.
+- Prefer `.\run_tests.ps1` over ad-hoc testing against the live DB. Windows PowerShell 5.1's
+  Invoke-RestMethod passes a JSON array down the pipeline as ONE object (and @() wraps it
+  again) - use `foreach ($x in $result)` when scripting against the API.
+- Testing by creating a supply consumes an id. Afterwards run
+  `SELECT setval(pg_get_serial_sequence('supplies','supply_id'), (SELECT max(supply_id) FROM supplies))`
+  so the user's numbering stays gap-free.
+
+## Handy commands
+- Verify: `docker exec hobby-inventory-db psql -U hobby -d hobby_inventory -c "SELECT * FROM v_supplies"`
+- Interactive: `docker exec -it hobby-inventory-db psql -U hobby -d hobby_inventory`
+- Backup: `docker exec hobby-inventory-db pg_dump -U hobby -d hobby_inventory > backup.sql`
+- See README.md for start/stop/logs/wipe/import.

@@ -1,0 +1,21 @@
+# Secrets
+.env
+
+# Database backups (contain your data)
+backups/
+*.dump
+
+# Test run leftovers
+.pytest_cache/
+
+# Python (later stages)
+__pycache__/
+*.pyc
+.venv/
+
+# Node (web)
+node_modules/
+dist/
+
+# Excel lock files
+~$*
