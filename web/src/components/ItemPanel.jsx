@@ -1,0 +1,265 @@
+import { useEffect, useState } from 'react'
+import { api, imageUrl, money } from '../api.js'
+import Drawer from './Drawer.jsx'
+import PhotoUpload from './PhotoUpload.jsx'
+import ScanButton from './ScanButton.jsx'
+import StockHistory from './StockHistory.jsx'
+import SupplyFields, { Choice, DETAIL_FIELDS, toForm, toPayload } from './SupplyFields.jsx'
+
+const longDate = (iso) =>
+  iso ? new Date(`${iso}T00:00`).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : ''
+
+// Everything about one supply in a side panel. Everyday changes (stock, condition, reorder,
+// location, last purchased, notes) save as you make them; what the item IS sits behind
+// "Edit details".
+export default function ItemPanel({ supplyId, lookups, onClose, onChanged }) {
+  const [item, setItem] = useState(null)
+  const [error, setError] = useState('')
+  const [saved, setSaved] = useState('') // short "Saved" confirmation
+  const [editing, setEditing] = useState(false)
+  const [details, setDetails] = useState(null) // form while editing details
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [busy, setBusy] = useState(false)
+  // Text fields are edited locally and saved when you leave the field.
+  const [text, setText] = useState({ notes: '', purchased_from: '', purchase_date: '' })
+
+  const show = (supply) => {
+    setItem(supply)
+    setText({ notes: supply.notes ?? '', purchased_from: supply.purchased_from ?? '',
+      purchase_date: supply.purchase_date ?? '' })
+  }
+
+  useEffect(() => {
+    api.getSupply(supplyId).then(show).catch((e) => setError(e.message))
+  }, [supplyId])
+
+  const flash = (msg = 'Saved ✓') => {
+    setSaved(msg)
+    setTimeout(() => setSaved(''), 1800)
+  }
+
+  // Save one or more fields straight away.
+  const save = async (changes) => {
+    setError('')
+    try {
+      show(await api.updateSupply(supplyId, changes))
+      flash()
+      onChanged()
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+
+  const saveText = (field) => {
+    const value = text[field].trim()
+    if (value === (item[field] ?? '')) return
+    save({ [field]: value || null })
+  }
+
+  const adjust = async (delta) => {
+    setError('')
+    try {
+      show(await api.adjustQty(supplyId, delta))
+      onChanged()
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+
+  const saveDetails = async (e) => {
+    e.preventDefault()
+    setBusy(true)
+    await save(toPayload(details, DETAIL_FIELDS))
+    setBusy(false)
+    setEditing(false)
+  }
+
+  const getTamiyaPhoto = async () => {
+    setBusy(true)
+    try {
+      await api.lookupTamiya(item.product_code, item.has_image)
+      show(await api.getSupply(supplyId))
+      flash('Photo updated ✓')
+      onChanged()
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const linkBarcode = async (barcode) => {
+    await api.setBarcode(item.brand_id, item.product_code, barcode)
+    show(await api.getSupply(supplyId))
+    flash('Barcode linked ✓')
+  }
+
+  const remove = async () => {
+    setBusy(true)
+    try {
+      await api.deleteSupply(supplyId)
+      onChanged()
+      onClose()
+    } catch (e) {
+      setError(e.message)
+      setBusy(false)
+    }
+  }
+
+  if (!item) {
+    return (
+      <Drawer title="Item" onClose={onClose}>
+        {error ? <p className="alert error">{error}</p> : <p className="muted">Loading...</p>}
+      </Drawer>
+    )
+  }
+
+  const canLink = item.brand_id && item.product_code
+  const footer = editing ? (
+    <>
+      <button type="submit" form="details-form" className="primary" disabled={busy}>Save details</button>
+      <button type="button" className="link" onClick={() => setEditing(false)}>Cancel</button>
+    </>
+  ) : confirmDelete ? (
+    <span className="confirm">
+      Delete {item.name} permanently?
+      <button type="button" className="danger" onClick={remove} disabled={busy}>Yes, delete</button>
+      <button type="button" className="link" onClick={() => setConfirmDelete(false)}>Cancel</button>
+    </span>
+  ) : (
+    <>
+      <button type="button" className="secondary"
+        onClick={() => { setDetails(toForm(item)); setEditing(true) }}>Edit details</button>
+      <span className="spacer" />
+      <button type="button" className="danger-link" onClick={() => setConfirmDelete(true)}>Delete</button>
+    </>
+  )
+
+  return (
+    <Drawer title={item.item_ref} onClose={onClose} footer={footer}>
+      {error && <p className="alert error" role="alert">{error}</p>}
+      <p className="save-flash" role="status" aria-live="polite">{saved}</p>
+
+      {editing ? (
+        <form id="details-form" onSubmit={saveDetails}>
+          <SupplyFields form={details} lookups={lookups}
+            set={(f) => (e) => setDetails((d) => ({ ...d, [f]: e.target.value }))} />
+        </form>
+      ) : (
+        <>
+          <div className="item-hero">
+            <div className="item-photo">
+              {item.has_image ? <img src={imageUrl(item)} alt="" /> : <span className="photo-missing">No photo</span>}
+            </div>
+            <div>
+              <h3 className="item-name">{item.name}</h3>
+              <p className="item-sub mono">{[item.brand, item.product_code].filter(Boolean).join(' · ')}</p>
+              <div className="chips">
+                {[item.category, item.paint_type, item.finish, item.size]
+                  .filter((v) => v && v !== 'N/A').map((v) => <span key={v} className="chip">{v}</span>)}
+              </div>
+            </div>
+          </div>
+
+          <section className="panel-section">
+            <div className="stock-row">
+              <button type="button" className="step" aria-label="Use one" onClick={() => adjust(-1)}
+                disabled={item.qty_on_hand <= 0}>−</button>
+              <div className="stock-count">
+                <strong>{item.qty_on_hand}</strong>
+                <span className="muted small">on hand</span>
+              </div>
+              <button type="button" className="step" aria-label="Add one (sets last purchased to today)"
+                onClick={() => adjust(1)}>+</button>
+              <span className={`badge ${item.stock_status.toLowerCase()}`}>{item.stock_status}</span>
+              {item.unit_price != null && (
+                <span className="muted small stock-value">{money(item.unit_price)} each · {money(item.total_value)}</span>
+              )}
+            </div>
+          </section>
+
+          <section className="panel-section quick-grid">
+            <label className="field">
+              <span className="field-label">Condition</span>
+              <Choice value={item.condition ?? ''} options={lookups.conditions}
+                onChange={(e) => save({ condition: e.target.value || null })} />
+            </label>
+            <div className="field">
+              <span className="field-label">Reorder at</span>
+              <div className="mini-stepper">
+                <button type="button" aria-label="Lower reorder level" disabled={!item.reorder_at}
+                  onClick={() => save({ reorder_at: Math.max(0, (item.reorder_at ?? 0) - 1) })}>−</button>
+                <span>{item.reorder_at ?? 0}</span>
+                <button type="button" aria-label="Raise reorder level"
+                  onClick={() => save({ reorder_at: (item.reorder_at ?? 0) + 1 })}>+</button>
+              </div>
+            </div>
+            <label className="field">
+              <span className="field-label">Location</span>
+              <select value={item.location_id ?? ''} onChange={(e) => save({ location_id: e.target.value ? Number(e.target.value) : null })}>
+                <option value="">—</option>
+                {lookups.locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+              </select>
+            </label>
+            <label className="field">
+              <span className="field-label">Last purchased</span>
+              <input type="date" value={text.purchase_date}
+                onChange={(e) => setText((t) => ({ ...t, purchase_date: e.target.value }))}
+                onBlur={() => saveText('purchase_date')} />
+            </label>
+            <label className="field wide">
+              <span className="field-label">Last bought from</span>
+              <input value={text.purchased_from} placeholder="e.g. Hobbyrama"
+                onChange={(e) => setText((t) => ({ ...t, purchased_from: e.target.value }))}
+                onBlur={() => saveText('purchased_from')} />
+            </label>
+            <label className="field wide">
+              <span className="field-label">Notes</span>
+              <textarea rows="3" value={text.notes} placeholder="Anything worth remembering"
+                onChange={(e) => setText((t) => ({ ...t, notes: e.target.value }))}
+                onBlur={() => saveText('notes')} />
+            </label>
+          </section>
+
+          {item.product_description && (
+            <section className="panel-section">
+              <h4 className="section-title">From the manufacturer</h4>
+              <p className="detail-desc">{item.product_description}</p>
+              {item.source_url && <a className="small" href={item.source_url} target="_blank" rel="noreferrer">View on tamiya.com ↗</a>}
+            </section>
+          )}
+
+          <section className="panel-section">
+            <h4 className="section-title">Photo &amp; barcode</h4>
+            <div className="photo-actions">
+              {item.brand === 'Tamiya' && item.product_code && (
+                <button type="button" className="secondary" onClick={getTamiyaPhoto} disabled={busy}>
+                  {item.has_image ? 'Refresh from tamiya.com' : 'Get photo from tamiya.com'}
+                </button>
+              )}
+              <PhotoUpload brandId={item.brand_id} productCode={item.product_code} hasPhoto={item.has_image}
+                onChanged={async (msg) => { show(await api.getSupply(supplyId)); flash(`${msg} ✓`); onChanged() }} />
+            </div>
+            <div className="barcode-line">
+              {canLink ? (
+                <>
+                  <span className="small">
+                    Barcode: {item.barcode ? <span className="mono">{item.barcode}</span> : <span className="muted">not linked</span>}
+                  </span>
+                  <ScanButton onBarcode={linkBarcode} className="secondary"
+                    label={item.barcode ? 'Change barcode' : 'Link barcode'} />
+                </>
+              ) : (
+                <span className="hint">Add a brand and product code (Edit details) to link a barcode.</span>
+              )}
+            </div>
+          </section>
+
+          <section className="panel-section">
+            <StockHistory supplyId={item.supply_id} version={`${item.qty_on_hand}-${item.updated_at}`} />
+          </section>
+        </>
+      )}
+    </Drawer>
+  )
+}

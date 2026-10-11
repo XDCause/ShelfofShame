@@ -47,10 +47,9 @@ class SupplyIn(BaseModel):
     reorder_at: int | None = Field(None, ge=0)
     condition: Condition | None = None
     unit_price: Decimal | None = Field(None, ge=0, max_digits=10, decimal_places=2)
-    purchase_date: date | None = None
-    purchased_from: str | None = None
+    purchase_date: date | None = None      # shown as "Last purchased"
+    purchased_from: str | None = None      # shown as "Last bought from"
     location_id: int | None = None
-    used_for: str | None = None
     notes: str | None = None
 
 
@@ -70,12 +69,12 @@ class SupplyPatch(BaseModel):
     purchase_date: date | None = None
     purchased_from: str | None = None
     location_id: int | None = None
-    used_for: str | None = None
     notes: str | None = None
 
 
 class Adjust(BaseModel):
-    """Change quantity by a relative amount, e.g. -1 = used one, +3 = bought three."""
+    """Change quantity by a relative amount, e.g. -1 = used one, +3 = bought three.
+    Adding stock also sets the last-purchased date to today."""
     delta: int = Field(description="Amount to add (negative to remove)")
 
 
@@ -119,14 +118,14 @@ def health():
 def list_supplies(q: str | None = None, category: str | None = None, brand: str | None = None,
                   status: Literal["OK", "Low", "Out"] | None = None,
                   location: str | None = None):
-    """Search and filter. `q` matches name, code, brand, category, project and notes."""
+    """Search and filter. `q` matches name, code, brand, category and notes."""
     where, params = [], {}
     if q:
         # Escape LIKE wildcards so searching for "50%" or "_" means the literal characters
         term = q.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         params["q"] = f"%{term}%"
         where.append("(s.name ILIKE %(q)s OR s.product_code ILIKE %(q)s OR v.brand ILIKE %(q)s"
-                     " OR v.category ILIKE %(q)s OR s.used_for ILIKE %(q)s OR s.notes ILIKE %(q)s)")
+                     " OR v.category ILIKE %(q)s OR s.notes ILIKE %(q)s)")
     for column, value in (("v.category", category), ("v.brand", brand),
                           ("v.stock_status", status), ("v.location", location)):
         if value:
@@ -186,8 +185,10 @@ def adjust_quantity(supply_id: int, body: Adjust):
     """Relative change done inside the database, so two quick clicks can't overwrite each other."""
     with db() as conn:
         stock_reason(conn, "used" if body.delta < 0 else "bought")
-        conn.execute("UPDATE supplies SET qty_on_hand = qty_on_hand + %s WHERE supply_id = %s",
-                     (body.delta, supply_id))
+        conn.execute("""
+            UPDATE supplies SET qty_on_hand = qty_on_hand + %(delta)s,
+                   purchase_date = CASE WHEN %(delta)s > 0 THEN current_date ELSE purchase_date END
+            WHERE supply_id = %(id)s""", {"delta": body.delta, "id": supply_id})
         return fetch_supply(conn, supply_id)
 
 

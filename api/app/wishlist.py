@@ -32,7 +32,6 @@ class WishIn(BaseModel):
     qty_wanted: int = Field(1, ge=1)
     est_price: Decimal | None = Field(None, ge=0, max_digits=10, decimal_places=2)
     priority: Priority = "Normal"
-    for_project: str | None = None
     notes: str | None = None
 
 
@@ -48,7 +47,6 @@ class WishPatch(BaseModel):
     qty_wanted: int | None = Field(None, ge=1)
     est_price: Decimal | None = Field(None, ge=0, max_digits=10, decimal_places=2)
     priority: Priority | None = None
-    for_project: str | None = None
     notes: str | None = None
     got_it: bool | None = None
 
@@ -155,12 +153,12 @@ def move_to_inventory(conn, wish, purchased_from):
         supply_id = conn.execute("""
             INSERT INTO supplies (brand_id, product_code, name, category_id, paint_type, finish,
                                   size, qty_on_hand, reorder_at, condition, unit_price,
-                                  purchase_date, purchased_from, location_id, used_for, notes)
+                                  purchase_date, purchased_from, location_id, notes)
             VALUES (%(brand_id)s, %(product_code)s, %(name)s, %(category_id)s, %(paint_type)s,
                     %(finish)s, %(size)s, %(qty_wanted)s, 0, 'Sealed', %(est_price)s,
                     current_date, %(shop)s,
                     (SELECT location_id FROM storage_locations WHERE name = 'Other'),
-                    %(for_project)s, %(notes)s)
+                    %(notes)s)
             RETURNING supply_id""", {**wish, "shop": purchased_from}).fetchone()["supply_id"]
 
     conn.execute("DELETE FROM wishlist WHERE wish_id = %s", (wish["wish_id"],))
@@ -194,9 +192,9 @@ def wish_for_out_of_stock():
     with db() as conn:
         added = conn.execute("""
             INSERT INTO wishlist (brand_id, product_code, name, category_id, paint_type, finish,
-                                  size, qty_wanted, est_price, for_project)
+                                  size, qty_wanted, est_price)
             SELECT s.brand_id, s.product_code, s.name, s.category_id, s.paint_type, s.finish,
-                   s.size, 1, s.unit_price, s.used_for
+                   s.size, 1, s.unit_price
             FROM supplies s JOIN v_supplies v USING (supply_id)
             WHERE v.stock_status = 'Out'
               AND NOT EXISTS (SELECT 1 FROM wishlist w

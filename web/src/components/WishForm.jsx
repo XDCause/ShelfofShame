@@ -4,7 +4,7 @@ import PhotoUpload, { shrink } from './PhotoUpload.jsx'
 
 const FIELDS = [
   'brand_id', 'product_code', 'name', 'category_id', 'paint_type', 'finish', 'size',
-  'qty_wanted', 'est_price', 'priority', 'for_project', 'notes',
+  'qty_wanted', 'est_price', 'priority', 'notes',
 ]
 const INTEGER_FIELDS = ['brand_id', 'category_id', 'qty_wanted']
 
@@ -269,10 +269,6 @@ export default function WishForm({ wish, lookups, scanned, onSaved, onCancel }) 
             <select value={form.priority} onChange={set('priority')}>
               {lookups.priorities.map((o) => <option key={o}>{o}</option>)}
             </select>
-          </label>
-          <label className="field">
-            <span className="field-label">For project</span>
-            <input value={form.for_project} onChange={set('for_project')} />
           </label>
           <label className="field wide">
             <span className="field-label">Notes</span>

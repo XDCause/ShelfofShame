@@ -225,7 +225,6 @@ function WishCard({ wish, onToggle, onEdit, onRemove, onBuy, busy }) {
         <div className="wish-chips">
           {wish.qty_wanted > 1 && <span className="chip">×{wish.qty_wanted}</span>}
           {wish.est_price != null && <span className="chip">{money(wish.est_price)}</span>}
-          {wish.for_project && <span className="chip">{wish.for_project}</span>}
           {wish.owned_qty > 0 && <span className="badge low">You own {wish.owned_qty}</span>}
         </div>
         {wish.notes && <p className="wish-notes">{wish.notes}</p>}

@@ -43,7 +43,6 @@ SUPPLIES_COLUMNS = {
     "Purchase Date": "purchase_date",
     "Purchased From": "purchased_from",
     "Storage": "storage",
-    "Used For / Project": "used_for",
     "Notes": "notes",
 }
 # Stock Status and Total Value are spreadsheet formulas; the v_supplies view calculates them.
@@ -152,12 +151,11 @@ UPSERT_SQL = """
 INSERT INTO supplies (
     supply_id, brand_id, product_code, name, category_id, paint_type, finish, size,
     qty_on_hand, reorder_at, condition, unit_price, purchase_date, purchased_from,
-    location_id, used_for, notes)
+    location_id, notes)
 VALUES (
     %(supply_id)s, %(brand_id)s, %(product_code)s, %(name)s, %(category_id)s, %(paint_type)s,
     %(finish)s, %(size)s, COALESCE(%(qty_on_hand)s, 0), %(reorder_at)s, %(condition)s,
-    %(unit_price)s, %(purchase_date)s, %(purchased_from)s, %(location_id)s, %(used_for)s,
-    %(notes)s)
+    %(unit_price)s, %(purchase_date)s, %(purchased_from)s, %(location_id)s, %(notes)s)
 ON CONFLICT (brand_id, product_code) DO UPDATE SET
     name           = EXCLUDED.name,
     category_id    = EXCLUDED.category_id,
@@ -171,7 +169,6 @@ ON CONFLICT (brand_id, product_code) DO UPDATE SET
     purchase_date  = EXCLUDED.purchase_date,
     purchased_from = EXCLUDED.purchased_from,
     location_id    = EXCLUDED.location_id,
-    used_for       = EXCLUDED.used_for,
     notes          = EXCLUDED.notes
 RETURNING (xmax = 0) AS inserted  -- xmax is 0 for a brand-new row, non-zero for an updated one
 """

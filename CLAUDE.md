@@ -34,12 +34,8 @@ DBeaver, psql, and the one-off import script.
 ## Stages
 1. **PostgreSQL in Docker + schema** - DONE (2026-10-11)
 2. **Import the spreadsheet** - DONE (2026-10-11): 22 supplies, total value $142.90
-3. **Web app + API** - BUILT (2026-10-11), API smoke-tested; awaiting the user's first look in a browser.
-   User chose: build API and web together; front end in **React (Vite)**.
-   - Inventory tab (primary): search, filters (category/brand/status/location), sortable
-     table, totals, +/- quantity buttons, click a row for details.
-   - Add & Edit tab: supply form (add/edit/delete with inline confirm) + "Manage lists"
-     (add/remove brands, categories, locations; in-use entries can't be removed).
+3. **Web app + API** - DONE (2026-10-11). User chose: build API and web together; front end in
+   **React (Vite)**. Layout was redesigned in the app refresh (3f) - see there for the current UI.
 3b. **Wishlist page** - BUILT (2026-10-11), API smoke-tested; awaiting user's first look.
    - Phone-first cards with product photos; tap a card to tick it off in the shop; filters
      All / To find / Ticked; "You own N" warning; bottom bar "Add N ticked to inventory".
@@ -113,13 +109,10 @@ DBeaver, psql, and the one-off import script.
      `set_config('app.stock_reason', ..., true)` (`db.stock_reason()`); unset = 'manual'.
      Reasons: added, edited, used, bought, bought (wishlist), deleted, import, starting stock.
      item_name snapshot; supply_id SET NULL on delete. API: GET /api/supplies/{id}/history,
-     GET /api/history. UI: StockHistory in Inventory row details.
-   - **Inventory scanning:** shared `ScanButton` component (Wishlist, Inventory, "Link barcode"
-     in the supply form). Inventory scan -> ScanHit panel: owned = photo + -1/+1 + Edit; not
-     owned = Add to inventory (SupplyForm prefilled, barcode + photo saved on create) / Add to
-     wishlist. Scan results include supply_id. SupplyForm for new items has a Tamiya
-     code/number Look up. Supply barcode shown = product_info.barcode, else the catalogue's.
-     ScanButton uses a div, not a <form> (it sits inside the supply form; forms can't nest).
+     GET /api/history. UI: StockHistory in the item panel.
+   - **Inventory scanning:** shared `ScanButton` component. Scan results include supply_id.
+     Supply barcode shown = product_info.barcode, else the catalogue's. ScanButton uses a div,
+     not a <form> (forms can't nest). Current scan behaviour: see 3f.
    - **Out-of-stock -> wishlist:** POST /api/wishlist/from-out-of-stock; button on Inventory
      when anything is Out; skips items already on the wishlist.
    - **Tests:** `run_tests.ps1` rebuilds `hobby_inventory_test` from db/init/*.sql, runs pytest in
@@ -127,6 +120,26 @@ DBeaver, psql, and the one-off import script.
      refuses non-*_test DBs. 48 tests (supplies, history, wishlist, scan/photos, tamiya parsing
      with saved real pages in api/tests/fixtures). **Run it after every API change.** The
      suite found a real bug on its first run: "(IJN)" became "(Ijn)" -> ACRONYMS list in tamiya.py.
+3f. **App refresh** - DONE (2026-10-11), at the user's request ("better integrate things, keep
+   it simple"):
+   - **Two tabs only: Inventory, Wishlist.** The Add & Edit tab and SupplyForm.jsx are gone.
+     "Manage lists" (brands/categories/locations) opens from a gear icon in the header.
+   - **Inventory list** slimmed to: photo, item (name + brand · code · size on a second line),
+     category, finish, stock (-/+), status, value; columns hide as the screen narrows
+     (hide-md 900px, hide-sm 700px, hide-xs 480px). Sorting via a "Sort" dropdown (works on
+     phones). Suggestion chips: "Add N out-of-stock to wishlist", "Get N Tamiya photos".
+   - **Tap a row -> ItemPanel** (side drawer, full screen on phones): big -/+, Condition and
+     Location selects and a Reorder-at stepper that save instantly, Last purchased / Last
+     bought from / Notes that save on blur ("Saved ✓"), manufacturer description, photo +
+     barcode actions, stock history, "Edit details" (name, category, brand, code, type,
+     finish, size, price) and Delete.
+   - **Adding = AddPanel**, opened by "+ Add" or by scanning something you don't own: scan or
+     type a Tamiya code first, check the fields, then "Add to inventory" (opens the new item)
+     or "Add to wishlist". Scanning something you own opens its ItemPanel directly.
+   - **Removed "Used for"** (supplies.used_for) and the wishlist's "For project"
+     (`db/init/07_remove_used_for.sql`; both were empty). Labels: purchase_date = "Last
+     purchased", purchased_from = "Last bought from".
+   - **+1 (adjust with delta > 0) sets purchase_date to today**; -1 leaves it alone.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"
@@ -167,8 +180,9 @@ DBeaver connection confirmed working (2026-10-11).
   Docs at `/api/docs`. Routes all start with `/api` so nginx can forward them unchanged.
 - `web/`: React 19 + Vite 6, multi-stage Dockerfile (node build -> nginx). `nginx.conf` proxies
   `/api/` to `api:8000` via Docker DNS (resolver 127.0.0.11), so no CORS is needed.
-  `src/api.js` = all fetch calls; components: InventoryView, SupplyForm, ListsManager,
-  WishlistView (+ WishCard), WishForm. Last shop name is remembered in localStorage.
+  `src/api.js` = all fetch calls; components: App (tabs + which panel is open), InventoryView,
+  Drawer, ItemPanel, AddPanel, SupplyFields, ListsManager, ScanButton, PhotoUpload,
+  StockHistory, WishlistView (+ WishCard), WishForm. Last shop name is remembered in localStorage.
   `package-lock.json` was generated in a node:22-alpine container (no Node on the host).
 - New-supply form defaults to the user's conventions: qty 1, reorder 0, Sealed, today, location Other.
 - `.venv` (git-ignored) with `requirements.txt`: openpyxl, psycopg[binary] (import script only)

@@ -45,6 +45,15 @@ def test_adjust_up_and_down_but_never_below_zero(client, make_supply):
     assert client.get(f"/api/supplies/{s['supply_id']}").json()["qty_on_hand"] == 0
 
 
+def test_adding_stock_sets_last_purchased_to_today(client, make_supply):
+    from datetime import date
+    s = make_supply(qty_on_hand=1, purchase_date="2026-01-05")
+    used = client.post(f"/api/supplies/{s['supply_id']}/adjust", json={"delta": -1}).json()
+    assert used["purchase_date"] == "2026-01-05"  # using one doesn't change it
+    bought = client.post(f"/api/supplies/{s['supply_id']}/adjust", json={"delta": 1}).json()
+    assert bought["purchase_date"] == date.today().isoformat()
+
+
 def test_patch_changes_only_what_was_sent(client, make_supply):
     s = make_supply(notes=None)
     r = client.patch(f"/api/supplies/{s['supply_id']}", json={"notes": "half used"})

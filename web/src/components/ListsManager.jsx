@@ -7,13 +7,13 @@ const LISTS = [
   { kind: 'locations', title: 'Storage locations', placeholder: 'New location' },
 ]
 
-// Add or remove dropdown entries. Anything still used by a supply can't be removed:
-// the database's foreign keys refuse it, and the button is disabled to match.
+// Add or remove dropdown entries (shown in a panel from the gear button). Anything still used
+// by a supply can't be removed: the database's foreign keys refuse it, and the button is
+// disabled to match.
 export default function ListsManager({ lookups, onChanged }) {
   return (
-    <section className="card lists">
-      <h2>Manage lists</h2>
-      <p className="muted">The choices offered in the form. Numbers show how many supplies use each.</p>
+    <section className="lists">
+      <p className="muted">The choices offered when adding or editing. Numbers show how many supplies use each.</p>
       <div className="lists-grid">
         {LISTS.map((l) => (
           <LookupList key={l.kind} {...l} items={lookups[l.kind]} onChanged={onChanged} />
