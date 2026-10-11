@@ -50,6 +50,16 @@ export const api = {
   lookupTamiya: (code, refresh = false) =>
     request(`/lookup/tamiya/${encodeURIComponent(code)}${refresh ? '?refresh=true' : ''}`),
 
+  listModels: () => request('/models'),
+  getModel: (id) => request(`/models/${id}`),
+  addModel: (data) => request('/models', json('POST', data)),
+  updateModel: (id, data) => request(`/models/${id}`, json('PATCH', data)),
+  deleteModel: (id) => request(`/models/${id}`, { method: 'DELETE' }),
+  addModelPaints: (id, text, purpose) => request(`/models/${id}/paints`, json('POST', { text, purpose })),
+  updateModelPaint: (id, data) => request(`/model-paints/${id}`, json('PATCH', data)),
+  deleteModelPaint: (id) => request(`/model-paints/${id}`, { method: 'DELETE' }),
+  wishMissingPaints: (id) => request(`/models/${id}/wishlist`, { method: 'POST' }),
+
   lookups: () => request('/lookups'),
   addLookup: (kind, name) => request(`/lookups/${kind}`, json('POST', { name })),
   deleteLookup: (kind, id) => request(`/lookups/${kind}/${id}`, { method: 'DELETE' }),

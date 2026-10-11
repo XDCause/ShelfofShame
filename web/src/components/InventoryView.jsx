@@ -70,6 +70,7 @@ export default function InventoryView({ lookups, refreshKey, onOpen, onAdd }) {
   }, [all, search, filters, sort])
 
   const filtering = search.trim() !== '' || Object.values(filters).some(Boolean)
+  const shownValue = rows.reduce((s, r) => s + Number(r.total_value ?? 0), 0)
   const toggle = (key, value) => setFilters((f) => ({ ...f, [key]: f[key] === value ? NO_FILTERS[key] : value }))
   const clearAll = () => { setSearch(''); setFilters(NO_FILTERS) }
   const missingPhotos = all.filter((r) => r.brand === 'Tamiya' && r.product_code && !r.has_image)
@@ -124,9 +125,12 @@ export default function InventoryView({ lookups, refreshKey, onOpen, onAdd }) {
         <button type="button" className="secondary" onClick={() => onAdd(null)}>+ Add</button>
       </div>
 
+      {/* Totals follow the filters: "9 of 22 items · $35.55" when filtering. */}
       <p className="summary">
-        <strong>{all.length}</strong> items · <strong>{money(counts.value)}</strong>
-        {filtering && <> · showing {rows.length} <button type="button" className="link" onClick={clearAll}>Clear</button></>}
+        {filtering
+          ? <><strong>{rows.length}</strong> of {all.length} items · <strong>{money(shownValue)}</strong>{' '}
+              <button type="button" className="link" onClick={clearAll}>Clear filters</button></>
+          : <><strong>{all.length}</strong> items · <strong>{money(counts.value)}</strong></>}
       </p>
 
       <div className="chip-rows">

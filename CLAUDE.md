@@ -156,6 +156,31 @@ DBeaver, psql, and the one-off import script.
    - Item panel: Condition is a 3x2 grid of tap buttons (Nearly empty/Empty/Dried out shown
      amber when selected) with a hint when that makes it Low. "Reorder at" moved out of quick
      settings into Edit details (DETAIL_FIELDS; SupplyFields `reorder` prop).
+3h. **Models tab + filtered totals** - DONE (2026-10-11).
+   - Inventory summary follows the filters: "9 of 22 items · $35.55" + Clear filters.
+   - `db/init/09_models.sql`: `models` (name, brand_id, product_code = kit code e.g. T61108,
+     scale, status Not started/In progress/On hold/Finished, notes, updated_at trigger) and
+     `model_paints` (model_id CASCADE, brand_id + product_code, paint_name, **purpose** = what
+     it's for, have_it = ticked by hand, sort_order). Paints match the inventory by
+     brand + code (not a supply id), so a replaced bottle still counts.
+     "have" = owned (qty > 0) OR have_it. Model photo = product_info (brand + kit code).
+   - API `app/models.py` router: GET/POST /api/models, GET/PATCH/DELETE /api/models/{id},
+     POST /api/models/{id}/paints {text, purpose} (one line or a pasted list: paint, then tab /
+     " - " / ": ", then purpose; "(still to buy)" notes dropped; XF-n/X-n -> Tamiya T817nn/T815nn,
+     a product code you own, or a Tamiya item number, else unlinked), PATCH/DELETE
+     /api/model-paints/{id}, POST /api/models/{id}/wishlist (missing linked paints -> wishlist,
+     category Paint, notes "For <model>: <purpose>"; unlinked ones reported as skipped).
+     /api/lookups includes model_statuses.
+   - UI: Models tab (ModelsView cards: photo, status badge, "Paints 7/9" bar) -> ModelPanel
+     (status buttons, checklist with auto-ticked locked rows for owned paints + manual ticks,
+     inline "what it's for", tags In inventory / Need to buy / On wishlist / Not linked /
+     condition badge when Low, paint name opens its ItemPanel, add one paint with an
+     inventory datalist or "Paste a list", notes, photo). Adding a model: Tamiya kit number
+     lookup fills name/scale/photo (titles look like "1/48 SCALE MITSUBISHI ...").
+   - **The user's first model:** "Mitsubishi A6M3 Zero", Tamiya T61108 (1/48 SCALE MITSUBISHI
+     A6M3/3A ZERO (ZEKE)), 9 paints from their list, all owned. Their list said X-10 Gun Metal
+     was "still to buy", but SUP-0022 (T81510) is X-10 - told the user.
+   - tamiya.TIMEOUT raised 15 -> 30 s (a kit page timed out once).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

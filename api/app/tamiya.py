@@ -18,7 +18,7 @@ from bs4 import BeautifulSoup
 PAGE_URL = "https://www.tamiya.com/english/products/{item}/index.html"
 HEADERS = {"User-Agent": "ShelfOfShame/1.0 (personal hobby inventory; one request per lookup; "
                          "+https://github.com/XDCause/ShelfofShame)"}
-TIMEOUT = 15
+TIMEOUT = 30  # tamiya.com can be slow, especially for kit pages with big photos
 
 
 class NotFound(Exception):

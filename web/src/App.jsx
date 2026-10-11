@@ -5,11 +5,14 @@ import Drawer from './components/Drawer.jsx'
 import InventoryView from './components/InventoryView.jsx'
 import ItemPanel from './components/ItemPanel.jsx'
 import ListsManager from './components/ListsManager.jsx'
+import ModelPanel from './components/ModelPanel.jsx'
+import ModelsView from './components/ModelsView.jsx'
 import WishlistView from './components/WishlistView.jsx'
 
-// Two pages - Inventory and Wishlist - plus panels that slide in on top:
+// Three pages - Inventory, Wishlist, Models - plus panels that slide in on top:
 //   item   one supply: stock, quick settings, notes, photo/barcode, history, edit details
 //   add    add a supply (scan or type a code first), to inventory or the wishlist
+//   model  one model (kit): status, paint checklist, notes, photo - or adding a new one
 //   lists  manage brands / categories / locations (the gear button)
 export default function App() {
   const [tab, setTab] = useState('inventory')
@@ -39,6 +42,7 @@ export default function App() {
         <nav className="tabs" role="tablist">
           <button role="tab" aria-selected={tab === 'inventory'} onClick={() => setTab('inventory')}>Inventory</button>
           <button role="tab" aria-selected={tab === 'wishlist'} onClick={() => setTab('wishlist')}>Wishlist</button>
+          <button role="tab" aria-selected={tab === 'models'} onClick={() => setTab('models')}>Models</button>
         </nav>
         <button type="button" className="icon-btn gear" onClick={() => setPanel({ type: 'lists' })}
           aria-label="Manage lists" title="Manage lists (brands, categories, locations)">
@@ -64,8 +68,10 @@ export default function App() {
           <InventoryView lookups={lookups} refreshKey={refreshKey}
             onOpen={(id) => setPanel({ type: 'item', id })}
             onAdd={(scan) => setPanel({ type: 'add', scan })} />
-        ) : (
+        ) : tab === 'wishlist' ? (
           <WishlistView lookups={lookups} onChanged={changed} />
+        ) : (
+          <ModelsView refreshKey={refreshKey} onOpen={(id) => setPanel({ type: 'model', id })} />
         )}
       </main>
 
@@ -87,6 +93,12 @@ export default function App() {
               `${wish.name} added to your wishlist${problems.length ? `, but ${problems.join('; ')}` : ''}.`)
             close()
           }} />
+      )}
+      {lookups && panel?.type === 'model' && (
+        <ModelPanel key={panel.id ?? 'new-model'} modelId={panel.id} lookups={lookups} onClose={close}
+          onChanged={changed}
+          onCreated={(id) => setPanel({ type: 'model', id })}
+          onOpenSupply={(id) => setPanel({ type: 'item', id })} />
       )}
       {lookups && panel?.type === 'lists' && (
         <Drawer title="Manage lists" onClose={close}>

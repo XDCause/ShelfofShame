@@ -11,6 +11,8 @@ subscriptions.
   of Tamiya Acrylic Mini paint barcodes
 - **Tamiya lookup**: type an item number or paint code (e.g. `XF-76`) to fill in the name,
   photo, size, paint type and finish from tamiya.com
+- **Models**: your kits with a paint checklist (what each paint is for), ticked automatically
+  for paints you own; paste a whole paint list at once; missing paints to the wishlist in one tap
 - Nightly backups and an automated API test suite
 
 Three Docker containers:
@@ -51,6 +53,11 @@ Browser -> web (nginx) -> api (FastAPI) -> db (PostgreSQL)
 | GET | `/api/product-images/{id}` | A cached product photo |
 | PUT | `/api/product-photo?brand_id=&product_code=` | Your own photo for any item (image file as the body) |
 | DELETE | `/api/product-photo?brand_id=&product_code=` | Remove an item's photo |
+| GET/POST | `/api/models` | List / add models (kits) |
+| GET/PATCH/DELETE | `/api/models/{id}` | One model with its paint checklist |
+| POST | `/api/models/{id}/paints` | Add a paint, or paste a list `{"text": "XF-76 Grey Green\tExterior"}` |
+| PATCH/DELETE | `/api/model-paints/{id}` | Edit (what it's for, ticked by hand) / remove a paint |
+| POST | `/api/models/{id}/wishlist` | Put the model's missing paints on the wishlist |
 | GET | `/api/lookups` | Brands, categories, locations (with usage counts) + fixed choice lists |
 | POST | `/api/lookups/{brands\|categories\|locations}` | Add a list entry `{"name": "..."}` |
 | DELETE | `/api/lookups/{kind}/{id}` | Remove an unused list entry |

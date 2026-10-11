@@ -10,7 +10,7 @@ from fastapi import FastAPI, HTTPException, Query, Response
 from psycopg import sql
 from pydantic import BaseModel, Field
 
-from . import wishlist
+from . import models, wishlist
 from .db import CONDITIONS, FINISHES, PAINT_TYPES, PRIORITIES, db, stock_reason
 
 app = FastAPI(
@@ -19,6 +19,7 @@ app = FastAPI(
     openapi_url="/api/openapi.json",
 )
 app.include_router(wishlist.router)  # wishlist, Tamiya lookup and product photos
+app.include_router(models.router)    # models (kits) and the paints each one needs
 
 PaintType = Literal[tuple(PAINT_TYPES)]
 Finish = Literal[tuple(FINISHES)]
@@ -232,7 +233,7 @@ def recent_history(limit: int = Query(50, ge=1, le=500)):
 def lookups():
     """Everything a form needs for its dropdowns. `uses` = how many supplies refer to it."""
     result = {"paint_types": PAINT_TYPES, "finishes": FINISHES, "conditions": CONDITIONS,
-              "priorities": PRIORITIES}
+              "priorities": PRIORITIES, "model_statuses": models.STATUSES}
     with db() as conn:
         for kind, (table, id_col) in LOOKUPS.items():
             query = sql.SQL(
