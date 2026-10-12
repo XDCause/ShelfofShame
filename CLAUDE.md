@@ -252,7 +252,11 @@ DBeaver, psql, and the one-off import script.
      "+ Add to wishlist" (shows "On wishlist ✓" once there). Supplies carry `on_wishlist`
      (wishlist.ON_WISHLIST: brand+code match, or name when no code); list shows an
      "On wishlist" tag. Shared insert: wishlist.wish_from_supplies() (also used by /restock).
-   - Tests: 84 API, 27 browser steps.
+   - Tests: 85 API, 27 browser steps.
+   - Wishlist cards show the owned item's state (WISH_SELECT: owned_qty, owned_supply_id,
+     owned_condition, owned_status; matched like ON_WISHLIST incl. by name when no code):
+     red "None left" (qty 0), amber "You own 1 · Nearly empty" (Low), grey "You own 1 · Sealed"
+     (OK = don't double-buy; .badge.own).
    - **Open issue told to the user**: Tailscale access blocked - firewall rule "Hobby Inventory
      web (8080)" has RemoteAddress LocalSubnet; the Tailscale interface is 100.76.51.75/32, so
      the phone (100.118.29.60) is outside it. Fix (admin): Set-NetFirewallRule -DisplayName

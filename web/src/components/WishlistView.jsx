@@ -194,6 +194,17 @@ export default function WishlistView({ lookups, onChanged }) {
   )
 }
 
+// What your inventory says about this item:
+//   red    "None left"                  - used up (0 on hand)
+//   amber  "You own 1 · Nearly empty"   - running out, so fine to rebuy
+//   grey   "You own 1 · Sealed"         - you still have a good one: don't double-buy
+function OwnedBadge({ wish }) {
+  if (wish.owned_supply_id == null) return null
+  if (wish.owned_qty <= 0) return <span className="badge out">None left</span>
+  const own = `You own ${wish.owned_qty}${wish.owned_condition ? ` · ${wish.owned_condition}` : ''}`
+  return <span className={`badge ${wish.owned_status === 'OK' ? 'own' : 'low'}`}>{own}</span>
+}
+
 function WishCard({ wish, onToggle, onEdit, onRemove, onBuy, busy }) {
   const [confirmRemove, setConfirmRemove] = useState(false)
   const stop = (fn) => (e) => {
@@ -231,7 +242,7 @@ function WishCard({ wish, onToggle, onEdit, onRemove, onBuy, busy }) {
         <div className="wish-chips">
           {wish.qty_wanted > 1 && <span className="chip">×{wish.qty_wanted}</span>}
           {wish.est_price != null && <span className="chip">{money(wish.est_price)}</span>}
-          {wish.owned_qty > 0 && <span className="badge low">You own {wish.owned_qty}</span>}
+          <OwnedBadge wish={wish} />
         </div>
         {wish.notes && <p className="wish-notes">{wish.notes}</p>}
       </div>

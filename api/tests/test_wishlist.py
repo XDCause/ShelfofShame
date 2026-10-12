@@ -96,6 +96,21 @@ def test_changes_that_stay_ok_add_nothing(client, make_supply):
     assert wishes(client) == {}
 
 
+def test_wishlist_shows_the_condition_of_the_one_you_own(client, make_supply):
+    low = make_supply(product_code="T81701", name="Running out", qty_on_hand=1, condition="Opened")
+    client.patch(f"/api/supplies/{low['supply_id']}", json={"condition": "Nearly empty"})  # auto-added
+    gone = make_supply(product_code="T81702", name="Used up", qty_on_hand=1, condition="Sealed")
+    client.post(f"/api/supplies/{gone['supply_id']}/adjust", json={"delta": -1})            # auto-added
+    good = make_supply(product_code="T81703", name="Still sealed", qty_on_hand=1, condition="Sealed")
+    client.post(f"/api/supplies/{good['supply_id']}/wishlist")                              # by hand
+
+    w = wishes(client)
+    owned = lambda n: (w[n]["owned_qty"], w[n]["owned_condition"], w[n]["owned_status"])  # noqa: E731
+    assert owned("Running out") == (1, "Nearly empty", "Low")
+    assert owned("Used up") == (0, "Sealed", "Out") and w["Used up"]["owned_supply_id"] == gone["supply_id"]
+    assert owned("Still sealed") == (1, "Sealed", "OK")
+
+
 def test_add_to_wishlist_button(client, make_supply):
     s = make_supply(name="Acrylic XF7 Flat Red", qty_on_hand=1, unit_price="3.95")
     assert s["on_wishlist"] is False

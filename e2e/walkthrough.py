@@ -97,6 +97,12 @@ def condition_low(page):
     row = page.locator("tr.row", has_text="Acrylic XF1 Flat Black")
     expect(row.locator("td.hide-xs .badge.low")).to_be_visible()
     expect(row.locator("td.hide-xs .tag", has_text="On wishlist")).to_be_visible()
+    # ...and its wishlist card says why: the bottle you own is nearly empty
+    page.get_by_role("tab", name="Wishlist").click()
+    card = page.locator("article.wish-card", has_text="XF1 Flat Black")
+    expect(card.locator(".badge.low")).to_have_text("You own 1 · Nearly empty")
+    shot(page, "d04b_wishlist_nearly_empty", full=False)
+    page.get_by_role("tab", name="Inventory").click()
     shot(page, "d04_needs_attention", full=False)
 
 
@@ -153,7 +159,8 @@ def add_lookup(page):
 
 @step("Add panel: Add to wishlist")
 def add_to_wishlist(page):
-    page.get_by_role("button", name="Add to wishlist").click()
+    # inside the panel: the page behind can have a "Needs attention -> Add to wishlist" chip too
+    drawer(page).get_by_role("button", name="Add to wishlist").click()
     expect(page.locator("p.alert", has_text="added to your wishlist")).to_be_visible()
 
 

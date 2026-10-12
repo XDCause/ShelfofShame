@@ -60,14 +60,22 @@ WISH_SELECT = """
 SELECT w.*, b.name AS brand, c.name AS category,
        p.product_info_id, (p.image IS NOT NULL) AS has_image, p.source_url, p.description,
        p.fetched_at AS photo_updated,
-       COALESCE(owned.qty, 0) AS owned_qty
+       COALESCE(owned.qty_on_hand, 0) AS owned_qty,
+       owned.supply_id AS owned_supply_id,      -- the matching inventory item, if any
+       owned.condition AS owned_condition,      -- e.g. Nearly empty: why it's on the wishlist
+       owned.stock_status AS owned_status       -- OK / Low / Out
 FROM wishlist w
 JOIN categories c ON c.category_id = w.category_id
 LEFT JOIN brands b ON b.brand_id = w.brand_id
 LEFT JOIN product_info p ON p.brand_id = w.brand_id AND p.product_code = w.product_code
 LEFT JOIN LATERAL (
-    SELECT sum(s.qty_on_hand) AS qty FROM supplies s
-    WHERE s.brand_id = w.brand_id AND s.product_code = w.product_code
+    -- Same matching as ON_WISHLIST: brand + code, or the name when there's no code.
+    SELECT v.supply_id, v.qty_on_hand, v.condition, v.stock_status
+    FROM supplies s JOIN v_supplies v USING (supply_id)
+    WHERE (s.brand_id = w.brand_id AND s.product_code = w.product_code)
+       OR (w.product_code IS NULL AND s.product_code IS NULL AND s.name = w.name)
+    ORDER BY v.qty_on_hand DESC
+    LIMIT 1
 ) owned ON true
 """
 WISH_ORDER = """

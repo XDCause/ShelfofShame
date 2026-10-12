@@ -141,6 +141,7 @@ th.thumb-col, td.thumb-col { width: 56px; padding: 6px 4px 6px 10px; }
 .badge.ok { color: var(--ok); background: var(--ok-bg); }
 .badge.low { color: var(--low); background: var(--low-bg); }
 .badge.out { color: var(--out); background: var(--out-bg); }
+.badge.own { color: var(--text); background: var(--surface-2); border: 1px solid var(--border); }
 
 /* Fewer columns as the screen narrows: the item and stock always stay. */
 .show-xs { display: none; }
