@@ -14,6 +14,8 @@ const derived = ({ links, mentioned_in, suggestions }) => ({ links, mentioned_in
 // One journal page: title, date, icon, tags, pin, the editor, and what it links to.
 // Everything saves by itself as you go ("Saving..." / "Saved").
 // A whiteboard page shows its canvas instead of the editor; any drawing can open full screen.
+// Full screen (notes pages) is a writing mode for a pen on a tablet: everything but the page is
+// hidden, the browser goes full screen, and the lines are big with lots of room to write.
 export default function JournalPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -23,6 +25,26 @@ export default function JournalPage() {
   const [status, setStatus] = useState('')        // '', 'saving', 'saved'
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [drawing, setDrawing] = useState(null)      // the drawing open full screen
+  const [writing, setWriting] = useState(false)     // full screen writing mode
+
+  // Writing mode: a class on <body> hides the app around the page (styles.css), and the browser
+  // goes full screen too where it can. Leaving browser full screen (back gesture, Esc) or leaving
+  // the page ends writing mode.
+  useEffect(() => {
+    if (!writing) return undefined
+    document.body.classList.add('writing-mode')
+    document.documentElement.requestFullscreen?.().catch(() => {})   // not allowed? the page still fills the window
+    const left = () => { if (!document.fullscreenElement) setWriting(false) }
+    const esc = (e) => { if (e.key === 'Escape') setWriting(false) }
+    document.addEventListener('fullscreenchange', left)
+    document.addEventListener('keydown', esc)
+    return () => {
+      document.body.classList.remove('writing-mode')
+      document.removeEventListener('fullscreenchange', left)
+      document.removeEventListener('keydown', esc)
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {})
+    }
+  }, [writing])
   const pending = useRef({})                        // changes not sent yet
   const timer = useRef(null)
 
@@ -109,6 +131,10 @@ export default function JournalPage() {
       <div className="journal-bar">
         <Link to="/journal" className="plain">‹ Journal</Link>
         <span className="spacer" />
+        {!board && (
+          <button type="button" className={writing ? 'primary' : 'plain'} onClick={() => setWriting(!writing)}
+            title="A big page for writing with a pen">{writing ? 'Exit full screen' : '⛶ Full screen'}</button>
+        )}
         <span className="save-status muted small" role="status" aria-live="polite">
           {status === 'saving' ? 'Saving...' : status === 'saved' ? 'Saved' : ''}
         </span>

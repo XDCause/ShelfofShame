@@ -979,6 +979,24 @@ def sketch_block(page):
     page.locator(".drawing-overlay").get_by_role("button", name="Done").click()
 
 
+@step("Journal Full screen: just the page, bigger writing; Exit puts it back")
+def writing_mode(page):
+    go(page, "Journal")
+    page.locator(".journal-card").first.click()
+    editor = page.locator(".journal-editor .bn-editor")
+    expect(editor).to_be_visible(timeout=20000)
+    normal = float(editor.evaluate("e => parseFloat(getComputedStyle(e).fontSize)"))
+    page.get_by_role("button", name="⛶ Full screen").click()
+    expect(page.locator(".sidebar")).to_be_hidden()
+    expect(page.locator(".navbar")).to_be_hidden()
+    big = float(editor.evaluate("e => parseFloat(getComputedStyle(e).fontSize)"))
+    assert big > normal * 1.25, (normal, big)
+    shot(page, "d38_writing_mode", full=False)
+    page.get_by_role("button", name="Exit full screen").click()
+    expect(page.locator(".sidebar")).to_be_visible()
+    expect(page.locator("body.writing-mode")).to_have_count(0)
+
+
 @step("Settings: price guide, default shop, backups, exports, catalogue")
 def settings_more(page):
     page.get_by_role("button", name="Settings").click()
@@ -1068,7 +1086,7 @@ with sync_playwright() as p:
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
                matches, used_on, gundam, bandai_lookup, warhammer, journal_write, journal_links, journal_from_model,
                journal_suggestion, journal_todo, global_search, journal_wishlist, appearance,
-               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, settings_more, no_panel):
+               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, settings_more, no_panel):
         fn(desk)
     ctx = browser.new_context(**p.devices["iPhone 13"])
     mob = ctx.new_page()
