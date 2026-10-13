@@ -464,3 +464,15 @@ legend { font-weight: 650; color: var(--muted); font-size: 0.78rem; text-transfo
 .used-up { background: var(--low-bg); border-radius: 10px; padding: 12px 14px; }
 .used-up p { margin: 0 0 10px; color: var(--low); }
 .used-up strong { color: inherit; }
+
+/* ---------- Spending (gear panel, closed by default) ---------- */
+.spending { border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; }
+.spending summary { cursor: pointer; font-weight: 600; }
+.spending[open] summary { margin-bottom: 10px; }
+.spend-totals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.spend-totals div { display: flex; flex-direction: column; }
+.spend-totals strong { font-size: 1.2rem; }
+.spend-recent { list-style: none; margin: 0; padding: 0; }
+.spend-recent li { display: flex; gap: 8px; align-items: baseline; padding: 4px 0; border-top: 1px solid var(--border); }
+.spend-recent li span:first-child { flex: 1; min-width: 0; }
+.spend-recent .amount { font-variant-numeric: tabular-nums; }

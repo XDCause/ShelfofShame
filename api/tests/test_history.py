@@ -55,3 +55,20 @@ def test_refused_change_leaves_no_history(client, make_supply):
     s = make_supply(qty_on_hand=0)
     client.post(f"/api/supplies/{s['supply_id']}/adjust", json={"delta": -1})  # 422
     assert history(client, s["supply_id"]) == [(0, 0, "added")]
+
+
+def test_lifetime_spend(client, make_supply):
+    """Purchases count at the price paid then; price edits, using up, Undo and removing behave."""
+    s = make_supply(qty_on_hand=1, unit_price="3.95")                    # added: 3.95
+    sid = s["supply_id"]
+    client.post(f"/api/supplies/{sid}/adjust", json={"delta": 2})       # bought 2: 7.90
+    client.patch(f"/api/supplies/{sid}", json={"unit_price": "5.00"})   # price went up: no spend
+    client.post(f"/api/supplies/{sid}/adjust", json={"delta": 1})       # bought 1: 5.00
+    client.post(f"/api/supplies/{sid}/adjust", json={"delta": -1, "undo": True})  # oops: -5.00
+    client.post(f"/api/supplies/{sid}/adjust", json={"delta": -1})      # used one: no spend
+    client.delete(f"/api/supplies/{sid}")                                # removed: still spent
+
+    spent = client.get("/api/spending").json()
+    assert (spent["all_time"], spent["this_month"], spent["starting_stock"]) == (11.85, 11.85, 0)
+    assert spent["unpriced"] == 0
+    assert [(r["qty"], r["spent"]) for r in spent["recent"]] == [(-1, -5.0), (1, 5.0), (2, 7.9), (1, 3.95)]

@@ -40,6 +40,7 @@ export const api = {
   supplyHistory: (id, limit = 20) => request(`/supplies/${id}/history?limit=${limit}`),
   addSupplyToWishlist: (id) => request(`/supplies/${id}/wishlist`, { method: 'POST' }),
   recentHistory: (limit = 50) => request(`/history?limit=${limit}`),
+  spending: () => request('/spending'),
   wishRestock: () => request('/wishlist/restock', { method: 'POST' }),
 
   listWishlist: (show = 'all') => request(`/wishlist?show=${show}`),

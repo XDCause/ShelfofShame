@@ -294,6 +294,45 @@ def recent_history(limit: int = Query(50, ge=1, le=500)):
             " ORDER BY m.created_at DESC, m.movement_id DESC LIMIT %s", (limit,)).fetchall()
 
 
+# What you paid, from the stock history (each change remembers the price at that moment - see
+# db/init/12_spend.sql). Purchases count; Undo of a purchase takes it back off. Using things up,
+# removing them or fixing a miscount ('edited', 'manual') doesn't change what you spent.
+PURCHASES = ("added", "bought", "bought (wishlist)", "starting stock", "import")
+SPEND = """
+WITH spend AS (
+    SELECT created_at, item_name, reason, unit_price,
+           CASE WHEN reason = ANY(%(purchases)s) AND change > 0 THEN change
+                WHEN reason = 'undo' AND change < 0 THEN change   -- undoing a +1
+                ELSE 0 END AS qty
+    FROM stock_movements
+)
+"""
+
+
+@app.get("/api/spending")
+def spending():
+    """Lifetime spend, this year, this month, how much of it was your starting stock, and the
+    latest purchases."""
+    with db() as conn:
+        params = {"purchases": list(PURCHASES)}
+        totals = conn.execute(SPEND + """
+            SELECT COALESCE(sum(qty * unit_price), 0) AS all_time,
+                   COALESCE(sum(qty * unit_price) FILTER (WHERE created_at >= date_trunc('year', now())), 0) AS this_year,
+                   COALESCE(sum(qty * unit_price) FILTER (WHERE created_at >= date_trunc('month', now())), 0) AS this_month,
+                   COALESCE(sum(qty * unit_price) FILTER (WHERE reason IN ('starting stock', 'import')), 0) AS starting_stock,
+                   count(*) FILTER (WHERE qty > 0 AND unit_price IS NULL) AS unpriced
+            FROM spend WHERE qty <> 0""", params).fetchone()
+        by_year = conn.execute(SPEND + """
+            SELECT extract(year FROM created_at)::int AS year, sum(qty * unit_price) AS spent
+            FROM spend WHERE qty <> 0 AND unit_price IS NOT NULL
+            GROUP BY 1 ORDER BY 1 DESC""", params).fetchall()
+        recent = conn.execute(SPEND + """
+            SELECT created_at, item_name, qty, unit_price, qty * unit_price AS spent
+            FROM spend WHERE qty <> 0 AND reason NOT IN ('starting stock', 'import')
+            ORDER BY created_at DESC LIMIT 10""", params).fetchall()
+        return {**totals, "by_year": by_year, "recent": recent}
+
+
 # ---------------------------------------------------------------------------
 # Lookup lists (brands, categories, locations) + the fixed choice lists
 # ---------------------------------------------------------------------------

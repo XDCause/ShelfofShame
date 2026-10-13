@@ -52,6 +52,7 @@ Browser -> web (nginx) -> api (FastAPI) -> db (PostgreSQL)
 | GET | `/api/scan/{barcode}` | Identify an item from its barcode number (known / catalog / Tamiya / unknown) |
 | GET | `/api/supplies/{id}/history` | Quantity changes for one supply, newest first |
 | GET | `/api/history` | Quantity changes across everything |
+| GET | `/api/spending` | Lifetime spend: all time, this year, this month, latest purchases |
 | POST | `/api/supplies/{id}/wishlist` | Put one supply on the wishlist (things that run low are added automatically) |
 | POST | `/api/wishlist/restock` | Put everything that needs attention (Out or Low) on the wishlist |
 | PUT | `/api/product-barcode` | Remember a barcode `{"brand_id", "product_code", "barcode"}` |

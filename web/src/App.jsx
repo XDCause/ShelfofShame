@@ -8,6 +8,7 @@ import ItemPanel from './components/ItemPanel.jsx'
 import ListsManager from './components/ListsManager.jsx'
 import ModelPanel from './components/ModelPanel.jsx'
 import ModelsView from './components/ModelsView.jsx'
+import Spending from './components/Spending.jsx'
 import WishlistView from './components/WishlistView.jsx'
 
 // Three pages - Inventory, Wishlist, Models - plus panels that slide in on top:
@@ -149,6 +150,7 @@ export default function App() {
       )}
       {lookups && panel?.type === 'lists' && (
         <Drawer title="Manage lists" onClose={close}>
+          <Spending />
           <ListsManager lookups={lookups} onChanged={loadLookups} />
         </Drawer>
       )}

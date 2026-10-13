@@ -146,11 +146,18 @@ def edit_details(page):
     page.keyboard.press("Escape")
 
 
-@step("Manage lists opens from the gear")
+@step("Manage lists opens from the gear; Spending opens when tapped")
 def manage_lists(page):
     page.get_by_role("button", name="Manage lists").click()
     expect(drawer(page)).to_contain_text("Brands")
     shot(page, "d05_manage_lists")
+    # Spending is closed until you open it
+    spend = drawer(page).locator("details.spending")
+    expect(spend.locator(".spend-totals")).to_have_count(0)
+    spend.locator("summary").click()
+    expect(spend.locator(".spend-totals")).to_contain_text("All time")
+    expect(spend).to_contain_text("starting stock")
+    shot(page, "d05b_spending", full=False)
     page.keyboard.press("Escape")
 
 

@@ -301,6 +301,18 @@ DBeaver, psql, and the one-off import script.
      (opens the item). Toast now takes several actions. History reason stays 'deleted'.
    - e2e reads TOTAL / PAINTS from the API instead of hard-coding 22 / 9.
    - Tests: 104 API, 29 browser steps.
+3o. **Lifetime spend** - DONE (2026-10-13). User asked for it, "can be hidden".
+   - `db/init/12_spend.sql`: stock_movements.unit_price, set by the trigger from the supply's
+     price at that moment (OLD.unit_price on delete). Older rows backfilled with the current
+     price; the removed Dark Brown panel line's rows set to 10.95 by hand.
+   - GET /api/spending (main.py PURCHASES/SPEND): purchases = added, bought, bought (wishlist),
+     starting stock, import (change > 0) x unit_price, minus 'undo' rows with change < 0.
+     used / deleted / edited / manual don't count. Returns all_time, this_year, this_month,
+     starting_stock, unpriced, by_year, recent (10, excluding starting stock).
+   - UI: `Spending` component = closed <details> at the top of the gear (Manage lists) drawer;
+     loads only when opened. First figures: $157.80 all time ($142.90 starting stock).
+   - Inventory summary "$142.90" is CURRENT stock value (qty x price), not spend.
+   - Tests: 105 API, 29 browser steps.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"
