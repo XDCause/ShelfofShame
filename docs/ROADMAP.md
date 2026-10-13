@@ -80,6 +80,8 @@ Each phase is built and tested in the dev copy, then promoted (`promote.ps1`).
 | 3 | **Calendar** | DONE 2026-10-13 (in dev): month view, events (weekly / fortnightly, skip a day), what happened each day, Coming up on Home. Later: week / list views, dated to-dos |
 | 4 | **Board games** | DONE 2026-10-13 (in dev): collection, plays, photos, journal "Log a play". Later: scores per player, BoardGameGeek lookup |
 | 5 | **Volleyball** | DONE 2026-10-13 (in dev): games / training with sets, gear, video links, calendar "Log the result". Later: your own stats per game |
+| 5b | **Drawing in the journal** | DONE 2026-10-14 (in dev): whiteboard pages and `/` Drawing sketches (Excalidraw, pen pressure, pen mode); a pen box for handwriting keyboards (S Pen to text) |
+| 5c | **Handwriting -> text on a canvas** | LATER (user's preference: **AI on this PC**, e.g. a local Ollama vision model - free and private, ~30-90 s per page on this CPU). A "Convert to text" button on a sketch / whiteboard. Considered: MyScript (what reMarkable uses; cloud, free monthly quota, needs keys), Claude vision (cloud, paid per use), Chrome's Handwriting Recognition API (not confirmed on Android) |
 | 6+ | Scuba, woodworking, pottery... | One module at a time |
 
 ## Before going public

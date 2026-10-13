@@ -979,6 +979,29 @@ def sketch_block(page):
     page.locator(".drawing-overlay").get_by_role("button", name="Done").click()
 
 
+@step("Pen box: handwriting-keyboard text goes into the page line by line")
+def pen_box(page):
+    go(page, "Journal")
+    page.get_by_role("button", name="+ New page").click()
+    page.get_by_label("Title").fill(f"Pen {MARK}")
+    page.get_by_role("button", name="✍ Pen box").click()
+    box = page.get_by_label("Pen box: handwriting turns into text")
+    box.fill("Primed the hull\nNext the tracks")          # a handwriting keyboard types like this
+    editor = page.locator(".bn-editor")
+    expect(editor).to_contain_text("Primed the hull", timeout=10000)
+    expect(box).to_have_value("Next the tracks")             # the unfinished line waits
+    page.get_by_role("button", name="Add", exact=True).click()
+    expect(editor).to_contain_text("Next the tracks")
+    expect(box).to_have_value("")
+    expect(page.locator(".save-status")).to_have_text("Saved", timeout=10000)
+    page_id = int(re.search(r"/journal/(\d+)", page.url).group(1))
+    text = page.request.get(f"{BASE}/api/journal/{page_id}").json()["text"]
+    assert "Primed the hull\nNext the tracks" in text, text
+    shot(page, "d37_pen_box", full=False)
+    page.get_by_role("button", name="Close", exact=True).click()   # stays closed next time
+    expect(page.get_by_role("button", name="✍ Pen box")).to_be_visible()
+
+
 @step("Settings: price guide, default shop, backups, exports, catalogue")
 def settings_more(page):
     page.get_by_role("button", name="Settings").click()
@@ -1068,7 +1091,7 @@ with sync_playwright() as p:
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
                matches, used_on, gundam, bandai_lookup, warhammer, journal_write, journal_links, journal_from_model,
                journal_suggestion, journal_todo, global_search, journal_wishlist, appearance,
-               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, settings_more, no_panel):
+               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, pen_box, settings_more, no_panel):
         fn(desk)
     ctx = browser.new_context(**p.devices["iPhone 13"])
     mob = ctx.new_page()

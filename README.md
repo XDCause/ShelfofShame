@@ -34,6 +34,9 @@ have five tabs: Home, Journal, Calendar, Supplies (with the wishlist) and Hobbie
   (S Pen on a Galaxy Tab) it switches to pen mode by itself: the pen draws, fingers pan and zoom.
   In a normal page, `/` Drawing adds a sketch: its picture sits in the page, tap it to draw full
   screen. Everything saves by itself; words written on a canvas are searchable.
+- **Pen box** ("✍ Pen box" on a journal page): a plain text box at the foot of the page for a
+  tablet's handwriting-to-text (Samsung "S Pen to text" only works in plain text boxes, not in the
+  rich-text editor). Each finished line moves into the page.
 - **Journal -> actions**: write "Just bought @Sherman and started it right away" and the page
   offers "Sherman: Mark as In progress?" (Yes / Not now); "primed @Zero" offers the build step;
   "I want to buy new @XF-10 for a new project" offers "Add to wishlist?".
