@@ -1,32 +1,30 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Link, Navigate, Route, Routes, useLocation } from 'react-router'
 import { api } from './api.js'
 import { readBarcode } from './barcode.js'
 import AddPanel from './components/AddPanel.jsx'
-import ColoursView from './components/ColoursView.jsx'
 import Elapsed from './components/Elapsed.jsx'
-import { BoxIcon, CartIcon, DropsIcon, GearIcon, PlaneIcon, ScanIcon, TimerIcon } from './components/icons.jsx'
-import InventoryView from './components/InventoryView.jsx'
+import { GearIcon, ScanIcon, TimerIcon } from './components/icons.jsx'
 import ItemPanel from './components/ItemPanel.jsx'
 import ModelPanel from './components/ModelPanel.jsx'
-import ModelsView from './components/ModelsView.jsx'
 import SettingsPanel from './components/SettingsPanel.jsx'
-import WishlistView from './components/WishlistView.jsx'
+import { AppContext } from './core/app-context.js'
+import Home from './core/Home.jsx'
+import { Sidebar, TabBar } from './core/Navigation.jsx'
+import { MODULES, moduleFor, pageFor } from './modules/index.js'
 
-const TABS = [
-  { id: 'inventory', label: 'Inventory', Icon: BoxIcon },
-  { id: 'wishlist', label: 'Wishlist', Icon: CartIcon },
-  { id: 'models', label: 'Models', Icon: PlaneIcon },
-  { id: 'colours', label: 'Colours', Icon: DropsIcon },
-]
+const APP_NAME = 'Off the Clock'
 
-// Four pages - Inventory, Wishlist, Models, Colours - plus panels that slide over them:
+// Off the Clock: Home, then a module per hobby (modules/index.js), each with its own pages at
+// /<module>/<page>. Sidebar on wide screens, tab bar on phones (core/Navigation.jsx).
+// Panels slide over any page:
 //   item      one supply: stock, condition, used on, colour matches, photo, history, details
 //   add       add a supply (scan or type a code first), to inventory or the wishlist
 //   model     one kit: status, timer, paint checklist, build log - or adding a new one
 //   settings  spending, price guide, default shop, backups, export, catalogue, lists
 // Also here: the Undo bar after any -/+, the running-timer banner, and Scan in the nav bar.
 export default function App() {
-  const [tab, setTab] = useState('inventory')
+  const { pathname } = useLocation()
   const [panel, setPanel] = useState(null) // {type: 'item', id} | {type: 'add', scan} | {type: 'model', id} | {type: 'settings'}
   const [lookups, setLookups] = useState(null)
   const [settings, setSettings] = useState({ default_shop: 'Hobbyrama' })
@@ -45,10 +43,7 @@ export default function App() {
   useEffect(() => {
     loadLookups()
     api.settings().then(setSettings).catch(() => {})
-    api.about().then(({ env }) => {
-      setAppEnv(env)
-      if (env !== 'prod') document.title = `[${env.toUpperCase()}] ${document.title}`
-    }).catch(() => {})
+    api.about().then(({ env }) => setAppEnv(env)).catch(() => {})
   }, [loadLookups])
   useEffect(() => { api.runningTimer().then(setTimer).catch(() => {}) }, [refreshKey])
 
@@ -101,104 +96,118 @@ export default function App() {
     else setPanel({ type: 'add', scan: { result, photo } })
   }, [openItem])
 
-  const page = !lookups ? (!error && <p className="muted loading">Loading...</p>)
-    : tab === 'inventory' ? (
-      <InventoryView lookups={lookups} refreshKey={refreshKey} onAdjusted={adjusted} onOpen={openItem}
-        onAdd={(scan) => setPanel({ type: 'add', scan })} />
-    ) : tab === 'wishlist' ? (
-      <WishlistView lookups={lookups} settings={settings} refreshKey={refreshKey} onChanged={changed} />
-    ) : tab === 'models' ? (
-      <ModelsView lookups={lookups} refreshKey={refreshKey} onOpen={openModel} />
-    ) : (
-      <ColoursView refreshKey={refreshKey} onChanged={changed} onOpenItem={openItem} onOpenModel={openModel} />
-    )
+  // What every page and module can use (core/app-context.js).
+  const openAdd = useCallback((scan) => setPanel({ type: 'add', scan }), [])
+  const app = useMemo(() => ({
+    lookups, settings, refreshKey, changed, openItem, openModel, openAdd, adjusted, showToast,
+  }), [lookups, settings, refreshKey, changed, openItem, openModel, openAdd, adjusted, showToast])
+
+  // Where we are: "Inventory" in "Shelf of Shame", or Home.
+  const module = moduleFor(pathname)
+  const page = pageFor(pathname)
+  const title = page ? page.label : pathname === '/' ? APP_NAME : 'Not found'
+  useEffect(() => {
+    const name = page ? `${page.label} · ${module.name}` : APP_NAME
+    document.title = appEnv === 'prod' ? name : `[${appEnv.toUpperCase()}] ${name}`
+  }, [page, module, appEnv])
+  const envBadge = appEnv !== 'prod' && <span className="env-badge" title="A test copy - not your real data">{appEnv}</span>
 
   return (
-    <div className="app">
-      <header className="navbar">
-        <div className="navbar-row">
-          <h1>Shelf of Shame{appEnv !== 'prod' && <span className="env-badge" title="A test copy - not your real data">{appEnv}</span>}</h1>
-          <nav className="tabs segmented" role="tablist" aria-label="Pages">
-            {TABS.map((t) => (
-              <button key={t.id} role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)}>{t.label}</button>
-            ))}
-          </nav>
-          <div className="navbar-actions">
-            {lookups && !panel && <ScanButtonNav onBarcode={scanned} onError={showToast}
-              onUnreadable={() => {
-                setPanel({ type: 'add', scan: null })
-                showToast("Couldn't find a barcode in that photo. Try again, or use \"Type a barcode\".")
-              }} />}
-            <button type="button" className="icon-btn" onClick={() => setPanel({ type: 'settings' })}
-              aria-label="Settings" title="Settings: spending, prices, backups, export, lists">
-              <GearIcon />
-            </button>
+    <AppContext.Provider value={app}>
+      <div className="app">
+        <Sidebar />
+        <div className="main-col">
+          <header className="navbar">
+            <div className="navbar-row">
+              <h1>
+                {module && <span className="nav-context">{module.name}</span>}
+                {title}{envBadge}
+              </h1>
+              <div className="navbar-actions">
+                {lookups && !panel && <ScanButtonNav onBarcode={scanned} onError={showToast}
+                  onUnreadable={() => {
+                    setPanel({ type: 'add', scan: null })
+                    showToast("Couldn't find a barcode in that photo. Try again, or use \"Type a barcode\".")
+                  }} />}
+                <button type="button" className="icon-btn" onClick={() => setPanel({ type: 'settings' })}
+                  aria-label="Settings" title="Settings: spending, prices, backups, export, lists">
+                  <GearIcon />
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <div className="content">
+            {timer && (
+              <button type="button" className="timer-banner" onClick={() => openModel(timer.model_id)}>
+                <TimerIcon size={18} /> Working on <strong>{timer.name}</strong>
+                <Elapsed since={timer.started_at} />
+              </button>
+            )}
+            {error && <p className="alert error">{error}</p>}
+            {flash && (
+              <p className={`alert ${flash.type}`} role="status">
+                {flash.text} <button className="plain" onClick={() => setFlash(null)}>Dismiss</button>
+              </p>
+            )}
+
+            <main>
+              {!lookups ? (!error && <p className="muted loading">Loading...</p>) : (
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  {MODULES.map((m) => (
+                    <Route key={m.id} path={m.id}>
+                      <Route index element={<Navigate to={m.pages[0].path} replace />} />
+                      {m.pages.map((p) => <Route key={p.path} path={p.path} element={p.render(app)} />)}
+                    </Route>
+                  ))}
+                  <Route path="*" element={<p className="empty card">There's no page here. <Link to="/">Go home</Link></p>} />
+                </Routes>
+              )}
+            </main>
           </div>
         </div>
-      </header>
 
-      <div className="content">
-        {timer && (
-          <button type="button" className="timer-banner" onClick={() => openModel(timer.model_id)}>
-            <TimerIcon size={18} /> Working on <strong>{timer.name}</strong>
-            <Elapsed since={timer.started_at} />
-          </button>
+        <TabBar />
+
+        {lookups && panel?.type === 'item' && (
+          <ItemPanel key={panel.id} supplyId={panel.id} lookups={lookups} reloadKey={undoKey}
+            onClose={close} onChanged={changed} onAdjusted={adjusted} onOpenModel={openModel} onOpenItem={openItem}
+            onRemoved={(item) => show('ok', `${item.name} removed from your inventory.`)} />
         )}
-        {error && <p className="alert error">{error}</p>}
-        {flash && (
-          <p className={`alert ${flash.type}`} role="status">
-            {flash.text} <button className="plain" onClick={() => setFlash(null)}>Dismiss</button>
-          </p>
+        {lookups && panel?.type === 'add' && (
+          <AddPanel key={panel.scan?.result?.barcode ?? 'add'} lookups={lookups} settings={settings}
+            scanned={panel.scan} onClose={close} onOpen={openItem}
+            onAdded={(supply, problems) => {
+              changed()
+              if (problems.length) show('low', `${supply.name} added, but ${problems.join('; ')}.`)
+              openItem(supply.supply_id)
+            }}
+            onWished={(wish, problems) => {
+              changed()
+              show(problems.length ? 'low' : 'ok',
+                `${wish.name} added to your wishlist${problems.length ? `, but ${problems.join('; ')}` : ''}.`)
+              close()
+            }} />
+        )}
+        {lookups && panel?.type === 'model' && (
+          <ModelPanel key={panel.id ?? 'new-model'} modelId={panel.id} lookups={lookups} settings={settings}
+            onClose={close} onChanged={changed} onCreated={openModel} onOpenSupply={openItem} />
+        )}
+        {lookups && panel?.type === 'settings' && (
+          <SettingsPanel lookups={lookups} settings={settings} onClose={close}
+            onSettings={setSettings} onListsChanged={loadLookups} />
         )}
 
-        <main>{page}</main>
+        {toast && (
+          <div className="toast" role="status" aria-live="polite">
+            <span>{toast.text}</span>
+            {toast.actions.map((a) => <button key={a.label} type="button" onClick={a.run}>{a.label}</button>)}
+            <button type="button" className="toast-close" aria-label="Dismiss" onClick={() => setToast(null)}>✕</button>
+          </div>
+        )}
       </div>
-
-      <nav className="tabbar" aria-label="Pages">
-        {TABS.map(({ id, label, Icon }) => (
-          <button key={id} type="button" aria-current={tab === id ? 'page' : undefined} onClick={() => setTab(id)}>
-            <Icon /><span>{label}</span>
-          </button>
-        ))}
-      </nav>
-
-      {lookups && panel?.type === 'item' && (
-        <ItemPanel key={panel.id} supplyId={panel.id} lookups={lookups} reloadKey={undoKey}
-          onClose={close} onChanged={changed} onAdjusted={adjusted} onOpenModel={openModel} onOpenItem={openItem}
-          onRemoved={(item) => show('ok', `${item.name} removed from your inventory.`)} />
-      )}
-      {lookups && panel?.type === 'add' && (
-        <AddPanel key={panel.scan?.result?.barcode ?? 'add'} lookups={lookups} settings={settings}
-          scanned={panel.scan} onClose={close} onOpen={openItem}
-          onAdded={(supply, problems) => {
-            changed()
-            if (problems.length) show('low', `${supply.name} added, but ${problems.join('; ')}.`)
-            openItem(supply.supply_id)
-          }}
-          onWished={(wish, problems) => {
-            changed()
-            show(problems.length ? 'low' : 'ok',
-              `${wish.name} added to your wishlist${problems.length ? `, but ${problems.join('; ')}` : ''}.`)
-            close()
-          }} />
-      )}
-      {lookups && panel?.type === 'model' && (
-        <ModelPanel key={panel.id ?? 'new-model'} modelId={panel.id} lookups={lookups} settings={settings}
-          onClose={close} onChanged={changed} onCreated={openModel} onOpenSupply={openItem} />
-      )}
-      {lookups && panel?.type === 'settings' && (
-        <SettingsPanel lookups={lookups} settings={settings} onClose={close}
-          onSettings={setSettings} onListsChanged={loadLookups} />
-      )}
-
-      {toast && (
-        <div className="toast" role="status" aria-live="polite">
-          <span>{toast.text}</span>
-          {toast.actions.map((a) => <button key={a.label} type="button" onClick={a.run}>{a.label}</button>)}
-          <button type="button" className="toast-close" aria-label="Dismiss" onClick={() => setToast(null)}>✕</button>
-        </div>
-      )}
-    </div>
+    </AppContext.Provider>
   )
 }
 

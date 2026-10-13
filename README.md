@@ -1,8 +1,17 @@
-# Shelf of Shame
+# Off the Clock
 
-A self-hosted inventory for model-kit supplies (paints, thinners, tape, glue, tools...), built
-as a full-stack learning project. Runs entirely in Docker on your own PC; no accounts or
-subscriptions.
+A self-hosted home for your hobbies, built as a full-stack learning project. Runs entirely in
+Docker on your own PC; no accounts or subscriptions.
+
+It's one app with a **Home** page and a **module per hobby**, each with its own pages
+(`/<module>/<page>`), in a sidebar on wide screens and a tab bar on phones. The first module is
+**Shelf of Shame** (model kits and their supplies), described below. A journal, a calendar and more
+hobbies (board games, volleyball...) are planned: see [docs/ROADMAP.md](docs/ROADMAP.md).
+
+- **Home**: today at a glance. Each hobby shows its numbers (needs attention, to buy, unfinished
+  kits, time spent), what you're building and the latest changes.
+
+## Shelf of Shame (model kits)
 
 - **Inventory**: search, filter, sort, grouped into drop-downs (by category, condition, brand...; remembered), photos, +/- with Undo, per-item stock history, "used on"
   (which models need it), colour matches, and "used up, not replacing it" removal
@@ -26,8 +35,9 @@ subscriptions.
   between any brands, and mixes ("XF-62 + XF-2 (3:1)") that work on model paint lists
 - **Settings**: spending (lifetime / year / month), price guide, default shop, backups (back up
   now, download), CSV export for Excel, Tamiya catalogue refresh, brands / categories / locations
-- Styled after Apple's Human Interface Guidelines (bottom tab bar and sheets on phones, dark mode)
-- Nightly backups, 196 automated API tests and a 41-step browser walkthrough
+- Styled after Apple's Human Interface Guidelines (sidebar on wide screens, tab bar and sheets on
+  phones, dark mode)
+- Nightly backups, 197 automated API tests and a 42-step browser walkthrough
 
 Three Docker containers:
 

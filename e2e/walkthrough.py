@@ -53,6 +53,12 @@ def drawer(page):
     return page.locator("aside.drawer")
 
 
+def go(page, name):
+    """Open a page from the navigation: the sidebar on desktop, the tab bar on phones (only one
+    of them is visible, so the link name is enough)."""
+    page.get_by_role("link", name=name, exact=True).click()
+
+
 def watch(page, label):
     page.on("console", lambda m: m.type == "error" and errors.append(f"[{label}] console: {m.text}"))
     page.on("pageerror", lambda e: errors.append(f"[{label}] page error: {e}"))
@@ -60,9 +66,27 @@ def watch(page, label):
 
 
 # ---------------------------------------------------------------- desktop
+@step("Home: greeting, the Shelf of Shame card, and its numbers open their pages")
+def home(page):
+    page.goto(BASE)
+    expect(page.locator(".home-head h2")).to_have_text(re.compile("^Good (morning|afternoon|evening)$"), timeout=15000)
+    card = page.locator(".home-card", has_text="Shelf of Shame")
+    expect(card.locator(".home-stat")).to_have_count(4)
+    expect(card.locator(".home-stat", has_text="Needs attention")).to_contain_text(f"of {TOTAL} supplies")
+    expect(card.locator(".home-stat", has_text="Shelf of shame")).to_be_visible()
+    shot(page, "d00_home", full=False)
+    card.locator(".home-stat", has_text="To buy").click()
+    expect(page).to_have_url(BASE + "/models/wishlist")
+    expect(page.locator(".navbar h1")).to_contain_text("Wishlist")
+    page.go_back()
+    expect(page).to_have_url(BASE + "/")
+    page.goto(BASE + "/no-such-page")                       # unknown addresses get a way home
+    expect(page.get_by_role("link", name="Go home")).to_be_visible()
+
+
 @step("Inventory loads with every item")
 def inventory_loads(page):
-    page.goto(BASE)
+    page.goto(BASE + "/models/inventory")                   # a page's own address works directly
     expect(page.locator("tr.row").first).to_be_visible(timeout=15000)
     expect(page.locator("p.summary")).to_contain_text(f"{TOTAL} items")
     assert page.locator("tr.row").count() == TOTAL
@@ -129,11 +153,11 @@ def condition_low(page):
     expect(row.locator("td.hide-xs .badge.low")).to_be_visible()
     expect(row.locator("td.hide-xs .tag", has_text="On wishlist")).to_be_visible()
     # ...and its wishlist card says why: the bottle you own is nearly empty
-    page.get_by_role("tab", name="Wishlist").click()
+    go(page, "Wishlist")
     card = page.locator("article.wish-card", has_text="XF1 Flat Black")
     expect(card.locator(".badge.low")).to_have_text("You own 1 · Nearly empty")
     shot(page, "d04b_wishlist_nearly_empty", full=False)
-    page.get_by_role("tab", name="Inventory").click()
+    go(page, "Inventory")
     shot(page, "d04_needs_attention", full=False)
 
 
@@ -209,7 +233,7 @@ def add_to_wishlist(page):
 
 @step("Wishlist: tick, then move ticked into inventory")
 def wishlist_buy(page):
-    page.get_by_role("tab", name="Wishlist").click()
+    go(page, "Wishlist")
     card = page.locator("article.wish-card", has_text="XF2")
     expect(card).to_be_visible()
     shot(page, "d07_wishlist")
@@ -224,7 +248,7 @@ def wishlist_buy(page):
 
 @step("Bought item is in inventory with today's date; delete it")
 def delete_bought(page):
-    page.get_by_role("tab", name="Inventory").click()
+    go(page, "Inventory")
     page.locator("tr.row", has_text="XF2 Flat White").click()
     d = drawer(page)
     expect(d.get_by_label("Last bought from")).to_have_value("E2E shop")
@@ -256,7 +280,7 @@ def scan_unknown(page):
 
 @step("Models: shelf of shame, list and the Zero's checklist")
 def models(page):
-    page.get_by_role("tab", name="Models").click()
+    go(page, "Models")
     expect(page.locator(".model-card")).to_have_count(MODELS)
     expect(page.locator(".stat-grid")).to_contain_text("Shelf of shame")
     shot(page, "d09_models")
@@ -297,7 +321,7 @@ def add_model_hasegawa(page):
 
 @step("Undo after + in the list puts it back (and is in the history)")
 def undo(page):
-    page.get_by_role("tab", name="Inventory").click()
+    go(page, "Inventory")
     row = page.locator("tr.row", has_text="Acrylic XF1 Flat Black")
     row.get_by_role("button", name=re.compile("^Add one")).click()
     expect(row.locator(".qty span")).to_have_text("2")
@@ -312,15 +336,15 @@ def undo(page):
 
 @step("Item panel: + Add to wishlist button")
 def add_to_wishlist_button(page):
-    page.get_by_role("tab", name="Inventory").click()
+    go(page, "Inventory")
     page.locator("tr.row", has_text="Acrylic XF7 Flat Red").click()
     d = drawer(page)
     d.get_by_role("button", name="+ Add to wishlist").click()
     expect(d.locator(".wish-action")).to_contain_text("On wishlist")
     page.keyboard.press("Escape")
-    page.get_by_role("tab", name="Wishlist").click()
+    go(page, "Wishlist")
     expect(page.locator("article.wish-card", has_text="XF7 Flat Red")).to_be_visible()
-    page.get_by_role("tab", name="Inventory").click()
+    go(page, "Inventory")
 
 
 @step("Duplicate check while typing a name")
@@ -335,7 +359,7 @@ def duplicate_check(page):
 
 @step("Wishlist: total line and the side-panel form")
 def wishlist_panel(page):
-    page.get_by_role("tab", name="Wishlist").click()
+    go(page, "Wishlist")
     page.locator(".wish-head").get_by_role("button", name="+ Add").click()
     expect(drawer(page).locator(".drawer-head")).to_contain_text("Add to wishlist")
     shot(page, "d14_wishlist_panel")
@@ -344,7 +368,7 @@ def wishlist_panel(page):
 
 @step("Shop Tamiya: search the catalogue (search only, no tamiya.com fetch)")
 def shop_tamiya(page):
-    page.get_by_role("tab", name="Wishlist").click()
+    go(page, "Wishlist")
     page.get_by_role("button", name="Shop Tamiya").click()
     d = drawer(page)
     d.get_by_label("Search Tamiya").fill("panel line black")
@@ -359,7 +383,7 @@ def shop_tamiya(page):
 
 @step("Used the last one, not replacing it: remove from inventory and wishlist")
 def used_up(page):
-    page.get_by_role("tab", name="Inventory").click()
+    go(page, "Inventory")
     row = page.locator("tr.row", has_text="Acrylic XF71 Cockpit Green")
     row.get_by_role("button", name=re.compile("^Use one")).click()
     toast = page.locator(".toast")
@@ -373,29 +397,36 @@ def used_up(page):
     page.get_by_role("button", name="Yes, remove").click()
     expect(page.locator("p.alert", has_text="removed from your inventory")).to_be_visible()
     expect(page.locator("tr.row", has_text="XF71 Cockpit Green")).to_have_count(0)
-    page.get_by_role("tab", name="Wishlist").click()
+    go(page, "Wishlist")
     expect(page.locator("article.wish-card", has_text="XF71")).to_have_count(0)
-    page.get_by_role("tab", name="Inventory").click()
+    go(page, "Inventory")
 
 
 @step("Model: Search Scalemates link")
 def scalemates(page):
-    page.get_by_role("tab", name="Models").click()
+    go(page, "Models")
     page.locator(".model-card", has_text="Zero").click()
     link = drawer(page).get_by_role("link", name=re.compile("Search Scalemates"))
     expect(link).to_have_attribute("href", re.compile(r"scalemates\.com/search\.php\?q=Tamiya"))
     page.keyboard.press("Escape")
 
 
-@step("Desktop: page tabs in the nav bar, no bottom tab bar")
+@step("Desktop: sidebar with Home and the hobby's pages, no bottom tab bar")
 def desktop_tabs(page):
-    expect(page.get_by_role("tab", name="Colours")).to_be_visible()
+    sidebar = page.locator(".sidebar")
+    expect(sidebar).to_contain_text("Off the Clock")
+    expect(sidebar.get_by_role("link", name="Colours")).to_be_visible()
+    expect(sidebar).to_contain_text("Shelf of Shame")
     expect(page.locator(".tabbar")).to_be_hidden()
+    go(page, "Colours")
+    expect(sidebar.locator("a.active")).to_have_text("Colours")
+    expect(page).to_have_title(re.compile("Colours · Shelf of Shame"))
     expect(page.get_by_role("button", name="Scan a barcode")).to_be_visible()
 
 
 @step("Model Edit details opens, saves and stays saved")
 def model_edit(page):
+    go(page, "Models")
     page.locator(".model-card", has_text="P-40E").click()
     d = drawer(page)
     d.get_by_role("button", name="Edit details").click()
@@ -425,7 +456,7 @@ PIXEL = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQV
 
 
 def open_model(page, name):
-    page.get_by_role("tab", name="Models").click()
+    go(page, "Models")
     page.locator(".model-card", has_text=name).click()
     return drawer(page)
 
@@ -501,7 +532,7 @@ def stash(page):
 
 @step("Colours: a new mix, and a mix on a model's paint list")
 def mixes(page):
-    page.get_by_role("tab", name="Colours").click()
+    go(page, "Colours")
     page.get_by_role("button", name="+ New mix").click()
     page.get_by_label("Recipe").fill("XF-62 + XF-2 (3:1)")
     page.get_by_label("Name (optional)").fill("Faded olive drab")
@@ -521,7 +552,7 @@ def mixes(page):
 
 @step("Colours: find a match by name, and your own match")
 def matches(page):
-    page.get_by_role("tab", name="Colours").click()
+    go(page, "Colours")
     page.get_by_label("Find a colour match").fill("XF-62")
     page.locator(".pick-list button", has_text="Acrylic XF62 Olive Drab").click()
     found = page.locator(".find-match .matches")
@@ -538,7 +569,7 @@ def matches(page):
 
 @step("Item panel: used on (models) and colour matches")
 def used_on(page):
-    page.get_by_role("tab", name="Inventory").click()
+    go(page, "Inventory")
     page.locator("tr.row", has_text="Acrylic XF1 Flat Black").click()
     d = drawer(page)
     used = d.locator(".panel-section", has_text="Used on")
@@ -571,7 +602,7 @@ def gundam(page):
 
 @step("Bandai lookup: the box code fills name, grade and scale (cached - no hlj.com fetch)")
 def bandai_lookup(page):
-    page.get_by_role("tab", name="Models").click()
+    go(page, "Models")
     page.get_by_role("button", name="+ Add model").click()
     d = drawer(page)
     d.locator(".hobby-picker button", has_text="Gundam").click()
@@ -586,7 +617,7 @@ def bandai_lookup(page):
 
 @step("Warhammer: a box of 10 with its army, a new brand, minis painted; hobby filter")
 def warhammer(page):
-    page.get_by_role("tab", name="Models").click()
+    go(page, "Models")
     page.get_by_role("button", name="+ Add model").click()
     d = drawer(page)
     d.locator(".hobby-picker button", has_text="Warhammer").click()
@@ -635,10 +666,14 @@ def settings_more(page):
 @step("Phone: tab bar, nav bar, sheets, every page fits the screen")
 def phone(page):
     page.goto(BASE)
-    expect(page.locator("tr.row").first).to_be_visible(timeout=15000)
-    shot(page, "m01_inventory", full=False)
+    expect(page.locator(".home-stat").first).to_be_visible(timeout=15000)
+    shot(page, "m00_home", full=False)
     expect(page.locator(".tabbar")).to_be_visible()             # tabs at the bottom on phones
-    expect(page.locator(".navbar .tabs")).to_be_hidden()
+    expect(page.locator(".sidebar")).to_be_hidden()             # no sidebar
+    expect(page.locator(".tabbar a[aria-current=page]")).to_have_text("Home")
+    go(page, "Inventory")
+    expect(page.locator("tr.row").first).to_be_visible()
+    shot(page, "m01_inventory", full=False)
     expect(page.get_by_role("button", name="Scan a barcode")).to_be_visible()
     size = page.get_by_label("Search").evaluate("e => getComputedStyle(e).fontSize")
     assert size == "16px", f"search box font {size} (iPhone zooms in below 16px)"
@@ -649,13 +684,13 @@ def phone(page):
     shot(page, "m02_item_panel", full=False)
     page.keyboard.press("Escape")
     for name in ("Wishlist", "Models", "Colours", "Inventory"):
-        page.locator(".tabbar button", has_text=name).click()
-        expect(page.locator(".tabbar button[aria-current=page]")).to_have_text(name)
+        page.locator(".tabbar a", has_text=name).click()
+        expect(page.locator(".tabbar a[aria-current=page]")).to_have_text(name)
         page.wait_for_timeout(300)
         shot(page, f"m_{name.lower()}", full=False)
         width = page.evaluate("document.documentElement.scrollWidth")
         assert width <= 390, f"{name} is {width}px wide on a 390px phone"
-    page.locator(".tabbar button", has_text="Models").click()
+    page.locator(".tabbar a", has_text="Models").click()
     page.locator(".model-card", has_text="Zero").click()
     page.wait_for_timeout(400)
     shot(page, "m06_model_panel", full=False)
@@ -667,7 +702,7 @@ with sync_playwright() as p:
     browser = p.chromium.launch()
     desk = browser.new_page(viewport={"width": 1280, "height": 860})
     watch(desk, "desktop")
-    for fn in (inventory_loads, search, chip, groups, condition_low, plus_minus, notes, edit_details, settings,
+    for fn in (home, inventory_loads, search, chip, groups, condition_low, plus_minus, notes, edit_details, settings,
                add_lookup, add_to_wishlist, wishlist_buy, delete_bought, scan_owned, scan_unknown,
                models, model_paste, add_model_hasegawa, undo, add_to_wishlist_button, duplicate_check, wishlist_panel, shop_tamiya, used_up,
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,

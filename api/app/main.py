@@ -1,4 +1,7 @@
-"""Shelf of Shame API - the only thing that talks to PostgreSQL.
+"""Off the Clock API - the only thing that talks to PostgreSQL.
+
+The model-kit module ("Shelf of Shame") is everything below so far; more hobbies will follow
+(docs/ROADMAP.md).
 
 Interactive docs: http://localhost:8000/api/docs
 
@@ -17,7 +20,7 @@ from . import (build, catalog, colours, lookups, models, products, settings, spe
                wishlist)
 from .db import db
 
-app = FastAPI(title="Shelf of Shame API", docs_url="/api/docs", openapi_url="/api/openapi.json")
+app = FastAPI(title="Off the Clock API", docs_url="/api/docs", openapi_url="/api/openapi.json")
 
 for part in (supplies, wishlist, products, catalog, models, build, colours, spending, settings, lookups):
     app.include_router(part.router)

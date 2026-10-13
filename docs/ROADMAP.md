@@ -9,7 +9,7 @@ and parts".
 | Question | Decision |
 |---|---|
 | Journal editor | **Notion-style blocks** (type `/` for headings, to-dos, photos, quotes; drag blocks; `@` mentions). Planned library: BlockNote (open source, built on TipTap/ProseMirror). |
-| App name | **A new umbrella name** (still to choose). "Shelf of Shame" becomes the model-kit module's name. Internal names (containers, database, volume) stay as they are. |
+| App name | **Off the Clock** (chosen 2026-10-13). "Shelf of Shame" is the model-kit module's name. Internal names (containers, database, volume) stay as they are. |
 | First new modules | **Board games** and **Volleyball**, after the journal and calendar. Scuba diving, woodworking and pottery come later. |
 | Environments | **Dev and prod on this PC.** Done: see README "Dev and prod". |
 
@@ -72,7 +72,7 @@ Each phase is built and tested in the dev copy, then promoted (`promote.ps1`).
 | # | Phase | Notes |
 |---|---|---|
 | 0 | **Dev and prod** | DONE 2026-10-13: worktree, dev.ps1, promote.ps1, migrate.ps1, DEV badge |
-| 1 | **New UI shell** | Router, sidebar / tab bar, Home page, module manifest. Model kits moved in **unchanged** (same tests pass). Needs the new name. |
+| 1 | **New UI shell** | DONE 2026-10-13 (in dev): React Router, sidebar / tab bar, Home page, module manifest (web/src/modules). Model kits moved in unchanged. |
 | 2 | **Journal** | Pages, BlockNote editor, photos, tags, @mentions of models / supplies; search |
 | 3 | **Calendar** | Month / week / list views; planned events; past activity from every module |
 | 4 | **Board games** | Collection (with an unplayed "shelf of shame"), plays (players, scores, winner) |

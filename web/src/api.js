@@ -39,6 +39,7 @@ export const api = {
   deleteSupply: (id, alsoWishlist = false) =>
     request(`/supplies/${id}${alsoWishlist ? '?also_wishlist=true' : ''}`, send('DELETE')),
   supplyHistory: (id, limit = 20) => request(`/supplies/${id}/history?limit=${limit}`),
+  recentHistory: (limit = 50) => request(`/history?limit=${limit}`),
   addSupplyToWishlist: (id) => request(`/supplies/${id}/wishlist`, send('POST')),
 
   // Wishlist

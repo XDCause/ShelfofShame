@@ -1,6 +1,8 @@
-# Shelf of Shame - project notes for Claude
+# Off the Clock - project notes for Claude
 
-**Project name: "Shelf of Shame"** (renamed from "Hobby Inventory" on 2026-10-11).
+**App name: "Off the Clock"** (2026-10-13), a hobby hub with a module per hobby. **"Shelf of Shame"**
+is now the name of the model-kit module (it was the app's name 2026-10-11 to 10-13; before that
+"Hobby Inventory").
 GitHub: https://github.com/XDCause/ShelfofShame (PUBLIC - never commit .env, backups, or
 copied third-party pages). The user-visible name changed (app title, docs, API title,
 scraper User-Agents); internal names were deliberately KEPT to avoid migrating data: folder
@@ -475,6 +477,26 @@ DBeaver, psql, and the one-off import script.
    - The Windows firewall rule only opens 8080, so phones can't reach dev on 8081 unless another
      rule is added (not done).
    - Tests: 197 API, 41 browser steps, run in both copies.
+3u. **Phase 1: new UI shell, "Off the Clock"** - DONE in dev (2026-10-13). User picked the name.
+   - React Router 7.6.2 (`react-router`, BrowserRouter in main.jsx; nginx already falls back to
+     index.html). Addresses: `/` Home, `/models/inventory|wishlist|kits|colours`, `/models` ->
+     inventory, anything else = "There's no page here" + Go home.
+   - `web/src/modules/index.js` = MODULES registry; `modules/models/manifest.jsx` (id, name "Shelf
+     of Shame", what, Icon, HomeCard, pages [{path, label, Icon, render(app)}]). The view
+     components stay in web/src/components for now (not moved).
+   - `core/app-context.js` (AppContext: lookups, settings, refreshKey, changed, openItem,
+     openModel, openAdd, adjusted, showToast), `core/Home.jsx` (date, greeting, each module's
+     HomeCard), `core/Navigation.jsx` (Sidebar: brand, Home, "Hobbies", module + its pages;
+     TabBar on phones: Home + the current module's pages).
+   - `modules/models/ModelsHome.jsx`: 4 stat tiles (links: Needs attention, To buy, Shelf of shame,
+     Time building), "Building now" (In progress kits, opens the panel), latest 5 stock changes
+     (GET /api/history?limit=5).
+   - Layout CSS: `.app` grid (sidebar 236px | main-col); 701-1000px icons-only sidebar (64px);
+     <=700px no sidebar, `.tabbar a` (NavLink aria-current). The nav bar title = page label with
+     the module name above it (`.nav-context`); document.title "Inventory · Shelf of Shame",
+     "[DEV] ..." in dev. Panels, toast, timer banner, Scan + Settings unchanged.
+   - e2e: `go(page, name)` clicks the nav link (sidebar or tab bar); new Home step; phone step uses
+     `.tabbar a`. 197 API tests, 42 browser steps (dev).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

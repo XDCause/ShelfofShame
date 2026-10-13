@@ -77,7 +77,7 @@ Fine on a home network with one user; not fine for a hosted app.
 | What | Status |
 |---|---|
 | **Third-party trademarks in the app**: Tamiya, Hasegawa, Bandai, Gundam, Gunpla, Warhammer, Citadel, Games Workshop, HobbyLink Japan, Scalemates, Mr. Hobby | **OK** for naming products you own. Commercially: no logos, no wording that implies endorsement, and a "not affiliated with..." line. Games Workshop in particular has strict IP guidelines; read them before shipping anything Warhammer-branded. Gundam is owned by Sotsu/Sunrise (Bandai Namco). |
-| **App name "Shelf of Shame"** | **Check** that no one else uses it as a trademark for a similar product, in the countries you'd sell in. |
+| **App name "Off the Clock"** (and the module name "Shelf of Shame") | **Check** that no one else uses them as trademarks for similar products, in the countries you'd sell in. "Off the Clock" is a common phrase, so it's likely used by other apps and businesses. |
 | **Apple-style design** (Human Interface Guidelines look) | **OK.** It uses the device's own system font (no Apple font files) and our own icons in `web/src/components/icons.jsx`, drawn "in the spirit of" SF Symbols, not copied. Don't add Apple's SF Symbols or SF Pro font files, or Apple's logos or product images. |
 
 ## 5. Open-source libraries
@@ -87,7 +87,7 @@ their licence notices:
 
 | Library | Licence | Note |
 |---|---|---|
-| React, React DOM | MIT | |
+| React, React DOM, React Router | MIT | |
 | @zxing/library (barcode reading) | Apache-2.0 | Distribute its licence and any NOTICE file. |
 | FastAPI, uvicorn, httpx, Beautiful Soup | MIT / BSD | |
 | psycopg 3 | LGPL-3.0 | Fine to use as a library unmodified. If you change psycopg itself and distribute it, those changes must be shared. |
