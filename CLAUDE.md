@@ -694,6 +694,10 @@ DBeaver, psql, and the one-off import script.
      the keyboard (user tested both). A "pen box" (plain textarea) was built for Chrome, then
      removed once Samsung Internet worked - nothing to build. Converting handwriting ON A CANVAS:
      later, with AI on this PC (docs/ROADMAP.md 5c).
+   - Writing mode: JournalPage "Full screen" (notes pages) adds body.writing-mode (hides sidebar /
+     navbar / tabbar, wide page, 1.45rem lines, 40dvh blank space below) + requestFullscreen; leaving
+     browser full screen or Esc ends it. @media (pointer: coarse): bigger journal lines anyway.
+     57 browser steps (writing_mode).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

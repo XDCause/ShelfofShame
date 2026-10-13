@@ -37,6 +37,8 @@ have five tabs: Home, Journal, Calendar, Supplies (with the wishlist) and Hobbie
 - **Handwriting into text** on a Samsung tablet: use **Samsung Internet** (not Chrome) with S Pen to
   text turned on (Settings > Advanced features > S Pen): write with the pen straight onto a journal
   page and it becomes typed text. In Chrome the S Pen only brings up the keyboard.
+  A page's **Full screen** button gives a big writing page: no sidebar or bars, big lines, room to
+  write below the last line (Exit full screen, Esc or the back gesture to leave).
 - **Journal -> actions**: write "Just bought @Sherman and started it right away" and the page
   offers "Sherman: Mark as In progress?" (Yes / Not now); "primed @Zero" offers the build step;
   "I want to buy new @XF-10 for a new project" offers "Add to wishlist?".
