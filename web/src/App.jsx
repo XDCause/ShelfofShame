@@ -1,35 +1,53 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, Navigate, Route, Routes, useLocation } from 'react-router'
+import { Link, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router'
 import { api } from './api.js'
 import { readBarcode } from './barcode.js'
 import AddPanel from './components/AddPanel.jsx'
 import Elapsed from './components/Elapsed.jsx'
 import { GearIcon, ScanIcon, TimerIcon } from './components/icons.jsx'
+import InventoryView from './components/InventoryView.jsx'
 import ItemPanel from './components/ItemPanel.jsx'
 import ModelPanel from './components/ModelPanel.jsx'
+import Notice from './components/Notice.jsx'
 import SettingsPanel from './components/SettingsPanel.jsx'
+import WishlistView from './components/WishlistView.jsx'
 import { AppContext } from './core/app-context.js'
+import CalendarPage from './core/calendar/CalendarPage.jsx'
+import EventPanel from './core/calendar/EventPanel.jsx'
 import GlobalSearch from './core/GlobalSearch.jsx'
+import HobbiesPage from './core/HobbiesPage.jsx'
 import Home from './core/Home.jsx'
 import JournalList from './core/journal/JournalList.jsx'
 import JournalPage from './core/journal/JournalPage.jsx'
-import { corePageFor, ModuleTabs, Sidebar, TabBar } from './core/Navigation.jsx'
-import { MODULES, moduleFor, pageFor } from './modules/index.js'
+import { corePageFor, SectionTabs, Sidebar, TabBar } from './core/Navigation.jsx'
+import { MODULE_PANELS, MODULES, moduleFor, pageFor } from './modules/index.js'
 
 const APP_NAME = 'Off the Clock'
 
-// Off the Clock: the core pages (Home, Journal at /journal), then a module per hobby
-// (modules/index.js), each with its own pages at /<module>/<page>. Sidebar on wide screens, tab
-// bar on phones (core/Navigation.jsx).
+// Off the Clock: the core pages (Home, Journal, Calendar, and the hobby supplies and wishlist that
+// every hobby shares), then a module per hobby (modules/index.js) with its own pages at
+// /<module>/<page>. Sidebar on wide screens, tab bar on phones (core/Navigation.jsx).
 // Panels slide over any page:
 //   item      one supply: stock, condition, used on, colour matches, photo, history, details
 //   add       add a supply (scan or type a code first), to inventory or the wishlist
 //   model     one kit: status, timer, paint checklist, build log - or adding a new one
 //   settings  spending, price guide, default shop, backups, export, catalogue, lists
+//   event     a calendar event
+//   ...and each module's own (a board game, a play, a volleyball game, gear, a video).
 // Also here: the Undo bar after any -/+, the running-timer banner, and Scan in the nav bar.
+
+// Panels opened by type with openPanel(type, props).
+const PANELS = { event: EventPanel, ...MODULE_PANELS }
+
+// Old addresses from before supplies moved out of the models hobby keep working.
+function MovedTo({ to }) {
+  const { search } = useLocation()
+  return <Navigate to={`${to}${search}`} replace />
+}
 export default function App() {
   const { pathname } = useLocation()
-  const [panel, setPanel] = useState(null) // {type: 'item', id} | {type: 'add', scan} | {type: 'model', id} | {type: 'settings'}
+  const navigate = useNavigate()
+  const [panel, setPanel] = useState(null) // {type: 'item', id} | {type: 'add', scan} | {type: 'model', id} | {type: 'settings'} | {type: <PANELS>, ...props}
   const [lookups, setLookups] = useState(null)
   const [settings, setSettings] = useState({ default_shop: 'Hobbyrama' })
   const [error, setError] = useState('')
@@ -60,6 +78,7 @@ export default function App() {
   const openModel = useCallback((id) => setPanel({ type: 'model', id }), [])
   const openItem = useCallback((id) => setPanel({ type: 'item', id }), [])
   const show = (type, text) => setFlash({ type, text })
+  const clearFlash = useCallback(() => setFlash(null), [])
 
   const showToast = useCallback((text, ...actions) => {
     clearTimeout(toastTimer.current)
@@ -102,15 +121,25 @@ export default function App() {
 
   // What every page and module can use (core/app-context.js).
   const openAdd = useCallback((scan) => setPanel({ type: 'add', scan }), [])
+  const openPanel = useCallback((type, props = {}) => setPanel({ ...props, type }), [])
+  // Open whatever a search result, @mention, activity row or calendar entry points at.
+  const openThing = useCallback((kind, id) => {
+    if (kind === 'model') openModel(id)
+    else if (kind === 'supply') openItem(id)
+    else if (kind === 'page') navigate(`/journal/${id}`)
+    else if (kind === 'game') openPanel('boardgame', { id })
+    else if (kind === 'volleyball') openPanel('volleyball', { id })
+    else if (kind === 'gear') openPanel('gear', { id })
+  }, [openModel, openItem, navigate, openPanel])
   const app = useMemo(() => ({
-    lookups, settings, refreshKey, changed, openItem, openModel, openAdd, adjusted, showToast,
-  }), [lookups, settings, refreshKey, changed, openItem, openModel, openAdd, adjusted, showToast])
+    lookups, settings, refreshKey, changed, openItem, openModel, openAdd, openPanel, openThing, adjusted, showToast,
+  }), [lookups, settings, refreshKey, changed, openItem, openModel, openAdd, openPanel, openThing, adjusted, showToast])
 
-  // Where we are: "Inventory" in "Shelf of Shame", the Journal, or Home.
+  // Where we are: "Kits" in "Models", the Journal, or Home.
   const module = moduleFor(pathname)
   const page = pageFor(pathname)
   const core = corePageFor(pathname)
-  const title = page ? page.label : core ? (core.path === '/' ? APP_NAME : core.label) : 'Not found'
+  const title = module ? module.name : core ? (core.path === '/' ? APP_NAME : core.title ?? core.label) : 'Not found'
   useEffect(() => {
     const name = page ? `${page.label} · ${module.name}` : core && core.path !== '/' ? `${core.label} · ${APP_NAME}` : APP_NAME
     document.title = appEnv === 'prod' ? name : `[${appEnv.toUpperCase()}] ${name}`
@@ -125,7 +154,6 @@ export default function App() {
           <header className="navbar">
             <div className="navbar-row">
               <h1>
-                {module && <span className="nav-context">{module.name}</span>}
                 {title}{envBadge}
               </h1>
               {lookups && <GlobalSearch />}
@@ -152,18 +180,24 @@ export default function App() {
             )}
             {error && <p className="alert error">{error}</p>}
             {flash && (
-              <p className={`alert ${flash.type}`} role="status">
-                {flash.text} <button className="plain" onClick={() => setFlash(null)}>Dismiss</button>
-              </p>
+              <Notice type={flash.type} onClose={clearFlash}>{flash.text}</Notice>
             )}
 
-            <ModuleTabs />
-          <main>
+            <SectionTabs />
+            <main>
               {!lookups ? (!error && <p className="muted loading">Loading...</p>) : (
                 <Routes>
                   <Route path="/" element={<Home />} />
-              <Route path="/journal" element={<JournalList />} />
-              <Route path="/journal/:id" element={<JournalPage />} />
+                  <Route path="/journal" element={<JournalList />} />
+                  <Route path="/journal/:id" element={<JournalPage />} />
+                  <Route path="/calendar" element={<CalendarPage />} />
+                  <Route path="/supplies" element={<InventoryView lookups={lookups} refreshKey={refreshKey}
+                    onAdjusted={adjusted} onOpen={openItem} onAdd={openAdd} />} />
+                  <Route path="/wishlist" element={<WishlistView lookups={lookups} settings={settings}
+                    refreshKey={refreshKey} onChanged={changed} />} />
+                  <Route path="/hobbies" element={<HobbiesPage />} />
+                  <Route path="/models/inventory" element={<MovedTo to="/supplies" />} />
+                  <Route path="/models/wishlist" element={<MovedTo to="/wishlist" />} />
                   {MODULES.map((m) => (
                     <Route key={m.id} path={m.id}>
                       <Route index element={<Navigate to={m.pages[0].path} replace />} />
@@ -207,6 +241,7 @@ export default function App() {
           <SettingsPanel lookups={lookups} settings={settings} onClose={close}
             onSettings={setSettings} onListsChanged={loadLookups} />
         )}
+        {lookups && PANELS[panel?.type] && <ModulePanel panel={panel} onClose={close} />}
 
         {toast && (
           <div className="toast" role="status" aria-live="polite">
@@ -250,4 +285,10 @@ function ScanButtonNav({ onBarcode, onUnreadable, onError }) {
       </button>
     </>
   )
+}
+
+// A panel from PANELS (an event, a board game...): `panel` is {type, ...its props}.
+function ModulePanel({ panel: { type, ...props }, onClose }) {
+  const Panel = PANELS[type]
+  return <Panel key={`${type}-${props.id ?? 'new'}-${props.day ?? ''}`} {...props} onClose={onClose} />
 }

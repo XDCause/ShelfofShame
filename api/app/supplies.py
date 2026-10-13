@@ -209,6 +209,21 @@ def add_supply_to_wishlist(supply_id: int):
         return {**fetch_supply(conn, supply_id), "wish_id": added[0]["wish_id"]}
 
 
+@router.delete("/supplies/{supply_id}/wishlist")
+def remove_supply_from_wishlist(supply_id: int):
+    """The item panel's "On wishlist ✕": take it back off the wishlist (unless it's already
+    ticked as bought - then it's on its way into the inventory)."""
+    with db() as conn:
+        fetch_supply(conn, supply_id)
+        gone = conn.execute(f"""
+            DELETE FROM wishlist w USING supplies s
+            WHERE s.supply_id = %s AND NOT w.got_it AND {ON_WISHLIST_MATCH}
+            RETURNING w.wish_id""", (supply_id,)).fetchall()
+        if not gone:
+            raise HTTPException(409, "It's not on your wishlist, or it's already ticked as bought.")
+        return fetch_supply(conn, supply_id)
+
+
 @router.delete("/supplies/{supply_id}", status_code=204)
 def delete_supply(supply_id: int, also_wishlist: bool = False):
     """Remove an item from the inventory (e.g. used up and not replacing it). The stock history

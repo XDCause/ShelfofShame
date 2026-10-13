@@ -76,9 +76,10 @@ Each phase is built and tested in the dev copy, then promoted (`promote.ps1`).
 | 2 | **Journal** | DONE 2026-10-13 (in dev): pages, BlockNote editor, photos, tags, @mentions of models / supplies / pages, search, "In the journal" on panels |
 | 2b | **Journal actions + to-dos** | DONE 2026-10-13 (in dev): suggestions from what a page says ("bought ... started @Sherman" -> In progress), to-dos from check lists, margin fixes |
 | 2c | **A more creative look** | DONE 2026-10-13 (in dev), from two reference designs: navy dark theme + theme switch, hero, stat tiles, activity feed, quick actions, running low, top-bar search, journal cards; journal "Add to wishlist" suggestions |
-| 3 | **Calendar** | Month / week / list views; planned events; past activity from every module |
-| 4 | **Board games** | Collection (with an unplayed "shelf of shame"), plays (players, scores, winner) |
-| 5 | **Volleyball** | Games and training: team, opponent, result, sets, your stats, notes |
+| 2d | **Supplies move to the core** | DONE 2026-10-13 (in dev): Supplies + Wishlist beside Home / Journal / Calendar; Models is a hobby (Kits, Colours); phone tabs Home, Journal, Calendar, Supplies, Hobbies |
+| 3 | **Calendar** | DONE 2026-10-13 (in dev): month view, events (weekly / fortnightly, skip a day), what happened each day, Coming up on Home. Later: week / list views, dated to-dos |
+| 4 | **Board games** | DONE 2026-10-13 (in dev): collection, plays, photos, journal "Log a play". Later: scores per player, BoardGameGeek lookup |
+| 5 | **Volleyball** | DONE 2026-10-13 (in dev): games / training with sets, gear, video links, calendar "Log the result". Later: your own stats per game |
 | 6+ | Scuba, woodworking, pottery... | One module at a time |
 
 ## Before going public

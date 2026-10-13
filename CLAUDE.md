@@ -587,6 +587,39 @@ DBeaver, psql, and the one-off import script.
      shrink below a long one-line title and widened the page).
    - e2e: inventory search is `get_by_label("Search", exact=True)` (the top bar has "Search
      everything"); new steps global_search, journal_wishlist, appearance. 221 API tests, 50 steps.
+3y. **Change log round + structure + Calendar, Board games, Volleyball** - DONE in dev (2026-10-13).
+   Still NOT promoted (user reviews dev first).
+   - Item panel: "On wishlist ✓ ✕" takes it off (DELETE /api/supplies/{id}/wishlist, 409 if not on it
+     or ticked); photo buttons behind a "Photo options" drop-down, barcode stays visible.
+   - ScanButton is now one "Use barcode" button offering "Scan with camera" / "Type the number".
+   - Wishlist: per-card "Bought" removed - tick, then the bar's "Add N to inventory" (no confirm).
+     Header is just "+ Add"; the add panel (WishForm) starts with CatalogSearch (was ShopPanel)
+     + Use barcode + the form. /wishlist?add=1 opens it (Home's Wishlist action). Page messages
+     use components/Notice.jsx (✕ to close; ok ones fade after 8 s).
+   - Build steps: modules/models/steps.jsx buildProgress(): an In progress kit's next step is
+     "underway" (half-filled dot, striped segment, "Now: Priming"; text "Priming · step 2 of 5").
+   - Structure: core pages Home, Journal, Calendar, Supplies (/supplies, title "Hobby supplies"),
+     Wishlist (/wishlist); /models/inventory and /models/wishlist redirect. Modules: models (Kits,
+     Colours), boardgames (Games, Plays), volleyball (Games, Gear, Videos). Sidebar = core + one
+     link per hobby; a hobby's pages are SectionTabs on every width. Phone tabs: Home, Journal,
+     Calendar, Supplies (Supplies | Wishlist tabs), Hobbies (/hobbies page with each hobby's tiles).
+     Manifest: home {Tiles, Cards}, actions (Home quick actions), panels {type: Component};
+     App opens them with openPanel(type, props); openThing(kind, id) opens any activity / search /
+     mention target. core/Stat.jsx, core/SuppliesHome.jsx (supplies tiles + Running low),
+     core/activityKinds.js, components/RecordFields.jsx (field specs -> form + payload; RowPhoto).
+   - DB: 20_calendar.sql (calendar_events: repeats never/weekly/fortnightly, repeat_until,
+     skipped DATE[]), 21_board_games.sql (board_games with photo columns, board_game_plays),
+     22_volleyball.sql (gear with hobby column for later modules, volleyball_games with event_id,
+     volleyball_videos = links only). journal_links kinds + 'game', 'gear'.
+   - API: calendar.py (days_of expands repeats; /calendar returns events + activity.rows for the
+     range; logged_id per volleyball occurrence), boardgames.py, volleyball.py,
+     images.add_photo_routes (photo on the row), db.tidy_text. activity.py now returns `day` and
+     `photo_url` (not product_info_id) and has `until`; journal pages sit on their entry_date.
+     Journal: "played @Catan" -> "Log a play" (PLAY_WORDS, key game:<id>:play:<date>).
+   - Gotcha: the Bash tool chokes on some heredocs with quotes/backslashes - write a .py file with
+     the Write tool in the scratchpad and run it instead. NavLink sets its own aria-current (the
+     phone tab bar uses Link to mark Supplies active on /wishlist).
+   - Tests: 239 API, 54 browser steps.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

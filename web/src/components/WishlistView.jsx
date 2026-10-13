@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { api, imageUrl, money } from '../api.js'
+import Notice from './Notice.jsx'
 import OwnedBadge from './OwnedBadge.jsx'
-import ScanButton from './ScanButton.jsx'
-import ShopPanel from './ShopPanel.jsx'
 import WishForm from './WishForm.jsx'
 
 const SHOP_KEY = 'hobby-inventory.lastShop'
@@ -14,32 +13,29 @@ const saveShop = (shop) => {
   try { localStorage.setItem(SHOP_KEY, shop) } catch { /* private window etc. - not important */ }
 }
 
-// The shopping list. Built for a phone in the shop: big photos, tap a card to tick it off,
-// then move everything ticked into inventory in one go. Adding/editing opens a side panel.
+// The shopping list. Built for a phone in the shop: big photos, tap a card to tick it off as you
+// put it in the basket, then "Add N to inventory" moves everything ticked across in one go (that's
+// the only way to buy - one item is just one tick). "+ Add" opens a side panel that searches
+// Tamiya, reads a barcode or takes the details by hand.
 export default function WishlistView({ lookups, settings, refreshKey, onChanged }) {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [show, setShow] = useState('all')
   const [formFor, setFormFor] = useState(undefined) // undefined = closed, null = new, object = editing
   const [shop, setShop] = useState(() => readShop() || settings.default_shop || '')
-  const [confirmBuy, setConfirmBuy] = useState(false)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState(null)
   const [scanned, setScanned] = useState(null) // {result, photo} -> form pre-filled
   const [params, setParams] = useSearchParams()
-  const [shopping, setShopping] = useState(() => params.get('shop') === '1') // Shop Tamiya open (?shop=1 from Home)
 
   const openForm = (wish, scan = null) => {
     setScanned(scan)
     setFormFor(wish)
+    if (wish === undefined && params.has('add')) setParams({}, { replace: true })
   }
-
-  // Barcode -> API -> open the form with whatever the API recognised.
-  const onBarcode = async (barcode, photo) => {
-    setMessage(null)
-    const result = await api.scan(barcode)
-    openForm(null, { result, photo })
-  }
+  // /wishlist?add=1 (Home's "Shop Tamiya") opens the add panel straight away.
+  useEffect(() => { if (params.get('add') === '1') setFormFor(null) }, [params])
+  const clearMessage = useCallback(() => setMessage(null), [])
 
   const load = useCallback(() => {
     return api.listWishlist()
@@ -90,7 +86,6 @@ export default function WishlistView({ lookups, settings, refreshKey, onChanged 
     try {
       const results = [].concat(await promise)
       setMessage({ type: 'ok', text: `Added to inventory: ${describe(results)}.` })
-      setConfirmBuy(false)
       await load()
       onChanged()
     } catch (e) {
@@ -123,22 +118,11 @@ export default function WishlistView({ lookups, settings, refreshKey, onChanged 
           ))}
         </div>
         <div className="head-buttons">
-          <button className="primary" onClick={() => setShopping(true)}>Shop Tamiya</button>
-          <ScanButton onBarcode={onBarcode} className="secondary" />
-          <button className="secondary" onClick={() => openForm(null)}>+ Add</button>
+          <button className="primary" onClick={() => openForm(null)}>+ Add</button>
         </div>
       </div>
 
-      {shopping && (
-        <ShopPanel onClose={() => { setShopping(false); if (params.has('shop')) setParams({}, { replace: true }) }}
-          onAdded={(p) => {
-            setMessage({ type: 'ok', text: `${p.name} added to your wishlist.` })
-            load()
-            setTimeout(load, 10000) // the photo and size arrive from tamiya.com in the background
-          }} />
-      )}
-
-      {message && <p className={`alert ${message.type}`} role="status">{message.text}</p>}
+      {message && <Notice type={message.type} onClose={clearMessage}>{message.text}</Notice>}
 
       {formFor !== undefined && (
         <WishForm
@@ -147,6 +131,10 @@ export default function WishlistView({ lookups, settings, refreshKey, onChanged 
           scanned={scanned}
           lookups={lookups}
           onCancel={() => openForm(undefined)}
+          onCatalogAdded={() => {
+            load()
+            setTimeout(load, 10000) // the photo and size arrive from tamiya.com in the background
+          }}
           onSaved={(saved, problems = []) => {
             openForm(undefined)
             setMessage(problems.length
@@ -173,8 +161,6 @@ export default function WishlistView({ lookups, settings, refreshKey, onChanged 
             onToggle={() => toggle(w)}
             onEdit={() => openForm(w)}
             onRemove={() => remove(w)}
-            onBuy={() => finishBuying(api.buyWish(w.wish_id, shop))}
-            busy={busy}
           />
         ))}
       </div>
@@ -191,25 +177,16 @@ export default function WishlistView({ lookups, settings, refreshKey, onChanged 
             placeholder="Shop (e.g. Hobbyrama)"
             aria-label="Bought from"
           />
-          {!confirmBuy ? (
-            <button className="primary" onClick={() => setConfirmBuy(true)} disabled={busy}>
-              Add to inventory
-            </button>
-          ) : (
-            <span className="confirm-buy">
-              <button className="primary" onClick={() => finishBuying(api.buyTicked(shop))} disabled={busy}>
-                {busy ? 'Adding...' : `Yes, add ${ticked.length}`}
-              </button>
-              <button className="plain" onClick={() => setConfirmBuy(false)}>Cancel</button>
-            </span>
-          )}
+          <button className="primary" onClick={() => finishBuying(api.buyTicked(shop))} disabled={busy}>
+            {busy ? 'Adding...' : `Add ${ticked.length} to inventory`}
+          </button>
         </div>
       )}
     </section>
   )
 }
 
-function WishCard({ wish, onToggle, onEdit, onRemove, onBuy, busy }) {
+function WishCard({ wish, onToggle, onEdit, onRemove }) {
   const [confirmRemove, setConfirmRemove] = useState(false)
   const stop = (fn) => (e) => {
     e.stopPropagation()
@@ -257,9 +234,6 @@ function WishCard({ wish, onToggle, onEdit, onRemove, onBuy, busy }) {
       <div className="wish-actions" onClick={(e) => e.stopPropagation()}>
         {!confirmRemove ? (
           <>
-            <button className="plain" onClick={stop(onBuy)} disabled={busy} title="Add to inventory now">
-              Bought
-            </button>
             <button className="plain" onClick={stop(onEdit)}>Edit</button>
             <button className="plain destructive" onClick={stop(() => setConfirmRemove(true))}>Remove</button>
           </>

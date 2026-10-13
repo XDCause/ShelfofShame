@@ -1,13 +1,15 @@
 import { useRef, useState } from 'react'
 import { readBarcode } from '../barcode.js'
 
-// "Scan barcode" for any page: opens the phone camera, reads the barcode on the phone itself,
-// and if the photo can't be read, offers a box to type the number instead.
+// "Use barcode" for any page. One button that offers the two ways in:
+//   Scan with camera   opens the phone camera; the barcode is read on the phone itself
+//   Type the number    a box for the digits under the bars
+// If a photo can't be read, the typing box opens with a hint.
 // onBarcode(barcode, photo) does whatever the page needs (it may be async; errors it throws
 // are shown here). `photo` is the picture taken, or null when the number was typed.
-export default function ScanButton({ onBarcode, label = 'Scan barcode', className = 'primary' }) {
+export default function ScanButton({ onBarcode, label = 'Use barcode', className = 'secondary' }) {
   const input = useRef(null)
-  const [status, setStatus] = useState('') // '' | 'reading' | 'busy' | 'failed'
+  const [status, setStatus] = useState('') // '' | 'choose' | 'reading' | 'busy' | 'typing'
   const [photo, setPhoto] = useState(null)
   const [typed, setTyped] = useState('')
   const [error, setError] = useState('')
@@ -23,7 +25,7 @@ export default function ScanButton({ onBarcode, label = 'Scan barcode', classNam
     } catch (e) {
       setPhoto(file)
       setError(e.message)
-      setStatus('failed')
+      setStatus('typing')
     }
   }
 
@@ -42,7 +44,7 @@ export default function ScanButton({ onBarcode, label = 'Scan barcode', classNam
     if (barcode) return handle(barcode, file)
     setPhoto(file)
     setError("Couldn't find a barcode in that photo. Try closer, square-on and in good light, or type the number under the bars.")
-    setStatus('failed')
+    setStatus('typing')
   }
 
   const cancel = () => {
@@ -51,19 +53,25 @@ export default function ScanButton({ onBarcode, label = 'Scan barcode', classNam
     setError('')
   }
 
+  const working = status === 'reading' || status === 'busy'
   return (
     <div className="scan-control">
       {/* capture="environment" = open the back camera straight away on phones */}
       <input ref={input} type="file" accept="image/*" capture="environment" onChange={onPhoto} hidden />
-      <button type="button" className={className} onClick={() => input.current.click()}
-        disabled={status === 'reading' || status === 'busy'}>
-        {status === 'reading' ? 'Reading barcode...' : status === 'busy' ? 'Looking up...' : label}
-      </button>
-      {status !== 'failed' && (
-        <button type="button" className="plain" onClick={() => setStatus('failed')}>Type a barcode</button>
+      {status !== 'typing' && (
+        <button type="button" className={className} aria-expanded={status === 'choose'} disabled={working}
+          onClick={() => setStatus(status === 'choose' ? '' : 'choose')}>
+          {status === 'reading' ? 'Reading barcode...' : status === 'busy' ? 'Looking up...' : label}
+        </button>
+      )}
+      {status === 'choose' && (
+        <span className="scan-choices" role="group" aria-label="Use barcode">
+          <button type="button" className="plain" onClick={() => input.current.click()}>Scan with camera</button>
+          <button type="button" className="plain" onClick={() => setStatus('typing')}>Type the number</button>
+        </span>
       )}
 
-      {status === 'failed' && (
+      {status === 'typing' && (
         <div className="scan-panel">
           {error && <p className="alert low small">{error}</p>}
           {/* A div, not a <form>: this control is also used inside the supply form, and forms

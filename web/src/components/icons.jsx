@@ -44,3 +44,33 @@ export const BoltIcon = (p) => <Icon {...p}><path d="M13 3 5 13.5h6L10.5 21 19 1
 export const SearchIcon = (p) => <Icon {...p}><circle cx="11" cy="11" r="6.5" /><path d="m20 20-4.2-4.2" /></Icon>
 export const CloseIcon = (p) => <Icon {...p}><path d="M6 6l12 12M18 6 6 18" /></Icon>
 export const ChevronIcon = (p) => <Icon {...p}><path d="m9 6 6 6-6 6" /></Icon>
+export const CalendarIcon = (p) => (
+  <Icon {...p}><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" /><path d="M3.5 10h17M8 3v4M16 3v4" />
+    <path d="M8 14h.01M12 14h.01M16 14h.01M8 17.5h.01M12 17.5h.01" /></Icon>
+)
+export const DiceIcon = (p) => (
+  <Icon {...p}><rect x="3.5" y="3.5" width="17" height="17" rx="3.5" />
+    <circle cx="8.5" cy="8.5" r="1" fill="currentColor" /><circle cx="15.5" cy="15.5" r="1" fill="currentColor" />
+    <circle cx="12" cy="12" r="1" fill="currentColor" /><circle cx="15.5" cy="8.5" r="1" fill="currentColor" />
+    <circle cx="8.5" cy="15.5" r="1" fill="currentColor" /></Icon>
+)
+export const BallIcon = (p) => (
+  <Icon {...p}><circle cx="12" cy="12" r="8.5" /><path d="M12 3.5c-1.5 3.5-1.2 7 1 8.5s6.3 1.5 7.4-.5" />
+    <path d="M5 7.2c3.3.2 6.2 1.8 7 4.8M12 12c-1.8 2.7-5.2 4.3-8.2 4.1M13 20.4c-.4-3.3.6-6.7 3-8.4" /></Icon>
+)
+export const GridIcon = (p) => (
+  <Icon {...p}><rect x="3.5" y="3.5" width="7" height="7" rx="2" /><rect x="13.5" y="3.5" width="7" height="7" rx="2" />
+    <rect x="3.5" y="13.5" width="7" height="7" rx="2" /><rect x="13.5" y="13.5" width="7" height="7" rx="2" /></Icon>
+)
+export const VideoIcon = (p) => (
+  <Icon {...p}><rect x="3" y="6" width="13" height="12" rx="2.5" /><path d="m16 10.5 5-3v9l-5-3" /></Icon>
+)
+export const ShoeIcon = (p) => (
+  <Icon {...p}><path d="M3 16.5V9.5l4.5-3 2 3.5c1.5 1.3 4 1.8 6 2.3 3 .7 5.5 1.8 5.5 4.2v.5H3z" />
+    <path d="M3 19.5h18M9.5 10l1.5-1M11.5 11.3 13 10.2" /></Icon>
+)
+export const TrophyIcon = (p) => (
+  <Icon {...p}><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4.5v1.5A3 3 0 0 0 8 10.4M16 6h3.5v1.5a3 3 0 0 1-3.5 2.9" />
+    <path d="M12 13v4M8.5 20.5h7M9.5 17h5v3.5h-5z" /></Icon>
+)
+export const PlusIcon = (p) => <Icon {...p}><path d="M12 5v14M5 12h14" /></Icon>

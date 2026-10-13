@@ -68,6 +68,17 @@ export default function ItemPanel({ supplyId, lookups, reloadKey, onClose, onCha
     }
   }
 
+  const removeFromWishlist = async () => {
+    setError('')
+    try {
+      show(await api.removeSupplyFromWishlist(supplyId))
+      flash('Taken off your wishlist ✓')
+      onChanged()
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+
   const saveText = (field) => {
     const value = text[field].trim()
     if (value === (item[field] ?? '')) return
@@ -202,9 +213,12 @@ export default function ItemPanel({ supplyId, lookups, reloadKey, onClose, onCha
                 <span className="muted small stock-value">{money(item.unit_price)} each · {money(item.total_value)}</span>
               )}
               <span className="wish-action">
-                {item.on_wishlist
-                  ? <span className="tag ok">On wishlist ✓</span>
-                  : <button type="button" className="chip-btn" onClick={addToWishlist}>+ Add to wishlist</button>}
+                {item.on_wishlist ? (
+                  <button type="button" className="chip-btn on" onClick={removeFromWishlist}
+                    title="Take it off your wishlist" aria-label="On wishlist. Take it off">
+                    On wishlist ✓ <span aria-hidden="true">✕</span>
+                  </button>
+                ) : <button type="button" className="chip-btn" onClick={addToWishlist}>+ Add to wishlist</button>}
               </span>
             </div>
           </section>
@@ -290,29 +304,33 @@ export default function ItemPanel({ supplyId, lookups, reloadKey, onClose, onCha
           )}
 
           <section className="panel-section">
-            <h4 className="section-title">Photo &amp; barcode</h4>
-            <div className="button-row">
-              {item.brand === 'Tamiya' && item.product_code && (
-                <button type="button" className="secondary" onClick={getTamiyaPhoto} disabled={busy}>
-                  {item.has_image ? 'Refresh from tamiya.com' : 'Get photo from tamiya.com'}
-                </button>
-              )}
-              <PhotoUpload brandId={item.brand_id} productCode={item.product_code} hasPhoto={item.has_image}
-                onChanged={async (msg) => { show(await api.getSupply(supplyId)); flash(`${msg} ✓`); onChanged() }} />
-            </div>
+            <h4 className="section-title">Barcode</h4>
             <div className="barcode-line">
               {canLink ? (
                 <>
                   <span className="small">
-                    Barcode: {item.barcode ? <span className="mono">{item.barcode}</span> : <span className="muted">not linked</span>}
+                    {item.barcode ? <span className="mono">{item.barcode}</span> : <span className="muted">Not linked yet</span>}
                   </span>
-                  <ScanButton onBarcode={linkBarcode} className="secondary"
+                  <ScanButton onBarcode={linkBarcode}
                     label={item.barcode ? 'Change barcode' : 'Link barcode'} />
                 </>
               ) : (
                 <span className="hint">Add a brand and product code (Edit details) to link a barcode.</span>
               )}
             </div>
+            {/* Photo changes are rare, so they wait behind a drop-down. */}
+            <details className="more-menu">
+              <summary>Photo options</summary>
+              <div className="button-row">
+                {item.brand === 'Tamiya' && item.product_code && (
+                  <button type="button" className="secondary" onClick={getTamiyaPhoto} disabled={busy}>
+                    {item.has_image ? 'Refresh from tamiya.com' : 'Get photo from tamiya.com'}
+                  </button>
+                )}
+                <PhotoUpload brandId={item.brand_id} productCode={item.product_code} hasPhoto={item.has_image}
+                  onChanged={async (msg) => { show(await api.getSupply(supplyId)); flash(`${msg} ✓`); onChanged() }} />
+              </div>
+            </details>
           </section>
 
           {item.product_code && item.brand_id && (

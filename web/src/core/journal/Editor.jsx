@@ -1,7 +1,7 @@
 // The Notion-style editor (BlockNote). Loaded only when a journal page opens (it's big), so the
 // rest of the app stays quick.
 //   /      menu of blocks: headings, lists, to-dos, quotes, images, tables...
-//   @      mention a model, a supply or another page: a pill that opens it when clicked
+//   @      mention a model, a supply, a board game, gear or another page: a pill that opens it
 //   photos dropped or pasted in are shrunk and stored by the API
 import '@blocknote/mantine/style.css'
 import { BlockNoteSchema, defaultInlineContentSpecs } from '@blocknote/core'
@@ -31,7 +31,7 @@ const schema = BlockNoteSchema.create({
   inlineContentSpecs: { ...defaultInlineContentSpecs, mention: Mention },
 })
 
-const WHAT = { model: 'Model', supply: 'Supply', page: 'Journal page' }
+const WHAT = { model: 'Model', supply: 'Supply', page: 'Journal page', game: 'Board game', gear: 'Gear' }
 
 export default function Editor({ pageId, initialContent, onChange, onOpenMention }) {
   const theme = useTheme() // light / dark, like the rest of the app
@@ -41,7 +41,7 @@ export default function Editor({ pageId, initialContent, onChange, onOpenMention
     uploadFile: async (file) => (await api.uploadJournalImage(await shrink(file, 1600), pageId)).url,
   })
 
-  // What @ offers: models, supplies and pages matching what's typed after it.
+  // What @ offers: models, supplies, pages, games and gear matching what's typed after it.
   const mentionItems = async (query) => (await api.mentionable(query)).map((m) => ({
     title: m.label,
     subtext: WHAT[m.kind],

@@ -26,7 +26,8 @@ def clean_database():
         conn.execute("TRUNCATE stock_movements, wishlist, barcode_catalog, product_info, supplies, "
                      "model_paints, models, catalog_products, model_sessions, model_log, colour_groups, "
                      "colour_group_members, mixes, mix_parts, price_guide, journal_pages, tags, page_tags, "
-                     "journal_links, journal_images RESTART IDENTITY CASCADE")
+                     "journal_links, journal_images, calendar_events, board_games, board_game_plays, gear, "
+                     "volleyball_games, volleyball_videos RESTART IDENTITY CASCADE")
         # the seeded settings (db/init/15_settings.sql)
         conn.execute("UPDATE settings SET value = 'Hobbyrama' WHERE key = 'default_shop'")
         conn.execute("""INSERT INTO price_guide (label, title_contains, paint_type, size, price, sort_order)

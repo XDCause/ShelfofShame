@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api, duration, imageUrl, money } from '../api.js'
+import { buildProgress, StepBar } from '../modules/models/steps.jsx'
 
 const UNBUILT = ['In stash', 'In progress', 'On hold']
 const FILTERS = [
@@ -16,11 +17,11 @@ export const statusClass = (status) => `status-badge s-${status.replace(' ', '-'
 // "HG · 1/144 · Bandai · G5057403", "Ultramarines · Games Workshop", "1/48 · Tamiya · T32595"
 export const modelMeta = (m) => [m.grade, m.scale, m.faction, m.brand, m.product_code].filter(Boolean).join(' · ')
 
-// "Panel lined, step 2 of 4" / "3 of 10 minis painted"
+// "Painting · step 3 of 5" / "Panel lined, step 2 of 4" / "3 of 10 minis painted"
 function progress(m, stages) {
-  const steps = stages?.[m.hobby] ?? []
   const parts = []
-  if (m.stage) parts.push(`${m.stage}, step ${steps.indexOf(m.stage) + 1} of ${steps.length}`)
+  const { text } = buildProgress(m, stages)
+  if (text) parts.push(text)
   if (m.hobby === 'Warhammer' && m.figures > 1) parts.push(`${m.figures_done} of ${m.figures} minis painted`)
   return parts.join(' · ')
 }
@@ -105,6 +106,7 @@ function ModelCard({ model: m, stages, onOpen }) {
         <span className="model-name">{m.name}</span>
         <span className="model-meta">{modelMeta(m)}</span>
         {built && <span className="small build-progress">{built}</span>}
+        {(m.stage || m.status === 'In progress') && <StepBar model={m} stages={stages} />}
         {m.paints_total > 0 ? (
           <span className="paint-progress">
             <span className="progress-bar"><span style={{ width: `${(m.paints_have / m.paints_total) * 100}%` }} /></span>

@@ -3,10 +3,11 @@
 A self-hosted home for your hobbies, built as a full-stack learning project. Runs entirely in
 Docker on your own PC; no accounts or subscriptions.
 
-It's one app with a **Home** page and a **module per hobby**, each with its own pages
-(`/<module>/<page>`), in a sidebar on wide screens and a tab bar on phones. The first module is
-**Shelf of Shame** (model kits and their supplies), described below. A journal, a calendar and more
-hobbies (board games, volleyball...) are planned: see [docs/ROADMAP.md](docs/ROADMAP.md).
+It's one app with a **core** every hobby shares (Home, Journal, Calendar, hobby **Supplies** and the
+**Wishlist**) and a **module per hobby** (Models, Board games, Volleyball), each with its own pages
+(`/<module>/<page>`, shown as tabs at the top of the hobby). Wide screens have a sidebar; phones
+have five tabs: Home, Journal, Calendar, Supplies (with the wishlist) and Hobbies. More hobbies
+(scuba, woodworking, pottery...): see [docs/ROADMAP.md](docs/ROADMAP.md).
 
 - **Home**: a hero banner (the day, a greeting, a line for the day, over a photo of what you've
   been working on) with "Write today's entry"; each hobby's stat tiles; **Recent activity** (one feed
@@ -20,6 +21,14 @@ hobbies (board games, volleyball...) are planned: see [docs/ROADMAP.md](docs/ROA
   tables and photos; type `@` to mention a model, a supply or another page (a pill that opens it).
   Pages save as you type, have a date, an emoji, tags and a pin; search and tag filters. A model's
   or supply's panel lists the pages that mention it, with "+ Write about it".
+- **Calendar**: a month of planned events (one-off, weekly or fortnightly, with "Not on this day" for
+  a skipped week) and what happened each day (from the activity feed: kits, supplies, plays,
+  volleyball games, journal pages). Tap a day for the detail, "+ Event on this day" or "Write about
+  this day". A volleyball event offers **Log the result**. Home shows what's **Coming up**.
+- **Board games**: your games (Owned / Wanted / Borrowed / Gone, players, time, rating, box photo)
+  and every play (who played, who won, how long). "Played @Catan" in the journal offers "Log a play".
+- **Volleyball**: games and training with results (sets won and lost), your gear (condition, photo)
+  and video links (YouTube thumbnails), all on the calendar and in Recent activity.
 - **Journal -> actions**: write "Just bought @Sherman and started it right away" and the page
   offers "Sherman: Mark as In progress?" (Yes / Not now); "primed @Zero" offers the build step;
   "I want to buy new @XF-10 for a new project" offers "Add to wishlist?".
@@ -117,7 +126,19 @@ Grouped as in `api/app/` (one module per part of the app):
 | Method | Path | Does |
 |---|---|---|
 | **activity.py** (core) | | |
-| GET | `/api/activity?limit=&since=` | What you've done lately: stock, kits, build log, time, journal |
+| GET | `/api/activity?limit=&since=&until=` | What you've done: stock, kits, build log, time, journal, plays, volleyball, gear |
+| **calendar.py** (core) | | |
+| GET | `/api/calendar?start=&end=` | `events` (repeats expanded) and what `happened` each day |
+| GET | `/api/calendar/upcoming?limit=` | The next events from today |
+| POST / GET / PATCH / DELETE | `/api/calendar/events[/{id}]` | Events; POST `.../{id}/skip {day}` = not on that day |
+| **boardgames.py** | | |
+| GET / POST | `/api/board-games` | Games; `/summary`, `/plays` (every play) |
+| GET / PATCH / DELETE | `/api/board-games/{id}` | One game with its plays; `/photo` GET / PUT / DELETE |
+| POST, PATCH / DELETE | `/api/board-games/{id}/plays`, `/api/board-game-plays/{id}` | Plays |
+| **volleyball.py** | | |
+| GET / POST, GET / PATCH / DELETE | `/api/volleyball/games[/{id}]` | Games and training; `/api/volleyball/summary` |
+| GET / POST, GET / PATCH / DELETE | `/api/gear[/{id}]` | Gear; `/photo` GET / PUT / DELETE |
+| GET / POST, PATCH / DELETE | `/api/volleyball/videos[/{id}]` | Video links |
 | **journal.py** (core) | | |
 | GET/POST | `/api/journal?q=&tag=&mention=model:3` | Pages (newest first, pinned on top) / start a page |
 | GET/PATCH/DELETE | `/api/journal/{id}` | One page with its blocks, tags, mentions and "mentioned in" |

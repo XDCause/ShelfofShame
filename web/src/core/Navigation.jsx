@@ -1,29 +1,43 @@
-import { NavLink, useLocation } from 'react-router'
-import { BoltIcon, ClockIcon, HomeIcon, JournalIcon } from '../components/icons.jsx'
+import { Link, NavLink, useLocation } from 'react-router'
+import {
+  BoltIcon, BoxIcon, CalendarIcon, CartIcon, ClockIcon, GridIcon, HomeIcon, JournalIcon,
+} from '../components/icons.jsx'
 import { MODULES, moduleFor } from '../modules/index.js'
 
-// The core's own pages, for every hobby (the calendar joins them in phase 3, docs/ROADMAP.md).
+// The core: pages for every hobby. Supplies and the wishlist are shared (paints, glue, tape...
+// for any hobby), so they sit here rather than inside a hobby. `title` is the page heading when
+// it differs from the menu label.
 export const CORE_PAGES = [
   { path: '/', label: 'Home', Icon: HomeIcon },
   { path: '/journal', label: 'Journal', Icon: JournalIcon },
+  { path: '/calendar', label: 'Calendar', Icon: CalendarIcon },
+  { path: '/supplies', label: 'Supplies', title: 'Hobby supplies', Icon: BoxIcon },
+  { path: '/wishlist', label: 'Wishlist', Icon: CartIcon },
 ]
+const SUPPLY_PAGES = CORE_PAGES.slice(3)
+export const HOBBIES_PAGE = { path: '/hobbies', label: 'Hobbies', Icon: GridIcon }
+
+const under = (pathname, path) => pathname === path || pathname.startsWith(`${path}/`)
 export const corePageFor = (pathname) =>
-  CORE_PAGES.find((p) => (p.path === '/' ? pathname === '/' : pathname === p.path || pathname.startsWith(`${p.path}/`)))
+  [...CORE_PAGES, HOBBIES_PAGE].find((p) => (p.path === '/' ? pathname === '/' : under(pathname, p.path)))
 
 const pageLink = (module, page) => `/${module.id}/${page.path}`
 
 // The card at the foot of the sidebar: a different nudge each day.
 const NUDGES = [
-  ['Keep building.', 'One model at a time.'],
+  ['Make time for it.', 'Ten minutes off the clock still counts.'],
   ['Thin your paints.', 'Two thin coats beat one thick one.'],
-  ['Progress, not perfection.', 'Ten minutes at the bench still counts.'],
+  ['Progress, not perfection.', 'One step at a time.'],
   ['Clear the shelf.', 'Finish one before you open another.'],
-  ['Write it down.', 'Future you will want to know what you mixed.'],
+  ['Write it down.', 'Future you will want to know.'],
+  ['Call a games night.', 'The box is no fun on the shelf.'],
+  ['Stretch first.', 'Your knees will thank you on Tuesday.'],
 ]
 const nudge = () => NUDGES[Math.floor(Date.now() / 86400000) % NUDGES.length]
 
-// Wide screens: a sidebar like the Mac's (Notes, Mail): Home and Journal, then each hobby and
-// its pages. Between 701 and 1000 px it shrinks to icons only (CSS).
+// Wide screens: a sidebar like the Mac's (Notes, Mail): the core pages, then one entry per hobby.
+// A hobby's own pages (Kits, Colours...) are tabs at the top of its page (SectionTabs).
+// Between 701 and 1000 px it shrinks to icons only (CSS).
 export function Sidebar() {
   return (
     <aside className="sidebar">
@@ -36,14 +50,9 @@ export function Sidebar() {
         ))}
         <p className="side-section">Hobbies</p>
         {MODULES.map((m) => (
-          <div key={m.id} className="side-module">
-            <p className="side-module-name" title={m.what}><m.Icon size={18} /><span>{m.name}</span></p>
-            {m.pages.map((p) => (
-              <NavLink key={p.path} to={pageLink(m, p)} className="side-link sub" title={p.label}>
-                <p.Icon size={20} /><span>{p.label}</span>
-              </NavLink>
-            ))}
-          </div>
+          <NavLink key={m.id} to={`/${m.id}`} className="side-link" title={m.what}>
+            <m.Icon size={20} /><span>{m.name}</span>
+          </NavLink>
         ))}
       </nav>
       <div className="nudge" aria-hidden="true">
@@ -54,29 +63,43 @@ export function Sidebar() {
   )
 }
 
-// Phones: a tab bar with Home, Journal and one tab per hobby (its short name). A hobby's own
-// pages are a switcher at the top of the screen (ModuleTabs), so the bar never overflows.
+// Phones: five tabs. Supplies covers the wishlist too, and Hobbies covers every hobby (a page
+// listing them), so the bar never overflows however many hobbies there are. Plain Links: a
+// NavLink would mark itself by its own address only.
 export function TabBar() {
+  const { pathname } = useLocation()
+  const tabs = [
+    ...CORE_PAGES.slice(0, 3).map((p) => ({ ...p, on: p.path === '/' ? pathname === '/' : under(pathname, p.path) })),
+    { ...SUPPLY_PAGES[0], on: SUPPLY_PAGES.some((p) => under(pathname, p.path)) },
+    { ...HOBBIES_PAGE, on: under(pathname, HOBBIES_PAGE.path) || Boolean(moduleFor(pathname)) },
+  ]
   return (
     <nav className="tabbar" aria-label="Sections">
-      {CORE_PAGES.map((p) => (
-        <NavLink key={p.path} to={p.path} end={p.path === '/'}><p.Icon /><span>{p.label}</span></NavLink>
-      ))}
-      {MODULES.map((m) => (
-        <NavLink key={m.id} to={`/${m.id}`} title={m.name}><m.Icon /><span>{m.short}</span></NavLink>
+      {tabs.map((t) => (
+        <Link key={t.path} to={t.path} aria-current={t.on ? 'page' : undefined}>
+          <t.Icon /><span>{t.label}</span>
+        </Link>
       ))}
     </nav>
   )
 }
 
-// Phones, inside a hobby: its pages as a segmented control under the nav bar.
-export function ModuleTabs() {
+// Tabs under the nav bar: a hobby's own pages (on every screen), and on phones Supplies | Wishlist.
+export function SectionTabs() {
   const { pathname } = useLocation()
   const module = moduleFor(pathname)
-  if (!module) return null
+  if (module) {
+    if (module.pages.length < 2) return null
+    return (
+      <nav className="section-tabs segmented" aria-label={`${module.name} pages`}>
+        {module.pages.map((p) => <NavLink key={p.path} to={pageLink(module, p)}>{p.label}</NavLink>)}
+      </nav>
+    )
+  }
+  if (!SUPPLY_PAGES.some((p) => under(pathname, p.path))) return null
   return (
-    <nav className="module-tabs segmented" aria-label={`${module.name} pages`}>
-      {module.pages.map((p) => <NavLink key={p.path} to={pageLink(module, p)}>{p.label}</NavLink>)}
+    <nav className="section-tabs segmented phone-only" aria-label="Supplies pages">
+      {SUPPLY_PAGES.map((p) => <NavLink key={p.path} to={p.path}>{p.label}</NavLink>)}
     </nav>
   )
 }

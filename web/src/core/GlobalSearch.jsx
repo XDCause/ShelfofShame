@@ -1,18 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router'
 import { api } from '../api.js'
-import { BoxIcon, JournalIcon, PlaneIcon, SearchIcon } from '../components/icons.jsx'
+import { BoxIcon, DiceIcon, JournalIcon, PlaneIcon, SearchIcon, ShoeIcon } from '../components/icons.jsx'
 import { useApp } from './app-context.js'
 
-const ICON = { model: PlaneIcon, supply: BoxIcon, page: JournalIcon }
-const WHAT = { model: 'Kit', supply: 'Supply', page: 'Journal page' }
+const ICON = { model: PlaneIcon, supply: BoxIcon, page: JournalIcon, game: DiceIcon, gear: ShoeIcon }
+const WHAT = { model: 'Kit', supply: 'Supply', page: 'Journal page', game: 'Board game', gear: 'Gear' }
 const isMac = /Mac|iPhone|iPad/.test(navigator.platform)
 
-// Search everything from the nav bar: kits, supplies and journal pages. Ctrl+K (⌘K) jumps here;
+// Search everything from the nav bar: kits, supplies, journal pages, board games and gear. Ctrl+K (⌘K) jumps here;
 // arrows + Enter pick a result. On phones it's a button that opens the box.
 export default function GlobalSearch() {
-  const { openItem, openModel } = useApp()
-  const navigate = useNavigate()
+  const { openThing } = useApp()
   const input = useRef(null)
   const [q, setQ] = useState('')
   const [results, setResults] = useState([])
@@ -42,9 +40,7 @@ export default function GlobalSearch() {
   const close = () => { setQ(''); setResults([]); setOpen(false); input.current?.blur() }
   const pick = (r) => {
     close()
-    if (r.kind === 'model') openModel(r.id)
-    else if (r.kind === 'supply') openItem(r.id)
-    else navigate(`/journal/${r.id}`)
+    openThing(r.kind, r.id)
   }
 
   const onKey = (e) => {
@@ -60,7 +56,7 @@ export default function GlobalSearch() {
         onClick={() => { setOpen(true); setTimeout(() => input.current?.focus()) }}><SearchIcon /></button>
       <label className="search-box">
         <SearchIcon size={18} />
-        <input ref={input} type="search" value={q} placeholder="Search kits, supplies and the journal..."
+        <input ref={input} type="search" value={q} placeholder="Search kits, supplies, games, the journal..."
           aria-label="Search everything" onChange={(e) => setQ(e.target.value)} onKeyDown={onKey}
           onBlur={() => setTimeout(() => { setResults([]); if (!q) setOpen(false) }, 150)} />
         <kbd>{isMac ? '⌘K' : 'Ctrl K'}</kbd>

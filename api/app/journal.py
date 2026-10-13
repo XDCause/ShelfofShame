@@ -13,10 +13,11 @@ from fastapi import APIRouter, HTTPException, Query, Request, Response
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel, Field
 
+from .boardgames import PlayIn, add_play
 from .db import db, found, insert_row, update_row
 from .images import photo_response, read_photo
 from .journal_actions import set_checked, suggestions, todos_in
-from .journal_text import mentions, plain_text
+from .journal_text import KINDS, mentions, plain_text
 from .models import ModelPatch, update_model
 from .wishlist import wish_from_supplies
 
@@ -101,6 +102,8 @@ CASE l.target_kind
     WHEN 'model'  THEN (SELECT name FROM models WHERE model_id = l.target_id)
     WHEN 'supply' THEN (SELECT name FROM supplies WHERE supply_id = l.target_id)
     WHEN 'page'   THEN (SELECT COALESCE(NULLIF(title, ''), 'Untitled') FROM journal_pages WHERE page_id = l.target_id)
+    WHEN 'game'   THEN (SELECT name FROM board_games WHERE game_id = l.target_id)
+    WHEN 'gear'   THEN (SELECT name FROM gear WHERE gear_id = l.target_id)
 END"""
 
 
@@ -126,7 +129,7 @@ def fetch_page(conn, page_id: int) -> dict:
 # ---------------------------------------------------------------------------
 @router.get("/journal")
 def list_pages(q: str | None = None, tag: str | None = None,
-               mention: str | None = Query(None, pattern=r"^(model|supply|page):\d+$"),
+               mention: str | None = Query(None, pattern=rf"^({'|'.join(KINDS)}):\d+$"),
                limit: int = Query(200, ge=1, le=1000)):
     """Newest first (pinned ones on top). q searches titles and text; tag filters by a tag;
     mention=model:3 lists the pages that @mention model 3."""
@@ -174,7 +177,7 @@ def list_tags():
 
 @router.get("/journal/mentionable")
 def mentionable(q: str = ""):
-    """What can be @mentioned, matching q: models, supplies and pages (up to 8 of each)."""
+    """What can be @mentioned, matching q: models, supplies, pages, board games and gear (up to 8 of each)."""
     like = f"%{q.strip()}%"
     with db() as conn:
         rows = conn.execute("""
@@ -185,7 +188,13 @@ def mentionable(q: str = ""):
              WHERE name ILIKE %(q)s OR product_code ILIKE %(q)s ORDER BY name LIMIT 8)
             UNION ALL
             (SELECT 'page', page_id, COALESCE(NULLIF(title, ''), 'Untitled'), 'Journal page' FROM journal_pages
-             WHERE title ILIKE %(q)s ORDER BY entry_date DESC LIMIT 8)""", {"q": like}).fetchall()
+             WHERE title ILIKE %(q)s ORDER BY entry_date DESC LIMIT 8)
+            UNION ALL
+            (SELECT 'game', game_id, name, 'Board game' FROM board_games
+             WHERE name ILIKE %(q)s ORDER BY name LIMIT 8)
+            UNION ALL
+            (SELECT 'gear', gear_id, name, 'Gear' FROM gear
+             WHERE name ILIKE %(q)s OR kind ILIKE %(q)s ORDER BY name LIMIT 8)""", {"q": like}).fetchall()
     return rows
 
 
@@ -244,11 +253,14 @@ def apply_suggestion(page_id: int, body: SuggestionIn):
     if body.key not in offered:
         raise HTTPException(409, "That suggestion no longer applies (it may have been done already).")
     s = offered[body.key]
-    if s["kind"] == "supply":                              # "Add to wishlist"
+    if s["kind"] in ("supply", "game"):
         with db() as conn:
             page = fetch_page(conn, page_id)
             note = f"From the journal: {page['title'] or page['entry_date']}"
-            wish_from_supplies(conn, "s.supply_id = %s", (s["id"],), notes=note)
+            if s["kind"] == "supply":                      # "Add to wishlist"
+                wish_from_supplies(conn, "s.supply_id = %s", (s["id"],), notes=note)
+            else:                                          # "Log a play" on the page's day
+                add_play(conn, s["id"], PlayIn(played_on=page["entry_date"], notes=note))
     else:
         update_model(s["id"], ModelPatch(**s["changes"]))  # the usual rules: dates, build steps...
     with db() as conn:

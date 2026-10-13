@@ -15,7 +15,7 @@ const derived = ({ links, mentioned_in, suggestions }) => ({ links, mentioned_in
 export default function JournalPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { openItem, openModel, changed, showToast } = useApp()
+  const { openThing, changed, showToast } = useApp()
   const [page, setPage] = useState(null)
   const [error, setError] = useState('')
   const [status, setStatus] = useState('')        // '', 'saving', 'saved'
@@ -80,11 +80,7 @@ export default function JournalPage() {
     }
   }
 
-  const openMention = (kind, ref) => {
-    if (kind === 'model') openModel(ref)
-    else if (kind === 'supply') openItem(ref)
-    else navigate(`/journal/${ref}`)
-  }
+  const openMention = openThing
 
   if (error) return <p className="alert error">{error} <Link to="/journal">Back to the journal</Link></p>
   if (!page) return <p className="muted loading">Loading...</p>

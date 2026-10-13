@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api.js'
-import Drawer from './Drawer.jsx'
 import OwnedBadge from './OwnedBadge.jsx'
 
 const SUGGESTIONS = ['panel line', 'XF-1', 'masking tape', 'thinner', 'primer', 'cement']
 
-// Shop Tamiya: search Tamiya's catalogue (imported with app/tamiya_catalog.py) and add things to
-// the wishlist in one tap. Photos in the results load from Tamiya's site. Adding is instant; the
-// API then fetches the full details and photo into your database in the background.
-export default function ShopPanel({ onClose, onAdded }) {
+// Search Tamiya's catalogue (imported with app/tamiya_catalog.py) and add things to the wishlist
+// in one tap. Lives at the top of the wishlist's "+ Add" panel. Photos in the results load from
+// Tamiya's site. Adding is instant; the API then fetches the full details and photo into your
+// database in the background.
+export default function CatalogSearch({ onAdded }) {
   const [q, setQ] = useState('')
   const [results, setResults] = useState(null)
   const [info, setInfo] = useState(null)
@@ -46,10 +46,10 @@ export default function ShopPanel({ onClose, onAdded }) {
   const empty = info && info.products === 0
 
   return (
-    <Drawer title="Shop Tamiya" onClose={onClose} wide>
+    <div className="catalog-search">
       <div className="shop-search">
         <input type="search" value={q} onChange={(e) => setQ(e.target.value)} autoFocus
-          placeholder="Search Tamiya: panel line black, XF-76, masking tape..." aria-label="Search Tamiya" />
+          placeholder="Search Tamiya: panel line black, XF-76, masking tape..." aria-label="Search the Tamiya catalogue" />
         {!q && !empty && (
           <div className="chip-row">
             {SUGGESTIONS.map((s) => <button key={s} type="button" className="chip-filter" onClick={() => setQ(s)}>{s}</button>)}
@@ -102,6 +102,6 @@ export default function ShopPanel({ onClose, onAdded }) {
           {new Date(info.imported_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
         </p>
       )}
-    </Drawer>
+    </div>
   )
 }

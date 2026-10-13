@@ -127,3 +127,13 @@ def test_lookup_lists_add_remove_and_in_use_protection(client, make_supply, ids)
     r = client.delete(f"/api/lookups/brands/{ids['tamiya']}")
     assert r.status_code == 409
     assert "still in use" in r.json()["detail"]
+
+
+def test_taking_an_item_back_off_the_wishlist(client, make_supply):
+    """The item panel's "On wishlist ✕": off it goes; asking again is a 409."""
+    xf1 = make_supply(qty_on_hand=1)
+    client.post(f"/api/supplies/{xf1['supply_id']}/wishlist")
+    r = client.delete(f"/api/supplies/{xf1['supply_id']}/wishlist")
+    assert r.status_code == 200 and r.json()["on_wishlist"] is False
+    assert client.get("/api/wishlist").json() == []
+    assert client.delete(f"/api/supplies/{xf1['supply_id']}/wishlist").status_code == 409

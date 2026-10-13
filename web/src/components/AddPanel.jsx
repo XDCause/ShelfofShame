@@ -140,7 +140,7 @@ export default function AddPanel({ lookups, settings, scanned: initialScan, onCl
   return (
     <Drawer title="Add a supply" onClose={onClose} footer={footer}>
       <section className="panel-section add-start">
-        <ScanButton onBarcode={onBarcode} label={scan ? 'Scan again' : 'Scan barcode'} />
+        <ScanButton onBarcode={onBarcode} label={scan ? 'Use another barcode' : 'Use barcode'} />
         <div className="lookup-row">
           <label className="field">
             <span className="field-label">or Tamiya paint code / item number</span>

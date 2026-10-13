@@ -45,7 +45,16 @@ export const api = {
   dismissSuggestion: (pageId, key) => request(`/journal/${pageId}/suggestions/dismiss`, send('POST', { key })),
   uploadJournalImage: (blob, pageId) => request(`/journal/images${pageId ? `?page_id=${pageId}` : ''}`, image('POST', blob)),
 
-  // Inventory
+  // Calendar (core): events (repeats expanded by the API) and what happened each day
+  calendar: (start, end) => request(`/calendar?start=${start}&end=${end}`),
+  upcoming: (limit = 5) => request(`/calendar/upcoming?limit=${limit}`),
+  getEvent: (id) => request(`/calendar/events/${id}`),
+  addEvent: (data) => request('/calendar/events', send('POST', data)),
+  updateEvent: (id, data) => request(`/calendar/events/${id}`, send('PATCH', data)),
+  deleteEvent: (id) => request(`/calendar/events/${id}`, send('DELETE')),
+  skipEventDay: (id, day) => request(`/calendar/events/${id}/skip`, send('POST', { day })),
+
+  // Hobby supplies: the inventory
   listSupplies: () => request('/supplies'),
   getSupply: (id) => request(`/supplies/${id}`),
   createSupply: (data) => request('/supplies', send('POST', data)),
@@ -58,13 +67,13 @@ export const api = {
   supplyHistory: (id, limit = 20) => request(`/supplies/${id}/history?limit=${limit}`),
   recentHistory: (limit = 50) => request(`/history?limit=${limit}`),
   addSupplyToWishlist: (id) => request(`/supplies/${id}/wishlist`, send('POST')),
+  removeSupplyFromWishlist: (id) => request(`/supplies/${id}/wishlist`, send('DELETE')),
 
   // Wishlist
   listWishlist: () => request('/wishlist'),
   addWish: (data) => request('/wishlist', send('POST', data)),
   updateWish: (id, data) => request(`/wishlist/${id}`, send('PATCH', data)),
   deleteWish: (id) => request(`/wishlist/${id}`, send('DELETE')),
-  buyWish: (id, purchased_from) => request(`/wishlist/${id}/buy`, send('POST', { purchased_from })),
   buyTicked: (purchased_from) => request('/wishlist/buy-ticked', send('POST', { purchased_from })),
   wishRestock: () => request('/wishlist/restock', send('POST')),
 
@@ -101,6 +110,39 @@ export const api = {
   wishMissingPaints: (id) => request(`/models/${id}/wishlist`, send('POST')),
   kitPaints: (id) => request(`/models/${id}/kit-paints`),
   addKitPaints: (id, paints) => request(`/models/${id}/kit-paints`, send('POST', { paints })),
+
+  // Board games
+  listBoardGames: () => request('/board-games'),
+  boardGameSummary: () => request('/board-games/summary'),
+  getBoardGame: (id) => request(`/board-games/${id}`),
+  addBoardGame: (data) => request('/board-games', send('POST', data)),
+  updateBoardGame: (id, data) => request(`/board-games/${id}`, send('PATCH', data)),
+  deleteBoardGame: (id) => request(`/board-games/${id}`, send('DELETE')),
+  listPlays: (limit = 200) => request(`/board-games/plays?limit=${limit}`),
+  addPlay: (gameId, data) => request(`/board-games/${gameId}/plays`, send('POST', data)),
+  updatePlay: (id, data) => request(`/board-game-plays/${id}`, send('PATCH', data)),
+  deletePlay: (id) => request(`/board-game-plays/${id}`, send('DELETE')),
+
+  // Volleyball: games, gear, videos
+  listVolleyball: () => request('/volleyball/games'),
+  volleyballSummary: () => request('/volleyball/summary'),
+  getVolleyball: (id) => request(`/volleyball/games/${id}`),
+  addVolleyball: (data) => request('/volleyball/games', send('POST', data)),
+  updateVolleyball: (id, data) => request(`/volleyball/games/${id}`, send('PATCH', data)),
+  deleteVolleyball: (id) => request(`/volleyball/games/${id}`, send('DELETE')),
+  listGear: () => request('/gear'),
+  getGear: (id) => request(`/gear/${id}`),
+  addGear: (data) => request('/gear', send('POST', data)),
+  updateGear: (id, data) => request(`/gear/${id}`, send('PATCH', data)),
+  deleteGear: (id) => request(`/gear/${id}`, send('DELETE')),
+  listVideos: () => request('/volleyball/videos'),
+  addVideo: (data) => request('/volleyball/videos', send('POST', data)),
+  updateVideo: (id, data) => request(`/volleyball/videos/${id}`, send('PATCH', data)),
+  deleteVideo: (id) => request(`/volleyball/videos/${id}`, send('DELETE')),
+
+  // A photo kept on its own row (board games, gear): path = '/board-games/3' or '/gear/2'
+  uploadRowPhoto: (path, blob) => request(`${path}/photo`, image('PUT', blob)),
+  deleteRowPhoto: (path) => request(`${path}/photo`, send('DELETE')),
 
   // Time and the build log
   runningTimer: () => request('/timer'),
@@ -178,3 +220,12 @@ export const shortDate = (iso) =>
     .toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : ''
 
 export const today = () => new Date().toLocaleDateString('en-CA') // YYYY-MM-DD in local time
+export const isoDay = (d) => d.toLocaleDateString('en-CA')         // a Date -> YYYY-MM-DD (local)
+export const dayDate = (iso) => new Date(`${iso}T12:00:00`)          // YYYY-MM-DD -> a Date at midday
+
+// "19:00:00" -> "7pm", "19:30:00" -> "7:30pm"
+export const clock = (hms) => {
+  if (!hms) return ''
+  const [h, m] = hms.split(':').map(Number)
+  return `${h % 12 || 12}${m ? `:${String(m).padStart(2, '0')}` : ''}${h < 12 ? 'am' : 'pm'}`
+}

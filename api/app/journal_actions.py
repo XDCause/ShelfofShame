@@ -5,6 +5,7 @@ change, for the user to apply with one tap (never automatically):
     "Just bought @Sherman and started it right away"   -> Sherman: In progress
     "Primed the @Zero today"                            -> Zero: build step Primed
     "I want to buy new @XF-10 for a new project"        -> XF-10: add to the wishlist
+    "Played @Catan with Sam and Jo"                     -> Catan: log a play on the page's day
 When a block says several things ("bought ... and started"), the word written last wins: it's
 where the story ends. Only changes that move a model forward are offered, so a suggestion goes
 away once it's applied (or the model has moved on), and one waved away stays away (dismissed).
@@ -46,6 +47,10 @@ BUY_WORDS = (r"want(?:s|ed)? to (?:buy|get|order)|need(?:s)? (?:to buy|to get|mo
              r"running low on|ran out of|run out of|out of|low on|(?:add|put) (?:it )?(?:on|to) (?:the|my) wishlist")
 
 
+# Words saying you played a board game (on the page's day).
+PLAY_WORDS = r"play(?:ed|ing)?|games? night|won|lost|beat|taught|learn(?:ed|t)"
+
+
 def _last(pattern: str, text: str) -> int:
     """Where the last match of `pattern` (whole words) ends in `text`, or -1."""
     ends = [m.end() for m in re.finditer(rf"\b(?:{pattern})\b", text, re.I)]
@@ -70,11 +75,14 @@ def suggestions(conn, page: dict) -> list[dict]:
     """What the page's words suggest doing to the models it mentions (not yet done or dismissed)."""
     wanted = {}   # (model_id, field) -> what the words say
     supplies = set()
+    games = set()
     for block in _blocks(page["content"]):
         mentioned = mentions(block.get("content"))
         text = inline_text(block.get("content"))
         if _last(BUY_WORDS, text) >= 0:
             supplies |= {target for kind, target in mentioned if kind == "supply"}
+        if _last(PLAY_WORDS, text) >= 0:
+            games |= {target for kind, target in mentioned if kind == "game"}
         ids = {target for kind, target in mentioned if kind == "model"}
         if not ids:
             continue
@@ -85,7 +93,7 @@ def suggestions(conn, page: dict) -> list[dict]:
                 wanted[(model_id, "status")] = status
             if step:
                 wanted[(model_id, "stage")] = step
-    result = _supply_suggestions(conn, page, supplies)
+    result = _supply_suggestions(conn, page, supplies) + _play_suggestions(conn, page, games)
     if not wanted:
         return result
 
@@ -134,6 +142,23 @@ def _supply_suggestions(conn, page: dict, supply_ids: set[int]) -> list[dict]:
             continue
         result.append({"key": key, "kind": "supply", "id": s["supply_id"], "name": s["name"],
                        "label": "Add to wishlist", "changes": {"wishlist": True}})
+    return result
+
+
+def _play_suggestions(conn, page: dict, game_ids: set[int]) -> list[dict]:
+    """"Log a play" for board games the page says you played, unless one is logged for that day."""
+    if not game_ids:
+        return []
+    rows = conn.execute("SELECT g.game_id, g.name, EXISTS (SELECT 1 FROM board_game_plays p WHERE p.game_id = g.game_id "
+                        "AND p.played_on = %s) AS logged FROM board_games g WHERE g.game_id = ANY(%s) ORDER BY g.name",
+                        (page["entry_date"], list(game_ids))).fetchall()
+    result = []
+    for g in rows:
+        key = f"game:{g['game_id']}:play:{page['entry_date']}"
+        if g["logged"] or key in page.get("dismissed", []):
+            continue
+        result.append({"key": key, "kind": "game", "id": g["game_id"], "name": g["name"],
+                       "label": "Log a play", "changes": {"played_on": str(page["entry_date"])}})
     return result
 
 

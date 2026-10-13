@@ -1,31 +1,20 @@
 import ColoursView from '../../components/ColoursView.jsx'
-import { BoxIcon, CartIcon, DropsIcon, PlaneIcon } from '../../components/icons.jsx'
-import InventoryView from '../../components/InventoryView.jsx'
+import { DropsIcon, PlaneIcon } from '../../components/icons.jsx'
 import ModelsView from '../../components/ModelsView.jsx'
-import WishlistView from '../../components/WishlistView.jsx'
-import { ModelsCards, ModelsStats } from './ModelsHome.jsx'
+import { ModelsCards, ModelsTiles } from './ModelsHome.jsx'
 
-// Shelf of Shame: model kits and their supplies (the original app). Pages live at /models/<path>.
+// Models: scale models, Gundam and Warhammer kits - the shelf of shame - and paint colours.
+// Pages live at /models/<path>. The paints themselves are hobby supplies (core, /supplies).
 export default {
   id: 'models',
-  name: 'Shelf of Shame',
-  what: 'Model kits',
-  short: 'Shelf',          // its tab on phones
+  name: 'Models',
+  what: 'Scale models, Gundam and Warhammer',
   Icon: PlaneIcon,
-  home: { Stats: ModelsStats, Cards: ModelsCards },   // its parts of the Home page
+  home: { Tiles: ModelsTiles, Cards: ModelsCards },
+  actions: [{ label: 'Add kit', Icon: PlaneIcon, run: (app) => app.openModel(null) }],
   pages: [
     {
-      path: 'inventory', label: 'Inventory', Icon: BoxIcon,
-      render: (app) => <InventoryView lookups={app.lookups} refreshKey={app.refreshKey} onAdjusted={app.adjusted}
-        onOpen={app.openItem} onAdd={app.openAdd} />,
-    },
-    {
-      path: 'wishlist', label: 'Wishlist', Icon: CartIcon,
-      render: (app) => <WishlistView lookups={app.lookups} settings={app.settings} refreshKey={app.refreshKey}
-        onChanged={app.changed} />,
-    },
-    {
-      path: 'kits', label: 'Models', Icon: PlaneIcon,
+      path: 'kits', label: 'Kits', Icon: PlaneIcon,
       render: (app) => <ModelsView lookups={app.lookups} refreshKey={app.refreshKey} onOpen={app.openModel} />,
     },
     {

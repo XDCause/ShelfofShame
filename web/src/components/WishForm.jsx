@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api, imageUrl } from '../api.js'
+import CatalogSearch from './CatalogSearch.jsx'
 import Drawer from './Drawer.jsx'
 import PhotoUpload, { shrink } from './PhotoUpload.jsx'
 import ScanButton from './ScanButton.jsx'
@@ -29,13 +30,17 @@ function scanMessage(r) {
   if (r.match === 'known') return { tone: 'ok', text: 'Recognised from your own items.' }
   if (r.match === 'catalog') return { tone: 'ok', text: 'Identified from the barcode catalogue.' }
   if (r.match === 'tamiya') return { tone: 'low', text: 'Matched using the barcode digits. Check the photo and name are right.' }
-  if (r.brand_id != null) return { tone: 'low', text: "A Tamiya barcode we haven't seen. Type the paint code from the label (e.g. XF-76) below and tap Look up." }
+  if (r.brand_id != null) return { tone: 'low', text: "A Tamiya barcode we haven't seen. Type the paint code from the label (e.g. XF-76) below and tap Look up, so it's remembered next time." }
   return { tone: 'low', text: "New barcode. Fill in the details; it's remembered when you save." }
 }
 
-// Add or edit a wishlist item, in a side panel like adding a supply: scan or type a code
-// first, check what was filled in, then save. `scanned` = {result, photo} from a Scan button.
-export default function WishForm({ wish, lookups, scanned, onSaved, onCancel }) {
+// Add or edit a wishlist item in a side panel. Adding starts with the three ways in:
+//   search Tamiya's catalogue    one tap adds it (CatalogSearch)
+//   use a barcode                scan or type it; the details are filled in below
+//   fill in the form             anything else (other brands)
+// `scanned` = {result, photo} when opened from Scan in the nav bar.
+// onCatalogAdded(product) = something was added straight from the search (the panel stays open).
+export default function WishForm({ wish, lookups, scanned, onSaved, onCancel, onCatalogAdded }) {
   const [scan, setScan] = useState(scanned ?? null)
   const [form, setForm] = useState(() => {
     const start = startForm(wish)
@@ -130,8 +135,12 @@ export default function WishForm({ wish, lookups, scanned, onSaved, onCancel }) 
     <Drawer title={wish ? 'Edit wishlist item' : 'Add to wishlist'} onClose={onCancel} footer={footer}>
       {!wish && (
         <section className="panel-section add-start">
-          <ScanButton onBarcode={onBarcode} label={scan ? 'Scan again' : 'Scan barcode'} />
-          <div className="lookup-row">
+          <CatalogSearch onAdded={onCatalogAdded} />
+          <div className="add-or">
+            <span className="muted small">Not in Tamiya's catalogue?</span>
+            <ScanButton onBarcode={onBarcode} label={scan ? 'Use another barcode' : 'Use barcode'} />
+          </div>
+          {scan && scan.result.match === 'unknown' && scan.result.brand_id != null && <div className="lookup-row">
             <label className="field">
               <span className="field-label">or Tamiya paint code / item number</span>
               <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. XF-76 or 81776"
@@ -141,7 +150,8 @@ export default function WishForm({ wish, lookups, scanned, onSaved, onCancel }) 
             <button type="button" className="secondary" onClick={lookup} disabled={busy !== '' || !code.trim()}>
               {busy === 'lookup' ? 'Looking up...' : 'Look up'}
             </button>
-          </div>
+          </div>}
+          {!scan && <p className="hint">...or fill in the details below.</p>}
         </section>
       )}
 

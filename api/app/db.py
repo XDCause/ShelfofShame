@@ -38,6 +38,13 @@ HOBBY_BRANDS = {"Warhammer": "Games Workshop", "Gundam": "Bandai"}
 GUNDAM_GRADES = {"EG": "1/144", "HG": "1/144", "RG": "1/144", "FM": "1/100", "MG": "1/100",
                  "RE/100": "1/100", "PG": "1/60", "SD": None}
 
+# The hobby modules (web/src/modules/); a calendar event can belong to one (db/init/20_calendar.sql).
+MODULE_IDS = ["models", "boardgames", "volleyball"]
+REPEATS = ["never", "weekly", "fortnightly"]
+GAME_STATUSES = ["Owned", "Wanted", "Borrowed", "Gone"]                       # 21_board_games.sql
+GEAR_CONDITIONS = ["New", "Good", "Worn", "Needs replacing", "Retired"]       # 22_volleyball.sql
+VOLLEYBALL_KINDS = ["Game", "Training", "Social", "Tournament"]
+
 # Friendly messages for database rule violations, keyed by constraint name.
 CONSTRAINT_MESSAGES = {
     "supplies_brand_code_uq": "An item with that brand and product code already exists.",
@@ -50,6 +57,10 @@ CONSTRAINT_MESSAGES = {
     "price_guide_condition_check": "A price rule needs a name to match, a paint type or a size.",
     "models_stage_check": "That build step isn't one of this hobby's steps.",
     "models_figures_check": "Minis done must be between 0 and the number in the box.",
+    "calendar_events_until_check": "It can't stop repeating before it starts.",
+    "calendar_events_time_check": "The end time must be after the start time.",
+    "board_games_players_check": "Most players can't be fewer than fewest players.",
+    "volleyball_videos_url_check": "A video link must start with http:// or https://.",
 }
 
 
@@ -77,6 +88,13 @@ def update_row(conn, table: str, id_col: str, row_id, data: dict) -> int:
         sets=sql.SQL(", ").join(sql.SQL("{} = {}").format(sql.Identifier(k), sql.Placeholder(k))
                                 for k in data))
     return conn.execute(query, {**data, "_row_id": row_id}).rowcount
+
+
+def tidy_text(data: dict, required=("name", "title")) -> dict:
+    """Trim every text value; blank text means "not set" (None). Required ones stay "" so the
+    table's CHECK rejects them with a clear message."""
+    return {k: (v.strip() or ("" if k in required else None)) if isinstance(v, str) else v
+            for k, v in data.items()}
 
 
 def found(row, what: str):
