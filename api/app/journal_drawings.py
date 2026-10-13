@@ -36,16 +36,18 @@ class FileIn(BaseModel):
 def preview_url(row) -> str | None:
     if not row["has_preview"]:
         return None
-    version = int(row["updated_at"].timestamp() * 1000)
-    return f"/api/journal/drawings/{row['drawing_id']}/preview?v={version}"
+    return f"/api/journal/drawings/{row['drawing_id']}/preview?v={row['version']}"
 
 
-DRAWING_META = """SELECT drawing_id, page_id, board, text, preview IS NOT NULL AS has_preview, created_at, updated_at
+# `version` (updated_at in milliseconds) is worked out by the database, exactly as the journal
+# list does for its pictures (journal.PAGE_LIST), so both give the same address for a preview.
+DRAWING_META = """SELECT drawing_id, page_id, board, text, preview IS NOT NULL AS has_preview, created_at, updated_at,
+                         (extract(epoch FROM updated_at) * 1000)::bigint AS version
                   FROM journal_drawings"""
 
 
 def meta(row: dict) -> dict:
-    return {**{k: v for k, v in row.items() if k != "has_preview"}, "preview_url": preview_url(row)}
+    return {**{k: v for k, v in row.items() if k not in ("has_preview", "version")}, "preview_url": preview_url(row)}
 
 
 def page_drawings(conn, page_id: int) -> list[dict]:
