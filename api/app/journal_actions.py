@@ -167,7 +167,7 @@ def _play_suggestions(conn, page: dict, game_ids: set[int]) -> list[dict]:
 # ---------------------------------------------------------------------------
 def todos_in(page: dict) -> list[dict]:
     """The check-list blocks on one page."""
-    return [{"page_id": page["page_id"], "title": page["title"], "icon": page["icon"],
+    return [{"page_id": page["page_id"], "title": page["title"], "mood": page["mood"],
              "entry_date": page["entry_date"], "block_id": b.get("id"),
              "text": inline_text(b.get("content")).strip(), "checked": bool(b.get("props", {}).get("checked"))}
             for b in _blocks(page["content"]) if b.get("type") == "checkListItem" and b.get("id")]

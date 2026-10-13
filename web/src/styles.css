@@ -724,15 +724,11 @@ td .fill-bar { width: 90px; height: 4px; margin-top: 5px; }
 .pin { display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem; }
 .pin input { min-height: 0; }
 .journal-head { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
-.journal-icon {
-  width: 1.3em; min-height: 0; padding: 0; border: 0; background: transparent; font-size: 2rem; text-align: left;
-}
-.journal-icon:placeholder-shown { opacity: 0.35; }
 .journal-title {
   flex: 1; min-width: 0; border: 0; background: transparent; padding: 4px 0; font-size: 2rem; font-weight: 700;
   letter-spacing: -0.02em;
 }
-.journal-icon:focus, .journal-title:focus { box-shadow: none; }
+.journal-title:focus { box-shadow: none; }
 .journal-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 10px 0 22px; }
 .journal-meta input[type='date'] { min-height: 32px; padding: 4px 8px; font-size: 0.9rem; }
 .tags-input { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
@@ -927,7 +923,7 @@ button.mention:disabled { color: var(--muted); background: var(--fill); text-dec
   .search-box kbd { display: none; }
   .section-tabs, .section-tabs.phone-only { display: flex; max-width: none; margin: 0 0 12px; }
   .journal-page { --gutter-left: 16px; padding: 12px 16px 20px; }
-  .journal-title, .journal-icon { font-size: 1.6rem; }
+  .journal-title { font-size: 1.6rem; }
   .toolbar .search { flex-basis: 140px; }   /* room for the button beside it */
   body.drawer-open .tabbar { display: none; }
   /* Panels are sheets that slide up, with the page peeking out behind at the top. */
@@ -1136,3 +1132,44 @@ body.writing-mode .journal-page {
 body.writing-mode .journal-editor .bn-editor { font-size: 1.45rem; line-height: 1.7; min-height: 70dvh; padding-bottom: 40dvh; }
 body.writing-mode .journal-editor .bn-block-content { padding-block: 10px; }
 body.writing-mode .journal-title { font-size: 2.2rem; }
+
+/* ---------- Mood (core/journal/MoodPicker.jsx, moods.js) ---------- */
+.mood { position: relative; flex: none; }
+.mood-face {
+  display: grid; place-items: center; width: 48px; height: 48px; padding: 0; border: 0; border-radius: 14px;
+  font-size: 1.9rem; line-height: 1; background: var(--tone-bg, var(--fill)); cursor: pointer;
+}
+.mood-face.empty { opacity: 0.35; background: transparent; }
+.mood-face.empty:hover { opacity: 0.7; }
+.mood-panel {
+  position: absolute; top: calc(100% + 8px); left: 0; z-index: 30; width: min(440px, calc(100vw - 32px));
+  display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 16px;
+  border: 1px solid var(--border); background: var(--elevated); box-shadow: var(--shadow);
+}
+.mood-question { margin: 0; font-weight: 650; }
+.mood-choices { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.mood-choice {
+  display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 2px; border: 1px solid transparent;
+  border-radius: 12px; background: var(--fill-2); color: var(--text); font-size: 0.78rem; font-weight: 600;
+}
+.mood-choice-face { font-size: 1.8rem; line-height: 1.1; }
+.mood-choice[aria-pressed='true'] { background: var(--tone-bg); border-color: var(--tone); color: var(--tone); }
+.mood-words { gap: 6px; }
+.mood-words input { width: 110px; min-height: 30px; padding: 4px 10px; border-radius: 999px; font-size: 0.85rem; }
+.mood-line { margin: 0; font-size: 0.85rem; font-weight: 600; color: var(--tone, var(--muted)); }
+.mood-filter { flex: none; gap: 4px; }
+.mood-filter .chip-filter { padding-inline: 8px; font-size: 1.05rem; }
+.your-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; margin-bottom: 14px; }
+.week-day {
+  display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0; border-radius: 10px;
+  background: var(--tone-bg, var(--fill-2)); color: var(--muted); font-size: 0.72rem; font-weight: 600;
+}
+.week-day:hover { text-decoration: none; outline: 1px solid var(--tone, var(--border)); }
+.week-face { font-size: 1.35rem; line-height: 1.2; }
+.week-day.empty .week-face { color: var(--faint); }
+.day-top { display: flex; align-items: center; justify-content: space-between; }
+.day-mood { font-size: 0.95rem; line-height: 1; }
+@media (max-width: 700px) {
+  .mood-face { width: 40px; height: 40px; font-size: 1.6rem; }
+  .day-mood { font-size: 0.75rem; }
+}

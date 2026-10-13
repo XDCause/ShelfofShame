@@ -2,6 +2,8 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { api, shortDate } from '../../api.js'
 import { useApp } from '../app-context.js'
+import MoodPicker from './MoodPicker.jsx'
+import { pageFace } from './moods.js'
 import TagsInput from './TagsInput.jsx'
 
 const Editor = lazy(() => import('./Editor.jsx'))
@@ -123,7 +125,7 @@ export default function JournalPage() {
   const edit = (field, now = false) => (e) => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value
     setPage((p) => ({ ...p, [field]: value }))
-    save({ [field]: field === 'icon' ? value.trim() || null : value }, now)
+    save({ [field]: value }, now)
   }
 
   return (
@@ -159,8 +161,8 @@ export default function JournalPage() {
       </div>
 
       <div className="journal-head">
-        <input className="journal-icon" value={page.icon ?? ''} onChange={edit('icon')} maxLength={4}
-          placeholder="🙂" aria-label="Icon (an emoji)" />
+        <MoodPicker mood={page.mood} words={page.mood_words}
+          onChange={(changes) => { setPage((p) => ({ ...p, ...changes })); save(changes, true) }} />
         <input className="journal-title" value={page.title} onChange={edit('title')} placeholder="Untitled"
           aria-label="Title" autoFocus={!page.title} />
       </div>
@@ -220,7 +222,7 @@ export default function JournalPage() {
               <h4 className="section-title">Mentioned in</h4>
               <ul className="list compact">
                 {page.mentioned_in.map((p) => (
-                  <li key={p.page_id}><Link to={`/journal/${p.page_id}`}>{p.icon} {p.title || 'Untitled'}</Link>
+                  <li key={p.page_id}><Link to={`/journal/${p.page_id}`}>{pageFace(p)} {p.title || 'Untitled'}</Link>
                     <span className="muted small">{shortDate(p.entry_date)}</span></li>
                 ))}
               </ul>

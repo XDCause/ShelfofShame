@@ -15,7 +15,7 @@ from psycopg.types.json import Jsonb
 from pydantic import BaseModel, Field
 
 from .boardgames import PlayIn, add_play
-from .db import db, found, insert_row, update_row
+from .db import MOODS, db, found, insert_row, update_row
 from .images import photo_response, read_photo
 from .journal_actions import set_checked, suggestions, todos_in
 from .journal_drawings import add_drawing, drop_unused, page_drawings, page_text
@@ -25,10 +25,15 @@ from .wishlist import wish_from_supplies
 
 router = APIRouter(prefix="/api", tags=["journal"])
 
+Mood = Literal[tuple(MOODS)]
+# A word or two about the mood ("tired", "proud"): up to 5, each short.
+MoodWords = list[str]
+
 class PageIn(BaseModel):
     kind: Literal["notes", "whiteboard"] = "notes"   # whiteboard = the whole page is one canvas
     title: str = ""
-    icon: str | None = Field(None, max_length=16)
+    mood: Mood | None = None
+    mood_words: MoodWords = []
     entry_date: date | None = None
     content: list = []
     pinned: bool = False
@@ -45,7 +50,8 @@ class TodoPatch(BaseModel):
 
 class PagePatch(BaseModel):
     title: str | None = None
-    icon: str | None = Field(None, max_length=16)
+    mood: Mood | None = None
+    mood_words: MoodWords | None = None
     entry_date: date | None = None
     content: list | None = None
     pinned: bool | None = None
@@ -55,6 +61,20 @@ class PagePatch(BaseModel):
 # ---------------------------------------------------------------------------
 # Saving
 # ---------------------------------------------------------------------------
+def tidy_words(words: list[str]) -> list[str]:
+    """Mood words: trimmed, lower case, no repeats, at most 5 of up to 24 letters."""
+    clean = []
+    for w in words:
+        w = " ".join(str(w).split()).lower()
+        if w and w not in clean:
+            if len(w) > 24:
+                raise HTTPException(422, "A mood word can be at most 24 letters.")
+            clean.append(w)
+    if len(clean) > 5:
+        raise HTTPException(422, "Pick at most 5 mood words.")
+    return clean
+
+
 def save_tags(conn, page_id: int, names: list[str]):
     clean = sorted({n.strip() for n in names if n and n.strip()}, key=str.lower)
     conn.execute("DELETE FROM page_tags WHERE page_id = %s", (page_id,))
@@ -78,7 +98,7 @@ def save_links(conn, page_id: int, content: list):
 # A page in a list. Its picture: the first photo in the page (cover_url), else the photo of
 # the first kit (or supply) it mentions (product_info_id + photo_updated, like everywhere else).
 PAGE_LIST = """
-SELECT p.page_id, p.kind, p.title, p.icon, p.entry_date, p.pinned, p.created_at, p.updated_at,
+SELECT p.page_id, p.kind, p.title, p.mood, p.mood_words, p.entry_date, p.pinned, p.created_at, p.updated_at,
        left(p.text, 200) AS snippet,
        COALESCE((SELECT array_agg(t.name ORDER BY lower(t.name)) FROM page_tags pt JOIN tags t USING (tag_id)
                  WHERE pt.page_id = p.page_id), '{}') AS tags,
@@ -138,14 +158,17 @@ def fetch_page(conn, page_id: int) -> dict:
 @router.get("/journal")
 def list_pages(q: str | None = None, tag: str | None = None,
                mention: str | None = Query(None, pattern=rf"^({'|'.join(KINDS)}):\d+$"),
-               limit: int = Query(200, ge=1, le=1000)):
-    """Newest first (pinned ones on top). q searches titles and text; tag filters by a tag;
-    mention=model:3 lists the pages that @mention model 3."""
+               mood: Mood | None = None, limit: int = Query(200, ge=1, le=1000)):
+    """Newest first (pinned ones on top). q searches titles, text and mood words; tag filters by a
+    tag; mention=model:3 lists the pages that @mention model 3; mood=rough the rough days."""
     where, params = [], []
+    if mood:
+        where.append("p.mood = %s")
+        params.append(mood)
     if q and q.strip():
         for word in q.split():
-            where.append("(p.title ILIKE %s OR p.text ILIKE %s)")
-            params += [f"%{word}%", f"%{word}%"]
+            where.append("(p.title ILIKE %s OR p.text ILIKE %s OR array_to_string(p.mood_words, ' ') ILIKE %s)")
+            params += [f"%{word}%"] * 3
     if tag:
         where.append("EXISTS (SELECT 1 FROM page_tags pt JOIN tags t USING (tag_id) "
                      "WHERE pt.page_id = p.page_id AND t.name = %s)")
@@ -164,6 +187,7 @@ def list_pages(q: str | None = None, tag: str | None = None,
 @router.post("/journal", status_code=201)
 def add_page(body: PageIn):
     data = body.model_dump(exclude={"tags"})
+    data["mood_words"] = tidy_words(body.mood_words)
     if data["entry_date"] is None:
         data.pop("entry_date")                       # the database's default: today
     data["text"] = plain_text(body.content)
@@ -175,6 +199,24 @@ def add_page(body: PageIn):
         if body.kind == "whiteboard":
             add_drawing(conn, page_id, board=True)
         return fetch_page(conn, page_id)
+
+
+def moods_between(conn, start: date, end: date) -> list[dict]:
+    """Each day's mood between two days: from that day's page with a mood (the latest edited if
+    there are several), with its words and page."""
+    return conn.execute(
+        "SELECT DISTINCT ON (entry_date) entry_date AS day, mood, mood_words, page_id FROM journal_pages "
+        "WHERE mood IS NOT NULL AND entry_date BETWEEN %s AND %s ORDER BY entry_date, updated_at DESC",
+        (start, end)).fetchall()
+
+
+@router.get("/journal/moods")
+def moods(start: date, end: date):
+    """How each day felt, for Home's "Your week" and the calendar."""
+    if end < start or (end - start).days > 400:
+        raise HTTPException(422, "The end must be after the start, and at most 400 days later.")
+    with db() as conn:
+        return moods_between(conn, start, end)
 
 
 @router.get("/journal/tags")
@@ -213,7 +255,7 @@ def list_todos(done: bool = False, limit: int = Query(100, ge=1, le=1000)):
     """The check-list items on every page: open ones (done=false, the default) or ticked ones,
     newest page first."""
     with db() as conn:
-        pages = conn.execute("SELECT page_id, title, icon, entry_date, content FROM journal_pages "
+        pages = conn.execute("SELECT page_id, title, mood, entry_date, content FROM journal_pages "
                              "ORDER BY entry_date DESC, page_id DESC").fetchall()
     items = [t for page in pages for t in todos_in(page) if t["checked"] == done and t["text"]]
     return items[:limit]
@@ -231,6 +273,8 @@ def update_page(page_id: int, body: PagePatch):
     tags = data.pop("tags", None)
     if "entry_date" in data and data["entry_date"] is None:
         raise HTTPException(422, "A page needs a date.")
+    if "mood_words" in data:
+        data["mood_words"] = tidy_words(data["mood_words"] or [])
     with db() as conn:
         fetch_page(conn, page_id)                       # 404 if it doesn't exist
         if data.get("content") is not None:

@@ -102,11 +102,11 @@ def test_tags_are_tidied_listed_filtered_and_forgotten(client):
     assert [t["name"] for t in client.get("/api/journal/tags").json()] == ["painting"]   # unused tag gone
 
 
-def test_editing_title_date_icon_and_pin(client):
+def test_editing_title_date_mood_and_pin(client):
     page = client.post("/api/journal", json={}).json()
     url = f"/api/journal/{page['page_id']}"
-    saved = client.patch(url, json={"title": "Dive trip plans", "entry_date": "2026-11-02", "icon": "🤿", "pinned": True}).json()
-    assert (saved["title"], saved["entry_date"], saved["icon"], saved["pinned"]) == ("Dive trip plans", "2026-11-02", "🤿", True)
+    saved = client.patch(url, json={"title": "Dive trip plans", "entry_date": "2026-11-02", "mood": "great", "pinned": True}).json()
+    assert (saved["title"], saved["entry_date"], saved["mood"], saved["pinned"]) == ("Dive trip plans", "2026-11-02", "great", True)
     assert client.patch(url, json={"entry_date": None}).status_code == 422
     assert client.patch("/api/journal/999", json={"title": "x"}).status_code == 404
 

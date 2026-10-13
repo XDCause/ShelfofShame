@@ -5,6 +5,7 @@
               here, so the browser never has to work out repeats.
     happened  the activity feed (activity.py) for the same days: kits bought and finished,
               plays, volleyball games, journal pages...
+    moods     how each day felt (journal pages' mood)
 
 A volleyball event's day also says whether a game was logged from it (`logged_id`), so the
 calendar can offer "Log the result" until you have.
@@ -16,7 +17,7 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 
-from . import activity
+from . import activity, journal
 from .db import MODULE_IDS, REPEATS, db, found, insert_row, update_row
 
 router = APIRouter(prefix="/api", tags=["calendar"])
@@ -102,7 +103,8 @@ def calendar(start: date, end: date):
     if end < start or (end - start).days > MAX_DAYS:
         raise HTTPException(422, f"The end must be after the start, and at most {MAX_DAYS} days later.")
     with db() as conn:
-        return {"events": occurrences(conn, start, end), "happened": activity.rows(conn, 2000, start, end)}
+        return {"events": occurrences(conn, start, end), "happened": activity.rows(conn, 2000, start, end),
+                "moods": journal.moods_between(conn, start, end)}
 
 
 @router.get("/calendar/upcoming")

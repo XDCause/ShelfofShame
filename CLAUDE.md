@@ -698,6 +698,22 @@ DBeaver, psql, and the one-off import script.
      navbar / tabbar, wide page, 1.45rem lines, 40dvh blank space below) + requestFullscreen; leaving
      browser full screen or Esc ends it. @media (pointer: coarse): bigger journal lines anyway.
      57 browser steps (writing_mode).
+3zc. **Mood replaces the page icon** - DONE in dev (2026-10-14). User asked what the 🙂 was (a
+   Notion-style page icon placeholder, never set on prod) and chose: replace the icon with a mood,
+   5 faces + a word or two.
+   - 25_mood.sql: journal_pages.mood (great/good/okay/meh/rough, NULL = not set; MOODS in db.py),
+     mood_words TEXT[] (tidy_words: lower case, no repeats, <= 5 of <= 24 letters); icon DROPPED.
+   - API: PageIn/PagePatch mood + mood_words; GET /api/journal?mood=; q also searches mood words;
+     GET /api/journal/moods?start&end (journal.moods_between: per day, the latest-edited page with
+     a mood); /api/calendar also returns `moods`; to-dos carry mood instead of icon.
+   - Web: core/journal/moods.js (faces, tones, MOOD_WORDS, pageFace), MoodPicker.jsx (face button ->
+     panel: 5 moods, word chips, your own word; saves on tap). Journal list: face thumbnails, mood
+     line "Good · proud", mood filter chips. Home journal card: Your week (7 days). Calendar: face
+     in the day cell, "Felt good" in the day detail.
+   - e2e browsers now run with timezone_id Australia/Brisbane (the container is UTC; "today" in the
+     browser must match the day the API dates pages by). Gotcha: never rewrite walkthrough.py with
+     PowerShell Get-Content/Set-Content - 5.1 reads it as ANSI and garbles every · and –.
+   - Tests: 259 API (test_mood.py), 58 browser steps (mood).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

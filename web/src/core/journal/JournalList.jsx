@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { api, imageUrl, shortDate } from '../../api.js'
 import { useApp } from '../app-context.js'
+import { MOODS, moodOf, pageFace } from './moods.js'
 import TodoList from './TodoList.jsx'
 
 const dayOf = (day) => new Date(`${day}T12:00:00`)
@@ -30,15 +31,16 @@ export default function JournalList() {
   const [tags, setTags] = useState([])
   const [q, setQ] = useState('')
   const [tag, setTag] = useState('')
+  const [mood, setMood] = useState('')
   const [oldest, setOldest] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
     const wait = setTimeout(() => {
-      api.listPages({ q, tag }).then(setPages).catch((e) => setError(e.message))
+      api.listPages({ q, tag, mood }).then(setPages).catch((e) => setError(e.message))
     }, q ? 250 : 0)                                         // don't search on every keystroke
     return () => clearTimeout(wait)
-  }, [q, tag, refreshKey])
+  }, [q, tag, mood, refreshKey])
   useEffect(() => { api.journalTags().then(setTags).catch(() => {}) }, [refreshKey])
 
   // Pinned first, then a heading per month.
@@ -69,6 +71,13 @@ export default function JournalList() {
             </button>
           ))}
         </div>
+        <div className="chip-row mood-filter" aria-label="Mood">
+          {MOODS.map((m) => (
+            <button key={m.id} type="button" className="chip-filter" aria-pressed={mood === m.id}
+              title={`${m.label} days`} aria-label={`${m.label} days`}
+              onClick={() => setMood(mood === m.id ? '' : m.id)}>{m.face}</button>
+          ))}
+        </div>
         <label className="sort view-controls">
           <span className="muted small">Sort</span>
           <select value={oldest ? 'oldest' : 'newest'} onChange={(e) => setOldest(e.target.value === 'oldest')} aria-label="Sort pages">
@@ -78,9 +87,9 @@ export default function JournalList() {
         </label>
       </div>
       {error && <p className="alert error">{error}</p>}
-      {!q && !tag && <TodoList card />}
+      {!q && !tag && !mood && <TodoList card />}
       {pages && pages.length === 0 && (
-        <p className="empty card">{q || tag ? 'No pages match.' : 'No pages yet. Start one with "+ New page".'}</p>
+        <p className="empty card">{q || tag || mood ? 'No pages match.' : 'No pages yet. Start one with "+ New page".'}</p>
       )}
       {groups.map((g) => (
         <div key={g.name}>
@@ -108,14 +117,16 @@ function PageCard({ page: p }) {
           <span>{day.getFullYear()}</span>
         </span>
         {picture ? <img className="journal-thumb" src={picture} alt="" loading="lazy" />
-          : <span className="journal-thumb emoji" aria-hidden="true">{p.icon || (p.kind === 'whiteboard' ? '🖊️' : '📝')}</span>}
+          : <span className="journal-thumb emoji" aria-hidden="true">{pageFace(p)}</span>}
         <span className="grow">
           <span className="journal-card-head">
-            <span className="item-title">{picture && p.icon ? `${p.icon} ` : ''}{p.title || 'Untitled'}</span>
+            <span className="item-title">{picture && p.mood ? `${moodOf(p.mood).face} ` : ''}{p.title || 'Untitled'}</span>
             {p.kind === 'whiteboard' && <span className="pill purple">Whiteboard</span>}
             {p.pinned && <span className="pill low">Pinned</span>}
           </span>
           {first && <span className="pill tint">#{first}</span>}
+          {p.mood && <span className={`mood-line ${moodOf(p.mood).tone}`}>{moodOf(p.mood).label}
+            {p.mood_words.length > 0 && <span className="muted"> · {p.mood_words.join(', ')}</span>}</span>}
           {p.snippet && <span className="page-snippet two-lines">{p.snippet.replace(/\n/g, ' · ')}</span>}
           {others.length > 0 && <span className="chips">{others.map((t) => <span key={t} className="chip">#{t}</span>)}</span>}
         </span>
@@ -128,7 +139,7 @@ export function PageRow({ page: p, onClick }) {
   return (
     <li>
       <Link to={`/journal/${p.page_id}`} className="page-row" onClick={onClick}>
-        <span className="page-icon" aria-hidden="true">{p.icon || '📝'}</span>
+        <span className="page-icon" aria-hidden="true">{pageFace(p)}</span>
         <span className="grow">
           <span className="item-title">{p.title || 'Untitled'}</span>
           {p.snippet && <span className="page-snippet">{p.snippet.split('\n')[0]}</span>}

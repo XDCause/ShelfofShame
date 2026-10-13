@@ -48,7 +48,7 @@ export default function TodoList({ limit, card = false }) {
                 <input type="checkbox" checked={done} onChange={() => tick(t)} />
                 <span>{t.text}</span>
               </label>
-              <Link to={`/journal/${t.page_id}`} className="todo-page">{t.icon} {t.title || 'Untitled'}</Link>
+              <Link to={`/journal/${t.page_id}`} className="todo-page">{t.title || 'Untitled'}</Link>
             </li>
           )
         })}

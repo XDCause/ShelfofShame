@@ -38,6 +38,7 @@ export const api = {
   updatePage: (id, data) => request(`/journal/${id}`, send('PATCH', data)),
   deletePage: (id) => request(`/journal/${id}`, send('DELETE')),
   journalTags: () => request('/journal/tags'),
+  moods: (start, end) => request(`/journal/moods?start=${start}&end=${end}`),
   mentionable: (q) => request(`/journal/mentionable?q=${enc(q)}`),
   listTodos: (done = false) => request(`/journal/todos${done ? '?done=true' : ''}`),
   tickTodo: (pageId, blockId, checked) => request(`/journal/${pageId}/todos/${enc(blockId)}`, send('PATCH', { checked })),

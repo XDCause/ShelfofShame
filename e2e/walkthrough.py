@@ -997,6 +997,38 @@ def writing_mode(page):
     expect(page.locator("body.writing-mode")).to_have_count(0)
 
 
+@step("Mood: pick a face and a word; the list, its filter, Home's week and the calendar show it")
+def mood(page):
+    go(page, "Journal")
+    page.get_by_role("button", name="+ New page").click()
+    page.get_by_label("Title").fill(f"Mood {MARK}")
+    page.get_by_role("button", name="How did it feel? Set a mood").click()
+    panel = page.get_by_role("group", name="Mood")
+    panel.get_by_role("button", name="Good").click()
+    panel.get_by_role("button", name="proud", exact=True).click()
+    panel.get_by_label("Add your own word").fill("Painted")
+    panel.get_by_label("Add your own word").press("Enter")
+    expect(page.get_by_role("button", name="Mood: Good. Change it")).to_be_visible()
+    shot(page, "d39_mood", full=False)
+    panel.get_by_role("button", name="Done").click()
+    expect(page.locator(".save-status")).to_have_text("Saved", timeout=10000)
+    page_id = int(re.search(r"/journal/(\d+)", page.url).group(1))
+    saved = page.request.get(f"{BASE}/api/journal/{page_id}").json()
+    assert (saved["mood"], saved["mood_words"]) == ("good", ["proud", "painted"]), saved
+    go(page, "Journal")
+    card = page.locator(".journal-card", has_text=f"Mood {MARK}")
+    expect(card.locator(".mood-line")).to_contain_text("Good · proud, painted")
+    page.get_by_role("button", name="Rough days").click()
+    expect(page.locator(".journal-card", has_text=f"Mood {MARK}")).to_have_count(0)
+    page.get_by_role("button", name="Good days").click()
+    expect(page.locator(".journal-card", has_text=f"Mood {MARK}")).to_have_count(1)
+    go(page, "Home")
+    today = page.locator(".your-week .week-day").last
+    expect(today).to_contain_text("🙂")
+    go(page, "Calendar")
+    expect(page.locator(".day-detail .mood-line")).to_contain_text("Felt good")
+
+
 @step("Settings: price guide, default shop, backups, exports, catalogue")
 def settings_more(page):
     page.get_by_role("button", name="Settings").click()
@@ -1078,7 +1110,9 @@ def phone(page):
 
 with sync_playwright() as p:
     browser = p.chromium.launch()
-    desk = browser.new_page(viewport={"width": 1280, "height": 860})
+    # The user's time zone: "today" in the browser must be the same day the app dates pages by.
+    zone = "Australia/Brisbane"
+    desk = browser.new_page(viewport={"width": 1280, "height": 860}, timezone_id=zone)
     watch(desk, "desktop")
     for fn in (home, inventory_loads, search, chip, groups, condition_low, plus_minus, notes, edit_details, settings,
                add_lookup, add_to_wishlist, wishlist_buy, delete_bought, scan_owned, scan_unknown,
@@ -1086,9 +1120,9 @@ with sync_playwright() as p:
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
                matches, used_on, gundam, bandai_lookup, warhammer, journal_write, journal_links, journal_from_model,
                journal_suggestion, journal_todo, global_search, journal_wishlist, appearance,
-               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, settings_more, no_panel):
+               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, settings_more, no_panel):
         fn(desk)
-    ctx = browser.new_context(**p.devices["iPhone 13"])
+    ctx = browser.new_context(**p.devices["iPhone 13"], timezone_id=zone)
     mob = ctx.new_page()
     watch(mob, "phone")
     phone(mob)

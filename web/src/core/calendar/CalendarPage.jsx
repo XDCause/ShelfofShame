@@ -6,6 +6,7 @@ import { MODULES } from '../../modules/index.js'
 import { KIND_ICON, VERB_TONE } from '../activityKinds.js'
 import { useApp } from '../app-context.js'
 import { useNewPage } from '../journal/JournalList.jsx'
+import { moodOf } from '../journal/moods.js'
 
 // Colours: planned events by hobby, what happened by kind (dots) and verb (like Recent activity).
 export const HOBBY_TONE = { models: 'purple', boardgames: 'teal', volleyball: 'low' }
@@ -44,6 +45,7 @@ export default function CalendarPage() {
     const map = {}
     for (const e of data?.events ?? []) (map[e.day] ??= { events: [], happened: [] }).events.push(e)
     for (const h of data?.happened ?? []) (map[h.day] ??= { events: [], happened: [] }).happened.push(h)
+    for (const m of data?.moods ?? []) (map[m.day] ??= { events: [], happened: [] }).mood = m
     for (const d of Object.values(map)) d.happened.reverse() // oldest first within the day
     return map
   }, [data])
@@ -80,7 +82,10 @@ export default function CalendarPage() {
               <button key={iso} type="button" role="gridcell" aria-selected={iso === selected}
                 className={['day', d.getMonth() !== month.getMonth() && 'other', iso === today() && 'today'].filter(Boolean).join(' ')}
                 onClick={() => pick(iso)} aria-label={`${d.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}${day?.events.length ? `, ${day.events.length} planned` : ''}`}>
-                <span className="day-num">{d.getDate()}</span>
+                <span className="day-top">
+                  <span className="day-num">{d.getDate()}</span>
+                  {day?.mood && <span className="day-mood" title={moodOf(day.mood.mood).label}>{moodOf(day.mood.mood).face}</span>}
+                </span>
                 {day?.events.slice(0, 2).map((e) => (
                   <span key={`${e.event_id}`} className={`day-event ${HOBBY_TONE[e.hobby] ?? 'tint'}`}>
                     {e.start_time && <span className="day-time">{clock(e.start_time)}</span>} {e.title}
@@ -99,6 +104,12 @@ export default function CalendarPage() {
 
         <aside className="card day-detail" aria-label="The chosen day">
           <h3 className="home-card-title">{dayDate(selected).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}</h3>
+          {chosen.mood && (
+            <p className={`mood-line ${moodOf(chosen.mood.mood).tone}`}>
+              {moodOf(chosen.mood.mood).face} Felt {moodOf(chosen.mood.mood).label.toLowerCase()}
+              {chosen.mood.mood_words.length > 0 && <span className="muted"> · {chosen.mood.mood_words.join(', ')}</span>}
+            </p>
+          )}
           <h4 className="section-title">Planned</h4>
           {chosen.events.length === 0 ? <p className="muted small">Nothing planned.</p> : (
             <ul className="list plain-list">

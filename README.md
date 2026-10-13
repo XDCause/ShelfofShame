@@ -39,6 +39,10 @@ have five tabs: Home, Journal, Calendar, Supplies (with the wishlist) and Hobbie
   page and it becomes typed text. In Chrome the S Pen only brings up the keyboard.
   A page's **Full screen** button gives a big writing page: no sidebar or bars, big lines, room to
   write below the last line (Exit full screen, Esc or the back gesture to leave).
+- **Mood**: the face beside a page's title is how the day felt: Great 😄, Good 🙂, Okay 😐, Meh 😕 or
+  Rough 😢, plus up to five words (proud, tired... or your own). It shows on the page's card, as
+  a face on that day in the Calendar, and as **Your week** (the last seven days) on Home; the
+  journal list can show just one mood's days.
 - **Journal -> actions**: write "Just bought @Sherman and started it right away" and the page
   offers "Sherman: Mark as In progress?" (Yes / Not now); "primed @Zero" offers the build step;
   "I want to buy new @XF-10 for a new project" offers "Add to wishlist?".
@@ -158,6 +162,7 @@ Grouped as in `api/app/` (one module per part of the app):
 | GET/POST | `/api/journal?q=&tag=&mention=model:3` | Pages (newest first, pinned on top) / start a page |
 | GET/PATCH/DELETE | `/api/journal/{id}` | One page with its blocks, tags, mentions and "mentioned in" |
 | GET | `/api/journal/tags`, `/api/journal/mentionable?q=` | Tags in use / what `@` can mention |
+| GET | `/api/journal/moods?start=&end=` | Each day's mood (from that day's page) |
 | GET · PATCH | `/api/journal/todos?done=` · `/api/journal/{id}/todos/{block}` | Check-list items from every page / tick one `{"checked": true}` |
 | POST | `/api/journal/{id}/suggestions/apply`, `.../dismiss` | Do (or wave away) a suggestion `{"key": ...}` |
 | POST | `/api/journal/images` · GET `/api/journal/images/{id}` | A photo in a page (image as the body) |
