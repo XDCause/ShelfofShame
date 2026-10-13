@@ -261,6 +261,23 @@ DBeaver, psql, and the one-off import script.
      web (8080)" has RemoteAddress LocalSubnet; the Tailscale interface is 100.76.51.75/32, so
      the phone (100.118.29.60) is outside it. Fix (admin): Set-NetFirewallRule -DisplayName
      "Hobby Inventory web (8080)" -RemoteAddress LocalSubnet,100.64.0.0/10. Check whether done.
+3m. **Shop Tamiya** - DONE (2026-10-13). User wanted to search e.g. "Tamiya Panel Line Black" and
+   add it to the wishlist without knowing the item number.
+   - `db/init/11_catalog.sql`: `catalog_products` (brand_id + product_code PK, item, title, genre,
+     thumb_url = Tamiya's CDN, source_url). Filled by the one-off importer
+     `docker exec hobby-inventory-api python -m app.tamiya_catalog` (`app/tamiya_catalog.py`):
+     tamiya.com/english/products/list.html?genre_item=e_5040|e_5010|e_5020|e_5030 (Paints,
+     Finishing Materials, Craft Tools, Airbrush System), 2 s between pages, ~54 pages. First run
+     2026-10-13: 1,012 products. Never runs automatically.
+   - API `app/catalog.py`: GET /api/catalog/search?q= (every word must match the title, hyphens
+     ignored; XF-76 / xf76 -> item 81776; owned first, with owned_* + on_wishlist), GET /info,
+     POST /api/catalog/{code}/wishlist (fetches the product page + photo once via tamiya_product,
+     suggest() fills name/category/size; 409 if already on the wishlist).
+   - UI: "Shop Tamiya" button on the Wishlist -> ShopPanel drawer (search as you type, suggestion
+     chips, thumbnails hot-linked from Tamiya's CDN with no-referrer, OwnedBadge, "+ Wishlist").
+     OwnedBadge moved to its own component.
+   - Tests: 90 API (test_catalog.py + trimmed fixture tamiya_list_e_5010.html), 28 browser steps
+     (search only - the e2e never fetches tamiya.com; thumbnails are blank in its screenshots).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

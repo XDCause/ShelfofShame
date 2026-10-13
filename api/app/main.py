@@ -10,7 +10,7 @@ from fastapi import FastAPI, HTTPException, Query, Response
 from psycopg import sql
 from pydantic import BaseModel, Field
 
-from . import models, wishlist
+from . import catalog, models, wishlist
 from .db import CONDITIONS, FINISHES, PAINT_TYPES, PRIORITIES, db, stock_reason
 from .wishlist import ON_WISHLIST, wish_from_supplies
 
@@ -21,6 +21,7 @@ app = FastAPI(
 )
 app.include_router(wishlist.router)  # wishlist, Tamiya lookup and product photos
 app.include_router(models.router)    # models (kits) and the paints each one needs
+app.include_router(catalog.router)   # Shop Tamiya: search the catalogue, add to the wishlist
 
 PaintType = Literal[tuple(PAINT_TYPES)]
 Finish = Literal[tuple(FINISHES)]

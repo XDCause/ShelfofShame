@@ -23,7 +23,7 @@ def clean_database():
     """Every test starts with the seeded lookup lists and nothing else."""
     with db() as conn:
         conn.execute("TRUNCATE stock_movements, wishlist, barcode_catalog, product_info, supplies, "
-                     "model_paints, models RESTART IDENTITY CASCADE")
+                     "model_paints, models, catalog_products RESTART IDENTITY CASCADE")
         conn.execute("DELETE FROM brands WHERE name NOT IN ('Tamiya', 'Milliput', 'Microscale', 'Other')")
         conn.execute("DELETE FROM categories WHERE name LIKE 'Test %'")
         conn.execute("DELETE FROM storage_locations WHERE name LIKE 'Test %'")

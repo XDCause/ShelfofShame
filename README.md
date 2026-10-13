@@ -45,6 +45,8 @@ Browser -> web (nginx) -> api (FastAPI) -> db (PostgreSQL)
 | DELETE | `/api/wishlist/{id}` | Remove from wishlist |
 | POST | `/api/wishlist/{id}/buy` | Bought it: move to inventory `{"purchased_from": "..."}` |
 | POST | `/api/wishlist/buy-ticked` | Move every ticked item to inventory |
+| GET | `/api/catalog/search?q=panel line black` | Search the imported Tamiya catalogue (marks what you own / have on the wishlist) |
+| POST | `/api/catalog/{product_code}/wishlist` | Put a catalogue product on the wishlist (fetches its details + photo once) |
 | GET | `/api/lookup/tamiya/{item}` | Product details + photo from tamiya.com (cached after first time) |
 | GET | `/api/lookup/hasegawa/{code}` | Hasegawa kit by series code (`JT86`) or item number (`09086`): name, scale, box art |
 | GET | `/api/scan/{barcode}` | Identify an item from its barcode number (known / catalog / Tamiya / unknown) |
@@ -99,6 +101,7 @@ SUP-0001... numbering.
 | One-off query | `docker exec hobby-inventory-db psql -U hobby -d hobby_inventory -c "SELECT * FROM v_supplies"` |
 | **Wipe and rebuild** (deletes all data!) | `docker compose down -v`, `.\start.ps1`, then re-run the import |
 | Update the Tamiya paint barcode catalogue (new colours) | `docker exec hobby-inventory-api python -m app.catalog_import` |
+| Update the Shop Tamiya product list (~1,000 products, ~3 min) | `docker exec hobby-inventory-api python -m app.tamiya_catalog` |
 | Back up now (also runs nightly at 2 am) | `.\backup.ps1` (keeps the newest 14 in `backups\`) |
 | Back up and copy elsewhere | `.\backup.ps1 -CopyTo "D:\Backups"` |
 | Run the automated tests (never touches real data) | `.\run_tests.ps1` (or `.\run_tests.ps1 -k wishlist`) |

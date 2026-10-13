@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { api, imageUrl, money } from '../api.js'
+import OwnedBadge from './OwnedBadge.jsx'
 import ScanButton from './ScanButton.jsx'
+import ShopPanel from './ShopPanel.jsx'
 import WishForm from './WishForm.jsx'
 
 const SHOP_KEY = 'hobby-inventory.lastShop'
@@ -23,6 +25,7 @@ export default function WishlistView({ lookups, onChanged }) {
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState(null)
   const [scanned, setScanned] = useState(null) // {result, photo} -> form pre-filled
+  const [shopping, setShopping] = useState(false) // Shop Tamiya panel open
 
   const openForm = (wish, scan = null) => {
     setScanned(scan)
@@ -118,10 +121,19 @@ export default function WishlistView({ lookups, onChanged }) {
           ))}
         </div>
         <div className="head-buttons">
-          <ScanButton onBarcode={onBarcode} />
+          <button className="primary" onClick={() => setShopping(true)}>Shop Tamiya</button>
+          <ScanButton onBarcode={onBarcode} className="secondary" />
           <button className="secondary" onClick={() => openForm(null)}>+ Add</button>
         </div>
       </div>
+
+      {shopping && (
+        <ShopPanel onClose={() => setShopping(false)}
+          onAdded={(p) => {
+            setMessage({ type: 'ok', text: `${p.name} added to your wishlist.` })
+            load()
+          }} />
+      )}
 
       {message && <p className={`alert ${message.type}`} role="status">{message.text}</p>}
 
@@ -192,17 +204,6 @@ export default function WishlistView({ lookups, onChanged }) {
       )}
     </section>
   )
-}
-
-// What your inventory says about this item:
-//   red    "None left"                  - used up (0 on hand)
-//   amber  "You own 1 · Nearly empty"   - running out, so fine to rebuy
-//   grey   "You own 1 · Sealed"         - you still have a good one: don't double-buy
-function OwnedBadge({ wish }) {
-  if (wish.owned_supply_id == null) return null
-  if (wish.owned_qty <= 0) return <span className="badge out">None left</span>
-  const own = `You own ${wish.owned_qty}${wish.owned_condition ? ` · ${wish.owned_condition}` : ''}`
-  return <span className={`badge ${wish.owned_status === 'OK' ? 'own' : 'low'}`}>{own}</span>
 }
 
 function WishCard({ wish, onToggle, onEdit, onRemove, onBuy, busy }) {

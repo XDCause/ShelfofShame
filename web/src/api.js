@@ -64,6 +64,10 @@ export const api = {
   lookupHasegawa: (code, refresh = false) =>
     request(`/lookup/hasegawa/${encodeURIComponent(code)}${refresh ? '?refresh=true' : ''}`),
 
+  catalogInfo: () => request('/catalog/info'),
+  searchCatalog: (q) => request(`/catalog/search?q=${encodeURIComponent(q)}`),
+  addCatalogToWishlist: (code) => request(`/catalog/${encodeURIComponent(code)}/wishlist`, { method: 'POST' }),
+
   lookups: () => request('/lookups'),
   addLookup: (kind, name) => request(`/lookups/${kind}`, json('POST', { name })),
   deleteLookup: (kind, id) => request(`/lookups/${kind}/${id}`, { method: 'DELETE' }),

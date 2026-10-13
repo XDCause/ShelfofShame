@@ -296,6 +296,20 @@ def wishlist_panel(page):
     page.keyboard.press("Escape")
 
 
+@step("Shop Tamiya: search the catalogue (search only, no tamiya.com fetch)")
+def shop_tamiya(page):
+    page.get_by_role("tab", name="Wishlist").click()
+    page.get_by_role("button", name="Shop Tamiya").click()
+    d = drawer(page)
+    d.get_by_label("Search Tamiya").fill("panel line black")
+    row = d.locator(".shop-results li", has_text="Panel Line Accent Color (Black)")
+    expect(row).to_be_visible()
+    expect(row.get_by_role("button", name="+ Wishlist")).to_be_visible()
+    expect(d.locator(".shop-results li")).to_have_count(1)
+    shot(page, "d15_shop_tamiya", full=False)
+    page.keyboard.press("Escape")
+
+
 @step("Model: Search Scalemates link")
 def scalemates(page):
     page.get_by_role("tab", name="Models").click()
@@ -374,7 +388,7 @@ with sync_playwright() as p:
     watch(desk, "desktop")
     for fn in (inventory_loads, search, chip, condition_low, plus_minus, notes, edit_details, manage_lists,
                add_lookup, add_to_wishlist, wishlist_buy, delete_bought, scan_owned, scan_unknown,
-               models, model_paste, add_model_hasegawa, undo, add_to_wishlist_button, duplicate_check, wishlist_panel,
+               models, model_paste, add_model_hasegawa, undo, add_to_wishlist_button, duplicate_check, wishlist_panel, shop_tamiya,
                scalemates, fab_desktop, model_edit, lists_protect, no_panel):
         fn(desk)
     ctx = browser.new_context(**p.devices["iPhone 13"])
