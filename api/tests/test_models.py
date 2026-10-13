@@ -110,3 +110,76 @@ def test_removing_a_paint(client, ids):
     m = client.post(f"/api/models/{model['model_id']}/paints", json={"text": "XF-1\nXF-2"}).json()
     m = client.delete(f"/api/model-paints/{m['paints'][0]['model_paint_id']}").json()
     assert [p["product_code"] for p in m["paints"]] == ["T81702"]
+
+
+# ---------------------------------------------------------------- hobbies: Gundam and Warhammer
+def test_a_gundam_kit_with_a_new_brand_and_grade(client):
+    """The user's HGUC RX-78-2: Bandai isn't one of their brands yet, so it's added on first use."""
+    m = client.post("/api/models", json={"name": "RX-78-2 Gundam (Revive)", "hobby": "Gundam",
+                                         "brand_name": "Bandai", "product_code": "G5057403",
+                                         "grade": "HG", "scale": "1/144"}).json()
+    assert (m["hobby"], m["brand"], m["grade"], m["stage"]) == ("Gundam", "Bandai", "HG", None)
+    brands = [b["name"] for b in client.get("/api/lookups").json()["brands"]]
+    assert "Bandai" in brands
+    again = client.post("/api/models", json={"name": "Zaku II", "hobby": "Gundam", "brand_name": "Bandai"}).json()
+    assert again["brand_id"] == m["brand_id"]  # not added twice
+
+
+def test_existing_and_default_models_are_scale_models(client, ids):
+    m = make_model(client, ids)
+    assert (m["hobby"], m["figures"], m["figures_done"]) == ("Scale model", 1, 0)
+
+
+def test_build_steps_belong_to_the_hobby(client, ids):
+    m = make_model(client, ids, hobby="Gundam", status="In stash")
+    url = f"/api/models/{m['model_id']}"
+    r = client.patch(url, json={"stage": "Weathered"})            # a scale-model step
+    assert r.status_code == 422 and "Panel lined" in r.json()["detail"]
+    m = client.patch(url, json={"stage": "Panel lined"}).json()
+    assert m["stage"] == "Panel lined"
+    assert m["status"] == "In progress" and m["started_on"]       # ticking off a step starts the build
+    m = client.patch(url, json={"stage": None}).json()
+    assert m["stage"] is None and m["status"] == "In progress"
+
+
+def test_changing_hobby_drops_a_step_it_does_not_have(client, ids):
+    m = make_model(client, ids, hobby="Gundam", stage="Panel lined")
+    m = client.patch(f"/api/models/{m['model_id']}", json={"hobby": "Warhammer"}).json()
+    assert (m["hobby"], m["stage"]) == ("Warhammer", None)
+    m = client.patch(f"/api/models/{m['model_id']}", json={"stage": "Primed"}).json()
+    m = client.patch(f"/api/models/{m['model_id']}", json={"hobby": "Scale model"}).json()
+    assert m["stage"] == "Primed"                                  # both hobbies have it: kept
+
+
+def test_finished_kits_keep_their_status_when_a_step_changes(client, ids):
+    m = make_model(client, ids, status="Finished")
+    m = client.patch(f"/api/models/{m['model_id']}", json={"stage": "Weathered"}).json()
+    assert m["status"] == "Finished"
+
+
+def test_warhammer_box_counts_minis(client):
+    m = client.post("/api/models", json={"name": "Intercessors", "hobby": "Warhammer",
+                                         "brand_name": "Games Workshop", "faction": "Ultramarines",
+                                         "figures": 10}).json()
+    url = f"/api/models/{m['model_id']}"
+    assert (m["faction"], m["figures"], m["figures_done"]) == ("Ultramarines", 10, 0)
+    assert client.patch(url, json={"figures_done": 3}).json()["figures_done"] == 3
+    r = client.patch(url, json={"figures_done": 11})
+    assert r.status_code == 422 and "only 10" in r.json()["detail"]
+    assert client.patch(url, json={"figures": 0}).status_code == 422
+    m = client.patch(url, json={"figures": 2}).json()             # fewer in the box than done
+    assert (m["figures"], m["figures_done"]) == (2, 2)
+
+
+def test_lookups_list_hobbies_and_their_steps(client):
+    lk = client.get("/api/lookups").json()
+    assert lk["hobbies"] == ["Scale model", "Warhammer", "Gundam"]
+    assert lk["stages"]["Gundam"] == ["Built", "Panel lined", "Decals", "Top coat"]
+    assert lk["hobby_brands"]["Gundam"] == "Bandai" and lk["gundam_grades"]["MG"] == "1/100"
+
+
+def test_models_csv_has_the_hobby_columns(client):
+    client.post("/api/models", json={"name": "RX-78-2", "hobby": "Gundam", "grade": "HG", "stage": "Built"})
+    csv = client.get("/api/export/models.csv").content.decode("utf-8-sig").splitlines()
+    assert "Hobby" in csv[0] and "Build step" in csv[0] and "Grade" in csv[0]
+    assert "Gundam" in csv[1] and "HG" in csv[1] and "Built" in csv[1]

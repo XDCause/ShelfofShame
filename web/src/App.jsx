@@ -103,7 +103,7 @@ export default function App() {
     ) : tab === 'wishlist' ? (
       <WishlistView lookups={lookups} settings={settings} refreshKey={refreshKey} onChanged={changed} />
     ) : tab === 'models' ? (
-      <ModelsView refreshKey={refreshKey} onOpen={openModel} />
+      <ModelsView lookups={lookups} refreshKey={refreshKey} onOpen={openModel} />
     ) : (
       <ColoursView refreshKey={refreshKey} onChanged={changed} onOpenItem={openItem} onOpenModel={openModel} />
     )

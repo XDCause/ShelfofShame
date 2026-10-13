@@ -3,7 +3,8 @@ from fastapi import APIRouter, HTTPException, Response
 from psycopg import sql
 from pydantic import BaseModel, Field
 
-from .db import CONDITIONS, FINISHES, MODEL_STATUSES, PAINT_TYPES, PRIORITIES, db, found
+from .db import (CONDITIONS, FINISHES, GUNDAM_GRADES, HOBBIES, HOBBY_BRANDS, MODEL_STATUSES, PAINT_TYPES,
+                 PRIORITIES, STAGES, db, found)
 
 router = APIRouter(prefix="/api", tags=["lookups"])
 
@@ -32,7 +33,8 @@ def lookups():
     """Everything a form needs for its dropdowns. `uses` = how many things refer to it
     (anything in use can't be removed)."""
     result = {"paint_types": PAINT_TYPES, "finishes": FINISHES, "conditions": CONDITIONS,
-              "priorities": PRIORITIES, "model_statuses": MODEL_STATUSES}
+              "priorities": PRIORITIES, "model_statuses": MODEL_STATUSES,
+              "hobbies": HOBBIES, "stages": STAGES, "hobby_brands": HOBBY_BRANDS, "gundam_grades": GUNDAM_GRADES}
     with db() as conn:
         for kind, (table, id_col) in LOOKUPS.items():
             counts = sql.SQL(" + ").join(

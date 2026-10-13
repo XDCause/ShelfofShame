@@ -25,6 +25,18 @@ FINISHES = ["Flat / Matt", "Satin", "Semi-gloss", "Gloss", "Metallic", "Clear", 
 CONDITIONS = ["Sealed", "Opened", "Half used", "Nearly empty", "Empty", "Dried out"]
 PRIORITIES = ["High", "Normal", "Low"]
 MODEL_STATUSES = ["Wanted", "In stash", "In progress", "On hold", "Finished", "Gone"]
+# Each hobby's build steps in order (db/init/16_hobbies.sql); a model's stage = the last one done.
+STAGES = {
+    "Scale model": ["Built", "Primed", "Painted", "Decals", "Weathered"],
+    "Warhammer": ["Built", "Primed", "Painted", "Based"],
+    "Gundam": ["Built", "Panel lined", "Decals", "Top coat"],
+}
+HOBBIES = list(STAGES)
+# Who usually makes each hobby's kits: a new Warhammer / Gundam model starts with that brand.
+HOBBY_BRANDS = {"Warhammer": "Games Workshop", "Gundam": "Bandai"}
+# Suggestions for the Grade field, with the usual scale for each.
+GUNDAM_GRADES = {"EG": "1/144", "HG": "1/144", "RG": "1/144", "FM": "1/100", "MG": "1/100",
+                 "RE/100": "1/100", "PG": "1/60", "SD": None}
 
 # Friendly messages for database rule violations, keyed by constraint name.
 CONSTRAINT_MESSAGES = {
@@ -36,6 +48,8 @@ CONSTRAINT_MESSAGES = {
     "model_sessions_running_uq": "The timer is already running for this model.",
     "model_sessions_order_check": "A session can't end before it starts.",
     "price_guide_condition_check": "A price rule needs a name to match, a paint type or a size.",
+    "models_stage_check": "That build step isn't one of this hobby's steps.",
+    "models_figures_check": "Minis done must be between 0 and the number in the box.",
 }
 
 
@@ -75,6 +89,12 @@ def found(row, what: str):
 def brand_id(conn, name: str) -> int | None:
     row = conn.execute("SELECT brand_id FROM brands WHERE name = %s", (name,)).fetchone()
     return row["brand_id"] if row else None
+
+
+def ensure_brand(conn, name: str) -> int:
+    """The brand's id, adding it first if it's new (brands are only added once they're used)."""
+    conn.execute("INSERT INTO brands (name) VALUES (%s) ON CONFLICT (name) DO NOTHING", (name,))
+    return brand_id(conn, name)
 
 
 @contextmanager

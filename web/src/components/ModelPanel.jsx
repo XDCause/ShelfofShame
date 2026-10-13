@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { api, imageUrl, money, shortDate } from '../api.js'
 import BuildLog from './BuildLog.jsx'
+import BuildSteps from './BuildSteps.jsx'
 import Drawer from './Drawer.jsx'
 import ModelForm from './ModelForm.jsx'
-import { statusClass } from './ModelsView.jsx'
+import { modelMeta, statusClass } from './ModelsView.jsx'
 import PaintChecklist from './PaintChecklist.jsx'
 import PhotoUpload from './PhotoUpload.jsx'
 import TimeTracker from './TimeTracker.jsx'
@@ -95,7 +96,7 @@ export default function ModelPanel({ modelId, lookups, settings, onClose, onChan
         </div>
         <div>
           <h3 className="item-name">{model.name}</h3>
-          <p className="item-sub">{[model.scale, model.brand, model.product_code].filter(Boolean).join(' · ')}</p>
+          <p className="item-sub">{modelMeta(model)}</p>
           {(stash || dates) && <p className="item-sub small">{[stash, dates].filter(Boolean).join(' · ')}</p>}
           <div className="model-links">
             {model.source_url && (
@@ -105,8 +106,10 @@ export default function ModelPanel({ modelId, lookups, settings, onClose, onChan
             )}
             {model.scalemates_url
               ? <a className="small" href={model.scalemates_url} target="_blank" rel="noreferrer">Scalemates ↗</a>
-              : <a className="small" href={scalematesSearch(model)} target="_blank" rel="noreferrer"
-                  title="Find it on Scalemates, then paste its address into Edit details">Search Scalemates ↗</a>}
+              : model.hobby !== 'Warhammer' && (
+                <a className="small" href={scalematesSearch(model)} target="_blank" rel="noreferrer"
+                  title="Find it on Scalemates, then paste its address into Edit details">Search Scalemates ↗</a>
+              )}
           </div>
         </div>
       </div>
@@ -121,6 +124,7 @@ export default function ModelPanel({ modelId, lookups, settings, onClose, onChan
         </div>
       </section>
 
+      {model.status !== 'Wanted' && <BuildSteps model={model} stages={lookups.stages} save={save} />}
       <TimeTracker model={model} onModel={onModel} run={run} />
       <PaintChecklist model={model} onModel={onModel} run={run} flash={flash} onOpenSupply={onOpenSupply} />
       <BuildLog modelId={model.model_id} entries={model.log} reload={reload} run={run} />

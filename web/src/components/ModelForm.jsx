@@ -3,21 +3,40 @@ import { api, imageUrl, today } from '../api.js'
 import Drawer from './Drawer.jsx'
 import { Field } from './SupplyFields.jsx'
 
-const FIELDS = ['name', 'brand_id', 'product_code', 'scale', 'status', 'scalemates_url', 'price_paid',
-  'purchase_date', 'purchased_from', 'started_on', 'finished_on']
+const FIELDS = ['name', 'hobby', 'brand_id', 'product_code', 'scale', 'grade', 'faction', 'figures', 'status',
+  'scalemates_url', 'price_paid', 'purchase_date', 'purchased_from', 'started_on', 'finished_on']
+// Only some fields mean anything for each hobby; the others are sent empty.
+const ONLY_FOR = { grade: 'Gundam', faction: 'Warhammer', figures: 'Warhammer' }
+const NEW_BRAND = 'new:' // brand_id value for a brand you haven't used yet, e.g. "new:Bandai"
+
+// Hints that change with the hobby.
+const EXAMPLES = {
+  'Scale model': { name: 'e.g. M4A3E8 Sherman', code: 'e.g. T32595', scale: 'e.g. 1/48' },
+  Warhammer: { name: 'e.g. Intercessors', code: 'e.g. 48-75', scale: 'e.g. 28mm' },
+  Gundam: { name: 'e.g. RX-78-2 Gundam (Revive)', code: 'e.g. G5057403', scale: 'e.g. 1/144' },
+}
 
 const toForm = (m) => Object.fromEntries(FIELDS.map((f) => [f, m[f] == null ? '' : String(m[f])]))
-const toBody = (f, editing) => Object.fromEntries(FIELDS
-  .filter((k) => editing || !['started_on', 'finished_on'].includes(k))
-  .map((k) => {
-    const v = f[k].trim()
-    return [k, v === '' ? null : k === 'brand_id' ? Number(v) : v]
-  }))
+const toBody = (f, editing) => {
+  const body = Object.fromEntries(FIELDS
+    .filter((k) => editing || !['started_on', 'finished_on'].includes(k))
+    .map((k) => {
+      const v = f[k].trim()
+      if (v === '' || (ONLY_FOR[k] && ONLY_FOR[k] !== f.hobby)) return [k, k === 'figures' ? 1 : null]
+      return [k, ['brand_id', 'figures'].includes(k) && !v.startsWith(NEW_BRAND) ? Number(v) : v]
+    }))
+  if (String(body.brand_id ?? '').startsWith(NEW_BRAND)) {
+    body.brand_name = body.brand_id.slice(NEW_BRAND.length)  // the API adds it to your brands
+    body.brand_id = null
+  }
+  return body
+}
 
 // Adding a model (look the kit up by its number first, optionally) or editing its details.
 export default function ModelForm({ model, lookups, settings, onClose, onCancel, onSaved }) {
   const [form, setForm] = useState(() => (model ? toForm(model) : {
-    ...toForm({}), status: 'In stash', purchase_date: today(), purchased_from: settings.default_shop ?? '',
+    ...toForm({}), hobby: 'Scale model', status: 'In stash', figures: '1', purchase_date: today(),
+    purchased_from: settings.default_shop ?? '',
   }))
   const [kitCode, setKitCode] = useState('')
   const [maker, setMaker] = useState('Tamiya') // whose kit number it is
@@ -26,6 +45,23 @@ export default function ModelForm({ model, lookups, settings, onClose, onCancel,
   const [error, setError] = useState('')
   const set = (f) => (e) => setForm((x) => ({ ...x, [f]: e.target.value }))
   const wanted = form.status === 'Wanted'
+  const example = EXAMPLES[form.hobby]
+
+  // A new Warhammer / Gundam kit starts with that hobby's usual maker (added to your brands on
+  // saving if you haven't used it yet).
+  const pickHobby = (hobby) => setForm((f) => {
+    const maker = lookups.hobby_brands[hobby]
+    if (model) return { ...f, hobby }
+    if (!maker) return { ...f, hobby, brand_id: f.brand_id.startsWith(NEW_BRAND) ? '' : f.brand_id }
+    const known = lookups.brands.find((b) => b.name === maker)
+    return { ...f, hobby, brand_id: known ? String(known.id) : NEW_BRAND + maker }
+  })
+  // Picking a grade fills in its usual scale (HG = 1/144, MG = 1/100...) if there isn't one yet.
+  const setGrade = (e) => {
+    const grade = e.target.value
+    const scale = lookups.gundam_grades[grade.trim().toUpperCase()]
+    setForm((f) => ({ ...f, grade, scale: f.scale || scale || '' }))
+  }
 
   // Kit number -> name, scale and box photo from the maker's website.
   const lookup = async () => {
@@ -80,7 +116,16 @@ export default function ModelForm({ model, lookups, settings, onClose, onCancel,
   return (
     <Drawer title={model ? 'Edit model' : 'Add a model'} onClose={onClose} footer={footer}>
       {error && <p className="alert error" role="alert">{error}</p>}
-      {!model && (
+      <div className="segmented hobby-picker" role="group" aria-label="Hobby">
+        {lookups.hobbies.map((h) => (
+          <button key={h} type="button" aria-pressed={form.hobby === h} onClick={() => pickHobby(h)}>{h}</button>
+        ))}
+      </div>
+      {!model && form.hobby === 'Gundam' && (
+        <p className="hint">Bandai's website can't be read by the app, so type the kit's name, then add
+          your own box photo once it's saved.</p>
+      )}
+      {!model && form.hobby === 'Scale model' && (
         <section className="panel-section">
           <span className="field-label">Look up a kit (optional)</span>
           <div className="segmented maker" role="group" aria-label="Kit maker">
@@ -112,29 +157,52 @@ export default function ModelForm({ model, lookups, settings, onClose, onCancel,
         <fieldset>
           <legend>Kit</legend>
           <Field label="Model name" required wide>
-            <input value={form.name} onChange={set('name')} required placeholder="e.g. M4A3E8 Sherman" />
+            <input value={form.name} onChange={set('name')} required placeholder={example.name} />
           </Field>
           <Field label="Brand">
             <select value={form.brand_id} onChange={set('brand_id')}>
               <option value="">—</option>
               {lookups.brands.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+              {form.brand_id.startsWith(NEW_BRAND) && (
+                <option value={form.brand_id}>{form.brand_id.slice(NEW_BRAND.length)} (new)</option>
+              )}
             </select>
           </Field>
           <Field label="Kit code" hint="Needed for a photo">
-            <input value={form.product_code} onChange={set('product_code')} placeholder="e.g. T32595" />
+            <input value={form.product_code} onChange={set('product_code')} placeholder={example.code} />
           </Field>
           <Field label="Scale">
-            <input value={form.scale} onChange={set('scale')} placeholder="e.g. 1/48" />
+            <input value={form.scale} onChange={set('scale')} placeholder={example.scale} />
           </Field>
+          {form.hobby === 'Gundam' && (
+            <Field label="Grade" hint="HG, RG, MG, PG, SD...">
+              <input value={form.grade} onChange={setGrade} list="gundam-grades" placeholder="e.g. HG" autoCapitalize="characters" />
+              <datalist id="gundam-grades">
+                {Object.keys(lookups.gundam_grades).map((g) => <option key={g} value={g} />)}
+              </datalist>
+            </Field>
+          )}
+          {form.hobby === 'Warhammer' && (
+            <>
+              <Field label="Army">
+                <input value={form.faction} onChange={set('faction')} placeholder="e.g. Ultramarines" />
+              </Field>
+              <Field label="Minis in the box">
+                <input type="number" min="1" step="1" inputMode="numeric" value={form.figures} onChange={set('figures')} />
+              </Field>
+            </>
+          )}
           <Field label="Status">
             <select value={form.status} onChange={set('status')}>
               {lookups.model_statuses.map((s) => <option key={s}>{s}</option>)}
             </select>
           </Field>
-          <Field label="Scalemates link" wide hint="Paste the kit's page address from scalemates.com">
-            <input type="url" value={form.scalemates_url} onChange={set('scalemates_url')}
-              placeholder="https://www.scalemates.com/kits/..." />
-          </Field>
+          {form.hobby !== 'Warhammer' && (
+            <Field label="Scalemates link" wide hint="Paste the kit's page address from scalemates.com">
+              <input type="url" value={form.scalemates_url} onChange={set('scalemates_url')}
+                placeholder="https://www.scalemates.com/kits/..." />
+            </Field>
+          )}
         </fieldset>
         {!wanted && (
           <fieldset>

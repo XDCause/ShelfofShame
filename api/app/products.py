@@ -12,7 +12,7 @@ from psycopg.types.json import Jsonb
 from pydantic import BaseModel, Field
 
 from . import hasegawa, tamiya
-from .db import brand_id as brand_named, db
+from .db import brand_id as brand_named, db, ensure_brand
 from .images import photo_response, read_photo
 from .settings import price_for
 
@@ -144,8 +144,7 @@ async def lookup_hasegawa(code: str, refresh: bool = False):
 
     with db() as conn:
         # Add Hasegawa to your brands the first time you look one of their kits up.
-        conn.execute("INSERT INTO brands (name) VALUES ('Hasegawa') ON CONFLICT (name) DO NOTHING")
-        hasegawa_id = brand_named(conn, "Hasegawa")
+        hasegawa_id = ensure_brand(conn, "Hasegawa")
         cached = conn.execute(
             "SELECT product_code, series FROM product_info WHERE brand_id = %s AND title IS NOT NULL "
             "AND (product_code = %s OR series = %s)", (hasegawa_id, f"HSG{value}", value)).fetchone()

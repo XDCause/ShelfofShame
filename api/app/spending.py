@@ -70,8 +70,9 @@ EXPORTS = {
         FROM wishlist w JOIN categories c USING (category_id) LEFT JOIN brands b USING (brand_id)
         ORDER BY w.got_it, w.created_at""",
     "models": """
-        SELECT m.name AS "Model", b.name AS "Brand", m.product_code AS "Kit code", m.scale AS "Scale",
-               m.status AS "Status", m.price_paid AS "Price paid", m.purchase_date AS "Bought",
+        SELECT m.name AS "Model", m.hobby AS "Hobby", b.name AS "Brand", m.product_code AS "Kit code",
+               m.scale AS "Scale", m.grade AS "Grade", m.faction AS "Army", m.status AS "Status",
+               m.stage AS "Build step", m.figures AS "Minis", m.figures_done AS "Minis done", m.price_paid AS "Price paid", m.purchase_date AS "Bought",
                m.purchased_from AS "Bought from", m.started_on AS "Started", m.finished_on AS "Finished",
                round(COALESCE((SELECT sum(extract(epoch FROM (COALESCE(ended_at, now()) - started_at)))
                                FROM model_sessions x WHERE x.model_id = m.model_id), 0) / 3600.0, 1) AS "Hours",

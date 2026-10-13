@@ -393,6 +393,31 @@ DBeaver, psql, and the one-off import script.
      Open all". Each group is its own table with fixed column widths (quiet zero-height thead)
      so columns line up; Category column dropped when grouped by category.
    - Tests: 38 browser steps (new "Groups" step).
+3r. **Hobbies: Warhammer and Gundam** - DONE (2026-10-13). User chose both together, but NO
+   Citadel paints / paint "range" yet ("wouldn't bother at this stage"); they mainly use Tamiya
+   Panel Line colours.
+   - `db/init/16_hobbies.sql`: models.hobby (Scale model / Warhammer / Gundam, default Scale model),
+     stage (last build step done; CHECK per hobby), grade (Gundam), faction (Warhammer army),
+     figures / figures_done (minis in a box). db.py STAGES / HOBBIES / HOBBY_BRANDS / GUNDAM_GRADES
+     (grade -> usual scale) must match; /api/lookups returns them.
+   - models.tidy_model(): brand_name adds a brand on first use (db.ensure_brand, also used by the
+     Hasegawa lookup); a stage must be the hobby's; changing hobby drops a stage it lacks; ticking
+     a step on Wanted / In stash / On hold -> In progress; fewer minis than done -> done lowered.
+   - UI: hobby segmented picker in ModelForm (new Warhammer/Gundam kit pre-selects Games Workshop /
+     Bandai, shown as "(new)" until saved), Grade with datalist (fills scale), Army, Minis in the
+     box; Tamiya/Hasegawa lookup only for Scale model; no Scalemates for Warhammer. BuildSteps
+     component (numbered dots, tap last ticked to untick, minis stepper). ModelsView: hobby filter
+     (only when 2+ hobbies), cards show "Panel lined, step 2 of 4" / "3 of 10 minis painted".
+     Models CSV has Hobby / Grade / Army / Build step / Minis columns.
+   - **Bandai lookup rejected**: bandai-hobby.net has no robots.txt but is a JavaScript app (every URL
+     returns the same shell; data comes from a private API) - so manual name + own photo, like Milliput.
+   - **The user's Gundam**: model 5 "RX-78-2 Gundam (Revive)", Bandai (brand added) G5057403 (user's
+     code), HG 1/144, In stash, notes "HGUC 191", no photo/price; checklist Panel Line Gray (owned,
+     white parts) + Panel Line Black T87131 (not owned, blue/red/yellow parts).
+   - Live data seen 2026-10-13 (user's own edits): Sherman and P-40E now Wanted, new model 4
+     Triceratops Eurycephalus (Tamiya T60201, 1/35, On hold).
+   - Also fixed: model cards without a photo collapsed (.model-photo width 100%); status badges wrapped.
+   - Tests: 167 API, 40 browser steps (gundam, warhammer).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

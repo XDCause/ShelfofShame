@@ -2,6 +2,9 @@
 
 Status runs Wanted -> In stash -> In progress / On hold -> Finished (or Gone: sold, given away).
 "Shelf of shame" = kits you own but haven't finished (In stash, In progress, On hold).
+Each model belongs to a hobby (Scale model / Warhammer / Gundam), which has its own build steps
+(`stage` = the last one done). Warhammer boxes count minis (figures, figures_done); Gundam kits
+have a grade (HG, MG...).
 
 A model's paint list is a checklist. Each paint is matched to your inventory by brand + product
 code, so it shows as "have it" automatically while you own one; a line can also be a mix (have
@@ -16,14 +19,17 @@ from fastapi import APIRouter, HTTPException, Response
 from pydantic import BaseModel, Field
 
 from . import colours, paints, tamiya
-from .db import MODEL_STATUSES, brand_id as brand_named, db, found, insert_row, update_row
+from .db import (HOBBIES, MODEL_STATUSES, STAGES, brand_id as brand_named, db, ensure_brand, found,
+                 insert_row, update_row)
 from .products import tamiya_product
 from .settings import price_for
 
 router = APIRouter(prefix="/api", tags=["models"])
 
 Status = Literal[tuple(MODEL_STATUSES)]
+Hobby = Literal[tuple(HOBBIES)]
 UNBUILT = ("In stash", "In progress", "On hold")  # the shelf of shame
+NOT_STARTED = ("Wanted", "In stash", "On hold")   # ticking off a build step moves these to In progress
 
 
 def scalemates_url():
@@ -42,6 +48,13 @@ class ModelIn(BaseModel):
     price_paid: Decimal | None = Field(None, ge=0, max_digits=10, decimal_places=2)
     purchase_date: date | None = None
     purchased_from: str | None = None
+    hobby: Hobby = "Scale model"
+    stage: str | None = None
+    grade: str | None = None
+    faction: str | None = None
+    figures: int = Field(1, ge=1)
+    figures_done: int = Field(0, ge=0)
+    brand_name: str | None = Field(None, min_length=1)  # a brand you haven't used yet (instead of brand_id)
 
 
 class ModelPatch(BaseModel):
@@ -57,6 +70,13 @@ class ModelPatch(BaseModel):
     purchased_from: str | None = None
     started_on: date | None = None
     finished_on: date | None = None
+    hobby: Hobby | None = None
+    stage: str | None = None
+    grade: str | None = None
+    faction: str | None = None
+    figures: int | None = Field(None, ge=1)
+    figures_done: int | None = Field(None, ge=0)
+    brand_name: str | None = Field(None, min_length=1)
 
 
 class PaintsIn(BaseModel):
@@ -160,6 +180,32 @@ def date_status(conn, model_id, status):
                      (model_id,))
 
 
+def tidy_model(conn, current: dict, data: dict) -> dict:
+    """The rules for a new or changed model, applied to `data` (the fields being set):
+    - brand_name: a brand you haven't used yet is added to your brands
+    - the stage must be one of the hobby's steps; changing hobby drops a stage it doesn't have
+    - ticking off a step on a kit you haven't started moves it to In progress
+    - fewer minis in the box than you'd marked done lowers the done count to match"""
+    name = data.pop("brand_name", None)
+    if name and data.get("brand_id") is None:
+        data["brand_id"] = ensure_brand(conn, name.strip())
+    hobby = data.get("hobby") or current.get("hobby") or "Scale model"
+    stage = data["stage"] if "stage" in data else current.get("stage")
+    if stage is not None and stage not in STAGES[hobby]:
+        if "stage" in data:
+            raise HTTPException(422, f"'{stage}' isn't a {hobby} build step. Steps: {', '.join(STAGES[hobby])}.")
+        data["stage"] = None                        # the hobby changed: start its steps afresh
+    if data.get("stage") and "status" not in data and current.get("status", "In stash") in NOT_STARTED:
+        data["status"] = "In progress"
+    figures = data.get("figures") or current.get("figures") or 1
+    done = data["figures_done"] if "figures_done" in data else current.get("figures_done", 0)
+    if done is not None and done > figures:
+        if "figures_done" in data and "figures" not in data:
+            raise HTTPException(422, f"There are only {figures} minis in the box.")
+        data["figures_done"] = figures
+    return data
+
+
 # ---------------------------------------------------------------------------
 # Models
 # ---------------------------------------------------------------------------
@@ -192,8 +238,9 @@ def stash_summary():
 @router.post("/models", status_code=201)
 def add_model(body: ModelIn):
     with db() as conn:
-        model_id = insert_row(conn, "models", body.model_dump(), "model_id")
-        date_status(conn, model_id, body.status)
+        data = tidy_model(conn, {}, body.model_dump())
+        model_id = insert_row(conn, "models", data, "model_id")
+        date_status(conn, model_id, data["status"])
         return fetch_model(conn, model_id)
 
 
@@ -207,7 +254,7 @@ def get_model(model_id: int):
 def update_model(model_id: int, body: ModelPatch):
     data = body.model_dump(exclude_unset=True)
     with db() as conn:
-        fetch_model(conn, model_id)
+        data = tidy_model(conn, fetch_model(conn, model_id), data)
         update_row(conn, "models", "model_id", model_id, data)
         date_status(conn, model_id, data.get("status"))
         return fetch_model(conn, model_id)

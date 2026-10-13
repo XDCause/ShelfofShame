@@ -552,6 +552,47 @@ def used_on(page):
     page.keyboard.press("Escape")
 
 
+@step("Gundam: the RX-78-2's grade, build steps and panel line colours")
+def gundam(page):
+    d = open_model(page, "RX-78-2")
+    expect(d.locator(".item-sub").first).to_contain_text("HG · 1/144 · Bandai · G5057403")
+    expect(d.locator(".steps button")).to_have_count(4)
+    expect(d.locator(".checklist li", has_text="Panel Line Gray")).to_contain_text("In inventory")
+    d.locator(".steps button", has_text="Panel lined").click()
+    expect(d.locator(".steps button[aria-pressed='true']")).to_have_count(2)   # Built + Panel lined
+    expect(d.locator(".status-picker [aria-pressed='true']")).to_have_text("In progress")
+    shot(page, "d23_gundam", full=False)
+    d.locator(".steps button", has_text="Panel lined").click()                 # untick: back to Built
+    expect(d.locator(".steps button[aria-pressed='true']")).to_have_count(1)
+    page.keyboard.press("Escape")
+    expect(page.locator(".model-card", has_text="RX-78-2")).to_contain_text("Built, step 1 of 4")
+
+
+@step("Warhammer: a box of 10 with its army, a new brand, minis painted; hobby filter")
+def warhammer(page):
+    page.get_by_role("tab", name="Models").click()
+    page.get_by_role("button", name="+ Add model").click()
+    d = drawer(page)
+    d.locator(".hobby-picker button", has_text="Warhammer").click()
+    expect(d.get_by_label("Brand")).to_have_value("new:Games Workshop")
+    d.get_by_label("Model name").fill("Intercessors")
+    d.get_by_label("Army").fill("Ultramarines")
+    d.get_by_label("Minis in the box").fill("10")
+    page.get_by_role("button", name="Add model", exact=True).click()
+    d = drawer(page)
+    expect(d.locator(".item-sub").first).to_contain_text("Ultramarines · Games Workshop")
+    d.get_by_role("button", name="One more painted").click()
+    expect(d.locator(".minis")).to_contain_text("1 of 10")
+    page.keyboard.press("Escape")
+    hobby = page.locator(".hobby-filter")
+    expect(hobby).to_contain_text("Gundam")
+    hobby.get_by_role("button", name=re.compile("^Warhammer")).click()
+    expect(page.locator(".model-card")).to_have_count(1)
+    expect(page.locator(".model-card")).to_contain_text("1 of 10 minis painted")
+    shot(page, "d24_hobbies", full=False)
+    hobby.get_by_role("button", name=re.compile("^All")).click()
+
+
 @step("Settings: price guide, default shop, backups, exports, catalogue")
 def settings_more(page):
     page.get_by_role("button", name="Settings").click()
@@ -614,7 +655,7 @@ with sync_playwright() as p:
                add_lookup, add_to_wishlist, wishlist_buy, delete_bought, scan_owned, scan_unknown,
                models, model_paste, add_model_hasegawa, undo, add_to_wishlist_button, duplicate_check, wishlist_panel, shop_tamiya, used_up,
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
-               matches, used_on, settings_more, no_panel):
+               matches, used_on, gundam, warhammer, settings_more, no_panel):
         fn(desk)
     ctx = browser.new_context(**p.devices["iPhone 13"])
     mob = ctx.new_page()

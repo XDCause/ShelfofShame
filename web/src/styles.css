@@ -118,6 +118,11 @@ a:hover { text-decoration: underline; }
   .segmented button[aria-pressed='true'], .segmented button[aria-selected='true'] { background: #636366; }
 }
 .segmented.maker { margin: 6px 0 2px; }
+.segmented.hobby-picker { display: flex; margin: 12px 0 4px; }
+.segmented.hobby-picker button { flex: 1; }
+.hobby-picker + .hint { margin-bottom: 4px; }
+.segmented.hobby-filter { align-self: flex-start; max-width: 100%; overflow-x: auto; }
+.segmented.hobby-filter .chip-count { margin-left: 4px; }
 
 /* ---------- Tab bar (phones) ---------- */
 .tabbar { display: none; }
@@ -516,15 +521,38 @@ th.col-value { width: 96px; }
   background: var(--surface); border-radius: 14px; color: inherit; box-shadow: var(--card-shadow); transition: transform 0.15s;
 }
 .model-card:hover { transform: translateY(-1px); }
-.model-photo { position: relative; display: grid; place-items: center; aspect-ratio: 4 / 3; background: #fff; }
+.model-photo { position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: 4 / 3; background: #fff; }
 .model-photo img { width: 100%; height: 100%; object-fit: contain; padding: 8px; }
 .model-body { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px 14px; }
 .model-name { font-weight: 650; font-size: 1rem; }
 .model-meta { color: var(--muted); font-size: 0.85rem; }
+.build-progress { color: var(--tint); font-weight: 500; }
+
+/* Build steps: numbered dots joined by a line, ticked (tint) up to the last step done. */
+.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); }
+.steps li { position: relative; }
+.steps li + li::before {
+  content: ''; position: absolute; top: 15px; right: 50%; width: 100%; height: 2px; background: var(--separator);
+}
+.steps li:has(> button[aria-pressed='true']) + li:has(> button[aria-pressed='true'])::before { background: var(--tint); }
+.steps button {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%;
+  min-height: 44px; padding: 0 2px; border: 0; background: none; color: var(--muted); font-size: 0.82rem;
+}
+.step-dot {
+  display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%;
+  background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--separator);
+  color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.steps button[aria-pressed='true'] { color: var(--text); font-weight: 600; }
+.steps button[aria-pressed='true'] .step-dot { background: var(--tint); color: var(--on-tint); box-shadow: none; }
+.steps button:hover .step-dot { box-shadow: inset 0 0 0 1.5px var(--tint); }
+.step-name { text-align: center; line-height: 1.2; }
+.minis { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; }
 .paint-progress { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
 .timer-dot { position: absolute; top: 10px; right: 10px; padding: 3px 9px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; color: #fff; background: var(--out); }
 
-.status-badge { padding: 3px 10px; border-radius: 999px; font-size: 0.78rem; font-weight: 600; background: var(--fill); color: var(--text); }
+.status-badge { padding: 3px 10px; border-radius: 999px; font-size: 0.78rem; font-weight: 600; white-space: nowrap; background: var(--fill); color: var(--text); }
 .model-photo .status-badge { position: absolute; top: 10px; left: 10px; background: rgb(255 255 255 / 0.92); color: #3a3a3c; }
 .status-badge.s-wanted, .status-picker .s-wanted { background: var(--purple-bg); color: var(--purple); }
 .status-badge.s-in-stash, .status-picker .s-in-stash { background: var(--fill); color: var(--text); }

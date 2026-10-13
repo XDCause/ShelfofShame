@@ -16,12 +16,15 @@ subscriptions.
   paid, a "shelf of shame" total, a paint checklist (ticked automatically for paints you own,
   suggests a matching paint you do own), paints picked straight from a Tamiya kit's own paint
   list, a timer and time log, and a build log with photos
+- **Hobbies**: scale models, Warhammer and Gundam. Each has its own build steps (Gundam: Built,
+  Panel lined, Decals, Top coat), Gundam kits have a grade (HG = 1/144, MG = 1/100...), Warhammer
+  boxes have an army and count the minis painted ("3 of 10")
 - **Colours**: matches between Tamiya ranges (same code, same colour name), your own matches
   between any brands, and mixes ("XF-62 + XF-2 (3:1)") that work on model paint lists
 - **Settings**: spending (lifetime / year / month), price guide, default shop, backups (back up
   now, download), CSV export for Excel, Tamiya catalogue refresh, brands / categories / locations
 - Styled after Apple's Human Interface Guidelines (bottom tab bar and sheets on phones, dark mode)
-- Nightly backups, 159 automated API tests and a 38-step browser walkthrough
+- Nightly backups, 167 automated API tests and a 40-step browser walkthrough
 
 Three Docker containers:
 
@@ -69,7 +72,7 @@ Grouped as in `api/app/` (one module per part of the app):
 | **models.py** | | |
 | GET/POST | `/api/models` | List / add kits |
 | GET | `/api/models/summary` | Shelf of shame (unbuilt kits and their cost), counts per status, hours |
-| GET/PATCH/DELETE | `/api/models/{id}` | One kit with its checklist, sessions and build log |
+| GET/PATCH/DELETE | `/api/models/{id}` | One kit with its checklist, sessions and build log; `hobby`, `stage`, `grade`, `faction`, `figures` / `figures_done`, `brand_name` (a new brand) |
 | POST | `/api/models/{id}/paints` | Add paints: `XF-76 Grey Green\tExterior`, or a mix `XF-62 + XF-2 (3:1)` |
 | PATCH/DELETE | `/api/model-paints/{id}` | Edit / remove a checklist line |
 | GET/POST | `/api/models/{id}/kit-paints` | Tamiya's "Colors required" for the kit / add the ones you picked |
