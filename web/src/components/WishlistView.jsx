@@ -132,6 +132,7 @@ export default function WishlistView({ lookups, onChanged }) {
           onAdded={(p) => {
             setMessage({ type: 'ok', text: `${p.name} added to your wishlist.` })
             load()
+            setTimeout(load, 10000) // the photo and size arrive from tamiya.com in the background
           }} />
       )}
 
@@ -222,6 +223,9 @@ function WishCard({ wish, onToggle, onEdit, onRemove, onBuy, busy }) {
       <div className="wish-photo">
         {wish.has_image ? (
           <img src={imageUrl(wish)} alt="" loading="lazy" />
+        ) : wish.catalog_thumb ? (
+          // Tamiya's small picture while the full photo is still being fetched
+          <img src={wish.catalog_thumb} alt="" loading="lazy" referrerPolicy="no-referrer" />
         ) : (
           <span className="photo-missing">{wish.category}</span>
         )}

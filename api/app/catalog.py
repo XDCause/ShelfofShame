@@ -1,11 +1,14 @@
 """Shop Tamiya: search the imported catalogue (app/tamiya_catalog.py) and add to the wishlist."""
+import logging
 import re
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
 
 from . import tamiya
 from .db import db
 from .wishlist import fetch_wish, tamiya_product
+
+log = logging.getLogger("uvicorn.error")
 
 router = APIRouter(prefix="/api/catalog", tags=["catalog"])
 
@@ -55,30 +58,57 @@ def info():
 
 
 @router.post("/{product_code}/wishlist", status_code=201)
-async def add_to_wishlist(product_code: str):
-    """One tap from a search result: fetch the product's details + photo (once, cached), then
-    add it to the wishlist with your naming style, category, paint type, finish and size."""
+async def add_to_wishlist(product_code: str, background: BackgroundTasks):
+    """One tap from a search result: add it to the wishlist straight away with your naming
+    style, category, paint type and finish guessed from the catalogue title. The product page
+    and photo are fetched from tamiya.com afterwards, in the background (that can take from a
+    second to most of a minute), and fill in the size and photo when they arrive."""
     with db() as conn:
-        row = conn.execute("SELECT item FROM catalog_products WHERE product_code = %s",
+        row = conn.execute("SELECT brand_id, item, title, genre FROM catalog_products WHERE product_code = %s",
                            (product_code,)).fetchone()
-    if row is None:
-        raise HTTPException(404, f"{product_code} isn't in the catalogue.")
-
-    brand_id, code, _ = await tamiya_product(row["item"])  # tamiya.com, only the first time
-    with db() as conn:
+        if row is None:
+            raise HTTPException(404, f"{product_code} isn't in the catalogue.")
         info = conn.execute("SELECT title, series, description FROM product_info "
-                            "WHERE brand_id = %s AND product_code = %s", (brand_id, code)).fetchone()
-        guess = tamiya.suggest(info["title"], info["series"], info["description"])
-        category = conn.execute(
-            "SELECT category_id FROM categories WHERE name = %s", (guess["category"] or "Other",)).fetchone() \
-            or conn.execute("SELECT category_id FROM categories WHERE name = 'Other'").fetchone()
+                            "WHERE brand_id = %s AND product_code = %s AND title IS NOT NULL",
+                            (row["brand_id"], product_code)).fetchone()
+        guess = (tamiya.suggest(info["title"], info["series"], info["description"]) if info
+                 else tamiya.suggest(row["title"], row["genre"], None))
         wish = conn.execute("""
             INSERT INTO wishlist (brand_id, product_code, name, category_id, paint_type, finish, size)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (brand_id, product_code) DO NOTHING
             RETURNING wish_id""",
-            (brand_id, code, guess["name"], category["category_id"], guess["paint_type"],
-             guess["finish"], guess["size"])).fetchone()
+            (row["brand_id"], product_code, guess["name"], category_id(conn, guess["category"]),
+             guess["paint_type"], guess["finish"], guess["size"])).fetchone()
         if wish is None:
             raise HTTPException(409, "It's already on your wishlist.")
-        return fetch_wish(conn, wish["wish_id"])
+        result = fetch_wish(conn, wish["wish_id"])
+    if info is None:
+        background.add_task(fill_in_from_tamiya, row["item"], wish["wish_id"])
+    return result
+
+
+def category_id(conn, name):
+    found = conn.execute("SELECT category_id FROM categories WHERE name = %s", (name or "Other",)).fetchone()         or conn.execute("SELECT category_id FROM categories WHERE name = 'Other'").fetchone()
+    return found["category_id"]
+
+
+async def fill_in_from_tamiya(item: str, wish_id: int):
+    """Runs after the reply has gone: fetch the product page + photo (cached in product_info),
+    then fill in whatever the title alone couldn't tell us. Never overwrites what's there."""
+    try:
+        brand_id, code, _ = await tamiya_product(item)
+    except HTTPException as e:  # tamiya.com slow or down: the wishlist item is fine without it
+        log.warning("Background fetch of Tamiya %s failed: %s", item, e.detail)
+        return
+    with db() as conn:
+        info = conn.execute("SELECT title, series, description FROM product_info "
+                            "WHERE brand_id = %s AND product_code = %s", (brand_id, code)).fetchone()
+        guess = tamiya.suggest(info["title"], info["series"], info["description"])
+        conn.execute("""
+            UPDATE wishlist SET size = COALESCE(size, %s), paint_type = COALESCE(paint_type, %s),
+                                finish = COALESCE(finish, %s),
+                                category_id = CASE WHEN category_id = %s THEN %s ELSE category_id END
+            WHERE wish_id = %s""",
+            (guess["size"], guess["paint_type"], guess["finish"],
+             category_id(conn, "Other"), category_id(conn, guess["category"]), wish_id))

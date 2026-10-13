@@ -304,7 +304,8 @@ def shop_tamiya(page):
     d.get_by_label("Search Tamiya").fill("panel line black")
     row = d.locator(".shop-results li", has_text="Panel Line Accent Color (Black)")
     expect(row).to_be_visible()
-    expect(row.get_by_role("button", name="+ Wishlist")).to_be_visible()
+    # either addable, or already on your real wishlist
+    expect(row.get_by_role("button", name="+ Wishlist").or_(row.get_by_text("On wishlist"))).to_be_visible()
     expect(d.locator(".shop-results li")).to_have_count(1)
     shot(page, "d15_shop_tamiya", full=False)
     page.keyboard.press("Escape")

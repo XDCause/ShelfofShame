@@ -6,8 +6,8 @@ import OwnedBadge from './OwnedBadge.jsx'
 const SUGGESTIONS = ['panel line', 'XF-1', 'masking tape', 'thinner', 'primer', 'cement']
 
 // Shop Tamiya: search Tamiya's catalogue (imported with app/tamiya_catalog.py) and add things to
-// the wishlist in one tap. Photos in the results load from Tamiya's site; adding one fetches its
-// full details and photo into your database.
+// the wishlist in one tap. Photos in the results load from Tamiya's site. Adding is instant; the
+// API then fetches the full details and photo into your database in the background.
 export default function ShopPanel({ onClose, onAdded }) {
   const [q, setQ] = useState('')
   const [results, setResults] = useState(null)
@@ -33,7 +33,7 @@ export default function ShopPanel({ onClose, onAdded }) {
     setBusy(p.product_code)
     setError('')
     try {
-      await api.addCatalogToWishlist(p.product_code) // may fetch from tamiya.com the first time
+      await api.addCatalogToWishlist(p.product_code)
       setResults((rs) => rs.map((r) => (r.product_code === p.product_code ? { ...r, on_wishlist: true } : r)))
       onAdded(p)
     } catch (e) {

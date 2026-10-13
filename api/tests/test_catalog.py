@@ -68,10 +68,22 @@ def test_one_tap_add_to_wishlist(client, ids, fake_tamiya, monkeypatch):
     load_catalogue(ids)
     r = client.post("/api/catalog/T87131/wishlist")
     assert r.status_code == 201
-    wish = r.json()
-    assert (wish["name"], wish["category"], wish["size"]) == ("Panel Line Accent Color (Black)", "Weathering", "40ml")
-    assert wish["has_image"] is True and fake_tamiya == ["87131"]
+    wish = r.json()  # straight away, from the catalogue title alone
+    assert (wish["name"], wish["category"], wish["size"]) == ("Panel Line Accent Color (Black)", "Weathering", None)
+    assert wish["has_image"] is False and wish["catalog_thumb"] is None  # (no thumb_url in this test catalogue)
+    # ...then tamiya.com is fetched in the background and fills in the size and photo
+    assert fake_tamiya == ["87131"]
+    [later] = [w for w in client.get("/api/wishlist").json() if w["wish_id"] == wish["wish_id"]]
+    assert (later["size"], later["has_image"]) == ("40ml", True)
     assert client.get("/api/catalog/search", params={"q": "panel line black"}).json()[0]["on_wishlist"] is True
 
     assert client.post("/api/catalog/T87131/wishlist").status_code == 409
     assert client.post("/api/catalog/T99999/wishlist").status_code == 404
+
+
+def test_add_still_works_when_tamiya_is_down(client, ids, fake_tamiya):
+    load_catalogue(ids)  # 87132 isn't in FAKE_PRODUCTS, so the background fetch fails
+    r = client.post("/api/catalog/T87132/wishlist")
+    assert r.status_code == 201 and r.json()["name"] == "Panel Line Accent Color (Brown)"
+    assert fake_tamiya == ["87132"]
+    assert [w["name"] for w in client.get("/api/wishlist").json()] == ["Panel Line Accent Color (Brown)"]

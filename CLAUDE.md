@@ -271,12 +271,16 @@ DBeaver, psql, and the one-off import script.
      2026-10-13: 1,012 products. Never runs automatically.
    - API `app/catalog.py`: GET /api/catalog/search?q= (every word must match the title, hyphens
      ignored; XF-76 / xf76 -> item 81776; owned first, with owned_* + on_wishlist), GET /info,
-     POST /api/catalog/{code}/wishlist (fetches the product page + photo once via tamiya_product,
-     suggest() fills name/category/size; 409 if already on the wishlist).
+     POST /api/catalog/{code}/wishlist (409 if already on the wishlist). **Adds instantly** from
+     the catalogue title (suggest(title, genre)), then a BackgroundTask fetches the page + photo
+     (tamiya_product) and fills in size/type/finish/category only where empty. Why: tamiya.com
+     takes 0.5-5 s per page, sometimes far longer (30 s timeout x page + photo = ~1 min waits).
+     If the fetch fails the wish stays, just without a photo (logged). Wishlist rows carry
+     `catalog_thumb` (Tamiya CDN thumbnail) shown until the real photo exists.
    - UI: "Shop Tamiya" button on the Wishlist -> ShopPanel drawer (search as you type, suggestion
      chips, thumbnails hot-linked from Tamiya's CDN with no-referrer, OwnedBadge, "+ Wishlist").
      OwnedBadge moved to its own component.
-   - Tests: 90 API (test_catalog.py + trimmed fixture tamiya_list_e_5010.html), 28 browser steps
+   - Tests: 91 API (test_catalog.py + trimmed fixture tamiya_list_e_5010.html), 28 browser steps
      (search only - the e2e never fetches tamiya.com; thumbnails are blank in its screenshots).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
