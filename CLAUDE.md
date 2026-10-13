@@ -650,6 +650,39 @@ DBeaver, psql, and the one-off import script.
    - Tests: 249 API (new test_safety.py: links, uploads, served-photo headers, scraped-photo checks,
      CSV formulas, 20 concurrent requests on the pool, rollback, calendar repeat edges; log photo
      re-versioning in test_build.py), 54 browser steps (CSP violations would show as browser errors).
+3za. **Drawing in the journal (pen / whiteboard)** - DONE in dev (2026-10-14). User: journal "more like
+   reMarkable crossed with whiteboard crossed with notion", drawing with a Samsung Tab S7 + S Pen,
+   "draw images not just text". Still NOT promoted.
+   - Library: **Excalidraw 0.18.1** (MIT; tldraw was the alternative but needs a licence key in
+     production). Pressure from pointer events; pen mode turns on by itself when a pen is used
+     (pen draws, fingers pan/zoom = palm rejection). Canvas always opens with the pen tool.
+   - DB 24_drawings.sql: journal_pages.kind notes|whiteboard; journal_drawings (page_id CASCADE,
+     board bool - one per whiteboard page, partial unique; scene JSONB {elements, appState: bg +
+     grid only}; files JSONB {fileId: {mimeType, dataURL}} merged with `||`; text from text
+     elements (page search includes it via page_text); preview PNG BYTEA).
+   - API journal_drawings.py (router included before journal): POST /journal/{page_id}/drawings,
+     GET/PUT/DELETE /journal/drawings/{id} (can't delete a board: 409), PUT .../files, GET/PUT
+     .../preview (?v= ms of updated_at). Page save: drop_unused() deletes sketches no "drawing"
+     block shows, if untouched for 10 minutes (undo / a block being added). PAGE_LIST cover_url
+     falls back to the first drawing preview; activity verb "Drew" for whiteboard pages.
+   - Web: core/journal/DrawingCanvas.jsx (lazy; overlay with Done, or embedded with Full screen;
+     saves 1.2 s after a change, a preview at most every 10 s and on leaving / tab hidden; files
+     sent once each). **Gotcha (data loss, caught by e2e):** never read the scene from the
+     Excalidraw API in a save that can run on unmount - the closing canvas is already empty. Keep
+     the latest {elements, appState, files} from onChange in a ref and save that.
+     Editor.jsx: custom block "drawing" (createReactBlockSpec(...)() ), own "/" menu
+     (slashMenu={false} + SuggestionMenuController with getDefaultReactSlashMenuItems + "Drawing").
+     JournalList "+ Whiteboard" + Whiteboard pill; Home quick action "Whiteboard" (8 actions).
+   - Fonts: scripts/copy-excalidraw-fonts.js (npm run build) copies node_modules fonts to
+     web/public/fonts (git-ignored, docker-ignored); web/public/excalidraw-assets.js (a plain
+     <script> in index.html) sets window.EXCALIDRAW_ASSET_PATH='/'. Excalidraw always lists esm.sh
+     as a backup source and Chrome logs a CSP error for a blocked backup even though it loads ours
+     first - so font-src also allows https://esm.sh (used only if our copy is missing).
+   - npm overrides in web/package.json for Excalidraw's sub-dependencies (katex 0.19.0, lodash-es
+     4.18.1, nanoid 3.3.20 / 5.1.16). Left: braces (no fixed version exists; only in sass's
+     build-time file watcher, never in the browser or the server).
+   - Tests: 256 API (test_drawings.py), 56 browser steps (whiteboard: draws with the mouse, full
+     screen, checks both strokes are saved; / Drawing sketch block).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

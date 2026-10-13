@@ -56,6 +56,7 @@ export default function JournalList() {
       <div className="toolbar">
         <input type="search" className="search" placeholder="Search the journal..." value={q}
           onChange={(e) => setQ(e.target.value)} aria-label="Search the journal" />
+        <button type="button" className="secondary" onClick={() => newPage({ kind: 'whiteboard' })}>+ Whiteboard</button>
         <button type="button" className="primary" onClick={() => newPage()}>+ New page</button>
       </div>
       <div className="filters">
@@ -107,10 +108,11 @@ function PageCard({ page: p }) {
           <span>{day.getFullYear()}</span>
         </span>
         {picture ? <img className="journal-thumb" src={picture} alt="" loading="lazy" />
-          : <span className="journal-thumb emoji" aria-hidden="true">{p.icon || '📝'}</span>}
+          : <span className="journal-thumb emoji" aria-hidden="true">{p.icon || (p.kind === 'whiteboard' ? '🖊️' : '📝')}</span>}
         <span className="grow">
           <span className="journal-card-head">
             <span className="item-title">{picture && p.icon ? `${p.icon} ` : ''}{p.title || 'Untitled'}</span>
+            {p.kind === 'whiteboard' && <span className="pill purple">Whiteboard</span>}
             {p.pinned && <span className="pill low">Pinned</span>}
           </span>
           {first && <span className="pill tint">#{first}</span>}

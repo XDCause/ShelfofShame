@@ -1,13 +1,21 @@
 // The Notion-style editor (BlockNote). Loaded only when a journal page opens (it's big), so the
 // rest of the app stays quick.
-//   /      menu of blocks: headings, lists, to-dos, quotes, images, tables...
+//   /      menu of blocks: headings, lists, to-dos, quotes, images, tables... and Drawing (a pen
+//          sketch: a preview in the page, tapped to open the canvas)
 //   @      mention a model, a supply, a board game, gear or another page: a pill that opens it
 //   photos dropped or pasted in are shrunk and stored by the API
 import '@blocknote/mantine/style.css'
-import { BlockNoteSchema, defaultInlineContentSpecs } from '@blocknote/core'
+import {
+  BlockNoteSchema, defaultBlockSpecs, defaultInlineContentSpecs, filterSuggestionItems, insertOrUpdateBlockForSlashMenu,
+} from '@blocknote/core'
 import { BlockNoteView } from '@blocknote/mantine'
-import { createReactInlineContentSpec, SuggestionMenuController, useCreateBlockNote } from '@blocknote/react'
+import {
+  createReactBlockSpec, createReactInlineContentSpec, getDefaultReactSlashMenuItems, SuggestionMenuController,
+  useCreateBlockNote,
+} from '@blocknote/react'
+import { createContext, useContext, useState } from 'react'
 import { api } from '../../api.js'
+import { PenIcon } from '../../components/icons.jsx'
 import { shrink } from '../../components/PhotoUpload.jsx'
 import { useTheme } from '../theme.js'
 
@@ -27,13 +35,38 @@ const Mention = createReactInlineContentSpec(
   },
 )
 
+// What the page knows about its drawings: their preview addresses, and how to open one.
+const Drawings = createContext({ previews: {}, open: () => {} })
+
+// A drawing is stored in the page as {type: "drawing", props: {drawingId}}; the drawing itself
+// (strokes, pictures, preview) is in journal_drawings (api/app/journal_drawings.py).
+const DrawingBlock = createReactBlockSpec(
+  { type: 'drawing', propSchema: { drawingId: { default: '' } }, content: 'none' },
+  { render: ({ block }) => <DrawingPreview id={block.props.drawingId} /> },
+)
+
+function DrawingPreview({ id }) {
+  const { previews, open } = useContext(Drawings)
+  const [failed, setFailed] = useState(false)
+  const url = previews[id]
+  return (
+    <button type="button" className="drawing-block" contentEditable={false} onClick={() => open(Number(id))}
+      aria-label="Open the drawing">
+      {url && !failed ? <img src={url} alt="A drawing" onError={() => setFailed(true)} />
+        : <span className="drawing-empty"><PenIcon size={28} /> Tap to draw</span>}
+    </button>
+  )
+}
+
 const schema = BlockNoteSchema.create({
+  blockSpecs: { ...defaultBlockSpecs, drawing: DrawingBlock() },
   inlineContentSpecs: { ...defaultInlineContentSpecs, mention: Mention },
 })
 
 const WHAT = { model: 'Model', supply: 'Supply', page: 'Journal page', game: 'Board game', gear: 'Gear' }
 
-export default function Editor({ pageId, initialContent, onChange, onOpenMention }) {
+// previews: {drawingId: preview URL}; onDraw(id) opens the canvas for a drawing.
+export default function Editor({ pageId, initialContent, onChange, onOpenMention, previews = {}, onDraw }) {
   const theme = useTheme() // light / dark, like the rest of the app
   const editor = useCreateBlockNote({
     schema,
@@ -51,15 +84,34 @@ export default function Editor({ pageId, initialContent, onChange, onOpenMention
     ]),
   }))
 
+  // The / menu: BlockNote's own blocks, plus Drawing.
+  const drawing = {
+    title: 'Drawing',
+    subtext: 'Sketch with a pen, finger or mouse',
+    aliases: ['draw', 'sketch', 'pen', 'whiteboard', 'canvas'],
+    group: 'Drawing',
+    icon: <PenIcon size={18} />,
+    onItemClick: async () => {
+      const made = await api.addDrawing(pageId)
+      insertOrUpdateBlockForSlashMenu(editor, { type: 'drawing', props: { drawingId: String(made.drawing_id) } })
+      onDraw(made.drawing_id)
+    },
+  }
+  const slashItems = async (query) =>
+    filterSuggestionItems([...getDefaultReactSlashMenuItems(editor), drawing], query)
+
   return (
-    <div className="journal-editor"
-      onClick={(e) => {
-        const pill = e.target.closest?.('.mention')
-        if (pill) onOpenMention(pill.dataset.kind, Number(pill.dataset.ref))
-      }}>
-      <BlockNoteView editor={editor} theme={theme} onChange={() => onChange(editor.document)}>
-        <SuggestionMenuController triggerCharacter="@" getItems={mentionItems} />
-      </BlockNoteView>
-    </div>
+    <Drawings.Provider value={{ previews, open: onDraw }}>
+      <div className="journal-editor"
+        onClick={(e) => {
+          const pill = e.target.closest?.('.mention')
+          if (pill) onOpenMention(pill.dataset.kind, Number(pill.dataset.ref))
+        }}>
+        <BlockNoteView editor={editor} theme={theme} onChange={() => onChange(editor.document)} slashMenu={false}>
+          <SuggestionMenuController triggerCharacter="/" getItems={slashItems} />
+          <SuggestionMenuController triggerCharacter="@" getItems={mentionItems} />
+        </BlockNoteView>
+      </div>
+    </Drawings.Provider>
   )
 }

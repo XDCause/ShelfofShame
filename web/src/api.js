@@ -31,7 +31,7 @@ export const api = {
   // What you've done lately (core): stock, kits, build log, time, journal
   activity: (limit = 20) => request(`/activity?limit=${limit}`),
 
-  // Journal (core): pages, tags, @mentions, photos
+  // Journal (core): pages, tags, @mentions, photos, drawings
   listPages: (params = {}) => request(`/journal?${new URLSearchParams(Object.entries(params).filter(([, v]) => v))}`),
   addPage: (page = {}) => request('/journal', send('POST', page)),
   getPage: (id) => request(`/journal/${id}`),
@@ -43,6 +43,11 @@ export const api = {
   tickTodo: (pageId, blockId, checked) => request(`/journal/${pageId}/todos/${enc(blockId)}`, send('PATCH', { checked })),
   applySuggestion: (pageId, key) => request(`/journal/${pageId}/suggestions/apply`, send('POST', { key })),
   dismissSuggestion: (pageId, key) => request(`/journal/${pageId}/suggestions/dismiss`, send('POST', { key })),
+  addDrawing: (pageId) => request(`/journal/${pageId}/drawings`, send('POST')),
+  getDrawing: (id) => request(`/journal/drawings/${id}`),
+  saveDrawing: (id, scene) => request(`/journal/drawings/${id}`, send('PUT', scene)),
+  addDrawingFiles: (id, files) => request(`/journal/drawings/${id}/files`, send('PUT', files)),
+  saveDrawingPreview: (id, blob) => request(`/journal/drawings/${id}/preview`, image('PUT', blob)),
   uploadJournalImage: (blob, pageId) => request(`/journal/images${pageId ? `?page_id=${pageId}` : ''}`, image('POST', blob)),
 
   // Calendar (core): events (repeats expanded by the API) and what happened each day

@@ -8,6 +8,7 @@ The API doesn't need to understand the blocks. On every save it works out two th
            "label": "Sherman"}} -> journal_links (model 3), so the model can list pages about it
 """
 from datetime import date
+from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Query, Request, Response
 from psycopg.types.json import Jsonb
@@ -17,6 +18,7 @@ from .boardgames import PlayIn, add_play
 from .db import db, found, insert_row, update_row
 from .images import photo_response, read_photo
 from .journal_actions import set_checked, suggestions, todos_in
+from .journal_drawings import add_drawing, drop_unused, page_drawings, page_text
 from .journal_text import KINDS, mentions, plain_text
 from .models import ModelPatch, update_model
 from .wishlist import wish_from_supplies
@@ -24,6 +26,7 @@ from .wishlist import wish_from_supplies
 router = APIRouter(prefix="/api", tags=["journal"])
 
 class PageIn(BaseModel):
+    kind: Literal["notes", "whiteboard"] = "notes"   # whiteboard = the whole page is one canvas
     title: str = ""
     icon: str | None = Field(None, max_length=16)
     entry_date: date | None = None
@@ -75,12 +78,16 @@ def save_links(conn, page_id: int, content: list):
 # A page in a list. Its picture: the first photo in the page (cover_url), else the photo of
 # the first kit (or supply) it mentions (product_info_id + photo_updated, like everywhere else).
 PAGE_LIST = """
-SELECT p.page_id, p.title, p.icon, p.entry_date, p.pinned, p.created_at, p.updated_at,
+SELECT p.page_id, p.kind, p.title, p.icon, p.entry_date, p.pinned, p.created_at, p.updated_at,
        left(p.text, 200) AS snippet,
        COALESCE((SELECT array_agg(t.name ORDER BY lower(t.name)) FROM page_tags pt JOIN tags t USING (tag_id)
                  WHERE pt.page_id = p.page_id), '{}') AS tags,
-       (SELECT b -> 'props' ->> 'url' FROM jsonb_array_elements(p.content) b
-        WHERE b ->> 'type' = 'image' AND b -> 'props' ->> 'url' <> '' LIMIT 1) AS cover_url,
+       COALESCE((SELECT b -> 'props' ->> 'url' FROM jsonb_array_elements(p.content) b
+                 WHERE b ->> 'type' = 'image' AND b -> 'props' ->> 'url' <> '' LIMIT 1),
+                (SELECT '/api/journal/drawings/' || d.drawing_id || '/preview?v='
+                        || (extract(epoch FROM d.updated_at) * 1000)::bigint
+                 FROM journal_drawings d WHERE d.page_id = p.page_id AND d.preview IS NOT NULL
+                 ORDER BY d.board DESC, d.drawing_id LIMIT 1)) AS cover_url,
        pic.product_info_id, pic.photo_updated
 FROM journal_pages p
 LEFT JOIN LATERAL (
@@ -121,6 +128,7 @@ def fetch_page(conn, page_id: int) -> dict:
         "WHERE l.target_kind = 'page' AND l.target_id = %s ORDER BY p.entry_date DESC", (page_id,)).fetchall()
     # "Sherman: Mark as In progress" - what the page's words suggest (journal_actions.py).
     page["suggestions"] = suggestions(conn, page)
+    page["drawings"] = page_drawings(conn, page_id)     # sketches and the whiteboard (no scenes)
     return page
 
 
@@ -164,6 +172,8 @@ def add_page(body: PageIn):
         page_id = insert_row(conn, "journal_pages", data, "page_id")
         save_tags(conn, page_id, body.tags)
         save_links(conn, page_id, body.content)
+        if body.kind == "whiteboard":
+            add_drawing(conn, page_id, board=True)
         return fetch_page(conn, page_id)
 
 
@@ -221,12 +231,12 @@ def update_page(page_id: int, body: PagePatch):
     tags = data.pop("tags", None)
     if "entry_date" in data and data["entry_date"] is None:
         raise HTTPException(422, "A page needs a date.")
-    if data.get("content") is not None:
-        data["text"] = plain_text(data["content"])
     with db() as conn:
         fetch_page(conn, page_id)                       # 404 if it doesn't exist
-        if "content" in data:
+        if data.get("content") is not None:
             save_links(conn, page_id, data["content"])
+            drop_unused(conn, page_id, data["content"])  # sketches whose block was deleted
+            data["text"] = page_text(conn, page_id, data["content"])
             data["content"] = Jsonb(data["content"])
         update_row(conn, "journal_pages", "page_id", page_id, data)
         if tags is not None:

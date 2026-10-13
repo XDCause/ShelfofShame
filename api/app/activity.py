@@ -60,7 +60,8 @@ WITH feed AS (
            || COALESCE(' · ' || x.note, ''), m.brand_id, m.product_code, NULL
     FROM model_sessions x JOIN models m USING (model_id) WHERE x.ended_at IS NOT NULL
   UNION ALL
-    SELECT {_on_day('entry_date', 'created_at')}, 'page', page_id, 'Wrote',
+    SELECT {_on_day('entry_date', 'created_at')}, 'page', page_id,
+           CASE WHEN kind = 'whiteboard' THEN 'Drew' ELSE 'Wrote' END,
            COALESCE(NULLIF(title, ''), 'Untitled page'), NULL, NULL, NULL, NULL
     FROM journal_pages
   UNION ALL

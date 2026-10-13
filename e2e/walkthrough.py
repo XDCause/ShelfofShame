@@ -86,7 +86,7 @@ def home(page):
     expect(stats).to_have_count(8)
     expect(page.locator(".home-card", has_text="Recent activity").locator(".pill").first).to_be_visible()
     expect(page.locator(".home-card", has_text="Coming up")).to_be_visible()
-    expect(page.locator(".quick-action")).to_have_count(7)
+    expect(page.locator(".quick-action")).to_have_count(8)
     shot(page, "d00_home", full=False)
     stats.filter(has_text="To buy").click()
     expect(page).to_have_url(BASE + "/wishlist")
@@ -914,6 +914,71 @@ def board_games(page):
     shot(page, "d34_journal_play", full=False)
 
 
+def scribble(page, surface, dx=0):
+    """Draw a wavy line across the canvas with the mouse (the pen tool is picked up already)."""
+    box = surface.bounding_box()
+    x, y = box["x"] + box["width"] * 0.3 + dx, box["y"] + box["height"] * 0.45
+    page.mouse.move(x, y)
+    page.mouse.down()
+    for i in range(1, 25):
+        page.mouse.move(x + i * 12, y + (20 if i % 2 else -20), steps=2)
+    page.mouse.up()
+
+
+@step("Whiteboard page: draw on it, it saves, full screen, the journal list shows the picture")
+def whiteboard(page):
+    go(page, "Journal")
+    page.get_by_role("button", name="+ Whiteboard").click()
+    page.get_by_label("Title").fill(f"Board {MARK}")
+    canvas = page.get_by_test_id("drawing-canvas")
+    surface = canvas.locator(".drawing-surface")
+    expect(surface.locator("canvas").first).to_be_visible(timeout=30000)
+    page.wait_for_timeout(800)
+    scribble(page, surface)
+    expect(canvas.get_by_role("status")).to_have_text("Saved", timeout=15000)
+    page_id = int(re.search(r"/journal/(\d+)", page.url).group(1))
+    [board] = page.request.get(f"{BASE}/api/journal/{page_id}").json()["drawings"]
+    drawn = page.request.get(f"{BASE}/api/journal/drawings/{board['drawing_id']}").json()
+    assert [e["type"] for e in drawn["scene"]["elements"]] == ["freedraw"], drawn["scene"]["elements"]
+    shot(page, "d35_whiteboard", full=False)
+    canvas.get_by_role("button", name="Full screen").click()
+    overlay = page.locator(".drawing-overlay")
+    expect(overlay.locator("canvas").first).to_be_visible(timeout=30000)
+    page.wait_for_timeout(500)
+    scribble(page, overlay.locator(".drawing-surface"), dx=-80)
+    overlay.get_by_role("button", name="Done").click()
+    expect(overlay).to_have_count(0, timeout=15000)
+    drawn = page.request.get(f"{BASE}/api/journal/drawings/{board['drawing_id']}").json()
+    kinds = [e["type"] for e in drawn["scene"]["elements"]]
+    assert kinds == ["freedraw", "freedraw"] and drawn["preview_url"], (kinds, drawn["preview_url"])
+    go(page, "Journal")
+    card = page.locator(".journal-card", has_text=f"Board {MARK}")
+    expect(card.locator(".pill", has_text="Whiteboard")).to_be_visible()
+    expect(card.locator("img.journal-thumb")).to_have_attribute("src", re.compile(r"/api/journal/drawings/\d+/preview"))
+
+
+@step("Notes page: / Drawing adds a sketch, drawn full screen, shown in the page")
+def sketch_block(page):
+    go(page, "Journal")
+    page.get_by_role("button", name="+ New page").click()
+    page.get_by_label("Title").fill(f"Sketch {MARK}")
+    page.locator(".bn-editor").click(timeout=20000)
+    page.keyboard.type("/drawing")
+    page.get_by_role("option", name=re.compile("^Drawing")).click()
+    overlay = page.locator(".drawing-overlay")
+    expect(overlay.locator("canvas").first).to_be_visible(timeout=30000)
+    page.wait_for_timeout(500)
+    scribble(page, overlay.locator(".drawing-surface"))
+    overlay.get_by_role("button", name="Done").click()
+    expect(overlay).to_have_count(0, timeout=15000)
+    preview = page.locator(".drawing-block img")
+    expect(preview).to_be_visible(timeout=15000)
+    shot(page, "d36_sketch_in_page", full=False)
+    preview.click()                                                   # tap the sketch to draw more
+    expect(page.locator(".drawing-overlay canvas").first).to_be_visible(timeout=30000)
+    page.locator(".drawing-overlay").get_by_role("button", name="Done").click()
+
+
 @step("Settings: price guide, default shop, backups, exports, catalogue")
 def settings_more(page):
     page.get_by_role("button", name="Settings").click()
@@ -1003,7 +1068,7 @@ with sync_playwright() as p:
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
                matches, used_on, gundam, bandai_lookup, warhammer, journal_write, journal_links, journal_from_model,
                journal_suggestion, journal_todo, global_search, journal_wishlist, appearance,
-               build_underway, calendar, volleyball, board_games, settings_more, no_panel):
+               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, settings_more, no_panel):
         fn(desk)
     ctx = browser.new_context(**p.devices["iPhone 13"])
     mob = ctx.new_page()

@@ -29,6 +29,11 @@ have five tabs: Home, Journal, Calendar, Supplies (with the wishlist) and Hobbie
   and every play (who played, who won, how long). "Played @Catan" in the journal offers "Log a play".
 - **Volleyball**: games and training with results (sets won and lost), your gear (condition, photo)
   and video links (YouTube thumbnails), all on the calendar and in Recent activity.
+- **Drawing (pen, whiteboard)**: "+ Whiteboard" makes a page that is one endless canvas
+  (Excalidraw): pen strokes with pressure, shapes, arrows, text, pictures; pan and zoom. With a pen
+  (S Pen on a Galaxy Tab) it switches to pen mode by itself: the pen draws, fingers pan and zoom.
+  In a normal page, `/` Drawing adds a sketch: its picture sits in the page, tap it to draw full
+  screen. Everything saves by itself; words written on a canvas are searchable.
 - **Journal -> actions**: write "Just bought @Sherman and started it right away" and the page
   offers "Sherman: Mark as In progress?" (Yes / Not now); "primed @Zero" offers the build step;
   "I want to buy new @XF-10 for a new project" offers "Add to wishlist?".
@@ -127,6 +132,11 @@ Grouped as in `api/app/` (one module per part of the app):
 |---|---|---|
 | **activity.py** (core) | | |
 | GET | `/api/activity?limit=&since=&until=` | What you've done: stock, kits, build log, time, journal, plays, volleyball, gear |
+| **journal_drawings.py** (core) | | |
+| POST | `/api/journal/{page_id}/drawings` | A new sketch for a Drawing block |
+| GET / PUT / DELETE | `/api/journal/drawings/{id}` | A drawing's scene (strokes, shapes) / save it / delete a sketch |
+| PUT | `/api/journal/drawings/{id}/files` | Pictures on the canvas (each sent once, merged in) |
+| GET / PUT | `/api/journal/drawings/{id}/preview` | Its PNG picture |
 | **calendar.py** (core) | | |
 | GET | `/api/calendar?start=&end=` | `events` (repeats expanded) and what `happened` each day |
 | GET | `/api/calendar/upcoming?limit=` | The next events from today |

@@ -5,6 +5,7 @@ import { useApp } from '../app-context.js'
 import TagsInput from './TagsInput.jsx'
 
 const Editor = lazy(() => import('./Editor.jsx'))
+const DrawingCanvas = lazy(() => import('./DrawingCanvas.jsx'))
 const SAVE_AFTER_MS = 700  // save this long after you stop typing
 
 // The parts of a page the server works out from what you wrote.
@@ -12,6 +13,7 @@ const derived = ({ links, mentioned_in, suggestions }) => ({ links, mentioned_in
 
 // One journal page: title, date, icon, tags, pin, the editor, and what it links to.
 // Everything saves by itself as you go ("Saving..." / "Saved").
+// A whiteboard page shows its canvas instead of the editor; any drawing can open full screen.
 export default function JournalPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -20,6 +22,7 @@ export default function JournalPage() {
   const [error, setError] = useState('')
   const [status, setStatus] = useState('')        // '', 'saving', 'saved'
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [drawing, setDrawing] = useState(null)      // the drawing open full screen
   const pending = useRef({})                        // changes not sent yet
   const timer = useRef(null)
 
@@ -82,8 +85,18 @@ export default function JournalPage() {
 
   const openMention = openThing
 
+  // A drawing was saved: keep its new preview (the page's sketches and the journal list show it).
+  const drawingSaved = useCallback((meta) => {
+    setPage((p) => ({ ...p, drawings: [...p.drawings.filter((d) => d.drawing_id !== meta.drawing_id), meta] }))
+    changed()
+  }, [changed])
+
   if (error) return <p className="alert error">{error} <Link to="/journal">Back to the journal</Link></p>
   if (!page) return <p className="muted loading">Loading...</p>
+
+  const board = page.kind === 'whiteboard' ? page.drawings.find((d) => d.board) : null
+  const previews = Object.fromEntries(page.drawings.map((d) => [String(d.drawing_id), d.preview_url]))
+  const pageTitle = page.title || 'Untitled'
 
   const edit = (field, now = false) => (e) => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value
@@ -92,7 +105,7 @@ export default function JournalPage() {
   }
 
   return (
-    <article className="journal-page">
+    <article className={board ? 'journal-page whiteboard' : 'journal-page'}>
       <div className="journal-bar">
         <Link to="/journal" className="plain">‹ Journal</Link>
         <span className="spacer" />
@@ -132,8 +145,20 @@ export default function JournalPage() {
       </div>
 
       <Suspense fallback={<p className="muted loading">Opening the editor...</p>}>
-        <Editor key={page.page_id} pageId={page.page_id} initialContent={page.content}
-          onChange={(content) => save({ content })} onOpenMention={openMention} />
+        {board ? (
+          drawing !== board.drawing_id && (
+            <DrawingCanvas key={board.drawing_id} drawingId={board.drawing_id} title={pageTitle}
+              onSaved={drawingSaved} onExpand={() => setDrawing(board.drawing_id)} />
+          )
+        ) : (
+          <Editor key={page.page_id} pageId={page.page_id} initialContent={page.content}
+            onChange={(content) => save({ content })} onOpenMention={openMention}
+            previews={previews} onDraw={setDrawing} />
+        )}
+        {drawing && (
+          <DrawingCanvas key={`full-${drawing}`} drawingId={drawing} overlay title={pageTitle}
+            onSaved={drawingSaved} onClose={() => setDrawing(null)} />
+        )}
       </Suspense>
 
       {page.suggestions.length > 0 && (

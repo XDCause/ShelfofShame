@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router'
 import { api, timeAgo } from '../api.js'
-import { BoxIcon, CalendarIcon, CartIcon, JournalIcon } from '../components/icons.jsx'
+import { BoxIcon, CalendarIcon, CartIcon, JournalIcon, PenIcon } from '../components/icons.jsx'
 import { MODULES } from '../modules/index.js'
 import { KIND_ICON, KIND_NAME, VERB_TONE } from './activityKinds.js'
 import { useApp } from './app-context.js'
@@ -110,6 +110,7 @@ function QuickActions({ newPage }) {
   const navigate = useNavigate()
   const actions = [
     { label: 'New page', Icon: JournalIcon, run: () => newPage() },
+    { label: 'Whiteboard', Icon: PenIcon, run: () => newPage({ kind: 'whiteboard' }) },
     { label: 'Add event', Icon: CalendarIcon, run: () => app.openPanel('event', {}) },
     { label: 'Add supply', Icon: BoxIcon, run: () => app.openAdd(null) },
     { label: 'Wishlist', Icon: CartIcon, run: () => navigate('/wishlist?add=1') },

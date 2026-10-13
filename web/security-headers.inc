@@ -6,8 +6,11 @@
 #   Content-Security-Policy  only the app's own scripts run, and it only talks to its own API.
 #                            Photos may also come from https: sites (Tamiya, HLJ, YouTube thumbnails),
 #                            data: and blob: (photos being shrunk). Inline styles are needed by React
-#                            and the journal editor.
+#                            and the journal editor. Fonts: our own copies (public/fonts); the
+#                            drawing canvas lists esm.sh as a backup after them, and Chrome reports
+#                            a blocked backup as an error even when it never needs it, so fonts
+#                            may come from https://esm.sh too (only used if our copy is missing).
 add_header X-Content-Type-Options "nosniff" always;
 add_header X-Frame-Options "SAMEORIGIN" always;
 add_header Referrer-Policy "same-origin" always;
-add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'" always;
+add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data: https://esm.sh; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'" always;

@@ -20,3 +20,6 @@ dist/
 
 # Excel lock files
 ~$*
+
+# Copied from node_modules at build time (web/scripts/copy-excalidraw-fonts.js)
+web/public/fonts/

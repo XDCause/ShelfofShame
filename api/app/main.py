@@ -11,6 +11,7 @@ Hobby supplies (shared by every hobby):
     settings   default shop, price guide, backups          lookups    brands / categories / locations
 Core (every hobby):
     journal    Notion-style pages, tags, @mentions, photos, suggestions, to-dos
+    journal_drawings  pen sketches and whiteboard pages (Excalidraw scenes, previews)
     activity   one feed of what you've done (stock, kits, plays, games, journal...)
     calendar   events (repeating ones too) and what happened on each day
 Hobby modules:
@@ -22,13 +23,13 @@ import os
 
 from fastapi import FastAPI
 
-from . import (activity, boardgames, build, calendar, catalog, colours, journal, lookups, models, products,
-               settings, spending, supplies, volleyball, wishlist)
+from . import (activity, boardgames, build, calendar, catalog, colours, journal, journal_drawings, lookups, models,
+               products, settings, spending, supplies, volleyball, wishlist)
 from .db import db
 
 app = FastAPI(title="Off the Clock API", docs_url="/api/docs", openapi_url="/api/openapi.json")
 
-for part in (activity, journal, calendar, supplies, wishlist, products, catalog, models, build, colours,
+for part in (activity, journal_drawings, journal, calendar, supplies, wishlist, products, catalog, models, build, colours,
              boardgames, volleyball, spending, settings, lookups):
     app.include_router(part.router)
 
