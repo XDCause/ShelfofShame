@@ -137,3 +137,88 @@ def test_photos_in_pages(client):
     image = client.get(r.json()["url"])
     assert image.status_code == 200 and image.content == b"\x89PNGfake" and image.headers["content-type"] == "image/png"
     assert client.post("/api/journal/images", content=b"x", headers={"content-type": "text/plain"}).status_code == 415
+
+
+# ---------------------------------------------------------------- suggestions from what a page says
+def page_saying(client, *content, entry_date="2026-10-11"):
+    return client.post("/api/journal", json={"title": "Bench notes", "entry_date": entry_date,
+                                             "content": [paragraph(*content)]}).json()
+
+
+def test_bought_and_started_suggests_in_progress(client):
+    """The user's own example: the word written last ("started") wins over "bought"."""
+    sherman = client.post("/api/models", json={"name": "Sherman", "status": "Wanted"}).json()
+    page = page_saying(client, text("I just bought "), mention("model", sherman["model_id"], "Sherman"),
+                       text(" and started it right away"))
+    [s] = page["suggestions"]
+    assert (s["name"], s["label"]) == ("Sherman", "Mark as In progress")
+    assert s["changes"] == {"status": "In progress", "started_on": "2026-10-11"}   # the page's date
+
+    page = client.post(f"/api/journal/{page['page_id']}/suggestions/apply", json={"key": s["key"]}).json()
+    assert page["suggestions"] == []                                               # done: gone
+    m = client.get(f"/api/models/{sherman['model_id']}").json()
+    assert (m["status"], m["started_on"]) == ("In progress", "2026-10-11")
+    again = client.post(f"/api/journal/{page['page_id']}/suggestions/apply", json={"key": s["key"]})
+    assert again.status_code == 409
+
+
+def test_just_bought_suggests_in_stash_with_the_date(client):
+    kit = client.post("/api/models", json={"name": "P-40E", "status": "Wanted"}).json()
+    [s] = page_saying(client, text("Picked up the "), mention("model", kit["model_id"], "P-40E"),
+                      text(" at Hobbyrama"))["suggestions"]
+    assert s["changes"] == {"status": "In stash", "purchase_date": "2026-10-11"}
+
+
+def test_build_steps_from_the_words_only_moving_forward(client):
+    zero = client.post("/api/models", json={"name": "Zero", "status": "In progress", "stage": "Built"}).json()
+    gundam = client.post("/api/models", json={"name": "RX-78-2", "hobby": "Gundam", "status": "In progress"}).json()
+    page = page_saying(client, text("Primed the "), mention("model", zero["model_id"], "Zero"),
+                       text(" and panel lined the "), mention("model", gundam["model_id"], "RX-78-2"))
+    offered = {(s["name"], s["label"]) for s in page["suggestions"]}
+    # Both models get the last step written; a step a hobby doesn't have isn't offered.
+    assert offered == {("RX-78-2", "Tick build step Panel lined")}
+    page = page_saying(client, text("Primed the "), mention("model", zero["model_id"], "Zero"))
+    assert [s["changes"] for s in page["suggestions"]] == [{"stage": "Primed"}]
+    page = page_saying(client, text("Assembled the "), mention("model", zero["model_id"], "Zero"))
+    assert page["suggestions"] == []                     # Built isn't past Built: nothing to do
+
+
+def test_nothing_suggested_without_a_model_or_a_keyword(client):
+    kit = client.post("/api/models", json={"name": "Sherman"}).json()
+    assert page_saying(client, text("Started a new hobby"))["suggestions"] == []
+    assert page_saying(client, text("Looked at the "), mention("model", kit["model_id"], "Sherman"))["suggestions"] == []
+    # "In stash" already: "bought" has nothing to add, a word inside another isn't a match.
+    assert page_saying(client, text("Rebought? "), mention("model", kit["model_id"], "Sherman"))["suggestions"] == []
+
+
+def test_a_dismissed_suggestion_stays_away(client):
+    kit = client.post("/api/models", json={"name": "Sherman", "status": "In stash"}).json()
+    page = page_saying(client, text("Finished the "), mention("model", kit["model_id"], "Sherman"))
+    [s] = page["suggestions"]
+    assert s["label"] == "Mark as Finished"
+    page = client.post(f"/api/journal/{page['page_id']}/suggestions/dismiss", json={"key": s["key"]}).json()
+    assert page["suggestions"] == []
+    assert client.get(f"/api/journal/{page['page_id']}").json()["suggestions"] == []
+    assert client.get(f"/api/models/{kit['model_id']}").json()["status"] == "In stash"   # untouched
+
+
+# ---------------------------------------------------------------- to-dos
+def todo(block_id, words, checked=False):
+    return {"id": block_id, "type": "checkListItem", "props": {"checked": checked}, "content": [text(words)]}
+
+
+def test_todos_from_every_page_and_ticking_them_off(client):
+    a = client.post("/api/journal", json={"title": "Shopping", "entry_date": "2026-10-01",
+                                          "content": [todo("t1", "Buy XF-62"), todo("t2", "Buy thinner", True)]}).json()
+    client.post("/api/journal", json={"title": "Bench", "entry_date": "2026-10-05", "content": [
+        paragraph(text("notes"), children=[todo("t3", "Fix the tracks")]), todo("t4", "   ")]})
+    open_ = client.get("/api/journal/todos").json()
+    assert [(t["title"], t["text"]) for t in open_] == [("Bench", "Fix the tracks"), ("Shopping", "Buy XF-62")]
+    assert [t["text"] for t in client.get("/api/journal/todos?done=true").json()] == ["Buy thinner"]
+
+    r = client.patch(f"/api/journal/{a['page_id']}/todos/t1", json={"checked": True})
+    assert r.json() == {"page_id": a["page_id"], "block_id": "t1", "checked": True}
+    assert [t["text"] for t in client.get("/api/journal/todos").json()] == ["Fix the tracks"]
+    page = client.get(f"/api/journal/{a['page_id']}").json()
+    assert page["content"][0]["props"]["checked"] is True       # it's ticked on the page too
+    assert client.patch(f"/api/journal/{a['page_id']}/todos/nope", json={"checked": True}).status_code == 404

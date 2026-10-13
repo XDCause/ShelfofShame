@@ -1,0 +1,129 @@
+"""Turning journal pages into actions.
+
+Suggestions: a block that @mentions a model and says what happened to it offers the change, for
+the user to apply with one tap (never automatically):
+    "Just bought @Sherman and started it right away"   -> Sherman: In progress
+    "Primed the @Zero today"                            -> Zero: build step Primed
+When a block says several things ("bought ... and started"), the word written last wins: it's
+where the story ends. Only changes that move a model forward are offered, so a suggestion goes
+away once it's applied (or the model has moved on), and one waved away stays away (dismissed).
+
+To-dos: the editor's check-list blocks ({"type": "checkListItem", "props": {"checked": false}})
+on every page are one to-do list, which can be ticked off without opening the page.
+"""
+import re
+
+from .db import STAGES
+from .journal_text import inline_text, mentions
+
+# Words -> the status they suggest, and the statuses it makes sense to move from.
+STATUS_WORDS = [
+    (r"bought|purchased|picked up|ordered|arrived|got (?:a|the|my|it)", "In stash", {"Wanted"}),
+    (r"started|starting|began|begun|kicked off|working on|cracked open", "In progress", {"Wanted", "In stash", "On hold"}),
+    (r"on hold|paused|shelved|put aside|set aside", "On hold", {"In progress"}),
+    (r"finished|completed|done with|wrapped up", "Finished", {"Wanted", "In stash", "In progress", "On hold"}),
+    (r"sold|gave away|given away|traded", "Gone", {"Wanted", "In stash", "In progress", "On hold", "Finished"}),
+]
+
+# Words -> a build step (only offered when that step is one of the model's hobby's steps).
+STEP_WORDS = {
+    "Built": r"built|assembled|assembly (?:is )?done",
+    "Primed": r"primed|priming|primer(?:ed)? on",
+    "Painted": r"painted|base ?coated",
+    "Panel lined": r"panel[- ]?lin(?:ed|ing)",
+    "Decals": r"decal(?:s|ed|ing)",
+    "Weathered": r"weathered|weathering",
+    "Top coat": r"top[- ]?coat(?:ed|ing)?|clear[- ]?coat(?:ed)?",
+    "Based": r"based|basing",
+}
+
+
+def _last(pattern: str, text: str) -> int:
+    """Where the last match of `pattern` (whole words) ends in `text`, or -1."""
+    ends = [m.end() for m in re.finditer(rf"\b(?:{pattern})\b", text, re.I)]
+    return ends[-1] if ends else -1
+
+
+def _latest(found):
+    """Of (position, value) pairs, the value found furthest along the text (None if none were)."""
+    hits = [(pos, value) for pos, value in found if pos >= 0]
+    return max(hits, key=lambda h: h[0])[1] if hits else None
+
+
+def _blocks(blocks):
+    """Every block, nested ones included."""
+    for block in blocks or []:
+        if isinstance(block, dict):
+            yield block
+            yield from _blocks(block.get("children"))
+
+
+def suggestions(conn, page: dict) -> list[dict]:
+    """What the page's words suggest doing to the models it mentions (not yet done or dismissed)."""
+    wanted = {}   # (model_id, field) -> (position, value, word)
+    for block in _blocks(page["content"]):
+        ids = {target for kind, target in mentions(block.get("content")) if kind == "model"}
+        if not ids:
+            continue
+        text = inline_text(block.get("content"))
+        status = _latest((_last(words, text), (to, start)) for words, to, start in STATUS_WORDS)
+        step = _latest((_last(words, text), step) for step, words in STEP_WORDS.items())
+        for model_id in ids:
+            if status:
+                wanted[(model_id, "status")] = status
+            if step:
+                wanted[(model_id, "stage")] = step
+    if not wanted:
+        return []
+
+    models = {m["model_id"]: m for m in conn.execute(
+        "SELECT model_id, name, hobby, status, stage, purchase_date, started_on FROM models WHERE model_id = ANY(%s)",
+        (list({model_id for model_id, _ in wanted}),)).fetchall()}
+    result = []
+    for (model_id, field), found in sorted(wanted.items()):
+        m = models.get(model_id)
+        if m is None:
+            continue
+        if field == "status":
+            to, start = found
+            if m["status"] not in start:
+                continue
+            changes = {"status": to}
+            if to == "In stash" and m["purchase_date"] is None:
+                changes["purchase_date"] = page["entry_date"]
+            if to == "In progress" and m["started_on"] is None:
+                changes["started_on"] = page["entry_date"]
+            label = f"Mark as {to}"
+        else:
+            step = found
+            steps = STAGES[m["hobby"]]
+            if step not in steps or (m["stage"] in steps and steps.index(m["stage"]) >= steps.index(step)):
+                continue
+            changes = {"stage": step}
+            label = f"Tick build step {step}"
+        key = f"model:{model_id}:{field}:{changes[field]}"
+        if key in page.get("dismissed", []):
+            continue
+        result.append({"key": key, "kind": "model", "id": model_id, "name": m["name"], "label": label,
+                       "changes": changes})
+    return result
+
+
+# ---------------------------------------------------------------------------
+# To-dos
+# ---------------------------------------------------------------------------
+def todos_in(page: dict) -> list[dict]:
+    """The check-list blocks on one page."""
+    return [{"page_id": page["page_id"], "title": page["title"], "icon": page["icon"],
+             "entry_date": page["entry_date"], "block_id": b.get("id"),
+             "text": inline_text(b.get("content")).strip(), "checked": bool(b.get("props", {}).get("checked"))}
+            for b in _blocks(page["content"]) if b.get("type") == "checkListItem" and b.get("id")]
+
+
+def set_checked(content: list, block_id: str, checked: bool) -> bool:
+    """Tick or untick one check-list block (in place). False if there's no such block."""
+    for block in _blocks(content):
+        if block.get("id") == block_id and block.get("type") == "checkListItem":
+            block.setdefault("props", {})["checked"] = checked
+            return True
+    return False

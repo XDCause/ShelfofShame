@@ -697,6 +697,48 @@ def journal_from_model(page):
     expect(page).to_have_url(BASE + "/journal")
 
 
+@step("Journal: 'bought it and started' offers In progress; Yes moves the kit")
+def journal_suggestion(page):
+    kit = page.request.post(f"{BASE}/api/models", data={"name": f"Kit-{MARK}", "status": "Wanted"}).json()
+    go(page, "Journal")
+    page.get_by_role("button", name="+ New page").click()
+    page.locator(".bn-editor").click(timeout=20000)
+    page.keyboard.type(f"Just bought the @Kit-{MARK}")
+    page.get_by_role("option", name=re.compile(MARK)).click()
+    page.keyboard.type("and started it right away")
+    suggestion = page.locator(".suggestion")
+    expect(suggestion).to_contain_text("Mark as In progress?", timeout=10000)
+    shot(page, "d28_journal_suggestion", full=False)
+    suggestion.get_by_role("button", name="Yes").click()
+    expect(page.locator(".suggestion")).to_have_count(0)
+    expect(page.locator(".toast")).to_contain_text("now In progress")
+    model = page.request.get(f"{BASE}/api/models/{kit['model_id']}").json()
+    assert model["status"] == "In progress" and model["started_on"], model
+
+
+@step("Journal: a / check list item is a to-do, ticked off from the list and Home")
+def journal_todo(page):
+    page.locator(".bn-editor").focus()
+    page.keyboard.press("Control+End")                                  # the end of the text
+    page.keyboard.press("Enter")
+    page.keyboard.type("/check")
+    page.keyboard.press("Enter")
+    page.keyboard.type(f"Prime Kit-{MARK}")
+    expect(page.locator(".save-status")).to_have_text("Saved", timeout=10000)
+    go(page, "Home")
+    todo = page.locator(".home-card .todo", has_text=MARK)
+    expect(todo).to_be_visible()
+    shot(page, "d29_home_todos", full=False)
+    go(page, "Journal")
+    todo = page.locator(".todo", has_text=MARK)
+    todo.get_by_role("checkbox").check()
+    expect(todo).to_have_class(re.compile("done"))
+    page.reload()
+    expect(page.locator(".todo", has_text=MARK)).to_have_count(0)     # done: off the list
+    open_ = page.request.get(f"{BASE}/api/journal/todos?done=true").json()
+    assert any(MARK in t["text"] for t in open_), open_
+
+
 @step("Settings: price guide, default shop, backups, exports, catalogue")
 def settings_more(page):
     page.get_by_role("button", name="Settings").click()
@@ -767,6 +809,7 @@ with sync_playwright() as p:
                models, model_paste, add_model_hasegawa, undo, add_to_wishlist_button, duplicate_check, wishlist_panel, shop_tamiya, used_up,
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
                matches, used_on, gundam, bandai_lookup, warhammer, journal_write, journal_links, journal_from_model,
+               journal_suggestion, journal_todo,
                settings_more, no_panel):
         fn(desk)
     ctx = browser.new_context(**p.devices["iPhone 13"])

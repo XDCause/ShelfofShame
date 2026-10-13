@@ -4,10 +4,11 @@ import { api } from '../../api.js'
 import { JournalIcon } from '../../components/icons.jsx'
 import { useApp } from '../app-context.js'
 import { PageRow, useNewPage } from './JournalList.jsx'
+import TodoList from './TodoList.jsx'
 
 const today = () => new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
 
-// The journal on the Home page: start today's entry, and the latest few pages.
+// The journal on the Home page: start today's entry, open to-dos, and the latest few pages.
 export default function JournalHome() {
   const { refreshKey } = useApp()
   const newPage = useNewPage()
@@ -21,7 +22,13 @@ export default function JournalHome() {
       <button type="button" className="secondary" onClick={() => newPage({ title: today() })}>
         Write today's entry
       </button>
-      {pages?.length > 0 && <ul className="list journal-list home-journal">{pages.map((p) => <PageRow key={p.page_id} page={p} />)}</ul>}
+      <TodoList limit={5} />
+      {pages?.length > 0 && (
+        <>
+          <h3 className="section-title home-journal-title">Latest pages</h3>
+          <ul className="list journal-list">{pages.map((p) => <PageRow key={p.page_id} page={p} />)}</ul>
+        </>
+      )}
     </section>
   )
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { api, shortDate } from '../../api.js'
 import { useApp } from '../app-context.js'
+import TodoList from './TodoList.jsx'
 
 const monthOf = (day) => new Date(`${day}T12:00:00`).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })
 
@@ -60,6 +61,7 @@ export default function JournalList() {
         </div>
       )}
       {error && <p className="alert error">{error}</p>}
+      {!q && !tag && <TodoList card />}
       {pages && pages.length === 0 && (
         <p className="empty card">{q || tag ? 'No pages match.' : 'No pages yet. Start one with "+ New page".'}</p>
       )}

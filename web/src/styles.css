@@ -584,17 +584,20 @@ th.col-value { width: 96px; }
 .page-snippet { display: block; color: var(--muted); font-size: 0.87rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .page-tags { display: block; color: var(--tint); font-size: 0.8rem; margin-top: 1px; }
 .home-card > .secondary { margin-bottom: 4px; }
-.home-journal { margin-top: 10px; }
 .home-card-title a { margin-left: auto; font-weight: 500; }
 
-.journal-page { max-width: 820px; margin: 0 auto; background: var(--surface); border-radius: var(--radius); padding: 14px 20px 28px; box-shadow: var(--card-shadow); }
+.journal-page {
+  --gutter-left: 60px;
+  max-width: 860px; margin: 0 auto; padding: 16px 32px 32px var(--gutter-left);
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--card-shadow);
+}
 .journal-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; margin-bottom: 10px; }
 .journal-bar .plain { padding-left: 0; }
 .pin { display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem; }
 .pin input { min-height: 0; }
-.journal-head { display: flex; align-items: center; gap: 8px; }
+.journal-head { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
 .journal-icon {
-  width: 2.2em; min-height: 0; padding: 2px; border: 0; background: transparent; font-size: 2rem; text-align: center;
+  width: 1.3em; min-height: 0; padding: 0; border: 0; background: transparent; font-size: 2rem; text-align: left;
 }
 .journal-icon:placeholder-shown { opacity: 0.35; }
 .journal-title {
@@ -602,7 +605,7 @@ th.col-value { width: 96px; }
   letter-spacing: -0.02em;
 }
 .journal-icon:focus, .journal-title:focus { box-shadow: none; }
-.journal-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 4px 0 14px; }
+.journal-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 10px 0 22px; }
 .journal-meta input[type='date'] { min-height: 32px; padding: 4px 8px; font-size: 0.9rem; }
 .tags-input { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .tags-input input { width: 8em; min-height: 32px; padding: 4px 10px; border-radius: 999px; font-size: 0.9rem; }
@@ -610,13 +613,13 @@ th.col-value { width: 96px; }
 .tag-chip button { border: 0; background: none; padding: 0 0 0 2px; color: inherit; font-size: 0.7rem; opacity: 0.7; }
 
 /* BlockNote, made to sit on the page: our font and colours, no box of its own. */
-.journal-editor { margin: 0 -14px; min-height: 240px; }
+.journal-editor { margin: 0 0 0 calc(-1 * var(--gutter-left)); min-height: 200px; }
 .journal-editor .bn-container {
   --bn-font-family: inherit;
   --bn-colors-editor-background: transparent;
   --bn-colors-editor-text: var(--text);
 }
-.journal-editor .bn-editor { padding-inline: 50px 14px; font-size: 1rem; background: transparent; }
+.journal-editor .bn-editor { padding-inline: var(--gutter-left) 0; font-size: 1rem; background: transparent; }
 .mention {
   display: inline-block; padding: 0 6px; border-radius: 6px; border: 0; font: inherit; font-weight: 500;
   color: var(--tint); background: var(--tint-soft); cursor: pointer;
@@ -626,6 +629,28 @@ th.col-value { width: 96px; }
 button.mention:disabled { color: var(--muted); background: var(--fill); text-decoration: line-through; }
 .journal-links { display: grid; gap: 14px; margin-top: 24px; padding-top: 14px; border-top: 0.5px solid var(--separator); }
 .journal-links .list li { justify-content: space-between; }
+.journal-links .mention { text-align: left; }
+
+/* "@Sherman: Mark as In progress?  [Yes] [Not now]" */
+.suggestions { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; }
+.suggestion {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; padding: 10px 12px; border-radius: 12px;
+  background: var(--purple-bg);
+}
+.suggestion .grow { flex: 1 1 16em; }
+.suggestion .mention { display: inline; }
+/* The app's own input styling (height, padding) is for form fields, not the editor's check boxes. */
+.journal-editor input[type='checkbox'] { min-height: 0; padding: 0; width: auto; box-shadow: none; }
+
+/* To-dos gathered from every page */
+.todos .section-title { display: flex; align-items: center; gap: 6px; }
+.todo-list li { flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; }
+.todo { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 14em; cursor: pointer; }
+.todo input { width: 20px; height: 20px; min-height: 0; flex: none; }
+.todo.done span { color: var(--muted); text-decoration: line-through; }
+.todo-page { font-size: 0.8rem; color: var(--muted); }
+.home-card .todos { margin-top: 14px; }
+.home-journal-title { margin-top: 16px; }
 
 /* Phones: a hobby's pages as a segmented control under the nav bar (the tab bar holds hobbies). */
 .module-tabs { display: none; }
@@ -755,10 +780,9 @@ button.mention:disabled { color: var(--muted); background: var(--fill); text-dec
   .tabbar a[aria-current='page'] { color: var(--tint); }
   .home-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .module-tabs { display: flex; margin: 0 0 12px; }
-  .journal-page { padding: 10px 14px 20px; }
+  .journal-page { --gutter-left: 16px; padding: 12px 16px 20px; }
   .journal-title, .journal-icon { font-size: 1.6rem; }
-  .journal-editor { margin: 0 -10px; }
-  .journal-editor .bn-editor { padding-inline: 30px 10px; }
+  .toolbar .search { flex-basis: 140px; }   /* room for the button beside it */
   body.drawer-open .tabbar { display: none; }
   /* Panels are sheets that slide up, with the page peeking out behind at the top. */
   .drawer-backdrop { align-items: flex-end; }

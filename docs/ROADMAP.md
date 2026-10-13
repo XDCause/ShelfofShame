@@ -74,6 +74,7 @@ Each phase is built and tested in the dev copy, then promoted (`promote.ps1`).
 | 0 | **Dev and prod** | DONE 2026-10-13: worktree, dev.ps1, promote.ps1, migrate.ps1, DEV badge |
 | 1 | **New UI shell** | DONE 2026-10-13 (in dev): React Router, sidebar / tab bar, Home page, module manifest (web/src/modules). Model kits moved in unchanged. |
 | 2 | **Journal** | DONE 2026-10-13 (in dev): pages, BlockNote editor, photos, tags, @mentions of models / supplies / pages, search, "In the journal" on panels |
+| 2b | **Journal actions + to-dos** | DONE 2026-10-13 (in dev): suggestions from what a page says ("bought ... started @Sherman" -> In progress), to-dos from check lists, margin fixes |
 | 3 | **Calendar** | Month / week / list views; planned events; past activity from every module |
 | 4 | **Board games** | Collection (with an unplayed "shelf of shame"), plays (players, scores, winner) |
 | 5 | **Volleyball** | Games and training: team, opponent, result, sets, your stats, notes |

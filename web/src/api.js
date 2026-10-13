@@ -36,6 +36,10 @@ export const api = {
   deletePage: (id) => request(`/journal/${id}`, send('DELETE')),
   journalTags: () => request('/journal/tags'),
   mentionable: (q) => request(`/journal/mentionable?q=${enc(q)}`),
+  listTodos: (done = false) => request(`/journal/todos${done ? '?done=true' : ''}`),
+  tickTodo: (pageId, blockId, checked) => request(`/journal/${pageId}/todos/${enc(blockId)}`, send('PATCH', { checked })),
+  applySuggestion: (pageId, key) => request(`/journal/${pageId}/suggestions/apply`, send('POST', { key })),
+  dismissSuggestion: (pageId, key) => request(`/journal/${pageId}/suggestions/dismiss`, send('POST', { key })),
   uploadJournalImage: (blob, pageId) => request(`/journal/images${pageId ? `?page_id=${pageId}` : ''}`, image('POST', blob)),
 
   // Inventory

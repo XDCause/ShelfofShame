@@ -525,6 +525,34 @@ DBeaver, psql, and the one-off import script.
    - e2e: journal_write / journal_links / journal_from_model (MARK = unique word per run, so pages
      already in the data don't matter); phone step uses the Shelf tab + .module-tabs.
      209 API tests, 45 browser steps (dev).
+3w. **Journal actions, to-dos, margins** - DONE in dev (2026-10-13). User: "I like the journal";
+   margins were off; wants "I just bought @model and started it right away" to move it to In
+   progress, and to check things off (calendar / to-do list later). Still NOT promoted.
+   - Margins: `.journal-page` has a left gutter (`--gutter-left` 60px, 16px on phones); the editor
+     gets `margin-left: -gutter` and `.bn-editor` `padding-inline: gutter 0`, so title, date/tags
+     and body text share one left edge and the drag handle sits in the gutter. Emoji box 1.3em,
+     left-aligned. Our global `input` styles were hitting BlockNote's checkboxes: reset in
+     `.journal-editor input[type=checkbox]`.
+   - `db/init/19_journal_actions.sql`: journal_pages.dismissed TEXT[].
+   - `api/app/journal_text.py` (inline_text / plain_text / mentions, moved out of journal.py) and
+     `api/app/journal_actions.py`: suggestions(conn, page) per block that mentions a model:
+     STATUS_WORDS (bought -> In stash only from Wanted, started -> In progress from Wanted / In
+     stash / On hold, on hold, finished, sold -> Gone) and STEP_WORDS (built, primed, painted,
+     panel lined, decals, weathered, top coat, based; only the hobby's steps, only forward). The
+     word written LAST in the block wins. In stash adds purchase_date, In progress started_on = the
+     page's date (if empty). Key "model:<id>:<field>:<value>"; dismissed keys skipped.
+     todos_in(page) / set_checked(content, block_id) for checkListItem blocks (need BlockNote ids).
+   - journal.py: fetch_page adds `suggestions`; POST /journal/{id}/suggestions/apply (re-checks
+     the offer, then models.update_model with the changes; 409 if no longer offered) and /dismiss;
+     GET /journal/todos?done=; PATCH /journal/{id}/todos/{block_id} {checked}.
+   - UI: JournalPage shows suggestions under the text ("@Name Mark as ...?" Yes / Not now; Yes
+     flushes pending edits first, toasts "Name: now In progress"); TodoList.jsx (Journal page card
+     + Home first 5; a ticked item stays struck through until reload so it can be unticked).
+     JournalHome: "Latest pages" heading. Phones: toolbar search flex-basis 140px so "+ New page"
+     fits beside it.
+   - e2e: journal_suggestion (makes a Wanted "Kit-<MARK>" via the API), journal_todo (/check in the
+     editor; focus + Control+End, since clicking mid-line can hit a mention pill).
+     215 API tests, 47 browser steps (dev).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

@@ -15,11 +15,11 @@ from pydantic import BaseModel, Field
 
 from .db import db, found, insert_row, update_row
 from .images import photo_response, read_photo
+from .journal_actions import set_checked, suggestions, todos_in
+from .journal_text import mentions, plain_text
+from .models import ModelPatch, update_model
 
 router = APIRouter(prefix="/api", tags=["journal"])
-
-KINDS = ("model", "supply", "page")
-
 
 class PageIn(BaseModel):
     title: str = ""
@@ -30,6 +30,14 @@ class PageIn(BaseModel):
     tags: list[str] = []
 
 
+class SuggestionIn(BaseModel):
+    key: str = Field(min_length=1)
+
+
+class TodoPatch(BaseModel):
+    checked: bool
+
+
 class PagePatch(BaseModel):
     title: str | None = None
     icon: str | None = Field(None, max_length=16)
@@ -37,63 +45,6 @@ class PagePatch(BaseModel):
     content: list | None = None
     pinned: bool | None = None
     tags: list[str] | None = None
-
-
-# ---------------------------------------------------------------------------
-# Reading the blocks
-# ---------------------------------------------------------------------------
-def _inline(content) -> str:
-    """The words in a block's inline content: text, links, mentions and table cells."""
-    if isinstance(content, str):
-        return content
-    if isinstance(content, list):
-        return "".join(_inline(item) for item in content)
-    if isinstance(content, dict):
-        if content.get("type") == "mention":
-            return "@" + str(content.get("props", {}).get("label", ""))
-        if content.get("type") == "tableContent":
-            return " ".join(_inline(cell) for row in content.get("rows", []) for cell in row.get("cells", []))
-        if isinstance(content.get("text"), str):
-            return content["text"]
-        return _inline(content.get("content", ""))     # a link or a table cell
-    return ""
-
-
-def plain_text(blocks) -> str:
-    """Every word in the blocks, one block per line (nested blocks included)."""
-    lines = []
-    for block in blocks or []:
-        if not isinstance(block, dict):
-            continue
-        line = _inline(block.get("content")).strip()
-        if line:
-            lines.append(line)
-        nested = plain_text(block.get("children"))
-        if nested:
-            lines.append(nested)
-    return "\n".join(lines)
-
-
-def mentions(node) -> set[tuple[str, int]]:
-    """Every (kind, id) the blocks @mention."""
-    found_ = set()
-
-    def walk(n):
-        if isinstance(n, list):
-            for item in n:
-                walk(item)
-        elif isinstance(n, dict):
-            if n.get("type") == "mention":
-                props = n.get("props", {})
-                kind, ref = props.get("kind"), str(props.get("ref", ""))
-                if kind in KINDS and ref.isdigit():
-                    found_.add((kind, int(ref)))
-            for value in n.values():
-                if isinstance(value, (list, dict)):
-                    walk(value)
-
-    walk(node)
-    return found_
 
 
 # ---------------------------------------------------------------------------
@@ -148,6 +99,8 @@ def fetch_page(conn, page_id: int) -> dict:
     page["mentioned_in"] = conn.execute(
         PAGE_LIST + " JOIN journal_links l ON l.page_id = p.page_id "
         "WHERE l.target_kind = 'page' AND l.target_id = %s ORDER BY p.entry_date DESC", (page_id,)).fetchall()
+    # "Sherman: Mark as In progress" - what the page's words suggest (journal_actions.py).
+    page["suggestions"] = suggestions(conn, page)
     return page
 
 
@@ -219,6 +172,17 @@ def mentionable(q: str = ""):
     return rows
 
 
+@router.get("/journal/todos")
+def list_todos(done: bool = False, limit: int = Query(100, ge=1, le=1000)):
+    """The check-list items on every page: open ones (done=false, the default) or ticked ones,
+    newest page first."""
+    with db() as conn:
+        pages = conn.execute("SELECT page_id, title, icon, entry_date, content FROM journal_pages "
+                             "ORDER BY entry_date DESC, page_id DESC").fetchall()
+    items = [t for page in pages for t in todos_in(page) if t["checked"] == done and t["text"]]
+    return items[:limit]
+
+
 @router.get("/journal/{page_id}")
 def get_page(page_id: int):
     with db() as conn:
@@ -241,6 +205,40 @@ def update_page(page_id: int, body: PagePatch):
         update_row(conn, "journal_pages", "page_id", page_id, data)
         if tags is not None:
             save_tags(conn, page_id, tags)
+        return fetch_page(conn, page_id)
+
+
+@router.patch("/journal/{page_id}/todos/{block_id}")
+def tick_todo(page_id: int, block_id: str, body: TodoPatch):
+    """Tick (or untick) one check-list item without opening the page."""
+    with db() as conn:
+        page = fetch_page(conn, page_id)
+        if not set_checked(page["content"], block_id, body.checked):
+            raise HTTPException(404, "That to-do isn't on the page any more.")
+        conn.execute("UPDATE journal_pages SET content = %s WHERE page_id = %s", (Jsonb(page["content"]), page_id))
+        return {"page_id": page_id, "block_id": block_id, "checked": body.checked}
+
+
+@router.post("/journal/{page_id}/suggestions/apply")
+def apply_suggestion(page_id: int, body: SuggestionIn):
+    """Do what a suggestion says (e.g. mark the Sherman In progress). Returns the page again."""
+    with db() as conn:
+        offered = {s["key"]: s for s in fetch_page(conn, page_id)["suggestions"]}
+    if body.key not in offered:
+        raise HTTPException(409, "That suggestion no longer applies (it may have been done already).")
+    s = offered[body.key]
+    update_model(s["id"], ModelPatch(**s["changes"]))     # the usual rules: dates, build steps...
+    with db() as conn:
+        return fetch_page(conn, page_id)
+
+
+@router.post("/journal/{page_id}/suggestions/dismiss")
+def dismiss_suggestion(page_id: int, body: SuggestionIn):
+    """Don't offer this suggestion on this page again."""
+    with db() as conn:
+        fetch_page(conn, page_id)
+        conn.execute("UPDATE journal_pages SET dismissed = array_append(dismissed, %s) "
+                     "WHERE page_id = %s AND NOT %s = ANY(dismissed)", (body.key, page_id, body.key))
         return fetch_page(conn, page_id)
 
 

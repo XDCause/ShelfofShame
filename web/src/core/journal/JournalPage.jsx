@@ -7,12 +7,15 @@ import TagsInput from './TagsInput.jsx'
 const Editor = lazy(() => import('./Editor.jsx'))
 const SAVE_AFTER_MS = 700  // save this long after you stop typing
 
+// The parts of a page the server works out from what you wrote.
+const derived = ({ links, mentioned_in, suggestions }) => ({ links, mentioned_in, suggestions })
+
 // One journal page: title, date, icon, tags, pin, the editor, and what it links to.
 // Everything saves by itself as you go ("Saving..." / "Saved").
 export default function JournalPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { openItem, openModel, changed } = useApp()
+  const { openItem, openModel, changed, showToast } = useApp()
   const [page, setPage] = useState(null)
   const [error, setError] = useState('')
   const [status, setStatus] = useState('')        // '', 'saving', 'saved'
@@ -35,7 +38,7 @@ export default function JournalPage() {
     try {
       const saved = await api.updatePage(id, data)
       // Only take what the server works out: what you've typed since stays as it is.
-      setPage((p) => ({ ...p, links: saved.links, mentioned_in: saved.mentioned_in }))
+      setPage((p) => ({ ...p, ...derived(saved) }))
       setStatus('saved')
       changed()
     } catch (e) {
@@ -58,6 +61,21 @@ export default function JournalPage() {
     window.addEventListener('beforeunload', beforeUnload)
     return () => { window.removeEventListener('beforeunload', beforeUnload); flush() }
   }, [flush])
+
+  // "Sherman: Mark as In progress" - Apply does it (and says so), Not now hides it for this page.
+  const answer = async (s, apply) => {
+    try {
+      await flush()
+      const saved = apply ? await api.applySuggestion(page.page_id, s.key) : await api.dismissSuggestion(page.page_id, s.key)
+      setPage((p) => ({ ...p, ...derived(saved) }))
+      if (apply) {
+        changed()
+        showToast(`${s.name}: ${s.label.replace(/^Mark as /, 'now ').replace(/^Tick build step /, 'build step ')} ✓`)
+      }
+    } catch (e) {
+      setError(e.message)
+    }
+  }
 
   const openMention = (kind, ref) => {
     if (kind === 'model') openModel(ref)
@@ -118,6 +136,21 @@ export default function JournalPage() {
         <Editor key={page.page_id} pageId={page.page_id} initialContent={page.content}
           onChange={(content) => save({ content })} onOpenMention={openMention} />
       </Suspense>
+
+      {page.suggestions.length > 0 && (
+        <aside className="suggestions" aria-label="Suggestions">
+          {page.suggestions.map((s) => (
+            <div key={s.key} className="suggestion">
+              <span className="grow">
+                <button type="button" className="mention mention-model" onClick={() => openModel(s.id)}>@{s.name}</button>
+                {' '}{s.label}?
+              </span>
+              <button type="button" className="secondary" onClick={() => answer(s, true)}>Yes</button>
+              <button type="button" className="plain" onClick={() => answer(s, false)}>Not now</button>
+            </div>
+          ))}
+        </aside>
+      )}
 
       {(page.links.length > 0 || page.mentioned_in.length > 0) && (
         <footer className="journal-links">

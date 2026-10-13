@@ -15,6 +15,10 @@ hobbies (board games, volleyball...) are planned: see [docs/ROADMAP.md](docs/ROA
   tables and photos; type `@` to mention a model, a supply or another page (a pill that opens it).
   Pages save as you type, have a date, an emoji, tags and a pin; search and tag filters. A model's
   or supply's panel lists the pages that mention it, with "+ Write about it".
+- **Journal -> actions**: write "Just bought @Sherman and started it right away" and the page
+  offers "Sherman: Mark as In progress?" (Yes / Not now); "primed @Zero" offers the build step.
+  Nothing changes without a tap. Check-list items (`/` Check List) on every page form one **To do**
+  list, on the Journal page and Home, ticked off without opening the page.
 
 ## Shelf of Shame (model kits)
 
@@ -42,7 +46,7 @@ hobbies (board games, volleyball...) are planned: see [docs/ROADMAP.md](docs/ROA
   now, download), CSV export for Excel, Tamiya catalogue refresh, brands / categories / locations
 - Styled after Apple's Human Interface Guidelines (sidebar on wide screens, tab bar and sheets on
   phones, dark mode)
-- Nightly backups, 209 automated API tests and a 45-step browser walkthrough
+- Nightly backups, 215 automated API tests and a 47-step browser walkthrough
 
 Three Docker containers:
 
@@ -110,6 +114,8 @@ Grouped as in `api/app/` (one module per part of the app):
 | GET/POST | `/api/journal?q=&tag=&mention=model:3` | Pages (newest first, pinned on top) / start a page |
 | GET/PATCH/DELETE | `/api/journal/{id}` | One page with its blocks, tags, mentions and "mentioned in" |
 | GET | `/api/journal/tags`, `/api/journal/mentionable?q=` | Tags in use / what `@` can mention |
+| GET · PATCH | `/api/journal/todos?done=` · `/api/journal/{id}/todos/{block}` | Check-list items from every page / tick one `{"checked": true}` |
+| POST | `/api/journal/{id}/suggestions/apply`, `.../dismiss` | Do (or wave away) a suggestion `{"key": ...}` |
 | POST | `/api/journal/images` · GET `/api/journal/images/{id}` | A photo in a page (image as the body) |
 | **supplies.py** | | |
 | GET | `/api/supplies?q=&category=&brand=&status=&location=` | Search / filter (each with `used_on` models) |
