@@ -68,7 +68,7 @@ WITH feed AS (
            concat_ws(' · ', 'Won by ' || NULLIF(p.winner, ''), NULLIF(p.players, ''), p.minutes || ' min'),
            NULL, NULL,
            CASE WHEN g.photo IS NOT NULL THEN '/api/board-games/' || g.game_id || '/photo?v='
-                || extract(epoch FROM g.photo_updated)::bigint END
+                || (extract(epoch FROM g.photo_updated) * 1000)::bigint END
     FROM board_game_plays p JOIN board_games g USING (game_id)
   UNION ALL
     SELECT {_on_day('v.played_on', 'v.created_at')}, 'volleyball', v.game_id,
@@ -85,13 +85,13 @@ WITH feed AS (
   UNION ALL
     SELECT {NOON.format('purchase_date')}, 'gear', gear_id, 'Bought', name, NULLIF(kind, ''), NULL, NULL,
            CASE WHEN photo IS NOT NULL THEN '/api/gear/' || gear_id || '/photo?v='
-                || extract(epoch FROM photo_updated)::bigint END
+                || (extract(epoch FROM photo_updated) * 1000)::bigint END
     FROM gear WHERE purchase_date IS NOT NULL
 )
 SELECT f.at, (f.at AT TIME ZONE current_setting('TimeZone'))::date AS day,
        f.kind, f.ref, f.verb, f.title, NULLIF(f.detail, '') AS detail,
        COALESCE(f.photo_url, '/api/product-images/' || p.product_info_id || '?v='
-                || extract(epoch FROM p.fetched_at)::bigint) AS photo_url
+                || (extract(epoch FROM p.fetched_at) * 1000)::bigint) AS photo_url
 FROM feed f
 LEFT JOIN product_info p ON p.brand_id = f.brand_id AND p.product_code = f.product_code AND p.image IS NOT NULL
 WHERE f.at IS NOT NULL

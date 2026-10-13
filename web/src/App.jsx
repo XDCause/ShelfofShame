@@ -191,7 +191,7 @@ export default function App() {
                   <Route path="/journal" element={<JournalList />} />
                   <Route path="/journal/:id" element={<JournalPage />} />
                   <Route path="/calendar" element={<CalendarPage />} />
-                  <Route path="/supplies" element={<InventoryView lookups={lookups} refreshKey={refreshKey}
+                  <Route path="/supplies" element={<InventoryView refreshKey={refreshKey}
                     onAdjusted={adjusted} onOpen={openItem} onAdd={openAdd} />} />
                   <Route path="/wishlist" element={<WishlistView lookups={lookups} settings={settings}
                     refreshKey={refreshKey} onChanged={changed} />} />

@@ -17,6 +17,7 @@ import unicodedata
 
 import httpx
 from bs4 import BeautifulSoup
+from .images import fetched_photo
 
 PAGE_URL = "https://www.tamiya.com/english/products/{item}/index.html"
 HEADERS = {"User-Agent": "ShelfOfShame/1.0 (personal hobby inventory; one request per lookup; "
@@ -151,10 +152,7 @@ def fetch(item: str) -> dict:
             info["image"] = info["image_type"] = None
             image_url = info.pop("image_url")
             if image_url:
-                photo = client.get(_absolute(image_url))
-                if photo.status_code == 200 and photo.headers.get("content-type", "").startswith("image/"):
-                    info["image"] = photo.content
-                    info["image_type"] = photo.headers["content-type"].split(";")[0]
+                info["image"], info["image_type"] = fetched_photo(client.get(_absolute(image_url)))
             return info
     except httpx.HTTPError as e:
         raise LookupFailed(f"Couldn't reach tamiya.com ({e.__class__.__name__}).") from e

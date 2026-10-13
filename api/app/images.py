@@ -24,11 +24,22 @@ async def read_photo(request: Request) -> tuple[bytes, str]:
 
 
 def photo_response(image, image_type: str | None) -> Response:
-    """A stored photo. URLs carry ?v=<when it changed>, so the browser can keep it for a day."""
+    """A stored photo. Its URL changes when the photo does (?v=<when>, or a new id for journal
+    photos), so the browser can keep it for a year without asking again."""
     if image is None:
         raise HTTPException(404, "No photo.")
     return Response(content=bytes(image), media_type=image_type or "image/jpeg",
-                    headers={"Cache-Control": "public, max-age=86400"})
+                    headers={"Cache-Control": "public, max-age=31536000, immutable",
+                             "X-Content-Type-Options": "nosniff"})
+
+
+def fetched_photo(response) -> tuple[bytes | None, str | None]:
+    """A photo downloaded from a maker's or shop's site, if it's a usable one: a JPEG, PNG, WebP or
+    GIF (not SVG, which can carry script) of at most 5 MB. Otherwise (None, None)."""
+    image_type = response.headers.get("content-type", "").split(";")[0].strip().lower()
+    if response.status_code != 200 or image_type not in PHOTO_TYPES or len(response.content) > MAX_PHOTO_BYTES:
+        return None, None
+    return response.content, image_type
 
 
 def add_photo_routes(router, path: str, table: str, id_col: str, what: str):

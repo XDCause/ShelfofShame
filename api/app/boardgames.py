@@ -19,6 +19,8 @@ from .images import add_photo_routes
 router = APIRouter(prefix="/api", tags=["board games"])
 
 Status = Literal[tuple(GAME_STATUSES)]
+# A BoardGameGeek link is shown as a link, so only web addresses (no "javascript:...").
+WEB_LINK = r"^https?://\S+$"
 
 
 class GameIn(BaseModel):
@@ -33,7 +35,7 @@ class GameIn(BaseModel):
     price_paid: Decimal | None = Field(None, ge=0)
     rating: int | None = Field(None, ge=1, le=10)
     notes: str | None = None
-    bgg_url: str | None = None
+    bgg_url: str | None = Field(None, pattern=WEB_LINK)
 
 
 class GamePatch(BaseModel):
@@ -48,7 +50,7 @@ class GamePatch(BaseModel):
     price_paid: Decimal | None = Field(None, ge=0)
     rating: int | None = Field(None, ge=1, le=10)
     notes: str | None = None
-    bgg_url: str | None = None
+    bgg_url: str | None = Field(None, pattern=WEB_LINK)
 
 
 class PlayIn(BaseModel):
@@ -72,7 +74,7 @@ SELECT g.game_id, g.name, g.publisher, g.year, g.min_players, g.max_players, g.p
        g.purchase_date, g.price_paid, g.rating, g.notes, g.bgg_url, g.created_at, g.updated_at,
        g.photo IS NOT NULL AS has_photo,
        CASE WHEN g.photo IS NOT NULL THEN '/api/board-games/' || g.game_id || '/photo?v='
-            || extract(epoch FROM g.photo_updated)::bigint END AS photo_url,
+            || (extract(epoch FROM g.photo_updated) * 1000)::bigint END AS photo_url,
        (SELECT count(*) FROM board_game_plays p WHERE p.game_id = g.game_id)::int AS plays,
        (SELECT max(played_on) FROM board_game_plays p WHERE p.game_id = g.game_id) AS last_played
 FROM board_games g"""

@@ -15,6 +15,7 @@ import httpx
 from bs4 import BeautifulSoup
 
 from .tamiya import HEADERS, TIMEOUT, LookupFailed, NotFound
+from .images import fetched_photo
 
 PAGE_URL = "http://www.hasegawa-model.co.jp/product_g/{series}/"
 
@@ -58,10 +59,7 @@ def fetch(series: str) -> dict:
             info["image"] = info["image_type"] = None
             image_url = info.pop("image_url")
             if image_url:
-                photo = client.get(image_url)
-                if photo.status_code == 200 and photo.headers.get("content-type", "").startswith("image/"):
-                    info["image"] = photo.content
-                    info["image_type"] = photo.headers["content-type"].split(";")[0]
+                info["image"], info["image_type"] = fetched_photo(client.get(image_url))
             return info
     except httpx.HTTPError as e:
         raise LookupFailed(f"Couldn't reach hasegawa-model.co.jp ({e.__class__.__name__}).") from e

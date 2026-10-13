@@ -115,11 +115,11 @@ export function PlaysView() {
   )
 }
 
-// Home: two tiles.
+// Home: two tiles (just the summary - not every game).
 export function BoardGamesTiles() {
-  const { data } = useGames()
-  if (!data) return <><StatSkeleton /><StatSkeleton /></>
-  const { summary } = data
+  const { refreshKey } = useApp()
+  const { data: summary } = useShared(`boardgames-summary-${refreshKey}`, api.boardGameSummary)
+  if (!summary) return <><StatSkeleton /><StatSkeleton /></>
   return (
     <>
       <Stat to="/boardgames/games" Icon={DiceIcon} tone="purple" value={summary.owned} label="Board games"

@@ -22,6 +22,7 @@ import httpx
 from bs4 import BeautifulSoup
 
 from .tamiya import HEADERS, TIMEOUT, LookupFailed, NotFound, gtin_check_digit, normalise_barcode
+from .images import fetched_photo
 
 SITE = "https://www.hlj.com"
 SEARCH_URL = SITE + "/search/?q={q}"
@@ -139,10 +140,7 @@ def fetch(path: str) -> dict:
             info["image"] = info["image_type"] = None
             if info["image_url"]:
                 time.sleep(PAUSE)
-                photo = client.get(info["image_url"])
-                if photo.status_code == 200 and photo.headers.get("content-type", "").startswith("image/"):
-                    info["image"] = photo.content
-                    info["image_type"] = photo.headers["content-type"].split(";")[0]
+                info["image"], info["image_type"] = fetched_photo(client.get(info["image_url"]))
             return info
     except httpx.HTTPError as e:
         raise LookupFailed(f"Couldn't reach hlj.com ({e.__class__.__name__}).") from e

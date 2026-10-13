@@ -106,3 +106,10 @@ Before anyone but the owner uses this:
 3. **Security:** add accounts, HTTPS, an owner per row, rate limits, and lock down backups.
 4. **Settings:** make shop, prices, currency and time zone per user.
 5. **Branding:** add a not-affiliated line and check the app name.
+
+## Already done for safety (review, 2026-10-14)
+
+Safety headers (`web/security-headers.inc`: nosniff, no framing, referrer policy, a content security
+policy), web-only links, photo type and size checks on uploads and scraped photos, CSV formula
+protection, and dependency audits (`pip-audit`, `npm audit`) were clean at the time. Still needed
+before anyone else uses it: **login and HTTPS** (see above) - the headers don't replace those.

@@ -620,6 +620,36 @@ DBeaver, psql, and the one-off import script.
      the Write tool in the scratchpad and run it instead. NavLink sets its own aria-current (the
      phone tab bar uses Link to mark Supplies active on /wishlist).
    - Tests: 239 API, 54 browser steps.
+3z. **Review: security, speed, tests** - DONE in dev (2026-10-14), user asked for "a big check over
+   everything". pyflakes clean; ESLint (react + hooks, throwaway config, not in the repo) leaves 3
+   deliberate exhaustive-deps warnings (ModelPanel, SettingsPanel, useShared: run once per id / key).
+   - Security: nginx `web/security-headers.inc` (nosniff, X-Frame-Options, Referrer-Policy, CSP:
+     scripts/connect only 'self', images also https:/data:/blob:, inline styles allowed) included in
+     the server AND each location that sets its own headers (nginx add_header inheritance);
+     client_max_body_size 6m (default 1 MB < the API's 5 MB). bgg_url must be http(s) (React 19
+     already blocks javascript: hrefs; now the API refuses them too). images.fetched_photo(): photos
+     scraped from Tamiya / Hasegawa / HLJ only if JPEG/PNG/WebP/GIF <= 5 MB (was any image/*, incl.
+     SVG which can carry script; one helper instead of three copies). CSV cells starting with = + - @
+     tab CR get a leading ' (spending.cell). Backups download already only serves the name pattern.
+   - Dependencies: pip-audit + npm audit now clean. fastapi 0.115.12 -> 0.143.0 (Starlette 0.46 ->
+     1.8, several advisories), uvicorn 0.54.0, pytest 9.0.3, react-router 7.6.2 -> 7.18.4 (XSS
+     advisories). Starlette now warns that TestClient wants `httpx2` - harmless, left for now.
+   - Speed: psycopg_pool ConnectionPool in db.py (new connection ~6 ms vs ~0.1 ms query; most
+     requests ~2x faster), check_connection on checkout (survives DB restarts), opened lazily under
+     a lock, closed atexit (otherwise uvicorn / pytest waited 5 s per pool thread on exit). Photos
+     served with Cache-Control 1 year immutable + nosniff - so EVERY photo URL must change with the
+     photo: versions are now milliseconds (were whole seconds: a photo replaced twice in a second
+     kept its URL - the new test caught it), and model_log got photo_updated (23_review.sql; its URL
+     used created_at, which doesn't change when the photo is replaced). /assets/ cached 1 year
+     (hashed names), index.html no-cache. 23_review.sql also indexes 10 foreign keys. Home's
+     board-games tiles fetch only the summary.
+   - Removed: unused api.js wrappers (recentHistory, updatePlay, updateLogEntry), CloseIcon,
+     PlusIcon, ItemPanel longDate, InventoryView lookups prop. Kept /api/supplies/low-stock (for the
+     stage-6 assistant). CSV exports added: board-games, plays, volleyball, gear; file names
+     off-the-clock-*.
+   - Tests: 249 API (new test_safety.py: links, uploads, served-photo headers, scraped-photo checks,
+     CSV formulas, 20 concurrent requests on the pool, rollback, calendar repeat edges; log photo
+     re-versioning in test_build.py), 54 browser steps (CSP violations would show as browser errors).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

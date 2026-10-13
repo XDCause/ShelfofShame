@@ -10,9 +10,6 @@ import ScanButton from './ScanButton.jsx'
 import StockHistory from './StockHistory.jsx'
 import SupplyFields, { DETAIL_FIELDS, toForm, toPayload } from './SupplyFields.jsx'
 
-const longDate = (iso) =>
-  iso ? new Date(`${iso}T00:00`).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : ''
-
 // Everything about one supply in a side panel. Everyday changes (stock, condition, reorder,
 // location, last purchased, notes) save as you make them; what the item IS sits behind
 // "Edit details".

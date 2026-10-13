@@ -65,7 +65,7 @@ const valueOf = (rows) => rows.reduce((s, r) => s + Number(r.total_value ?? 0), 
 // Scan: something you own opens its panel; anything else opens "Add a supply" pre-filled.
 // The whole list is loaded once and filtered here, so the chip counts always describe
 // everything you own, not just what's currently showing.
-export default function InventoryView({ lookups, refreshKey, onOpen, onAdd, onAdjusted }) {
+export default function InventoryView({ refreshKey, onOpen, onAdd, onAdjusted }) {
   const [all, setAll] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')

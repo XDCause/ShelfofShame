@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { api, money, shortDate, today } from '../../api.js'
 import Drawer from '../../components/Drawer.jsx'
 import RecordFields, { RowPhoto, useRecordForm } from '../../components/RecordFields.jsx'
@@ -140,8 +140,12 @@ export function GearPanel({ id = null, onClose }) {
   const { lookups, changed, showToast } = useApp()
   const [gear, setGear] = useState(null)
   const [condition, setCondition] = useState('Good')
-  const reload = async () => { const g = await api.getGear(id); setGear(g); setCondition(g.condition) }
-  useEffect(() => { if (id != null) reload().catch((e) => showToast(e.message)) }, [id])
+  const reload = useCallback(async () => {
+    const g = await api.getGear(id)
+    setGear(g)
+    setCondition(g.condition)
+  }, [id])
+  useEffect(() => { if (id != null) reload().catch((e) => showToast(e.message)) }, [id, reload, showToast])
   if (id != null && !gear) return <Drawer title="Gear" onClose={onClose}><p className="muted">Loading...</p></Drawer>
 
   const save = async (data) => {

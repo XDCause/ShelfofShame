@@ -88,7 +88,33 @@ EXPORTS = {
         SELECT created_at AS "When", item_name AS "Item", change AS "Change", qty_after AS "Qty after",
                reason AS "Reason", unit_price AS "Price"
         FROM stock_movements ORDER BY created_at, movement_id""",
+    "board-games": """
+        SELECT g.name AS "Game", g.status AS "Status", g.publisher AS "Publisher", g.year AS "Year",
+               g.min_players AS "Fewest players", g.max_players AS "Most players", g.play_minutes AS "Minutes",
+               g.rating AS "Rating", g.price_paid AS "Price paid", g.purchase_date AS "Bought",
+               (SELECT count(*) FROM board_game_plays p WHERE p.game_id = g.game_id) AS "Plays", g.notes AS "Notes"
+        FROM board_games g ORDER BY lower(g.name)""",
+    "plays": """
+        SELECT p.played_on AS "Day", g.name AS "Game", p.players AS "Players", p.winner AS "Winner",
+               p.minutes AS "Minutes", p.notes AS "Notes"
+        FROM board_game_plays p JOIN board_games g USING (game_id) ORDER BY p.played_on, p.play_id""",
+    "volleyball": """
+        SELECT played_on AS "Day", kind AS "Kind", team AS "Team", opponent AS "Against",
+               sets_won AS "Sets won", sets_lost AS "Sets lost", venue AS "Where", notes AS "Notes"
+        FROM volleyball_games ORDER BY played_on, game_id""",
+    "gear": """
+        SELECT name AS "Gear", kind AS "Kind", brand AS "Brand", size AS "Size", condition AS "Condition",
+               purchase_date AS "Bought", price_paid AS "Price paid", notes AS "Notes"
+        FROM gear ORDER BY lower(name)""",
 }
+
+
+def cell(value):
+    """One CSV cell. Text starting with = + - @ (or a tab / return) would run as a formula when
+    Excel opens the file, so it gets a ' in front, which Excel shows as plain text."""
+    if isinstance(value, str) and value[:1] in ("=", "+", "-", "@", "\t", "\r"):
+        return "'" + value
+    return value
 
 
 @router.get("/export/{kind}.csv")
@@ -104,6 +130,6 @@ def export_csv(kind: str):
     out.write("﻿")
     writer = csv.writer(out)
     writer.writerow(columns)
-    writer.writerows([row[c] for c in columns] for row in rows)
+    writer.writerows([cell(row[c]) for c in columns] for row in rows)
     return Response(out.getvalue(), media_type="text/csv; charset=utf-8", headers={
-        "Content-Disposition": f'attachment; filename="shelf-of-shame-{kind}-{date.today()}.csv"'})
+        "Content-Disposition": f'attachment; filename="off-the-clock-{kind}-{date.today()}.csv"'})

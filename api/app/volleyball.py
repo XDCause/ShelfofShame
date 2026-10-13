@@ -99,7 +99,7 @@ GEAR_SELECT = """
 SELECT g.gear_id, g.hobby, g.name, g.kind, g.brand, g.size, g.condition, g.purchase_date, g.price_paid,
        g.notes, g.created_at, g.updated_at, g.photo IS NOT NULL AS has_photo,
        CASE WHEN g.photo IS NOT NULL THEN '/api/gear/' || g.gear_id || '/photo?v='
-            || extract(epoch FROM g.photo_updated)::bigint END AS photo_url
+            || (extract(epoch FROM g.photo_updated) * 1000)::bigint END AS photo_url
 FROM gear g"""
 
 VIDEO_SELECT = """

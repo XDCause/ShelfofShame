@@ -97,7 +97,7 @@ def delete_session(session_id: int):
 # ---------------------------------------------------------------------------
 def log_entry(conn, entry_id):
     return found(conn.execute(
-        "SELECT entry_id, model_id, entry_date, text, (photo IS NOT NULL) AS has_photo, created_at "
+        "SELECT entry_id, model_id, entry_date, text, (photo IS NOT NULL) AS has_photo, created_at, photo_updated "
         "FROM model_log WHERE entry_id = %s", (entry_id,)).fetchone(), "Log entry")
 
 
@@ -134,7 +134,7 @@ async def add_log_photo(entry_id: int, request: Request):
 
     def save():
         with db() as conn:
-            found(conn.execute("UPDATE model_log SET photo = %s, photo_type = %s WHERE entry_id = %s "
+            found(conn.execute("UPDATE model_log SET photo = %s, photo_type = %s, photo_updated = now() WHERE entry_id = %s "
                                "RETURNING entry_id", (image, image_type, entry_id)).fetchone(), "Log entry")
             return log_entry(conn, entry_id)
     return await run_in_threadpool(save)

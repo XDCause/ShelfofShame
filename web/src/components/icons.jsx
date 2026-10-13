@@ -42,7 +42,6 @@ export const ClockIcon = (p) => (
 )
 export const BoltIcon = (p) => <Icon {...p}><path d="M13 3 5 13.5h6L10.5 21 19 10.5h-6z" /></Icon>
 export const SearchIcon = (p) => <Icon {...p}><circle cx="11" cy="11" r="6.5" /><path d="m20 20-4.2-4.2" /></Icon>
-export const CloseIcon = (p) => <Icon {...p}><path d="M6 6l12 12M18 6 6 18" /></Icon>
 export const ChevronIcon = (p) => <Icon {...p}><path d="m9 6 6 6-6 6" /></Icon>
 export const CalendarIcon = (p) => (
   <Icon {...p}><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" /><path d="M3.5 10h17M8 3v4M16 3v4" />
@@ -73,4 +72,3 @@ export const TrophyIcon = (p) => (
   <Icon {...p}><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4.5v1.5A3 3 0 0 0 8 10.4M16 6h3.5v1.5a3 3 0 0 1-3.5 2.9" />
     <path d="M12 13v4M8.5 20.5h7M9.5 17h5v3.5h-5z" /></Icon>
 )
-export const PlusIcon = (p) => <Icon {...p}><path d="M12 5v14M5 12h14" /></Icon>

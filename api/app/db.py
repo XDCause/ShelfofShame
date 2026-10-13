@@ -1,12 +1,14 @@
 """Database connection and shared rules, used by every part of the API."""
+import atexit
 import os
+import threading
 from contextlib import contextmanager
 
-import psycopg
 from fastapi import HTTPException
 from psycopg import errors, sql
 from psycopg.conninfo import make_conninfo
 from psycopg.rows import dict_row
+from psycopg_pool import ConnectionPool
 
 # Inside Docker the database is reachable by its service name "db" on Postgres's own port 5432.
 # (5433 is only the port published to your Windows host.)
@@ -115,14 +117,28 @@ def ensure_brand(conn, name: str) -> int:
     return brand_id(conn, name)
 
 
+# Connections are kept open and lent out per request: opening a new one costs ~6 ms, a query on
+# an open one ~0.1 ms, and Home alone makes about ten requests. Opened on first use.
+# Each connection is checked (a quick round trip) before it's lent out, so one left over from
+# before a database restart is replaced instead of failing the request.
+POOL = ConnectionPool(CONNINFO, min_size=1, max_size=10, kwargs={"row_factory": dict_row}, open=False,
+                      check=ConnectionPool.check_connection)
+_opening = threading.Lock()
+atexit.register(POOL.close)     # close its connections and threads on the way out (quick restarts)
+
+
 @contextmanager
 def db():
-    """One connection + transaction per request: commits on success, rolls back on error.
+    """A pooled connection and one transaction per request: commits on success, rolls back on error.
 
     Database errors are turned into HTTP errors the front end can show to the user.
     """
     try:
-        with psycopg.connect(CONNINFO, row_factory=dict_row) as conn:
+        if POOL.closed:
+            with _opening:              # requests run in threads: open it once
+                if POOL.closed:
+                    POOL.open(wait=True)
+        with POOL.connection() as conn:
             yield conn
     except errors.UniqueViolation as e:
         raise HTTPException(409, CONSTRAINT_MESSAGES.get(e.diag.constraint_name,

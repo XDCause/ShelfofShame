@@ -65,7 +65,6 @@ export const api = {
   deleteSupply: (id, alsoWishlist = false) =>
     request(`/supplies/${id}${alsoWishlist ? '?also_wishlist=true' : ''}`, send('DELETE')),
   supplyHistory: (id, limit = 20) => request(`/supplies/${id}/history?limit=${limit}`),
-  recentHistory: (limit = 50) => request(`/history?limit=${limit}`),
   addSupplyToWishlist: (id) => request(`/supplies/${id}/wishlist`, send('POST')),
   removeSupplyFromWishlist: (id) => request(`/supplies/${id}/wishlist`, send('DELETE')),
 
@@ -120,7 +119,6 @@ export const api = {
   deleteBoardGame: (id) => request(`/board-games/${id}`, send('DELETE')),
   listPlays: (limit = 200) => request(`/board-games/plays?limit=${limit}`),
   addPlay: (gameId, data) => request(`/board-games/${gameId}/plays`, send('POST', data)),
-  updatePlay: (id, data) => request(`/board-game-plays/${id}`, send('PATCH', data)),
   deletePlay: (id) => request(`/board-game-plays/${id}`, send('DELETE')),
 
   // Volleyball: games, gear, videos
@@ -151,7 +149,6 @@ export const api = {
   addSession: (id, data) => request(`/models/${id}/sessions`, send('POST', data)),
   deleteSession: (id) => request(`/model-sessions/${id}`, send('DELETE')),
   addLogEntry: (id, data) => request(`/models/${id}/log`, send('POST', data)),
-  updateLogEntry: (id, data) => request(`/model-log/${id}`, send('PATCH', data)),
   deleteLogEntry: (id) => request(`/model-log/${id}`, send('DELETE')),
   addLogPhoto: (id, blob) => request(`/model-log/${id}/photo`, image('PUT', blob)),
 
@@ -186,7 +183,7 @@ export const api = {
 // Plain links (downloads open straight from these).
 export const backupUrl = (name) => `/api/backups/${enc(name)}`
 export const exportUrl = (kind) => `/api/export/${kind}.csv`
-export const logPhotoUrl = (entry) => `/api/model-log/${entry.entry_id}/photo?v=${enc(entry.created_at)}`
+export const logPhotoUrl = (entry) => `/api/model-log/${entry.entry_id}/photo?v=${enc(entry.photo_updated ?? entry.created_at)}`
 
 // The photo's last-updated time goes in the URL, so a replaced photo gets a new URL and the
 // browser doesn't keep showing its cached copy of the old one.

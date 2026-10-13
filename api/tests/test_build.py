@@ -138,3 +138,15 @@ def test_log_photos_must_be_images(client):
     assert client.put(url, content=b"hello", headers={"content-type": "text/plain"}).status_code == 415
     assert client.put(url, content=b"", headers={"content-type": "image/png"}).status_code == 422
     assert client.put("/api/model-log/9999/photo", content=b"x", headers={"content-type": "image/png"}).status_code == 404
+
+
+def test_a_replaced_log_photo_gets_a_new_address(client):
+    """Photos are cached for a year, so replacing one must change photo_updated (its ?v=)."""
+    model = client.post("/api/models", json={"name": "Zero"}).json()
+    entry = client.post(f"/api/models/{model['model_id']}/log", json={"text": "Cockpit"}).json()
+    url = f"/api/model-log/{entry['entry_id']}/photo"
+    first = client.put(url, content=b"\xff\xd8one", headers={"content-type": "image/jpeg"}).json()["photo_updated"]
+    second = client.put(url, content=b"\xff\xd8two", headers={"content-type": "image/jpeg"}).json()["photo_updated"]
+    assert first and second and second != first
+    [listed] = client.get(f"/api/models/{model['model_id']}").json()["log"]
+    assert listed["photo_updated"] == second
