@@ -216,7 +216,7 @@ export function VideoPanel({ id = null, gameId = null, onClose }) {
     onClose()
   }
   return (
-    <FormPanel key={games.length} title={video ? video.title : 'Add a video'} fields={fields} record={video}
+    <FormPanel title={video ? video.title : 'Add a video'} fields={fields} record={video}
       defaults={{ game_id: gameId ?? '' }} onClose={onClose} onSave={save} saveLabel={video ? 'Save' : 'Add video'}
       onDelete={video && (async () => { await api.deleteVideo(video.video_id); changed(); onClose() })}>
       {() => <datalist id="video-topics">{VIDEO_TOPICS.map((t) => <option key={t} value={t} />)}</datalist>}

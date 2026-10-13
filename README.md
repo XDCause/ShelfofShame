@@ -42,7 +42,8 @@ have five tabs: Home, Journal, Calendar, Supplies (with the wishlist) and Hobbie
 - **Mood**: the face beside a page's title is how the day felt: Great 😄, Good 🙂, Okay 😐, Meh 😕 or
   Rough 😢, plus up to five words (proud, tired... or your own). It shows on the page's card, as
   a face on that day in the Calendar, and as **Your week** (the last seven days) on Home; the
-  journal list can show just one mood's days.
+  journal list can show just one mood's days. The list groups pages by **Day** (with the day's mood)
+  or **Month**, and each card says what it is (Journal / Whiteboard) in its corner.
 - **Journal -> actions**: write "Just bought @Sherman and started it right away" and the page
   offers "Sherman: Mark as In progress?" (Yes / Not now); "primed @Zero" offers the build step;
   "I want to buy new @XF-10 for a new project" offers "Add to wishlist?".

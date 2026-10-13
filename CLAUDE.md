@@ -714,6 +714,11 @@ DBeaver, psql, and the one-off import script.
      browser must match the day the API dates pages by). Gotcha: never rewrite walkthrough.py with
      PowerShell Get-Content/Set-Content - 5.1 reads it as ANSI and garbles every · and –.
    - Tests: 259 API (test_mood.py), 58 browser steps (mood).
+   - Journal list: a kind pill in each card's corner (teal Journal / purple Whiteboard, KIND_PILL),
+     and Group by Day (default; "Today", "Yesterday", "Monday 12 October", with the day's mood
+     pill from its latest-edited page with a mood) or Month; remembered in localStorage
+     offtheclock.journalGroups. Fixed: the volleyball video form remounted (key=games.length)
+     when the games list arrived, wiping a title typed before it loaded.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

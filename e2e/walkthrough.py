@@ -1018,6 +1018,16 @@ def mood(page):
     go(page, "Journal")
     card = page.locator(".journal-card", has_text=f"Mood {MARK}")
     expect(card.locator(".mood-line")).to_contain_text("Good · proud, painted")
+    expect(card.locator(".card-pills .pill")).to_have_text(["Journal"])         # what kind of page
+    page.get_by_role("group", name="Group by").get_by_role("button", name="Day").click()
+    today = page.locator("h3.day-heading", has_text="Today")
+    expect(today).to_be_visible()
+    expect(today.locator(".pill")).to_be_visible()                              # the day's mood
+    shot(page, "d40_journal_by_day", full=False)
+    page.get_by_role("group", name="Group by").get_by_role("button", name="Month").click()
+    expect(page.locator("h3.day-heading")).to_have_count(0)
+    expect(page.locator("h3.section-title", has_text=re.compile(r"^\w+ \d{4}$")).first).to_be_visible()
+    page.get_by_role("group", name="Group by").get_by_role("button", name="Day").click()
     page.get_by_role("button", name="Rough days").click()
     expect(page.locator(".journal-card", has_text=f"Mood {MARK}")).to_have_count(0)
     page.get_by_role("button", name="Good days").click()

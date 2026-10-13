@@ -1,12 +1,30 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { api, imageUrl, shortDate } from '../../api.js'
+import { api, imageUrl, isoDay, shortDate } from '../../api.js'
 import { useApp } from '../app-context.js'
 import { MOODS, moodOf, pageFace } from './moods.js'
 import TodoList from './TodoList.jsx'
 
 const dayOf = (day) => new Date(`${day}T12:00:00`)
 const monthOf = (day) => dayOf(day).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })
+// "Today", "Yesterday", "Monday 12 October" (and the year, if it isn't this year).
+function dayName(day) {
+  const today = new Date()
+  const yesterday = new Date()
+  yesterday.setDate(today.getDate() - 1)
+  if (day === isoDay(today)) return 'Today'
+  if (day === isoDay(yesterday)) return 'Yesterday'
+  const sameYear = dayOf(day).getFullYear() === today.getFullYear()
+  return dayOf(day).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', ...(sameYear ? {} : { year: 'numeric' }) })
+}
+
+// Group by day (each with that day's mood) or by month; the choice is remembered on this device.
+const GROUP_KEY = 'offtheclock.journalGroups'
+const readGrouping = () => { try { return localStorage.getItem(GROUP_KEY) === 'month' ? 'month' : 'day' } catch { return 'day' } }
+const saveGrouping = (g) => { try { localStorage.setItem(GROUP_KEY, g) } catch { /* not important */ } }
+
+// What kind of page it is, in the card's corner.
+const KIND_PILL = { notes: ['Journal', 'teal'], whiteboard: ['Whiteboard', 'purple'] }
 
 // A page's picture: its first photo, else the box photo of a kit (or supply) it mentions.
 const pictureOf = (p) => p.cover_url || (p.product_info_id ? imageUrl(p) : null)
@@ -22,8 +40,8 @@ export function useNewPage() {
   }
 }
 
-// All journal pages as cards: search, filter by tag, newest or oldest first (pinned always on top),
-// with a heading per month. Open to-dos from every page sit above them.
+// All journal pages as cards: search, filter by tag or mood, newest or oldest first (pinned always
+// on top), with a heading per day or per month. Open to-dos from every page sit above them.
 export default function JournalList() {
   const { refreshKey } = useApp()
   const newPage = useNewPage()
@@ -33,6 +51,7 @@ export default function JournalList() {
   const [tag, setTag] = useState('')
   const [mood, setMood] = useState('')
   const [oldest, setOldest] = useState(false)
+  const [grouping, setGrouping] = useState(readGrouping)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -43,15 +62,18 @@ export default function JournalList() {
   }, [q, tag, mood, refreshKey])
   useEffect(() => { api.journalTags().then(setTags).catch(() => {}) }, [refreshKey])
 
-  // Pinned first, then a heading per month.
+  // Pinned first, then a heading per day (or month).
   const pinned = (pages ?? []).filter((p) => p.pinned)
   const rest = (pages ?? []).filter((p) => !p.pinned)
   const groups = []
   for (const p of [...pinned, ...(oldest ? [...rest].reverse() : rest)]) {
-    const name = p.pinned ? 'Pinned' : monthOf(p.entry_date)
-    if (groups.at(-1)?.name !== name) groups.push({ name, pages: [] })
+    const name = p.pinned ? 'Pinned' : grouping === 'day' ? dayName(p.entry_date) : monthOf(p.entry_date)
+    if (groups.at(-1)?.name !== name) groups.push({ name, pages: [], day: !p.pinned && grouping === 'day' })
     groups.at(-1).pages.push(p)
   }
+  // A day's heading shows how it felt: the mood of its most recently edited page with one.
+  const dayMood = (g) => moodOf([...g.pages].filter((p) => p.mood)
+    .sort((a, b) => b.updated_at.localeCompare(a.updated_at))[0]?.mood)
 
   return (
     <section className="page">
@@ -78,6 +100,12 @@ export default function JournalList() {
               onClick={() => setMood(mood === m.id ? '' : m.id)}>{m.face}</button>
           ))}
         </div>
+        <div className="segmented" role="group" aria-label="Group by">
+          {[['day', 'Day'], ['month', 'Month']].map(([g, label]) => (
+            <button key={g} type="button" aria-pressed={grouping === g}
+              onClick={() => { setGrouping(g); saveGrouping(g) }}>{label}</button>
+          ))}
+        </div>
         <label className="sort view-controls">
           <span className="muted small">Sort</span>
           <select value={oldest ? 'oldest' : 'newest'} onChange={(e) => setOldest(e.target.value === 'oldest')} aria-label="Sort pages">
@@ -93,7 +121,11 @@ export default function JournalList() {
       )}
       {groups.map((g) => (
         <div key={g.name}>
-          <h3 className="section-title">{g.name}</h3>
+          <h3 className={g.day ? 'section-title day-heading' : 'section-title'}>
+            {g.name}
+            {g.day && dayMood(g) && <span className={`pill ${dayMood(g).tone}`} title={`Felt ${dayMood(g).label.toLowerCase()}`}>
+              {dayMood(g).face} {dayMood(g).label}</span>}
+          </h3>
           <ul className="journal-cards">
             {g.pages.map((p) => <PageCard key={p.page_id} page={p} />)}
           </ul>
@@ -121,8 +153,10 @@ function PageCard({ page: p }) {
         <span className="grow">
           <span className="journal-card-head">
             <span className="item-title">{picture && p.mood ? `${moodOf(p.mood).face} ` : ''}{p.title || 'Untitled'}</span>
-            {p.kind === 'whiteboard' && <span className="pill purple">Whiteboard</span>}
-            {p.pinned && <span className="pill low">Pinned</span>}
+            <span className="card-pills">
+              <span className={`pill ${KIND_PILL[p.kind][1]}`}>{KIND_PILL[p.kind][0]}</span>
+              {p.pinned && <span className="pill low">Pinned</span>}
+            </span>
           </span>
           {first && <span className="pill tint">#{first}</span>}
           {p.mood && <span className={`mood-line ${moodOf(p.mood).tone}`}>{moodOf(p.mood).label}
