@@ -337,6 +337,13 @@ DBeaver connection confirmed working (2026-10-11).
   so that's acceptable. Windows had it marked "Public"; the user was advised to switch it to
   Private (needs admin). Docker Desktop's firewall Allow rules (`com.docker.backend`) cover 8080. PowerShell's Invoke-WebRequest does fall back, so test `http://[::1]:PORT`
   explicitly when checking browser access.
+- **After a reboot** (checked 2026-10-13): Docker Desktop AutoStart = True and all 3 containers
+  are `restart: unless-stopped`; they came up ~75 s after boot, all at once (Docker's restart
+  ignores depends_on order - harmless: the API connects per request, nginx resolves api per
+  request). "Not loading" right after login = still starting. Randomly named exited containers
+  (e.g. `sharp_mendeleev` KeyError POSTGRES_DB, `distracted_lederberg` no password) come from
+  pressing Run on an IMAGE in Docker Desktop: bare copies without compose/.env. Not part of
+  the app; safe to `docker rm`. Two were removed 2026-10-13. The app is always 3 containers.
 - `nextval()` consumes a sequence number. To inspect, read `<seq>.last_value` instead.
 - VS Code's generic SQL linter flags `BEGIN;` as an error. It's valid PostgreSQL; ignore it.
 - Changing anything in `db/` rebuilds the db image and recreates the container. Data is safe
