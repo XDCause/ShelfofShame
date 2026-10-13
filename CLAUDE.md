@@ -9,6 +9,18 @@ scraper User-Agents); internal names were deliberately KEPT to avoid migrating d
 Git author: XDCause <121413369+XDCause@users.noreply.github.com> (GitHub no-reply address, so
 the user's real email isn't published in commits).
 
+## WORKFLOW: dev first, then promote (since 2026-10-13)
+- **Make every change in the dev copy: `C:\Users\xdhar\hobby-inventory-dev` (branch `dev`)**, using
+  absolute paths there. Never edit the prod folder (`C:\Users\xdhar\hobby-inventory`, branch
+  `main`) directly. The Claude session's working directory is the prod folder, so be careful.
+- Build and test in dev: `.\dev.ps1` (rebuild), `run_tests.ps1` and `run_e2e.ps1` **in the dev folder**
+  (they act on hobby-dev-* containers). `.\dev.ps1 -Refresh` copies prod's data into dev.
+- Commit on dev. **Promote only when the user is happy**: `.\promote.ps1` in the prod folder
+  (tests dev, backs up prod, `git merge --ff-only dev`, migrate.ps1, rebuild). `-Push` pushes both branches.
+- **Schema changes:** a new numbered idempotent db\init file. `migrate.ps1` applies pending files and
+  records them in `schema_migrations` (17_schema_migrations.sql). No more hand-piping into psql.
+- Plan: docs/ROADMAP.md (core + modules: Home, Journal, Calendar; Board games and Volleyball first).
+
 ## Who / why
 The user is **learning full-stack integration** by building an inventory of their model-kit
 hobby supplies (paints, thinners, clears, primers, masking tape, glue, weathering, decals,
@@ -448,6 +460,21 @@ DBeaver, psql, and the one-off import script.
    - The RX-78-2 (model 5) was looked up live once: photo, barcode 4573102574039, HLJ page.
    - Tests: 196 API (test_hlj.py + trimmed fixtures hlj_banh574039.html, hlj_search_rx78.html),
      41 browser steps (bandai_lookup uses the cached kit - no hlj.com fetch).
+3t. **Dev and prod** - DONE (2026-10-13). User asked for prod and dev environments "so this can
+   be better tested before pushing such big changes", as phase 0 of a big plan (Notion-like
+   journal, calendar, UI rewrite, a module per hobby; docs/ROADMAP.md). User's choices: Notion-style
+   block editor (BlockNote), **a new umbrella app name (not chosen yet - ask at phase 1)**, Board
+   games + Volleyball as the first new modules, dev and prod both on this PC.
+   - docker-compose.yml: `name:`, container/image names `${APP_PREFIX:-hobby-inventory}-*`, volume
+     `${DB_VOLUME:-hobby_pgdata}`, api env `APP_ENV`. Prod's resolved config is unchanged (checked).
+   - Dev .env (written by dev.ps1 -Setup): APP_PREFIX=hobby-dev, APP_ENV=dev, ports 5434/8001/8081,
+     DB_VOLUME=hobby_dev_pgdata; same DB name/user/password.
+   - scripts\common.ps1 (dot-sourced): reads .env -> $Prefix, $DbContainer, $Network, ports,
+     Wait-Healthy. start/backup/run_tests/run_e2e use it.
+   - GET /api/about -> {"env"}; the web app shows an orange DEV badge and "[DEV]" in the tab title.
+   - The Windows firewall rule only opens 8080, so phones can't reach dev on 8081 unless another
+     rule is added (not done).
+   - Tests: 197 API, 41 browser steps, run in both copies.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

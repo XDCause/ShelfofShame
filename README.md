@@ -45,6 +45,46 @@ Browser -> web (nginx) -> api (FastAPI) -> db (PostgreSQL)
 > on their own PC. See [BEFORE_GOING_PUBLIC.md](BEFORE_GOING_PUBLIC.md) before sharing, hosting
 > or selling it.
 
+## Dev and prod
+
+Two copies of the app run side by side on this PC, so big changes can be tried out before they
+touch your real data:
+
+| | **prod** (your real data) | **dev** (test copy) |
+|---|---|---|
+| Folder | `C:\Users\xdhar\hobby-inventory` | `C:\Users\xdhar\hobby-inventory-dev` |
+| Git branch | `main` | `dev` |
+| Web app | http://localhost:8080 | http://localhost:8081 (orange **DEV** badge) |
+| API | http://localhost:8000/api/docs | http://localhost:8001/api/docs |
+| Database | `localhost:5433`, volume `hobby_pgdata` | `localhost:5434`, volume `hobby_dev_pgdata` |
+
+The dev folder is a git *worktree* (a second checkout of the same repository). Changes are made
+and committed there, tested there, then moved to prod:
+
+| Task | Command |
+|---|---|
+| Set up the dev copy (first time) | `.\dev.ps1 -Setup` |
+| Rebuild and start dev after code changes | `.\dev.ps1` |
+| Give dev a fresh copy of prod's data | `.\dev.ps1 -Refresh` (prod is only read) |
+| Stop dev | `.\dev.ps1 -Stop` |
+| See which database changes a copy has | `.\migrate.ps1 -List` |
+| **Move tested changes to prod** | `.\promote.ps1` in the prod folder (`-Quick` skips the browser walk-through, `-Push` pushes to GitHub) |
+
+`promote.ps1` refuses to run if either copy has uncommitted changes. Then it:
+1. runs the API tests and the browser walk-through against dev;
+2. backs up prod;
+3. fast-forwards `main` to `dev`;
+4. applies new `db\init` files with `migrate.ps1` (recorded in the `schema_migrations` table, so
+   each runs once);
+5. rebuilds prod and waits for it to be healthy.
+
+If anything fails after the backup, it prints the commands to go back.
+
+All the scripts (start, backup, tests, walk-through, migrate) work in either copy: they read
+their container names and ports from that copy's `.env`.
+
+See [docs/ROADMAP.md](docs/ROADMAP.md) for where the app is heading (journal, calendar, more hobbies).
+
 ## API endpoints
 
 Grouped as in `api/app/` (one module per part of the app):
@@ -129,6 +169,7 @@ SUP-0001... numbering.
 | Task | Command |
 |---|---|
 | Start (build if needed, wait until healthy) | `.\start.ps1` |
+| Apply new database changes (`db\init` files not yet applied) | `.\migrate.ps1` |
 | Start (plain) | `docker compose up -d` |
 | Stop (data is kept) | `docker compose stop` |
 | Stop and remove container (data is kept) | `docker compose down` |
