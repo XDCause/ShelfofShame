@@ -1,17 +1,18 @@
-"""Products: looking things up (Tamiya, Hasegawa), barcodes, and product photos.
+"""Products: looking things up (Tamiya, Hasegawa, Bandai via HLJ), barcodes, and product photos.
 
 product_info is the cache: one row per brand + product code with the manufacturer's title,
 description and photo (or your own photo), a barcode once you've linked one, and for Tamiya
 kits the paint list from the kit's page.
 """
 import re
+import time
 
 from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.concurrency import run_in_threadpool
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel, Field
 
-from . import hasegawa, tamiya
+from . import hasegawa, hlj, tamiya
 from .db import brand_id as brand_named, db, ensure_brand
 from .images import photo_response, read_photo
 from .settings import price_for
@@ -193,6 +194,82 @@ async def lookup_hasegawa(code: str, refresh: bool = False):
     return {**p, "brand_id": hasegawa_id, "product_code": product_code, "series_code": p["series"],
             "name": tamiya.nice_name(p["title"]), "scale": scale.group(1) if scale else None,
             "from_cache": bool(cached) and not refresh}
+
+
+def _bandai_cached(conn, bandai_id, kind, value):
+    """A kit already looked up: by your code (G5057403), its barcode, or HLJ's code."""
+    keys = {"barcode": (hlj.product_code_for(value, ""), value, None),
+            "hlj": (value, None, f"%{value.lower()}")}.get(kind)
+    if keys is None:
+        return None
+    return conn.execute(
+        "SELECT product_code FROM product_info WHERE brand_id = %s AND title IS NOT NULL "
+        "AND (product_code = %s OR barcode = %s OR source_url LIKE %s)", (bandai_id, *keys)).fetchone()
+
+
+def _bandai_page(kind, value):
+    """Search HLJ, open the matching kit page and check it's the kit asked for (blocking: runs
+    in a thread). Returns the page, or a list of choices when a name matches several kits."""
+    results = hlj.search(value)
+    if kind == "hlj":
+        results = [r for r in results if r["hlj_code"] == value]
+    if not results:
+        raise tamiya.NotFound(f"HLJ has no Bandai kit for {value}.")
+    if kind == "name" and len(results) > 1:
+        return results[:12]
+    time.sleep(hlj.PAUSE)
+    page = hlj.fetch(results[0]["path"])
+    # A code or barcode was typed: the page's own barcode must be that one, or it's another kit.
+    if kind == "barcode" and page["barcode"] != value:
+        raise tamiya.NotFound(f"HLJ's page for {value} is a different kit ({page['title']}).")
+    return page
+
+
+@router.get("/lookup/bandai/{code:path}")
+async def lookup_bandai(code: str, refresh: bool = False):
+    """A Bandai kit from HobbyLink Japan: name, grade, scale, barcode and box photo. `code` can be
+    your code from the box (G5057403 / 5057403), the box barcode, HLJ's code (BANH574039-UP) or
+    a name ("rx-78-2 revive"). A name matching several kits returns {"choices": [...]} to pick
+    from (look the pick up again by its hlj_code). Cached in product_info, product code G50xxxxx."""
+    parsed = hlj.normalise(code)
+    if parsed is None:
+        raise HTTPException(422, "Enter the code from the box (e.g. G5057403), its barcode, or the kit's name.")
+    kind, value = parsed
+    with db() as conn:
+        bandai_id = ensure_brand(conn, "Bandai")
+        cached = None if refresh else _bandai_cached(conn, bandai_id, kind, value)
+
+    if cached:
+        product_code = cached["product_code"]
+    else:
+        try:
+            page = await run_in_threadpool(_bandai_page, kind, value)
+        except tamiya.NotFound as e:
+            raise HTTPException(404, str(e))
+        except tamiya.LookupFailed as e:
+            raise HTTPException(502, str(e))
+        if isinstance(page, list):
+            return {"choices": page}
+        product_code = hlj.product_code_for(page["barcode"], page["hlj_code"])
+        description = " · ".join(filter(None, [page["item_type"], page["series"],
+                                               page["released"] and f"Released {page['released']}",
+                                               f"HLJ {page['hlj_code']}"]))
+        with db() as conn:
+            conn.execute(UPSERT_INFO, {**page, "brand_id": bandai_id, "code": product_code,
+                                       "description": description, "kit_paints": None})
+            if page["barcode"]:  # remember the box barcode (unless another product already has it)
+                conn.execute("""
+                    UPDATE product_info SET barcode = %(b)s WHERE brand_id = %(id)s AND product_code = %(c)s
+                    AND NOT EXISTS (SELECT 1 FROM product_info WHERE barcode = %(b)s)""",
+                             {"b": page["barcode"], "id": bandai_id, "c": product_code})
+
+    with db() as conn:
+        p = conn.execute("""
+            SELECT product_info_id, title, series, description, source_url, barcode,
+                   fetched_at AS photo_updated, (image IS NOT NULL) AS has_image
+            FROM product_info WHERE brand_id = %s AND product_code = %s""", (bandai_id, product_code)).fetchone()
+    return {**p, "brand_id": bandai_id, "product_code": product_code, "name": hlj.name_of(p["title"]),
+            "grade": hlj.grade_of(p["title"]), "scale": hlj.scale_of(p["title"]), "from_cache": bool(cached)}
 
 
 # ---------------------------------------------------------------------------

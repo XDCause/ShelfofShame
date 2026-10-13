@@ -409,8 +409,8 @@ DBeaver, psql, and the one-off import script.
      component (numbered dots, tap last ticked to untick, minis stepper). ModelsView: hobby filter
      (only when 2+ hobbies), cards show "Panel lined, step 2 of 4" / "3 of 10 minis painted".
      Models CSV has Hobby / Grade / Army / Build step / Minis columns.
-   - **Bandai lookup rejected**: bandai-hobby.net has no robots.txt but is a JavaScript app (every URL
-     returns the same shell; data comes from a private API) - so manual name + own photo, like Milliput.
+   - **Bandai's own site isn't usable**: bandai-hobby.net is a JavaScript app (every URL returns the
+     same shell; data comes from a private API). Superseded by the HLJ lookup (3s).
    - **The user's Gundam**: model 5 "RX-78-2 Gundam (Revive)", Bandai (brand added) G5057403 (user's
      code), HG 1/144, In stash, notes "HGUC 191", no photo/price; checklist Panel Line Gray (owned,
      white parts) + Panel Line Black T87131 (not owned, blue/red/yellow parts).
@@ -418,6 +418,36 @@ DBeaver, psql, and the one-off import script.
      Triceratops Eurycephalus (Tamiya T60201, 1/35, On hold).
    - Also fixed: model cards without a photo collapsed (.model-photo width 100%); status badges wrapped.
    - Tests: 167 API, 40 browser steps (gundam, warhammer).
+3s. **Bandai lookup via HobbyLink Japan + BEFORE_GOING_PUBLIC.md** - DONE (2026-10-13).
+   - User: "Photos are key. Its an internal tool just for me so it should be fine. Good to note if
+     this was to be made commercial" -> photos ARE cached; every such caveat goes in
+     **BEFORE_GOING_PUBLIC.md** (repo root). **Rule: whenever a new data source, scraper, copied
+     content or single-user shortcut is added, add a row there.**
+   - Sources checked 2026-10-13: hlj.com robots.txt allows product + search pages (only /account/,
+     /relatedproducts/, /recommendproducts/ blocked); their Copyright page reserves text/images;
+     Terms page is behind Cloudflare (not bypassed). Rejected: gundam.fandom.com (Cloudflare bot
+     challenge), dalong.net (reviews, not a catalogue), Hobbyrama (robots allows product pages,
+     Crawl-delay 10 for bots, /search.php disallowed; not checked further - maybe later for AUD prices).
+   - `api/app/hlj.py`: kit pages have schema.org Product JSON-LD (name, sku = HLJ code, gtin13 =
+     barcode, image) + `.product-details li` (Series, Item Type, Release Date, Manufacturer).
+     Search `/search/?q=` works in plain HTML (`.search-widget-block`, code from `[id$=_stock]`);
+     only BAN* results kept. Bandai Spirits barcodes = 4573102 + last 5 digits of the item number
+     + check digit (G5057403 -> 4573102574039): used only as a SEARCH key, and the page's gtin13
+     must match (the Tamiya "never calculate barcodes" lesson still holds for storing).
+     product_code_for(): G50xxxxx for 4573102 barcodes, else the HLJ code. Grade from the title
+     (HGUC/HGCE -> HG, Entry Grade -> EG, RE/100, Full Mechanics -> FM...).
+   - `GET /api/lookup/bandai/{code:path}`: code / barcode / HLJ code / name. A name with several
+     results returns {"choices": [...]} (no page fetched); picking one looks it up by hlj_code.
+     One lookup = search + page + photo with 1 s pauses; cached in product_info (description
+     "High Grade Kits · Gundam 0079 · Released 2025/04/30 · HLJ BANH574039-UP"; barcode stored
+     if no other product has it). Cache matches product_code, barcode or source_url ending in the
+     HLJ code.
+   - UI: Gundam in ModelForm gets the lookup (Bandai, "Scan the box" via ScanButton, pick list
+     with HLJ thumbnails hot-linked no-referrer); ModelPanel "Get/Refresh photo from hlj.com" and
+     "hlj.com ↗" link (SOURCES map).
+   - The RX-78-2 (model 5) was looked up live once: photo, barcode 4573102574039, HLJ page.
+   - Tests: 196 API (test_hlj.py + trimmed fixtures hlj_banh574039.html, hlj_search_rx78.html),
+     41 browser steps (bandai_lookup uses the cached kit - no hlj.com fetch).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

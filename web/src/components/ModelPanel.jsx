@@ -9,6 +9,13 @@ import PaintChecklist from './PaintChecklist.jsx'
 import PhotoUpload from './PhotoUpload.jsx'
 import TimeTracker from './TimeTracker.jsx'
 
+// Where each maker's kit details and box photos come from.
+const SOURCES = {
+  Tamiya: { site: 'tamiya.com', lookup: api.lookupTamiya },
+  Hasegawa: { site: 'hasegawa-model.co.jp', lookup: api.lookupHasegawa },
+  Bandai: { site: 'hlj.com', lookup: api.lookupBandai },
+}
+
 // Opens Scalemates' own search in your browser (the app itself never fetches Scalemates).
 const scalematesSearch = (m) => {
   const digits = (m.product_code ?? '').replace(/^\D+/, '')
@@ -101,7 +108,7 @@ export default function ModelPanel({ modelId, lookups, settings, onClose, onChan
           <div className="model-links">
             {model.source_url && (
               <a className="small" href={model.source_url} target="_blank" rel="noreferrer">
-                {model.brand === 'Hasegawa' ? 'hasegawa-model.co.jp' : 'tamiya.com'} ↗
+                {SOURCES[model.brand]?.site ?? 'Website'} ↗
               </a>
             )}
             {model.scalemates_url
@@ -141,14 +148,13 @@ export default function ModelPanel({ modelId, lookups, settings, onClose, onChan
       <section className="panel-section">
         <h4 className="section-title">Box photo</h4>
         <div className="button-row">
-          {['Tamiya', 'Hasegawa'].includes(model.brand) && model.product_code && (
+          {SOURCES[model.brand] && model.product_code && (
             <button type="button" className="secondary"
               onClick={() => run(async () => {
-                const lookup = model.brand === 'Hasegawa' ? api.lookupHasegawa : api.lookupTamiya
-                await lookup(model.product_code, model.has_image)
+                await SOURCES[model.brand].lookup(model.product_code, model.has_image)
                 await reload('Photo updated ✓')
               })}>
-              {model.has_image ? 'Refresh photo' : 'Get photo'} from {model.brand === 'Hasegawa' ? 'hasegawa-model.co.jp' : 'tamiya.com'}
+              {model.has_image ? 'Refresh photo' : 'Get photo'} from {SOURCES[model.brand].site}
             </button>
           )}
           <PhotoUpload brandId={model.brand_id} productCode={model.product_code} hasPhoto={model.has_image}

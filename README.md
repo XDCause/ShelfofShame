@@ -19,12 +19,15 @@ subscriptions.
 - **Hobbies**: scale models, Warhammer and Gundam. Each has its own build steps (Gundam: Built,
   Panel lined, Decals, Top coat), Gundam kits have a grade (HG = 1/144, MG = 1/100...), Warhammer
   boxes have an army and count the minis painted ("3 of 10")
+- **Kit lookups**: Tamiya and Hasegawa from their own sites; **Bandai via HobbyLink Japan
+  (hlj.com)** by the code on the box (`G5057403`), the box barcode, or a name. Name, grade, scale
+  and box photo filled in
 - **Colours**: matches between Tamiya ranges (same code, same colour name), your own matches
   between any brands, and mixes ("XF-62 + XF-2 (3:1)") that work on model paint lists
 - **Settings**: spending (lifetime / year / month), price guide, default shop, backups (back up
   now, download), CSV export for Excel, Tamiya catalogue refresh, brands / categories / locations
 - Styled after Apple's Human Interface Guidelines (bottom tab bar and sheets on phones, dark mode)
-- Nightly backups, 167 automated API tests and a 40-step browser walkthrough
+- Nightly backups, 196 automated API tests and a 41-step browser walkthrough
 
 Three Docker containers:
 
@@ -37,6 +40,10 @@ Three Docker containers:
 ```
 Browser -> web (nginx) -> api (FastAPI) -> db (PostgreSQL)
 ```
+
+> **Personal tool.** Some data sources and shortcuts are only OK because this runs for one person
+> on their own PC. See [BEFORE_GOING_PUBLIC.md](BEFORE_GOING_PUBLIC.md) before sharing, hosting
+> or selling it.
 
 ## API endpoints
 
@@ -61,6 +68,7 @@ Grouped as in `api/app/` (one module per part of the app):
 | **products.py** | | |
 | GET | `/api/lookup/tamiya/{item}` | Product details + photo from tamiya.com (cached after first time) |
 | GET | `/api/lookup/hasegawa/{code}` | Hasegawa kit by series code (`JT86`) or item number (`09086`) |
+| GET | `/api/lookup/bandai/{code}` | Bandai kit from hlj.com by box code (`G5057403`), barcode, HLJ code or name (`{"choices": [...]}` if several match) |
 | GET | `/api/scan/{barcode}` | Identify an item from its barcode (known / catalog / Tamiya / unknown) |
 | PUT | `/api/product-barcode` | Remember a barcode `{"brand_id", "product_code", "barcode"}` |
 | PUT/DELETE | `/api/product-photo?brand_id=&product_code=` | Your own photo for any item (image as the body) |

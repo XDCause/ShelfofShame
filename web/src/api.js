@@ -57,6 +57,8 @@ export const api = {
   lookupTamiya: (code, refresh = false) => request(`/lookup/tamiya/${enc(code)}${refresh ? '?refresh=true' : ''}`),
   lookupHasegawa: (code, refresh = false) =>
     request(`/lookup/hasegawa/${enc(code)}${refresh ? '?refresh=true' : ''}`),
+  // A Bandai kit via hlj.com: your code (G5057403), barcode, HLJ code or a name ({choices} if several)
+  lookupBandai: (code, refresh = false) => request(`/lookup/bandai/${enc(code)}${refresh ? '?refresh=true' : ''}`),
   uploadPhoto: (brandId, productCode, blob) =>
     request(`/product-photo?brand_id=${brandId}&product_code=${enc(productCode)}`, image('PUT', blob)),
   deletePhoto: (brandId, productCode) =>

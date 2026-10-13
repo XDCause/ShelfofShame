@@ -566,6 +566,22 @@ def gundam(page):
     expect(d.locator(".steps button[aria-pressed='true']")).to_have_count(1)
     page.keyboard.press("Escape")
     expect(page.locator(".model-card", has_text="RX-78-2")).to_contain_text("Built, step 1 of 4")
+    expect(page.locator(".model-card", has_text="RX-78-2").locator("img")).to_be_visible()  # HLJ box photo
+
+
+@step("Bandai lookup: the box code fills name, grade and scale (cached - no hlj.com fetch)")
+def bandai_lookup(page):
+    page.get_by_role("tab", name="Models").click()
+    page.get_by_role("button", name="+ Add model").click()
+    d = drawer(page)
+    d.locator(".hobby-picker button", has_text="Gundam").click()
+    d.get_by_label("Code from the box, its barcode, or the name").fill("G5057403")
+    d.get_by_role("button", name="Look up").click()
+    expect(d.get_by_label("Model name")).to_have_value("HGUC Revive RX-78-2 Gundam")
+    expect(d.get_by_label("Grade")).to_have_value("HG")
+    expect(d.locator(".preview img")).to_be_visible()
+    shot(page, "d25_bandai_lookup", full=False)
+    page.get_by_role("button", name="Cancel").click()
 
 
 @step("Warhammer: a box of 10 with its army, a new brand, minis painted; hobby filter")
@@ -655,7 +671,7 @@ with sync_playwright() as p:
                add_lookup, add_to_wishlist, wishlist_buy, delete_bought, scan_owned, scan_unknown,
                models, model_paste, add_model_hasegawa, undo, add_to_wishlist_button, duplicate_check, wishlist_panel, shop_tamiya, used_up,
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
-               matches, used_on, gundam, warhammer, settings_more, no_panel):
+               matches, used_on, gundam, bandai_lookup, warhammer, settings_more, no_panel):
         fn(desk)
     ctx = browser.new_context(**p.devices["iPhone 13"])
     mob = ctx.new_page()

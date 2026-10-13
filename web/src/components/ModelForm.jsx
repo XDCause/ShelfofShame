@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { api, imageUrl, today } from '../api.js'
 import Drawer from './Drawer.jsx'
+import ScanButton from './ScanButton.jsx'
 import { Field } from './SupplyFields.jsx'
 
 const FIELDS = ['name', 'hobby', 'brand_id', 'product_code', 'scale', 'grade', 'faction', 'figures', 'status',
@@ -8,6 +9,14 @@ const FIELDS = ['name', 'hobby', 'brand_id', 'product_code', 'scale', 'grade', '
 // Only some fields mean anything for each hobby; the others are sent empty.
 const ONLY_FOR = { grade: 'Gundam', faction: 'Warhammer', figures: 'Warhammer' }
 const NEW_BRAND = 'new:' // brand_id value for a brand you haven't used yet, e.g. "new:Bandai"
+
+// Whose kits each hobby can look up, and what to type for each.
+const MAKERS = { 'Scale model': ['Tamiya', 'Hasegawa'], Gundam: ['Bandai'] }
+const LOOKUP_HELP = {
+  Tamiya: { label: 'Kit number', example: 'e.g. 32595' },
+  Hasegawa: { label: 'Series code or item number from the box', example: 'e.g. JT86 or 09086' },
+  Bandai: { label: 'Code from the box, its barcode, or the name', example: 'e.g. G5057403 or rx-78-2 revive' },
+}
 
 // Hints that change with the hobby.
 const EXAMPLES = {
@@ -39,23 +48,30 @@ export default function ModelForm({ model, lookups, settings, onClose, onCancel,
     purchased_from: settings.default_shop ?? '',
   }))
   const [kitCode, setKitCode] = useState('')
-  const [maker, setMaker] = useState('Tamiya') // whose kit number it is
+  const [makerPick, setMaker] = useState('Tamiya') // whose kit number it is
   const [found, setFound] = useState(null)
+  const [choices, setChoices] = useState(null) // several Bandai kits matched a name: pick one
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const set = (f) => (e) => setForm((x) => ({ ...x, [f]: e.target.value }))
   const wanted = form.status === 'Wanted'
   const example = EXAMPLES[form.hobby]
 
+  // A brand's id for the Brand list, or "new:<name>" while it isn't one of your brands yet.
+  const brandValue = (name) => {
+    const known = lookups.brands.find((b) => b.name === name)
+    return known ? String(known.id) : NEW_BRAND + name
+  }
   // A new Warhammer / Gundam kit starts with that hobby's usual maker (added to your brands on
   // saving if you haven't used it yet).
   const pickHobby = (hobby) => setForm((f) => {
     const maker = lookups.hobby_brands[hobby]
     if (model) return { ...f, hobby }
     if (!maker) return { ...f, hobby, brand_id: f.brand_id.startsWith(NEW_BRAND) ? '' : f.brand_id }
-    const known = lookups.brands.find((b) => b.name === maker)
-    return { ...f, hobby, brand_id: known ? String(known.id) : NEW_BRAND + maker }
+    return { ...f, hobby, brand_id: brandValue(maker) }
   })
+  const makers = MAKERS[form.hobby] ?? []
+  const maker = makers.includes(makerPick) ? makerPick : makers[0]
   // Picking a grade fills in its usual scale (HG = 1/144, MG = 1/100...) if there isn't one yet.
   const setGrade = (e) => {
     const grade = e.target.value
@@ -63,25 +79,36 @@ export default function ModelForm({ model, lookups, settings, onClose, onCancel,
     setForm((f) => ({ ...f, grade, scale: f.scale || scale || '' }))
   }
 
-  // Kit number -> name, scale and box photo from the maker's website.
-  const lookup = async () => {
+  // Kit number -> name, scale and box photo from the maker's website (Bandai: from hlj.com).
+  const lookup = async (code = kitCode) => {
     setBusy(true)
     setError('')
+    setChoices(null)
     try {
-      let r, name, scale
-      if (maker === 'Hasegawa') {
-        r = await api.lookupHasegawa(kitCode.trim()) // series code (JT86) or item number (09086)
+      let r, name, scale, grade
+      if (maker === 'Bandai') {
+        r = await api.lookupBandai(code.trim())
+        if (r.choices) {
+          setChoices(r.choices)
+          setFound(null)
+          return
+        }
+        name = r.name
+        scale = r.scale
+        grade = r.grade
+      } else if (maker === 'Hasegawa') {
+        r = await api.lookupHasegawa(code.trim()) // series code (JT86) or item number (09086)
         name = r.name
         scale = r.scale ?? ''
       } else {
-        r = await api.lookupTamiya(kitCode.trim())
+        r = await api.lookupTamiya(code.trim())
         // Tamiya kit titles look like "1/48 SCALE MITSUBISHI A6M3/3A ZERO (ZEKE)": split off the scale.
         scale = r.title?.match(/^\s*(1\/\d+)/)?.[1] ?? ''
         name = (r.suggested?.name ?? r.title ?? '').replace(/^\s*1\/\d+\s*(scale\s+)?/i, '')
       }
       setFound(r)
-      setForm((f) => ({ ...f, name: name || f.name, scale: scale || f.scale,
-        brand_id: String(r.brand_id), product_code: r.product_code }))
+      setForm((f) => ({ ...f, name: name || f.name, scale: scale || f.scale, grade: grade || f.grade,
+        brand_id: brandValue(maker), product_code: r.product_code }))
     } catch (e) {
       setError(e.message)
     } finally {
@@ -121,30 +148,50 @@ export default function ModelForm({ model, lookups, settings, onClose, onCancel,
           <button key={h} type="button" aria-pressed={form.hobby === h} onClick={() => pickHobby(h)}>{h}</button>
         ))}
       </div>
-      {!model && form.hobby === 'Gundam' && (
-        <p className="hint">Bandai's website can't be read by the app, so type the kit's name, then add
-          your own box photo once it's saved.</p>
-      )}
-      {!model && form.hobby === 'Scale model' && (
+      {!model && maker && (
         <section className="panel-section">
           <span className="field-label">Look up a kit (optional)</span>
-          <div className="segmented maker" role="group" aria-label="Kit maker">
-            {['Tamiya', 'Hasegawa'].map((m) => (
-              <button key={m} type="button" aria-pressed={maker === m}
-                onClick={() => { setMaker(m); setFound(null) }}>{m}</button>
-            ))}
-          </div>
+          {makers.length > 1 && (
+            <div className="segmented maker" role="group" aria-label="Kit maker">
+              {makers.map((m) => (
+                <button key={m} type="button" aria-pressed={maker === m}
+                  onClick={() => { setMaker(m); setFound(null); setChoices(null) }}>{m}</button>
+              ))}
+            </div>
+          )}
+          {maker === 'Bandai' && <p className="hint">Bandai kits are looked up on hlj.com (HobbyLink Japan).</p>}
           <div className="lookup-row">
             <label className="field">
-              <span className="field-label">{maker === 'Hasegawa' ? 'Series code or item number from the box' : 'Kit number'}</span>
+              <span className="field-label">{LOOKUP_HELP[maker].label}</span>
               <input value={kitCode} onChange={(e) => setKitCode(e.target.value)}
-                placeholder={maker === 'Hasegawa' ? 'e.g. JT86 or 09086' : 'e.g. 32595'} autoCapitalize="characters"
+                placeholder={LOOKUP_HELP[maker].example} autoCapitalize={maker === 'Bandai' ? 'none' : 'characters'}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); lookup() } }} />
             </label>
-            <button type="button" className="secondary" onClick={lookup} disabled={busy || !kitCode.trim()}>
+            <button type="button" className="secondary" onClick={() => lookup()} disabled={busy || !kitCode.trim()}>
               {busy ? 'Looking up...' : 'Look up'}
             </button>
+            {maker === 'Bandai' && (
+              <ScanButton className="secondary" label="Scan the box"
+                onBarcode={(barcode) => { setKitCode(barcode); return lookup(barcode) }} />
+            )}
           </div>
+          {choices && (
+            <>
+              <p className="hint">{choices.length} kits match. Which one?</p>
+              <ul className="list kit-choices">
+                {choices.map((c) => (
+                  <li key={c.hlj_code}>
+                    <button type="button" className="row-button" onClick={() => { setKitCode(c.hlj_code); lookup(c.hlj_code) }}>
+                      {c.thumb_url
+                        ? <img className="thumb" src={c.thumb_url} alt="" referrerPolicy="no-referrer" loading="lazy" />
+                        : <span className="thumb thumb-empty" aria-hidden="true" />}
+                      <span>{c.title}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
           {found && (
             <div className="preview">
               {found.has_image ? <img src={imageUrl(found)} alt="" /> : <div className="photo-missing">No photo</div>}

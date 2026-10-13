@@ -453,6 +453,8 @@ th.col-value { width: 96px; }
 .matches h5:first-of-type { margin-top: 6px; }
 .find-match input[type='search'] { width: 100%; }
 .pick-list { margin-top: 8px; }
+.kit-choices { margin-top: 6px; max-height: 380px; overflow-y: auto; }
+.kit-choices .row-button { min-height: 44px; }
 .check-row { display: flex; align-items: center; gap: 12px; width: 100%; cursor: pointer; }
 .check-row input { width: 22px; height: 22px; min-height: 0; flex: none; }
 
