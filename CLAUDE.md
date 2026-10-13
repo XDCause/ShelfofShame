@@ -683,20 +683,17 @@ DBeaver, psql, and the one-off import script.
      build-time file watcher, never in the browser or the server).
    - Tests: 256 API (test_drawings.py), 56 browser steps (whiteboard: draws with the mouse, full
      screen, checks both strokes are saved; / Drawing sketch block).
-3zb. **Pen box + dev on the tablet** - DONE in dev (2026-10-14).
+3zb. **Dev on the tablet; handwriting -> text** (2026-10-14).
    - The Tab S7 couldn't reach dev (ERR_CONNECTION_TIMED_OUT): Wi-Fi is a Private network, Docker's
      allow rules are Public-only, and only 8080 had a rule. Added firewall rule "Off the Clock dev
      web (8081)" (TCP 8081, RemoteAddress LocalSubnet, Profile Private) via an elevated prompt the
      user approved (pass the command with -EncodedCommand; -Command lost its quotes). Neither
      rule covers Tailscale (100.64.0.0/10) yet.
-   - User wanted reMarkable-style "write and it becomes text". Samsung "S Pen to text" works in
-     plain text boxes but NOT in BlockNote's contenteditable (user tested). Added
-     core/journal/PenBox.jsx: a sticky plain <textarea> at the foot of notes pages ("✍ Pen box",
-     open/closed remembered in localStorage offtheclock.penBox); each finished line (newline / Add /
-     leaving the box) is appended to the page as a paragraph via the editor instance (Editor
-     onReady). User's choice for converting handwriting ON A CANVAS: later, with AI on this PC
-     (docs/ROADMAP.md 5c).
-   - Tests: 57 browser steps (pen_box).
+   - reMarkable-style "write and it becomes text" in journal pages: Samsung "S Pen to text" works
+     straight in the BlockNote editor in **Samsung Internet**; in Chrome the S Pen only brings up
+     the keyboard (user tested both). A "pen box" (plain textarea) was built for Chrome, then
+     removed once Samsung Internet worked - nothing to build. Converting handwriting ON A CANVAS:
+     later, with AI on this PC (docs/ROADMAP.md 5c).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

@@ -2,15 +2,11 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { api, shortDate } from '../../api.js'
 import { useApp } from '../app-context.js'
-import PenBox from './PenBox.jsx'
 import TagsInput from './TagsInput.jsx'
 
 const Editor = lazy(() => import('./Editor.jsx'))
 const DrawingCanvas = lazy(() => import('./DrawingCanvas.jsx'))
 const SAVE_AFTER_MS = 700  // save this long after you stop typing
-const PEN_KEY = 'offtheclock.penBox' // the pen box stays open (or closed) between pages, per device
-const penBoxWanted = () => { try { return localStorage.getItem(PEN_KEY) === 'on' } catch { return false } }
-const rememberPenBox = (on) => { try { localStorage.setItem(PEN_KEY, on ? 'on' : 'off') } catch { /* not important */ } }
 
 // The parts of a page the server works out from what you wrote.
 const derived = ({ links, mentioned_in, suggestions }) => ({ links, mentioned_in, suggestions })
@@ -27,9 +23,6 @@ export default function JournalPage() {
   const [status, setStatus] = useState('')        // '', 'saving', 'saved'
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [drawing, setDrawing] = useState(null)      // the drawing open full screen
-  const [penBox, setPenBox] = useState(penBoxWanted) // the handwriting box at the foot of the page
-  const editor = useRef(null)
-  const editorReady = useCallback((e) => { editor.current = e }, [])
   const pending = useRef({})                        // changes not sent yet
   const timer = useRef(null)
 
@@ -92,18 +85,6 @@ export default function JournalPage() {
 
   const openMention = openThing
 
-  // The pen box's finished lines go to the end of the page, one paragraph each (into the empty
-  // line the editor keeps at the end, if there is one). The editor's onChange then saves them.
-  const addLines = useCallback((lines) => {
-    const ed = editor.current
-    if (!ed) return
-    const paragraphs = lines.map((line) => ({ type: 'paragraph', content: line }))
-    const last = ed.document.at(-1)
-    if (last?.type === 'paragraph' && !last.content?.length) ed.replaceBlocks([last], paragraphs)
-    else ed.insertBlocks(paragraphs, last, 'after')
-  }, [])
-  const togglePenBox = (on) => { setPenBox(on); rememberPenBox(on) }
-
   // A drawing was saved: keep its new preview (the page's sketches and the journal list show it).
   const drawingSaved = useCallback((meta) => {
     setPage((p) => ({ ...p, drawings: [...p.drawings.filter((d) => d.drawing_id !== meta.drawing_id), meta] }))
@@ -128,10 +109,6 @@ export default function JournalPage() {
       <div className="journal-bar">
         <Link to="/journal" className="plain">‹ Journal</Link>
         <span className="spacer" />
-        {!board && !penBox && (
-          <button type="button" className="plain pen-toggle" onClick={() => togglePenBox(true)}
-            title="Handwrite with a pen: it turns into text (Samsung S Pen to text)">✍ Pen box</button>
-        )}
         <span className="save-status muted small" role="status" aria-live="polite">
           {status === 'saving' ? 'Saving...' : status === 'saved' ? 'Saved' : ''}
         </span>
@@ -176,15 +153,13 @@ export default function JournalPage() {
         ) : (
           <Editor key={page.page_id} pageId={page.page_id} initialContent={page.content}
             onChange={(content) => save({ content })} onOpenMention={openMention}
-            previews={previews} onDraw={setDrawing} onReady={editorReady} />
+            previews={previews} onDraw={setDrawing} />
         )}
         {drawing && (
           <DrawingCanvas key={`full-${drawing}`} drawingId={drawing} overlay title={pageTitle}
             onSaved={drawingSaved} onClose={() => setDrawing(null)} />
         )}
       </Suspense>
-
-      {!board && penBox && <PenBox onAdd={addLines} onClose={() => togglePenBox(false)} />}
 
       {page.suggestions.length > 0 && (
         <aside className="suggestions" aria-label="Suggestions">

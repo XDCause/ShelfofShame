@@ -13,7 +13,7 @@ import {
   createReactBlockSpec, createReactInlineContentSpec, getDefaultReactSlashMenuItems, SuggestionMenuController,
   useCreateBlockNote,
 } from '@blocknote/react'
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useState } from 'react'
 import { api } from '../../api.js'
 import { PenIcon } from '../../components/icons.jsx'
 import { shrink } from '../../components/PhotoUpload.jsx'
@@ -66,16 +66,13 @@ const schema = BlockNoteSchema.create({
 const WHAT = { model: 'Model', supply: 'Supply', page: 'Journal page', game: 'Board game', gear: 'Gear' }
 
 // previews: {drawingId: preview URL}; onDraw(id) opens the canvas for a drawing.
-// onReady(editor) hands the page the editor, e.g. so the pen box can add text to it.
-export default function Editor({ pageId, initialContent, onChange, onOpenMention, previews = {}, onDraw, onReady }) {
+export default function Editor({ pageId, initialContent, onChange, onOpenMention, previews = {}, onDraw }) {
   const theme = useTheme() // light / dark, like the rest of the app
   const editor = useCreateBlockNote({
     schema,
     initialContent: initialContent?.length ? initialContent : undefined,
     uploadFile: async (file) => (await api.uploadJournalImage(await shrink(file, 1600), pageId)).url,
   })
-
-  useEffect(() => { onReady?.(editor) }, [editor, onReady])
 
   // What @ offers: models, supplies, pages, games and gear matching what's typed after it.
   const mentionItems = async (query) => (await api.mentionable(query)).map((m) => ({
