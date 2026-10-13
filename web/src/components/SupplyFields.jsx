@@ -1,3 +1,5 @@
+import { today } from '../api.js'
+
 // The supply form fields, shared by "Add a supply" and an item's "Edit details".
 // `form` holds strings (what inputs hold); `set(name)` returns the change handler.
 
@@ -8,15 +10,17 @@ export const FIELDS = [
 ]
 const INTEGER_FIELDS = ['brand_id', 'category_id', 'location_id', 'qty_on_hand', 'reorder_at']
 
-// New items start with your usual conventions: 1 on hand, reorder at 0, sealed, bought today.
-export function emptyForm(lookups) {
+// New items start with your usual conventions: 1 on hand, reorder at 0, sealed, bought today
+// from your default shop.
+export function emptyForm(lookups, settings = {}) {
   const other = lookups.locations.find((l) => l.name === 'Other')
   return {
     ...Object.fromEntries(FIELDS.map((f) => [f, ''])),
     qty_on_hand: '1',
     reorder_at: '0',
     condition: 'Sealed',
-    purchase_date: new Date().toLocaleDateString('en-CA'), // YYYY-MM-DD in local time
+    purchase_date: today(),
+    purchased_from: settings.default_shop ?? '',
     location_id: other ? String(other.id) : '',
   }
 }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { api, imageUrl, uploadPhoto } from '../api.js'
+import { api, imageUrl } from '../api.js'
 import Drawer from './Drawer.jsx'
 import PhotoUpload, { shrink } from './PhotoUpload.jsx'
 import ScanButton from './ScanButton.jsx'
@@ -108,7 +108,7 @@ export default function WishForm({ wish, lookups, scanned, onSaved, onCancel }) 
       }
       if (scan.photo && !saved.has_image) {
         try {
-          await uploadPhoto(saved.brand_id, saved.product_code, await shrink(scan.photo))
+          await api.uploadPhoto(saved.brand_id, saved.product_code, await shrink(scan.photo))
         } catch (err) {
           problems.push(`your photo wasn't saved: ${err.message}`)
         }
@@ -122,7 +122,7 @@ export default function WishForm({ wish, lookups, scanned, onSaved, onCancel }) 
       <button key="save" type="submit" form="wish-form" className="primary" disabled={busy !== ''}>
         {busy === 'save' ? 'Saving...' : wish ? 'Save changes' : 'Add to wishlist'}
       </button>
-      <button key="cancel" type="button" className="link" onClick={onCancel}>Cancel</button>
+      <button key="cancel" type="button" className="plain" onClick={onCancel}>Cancel</button>
     </>
   )
 

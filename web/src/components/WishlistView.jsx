@@ -15,12 +15,12 @@ const saveShop = (shop) => {
 
 // The shopping list. Built for a phone in the shop: big photos, tap a card to tick it off,
 // then move everything ticked into inventory in one go. Adding/editing opens a side panel.
-export default function WishlistView({ lookups, onChanged }) {
+export default function WishlistView({ lookups, settings, refreshKey, onChanged }) {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [show, setShow] = useState('all')
   const [formFor, setFormFor] = useState(undefined) // undefined = closed, null = new, object = editing
-  const [shop, setShop] = useState(readShop)
+  const [shop, setShop] = useState(() => readShop() || settings.default_shop || '')
   const [confirmBuy, setConfirmBuy] = useState(false)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState(null)
@@ -45,7 +45,7 @@ export default function WishlistView({ lookups, onChanged }) {
       .catch((e) => setMessage({ type: 'error', text: e.message }))
       .finally(() => setLoading(false))
   }, [])
-  useEffect(() => { load() }, [load])
+  useEffect(() => { load() }, [load, refreshKey])
 
   const ticked = items.filter((w) => w.got_it)
   const visible = useMemo(
@@ -198,7 +198,7 @@ export default function WishlistView({ lookups, onChanged }) {
               <button className="primary" onClick={() => finishBuying(api.buyTicked(shop))} disabled={busy}>
                 {busy ? 'Adding...' : `Yes, add ${ticked.length}`}
               </button>
-              <button className="link" onClick={() => setConfirmBuy(false)}>Cancel</button>
+              <button className="plain" onClick={() => setConfirmBuy(false)}>Cancel</button>
             </span>
           )}
         </div>
@@ -255,17 +255,17 @@ function WishCard({ wish, onToggle, onEdit, onRemove, onBuy, busy }) {
       <div className="wish-actions" onClick={(e) => e.stopPropagation()}>
         {!confirmRemove ? (
           <>
-            <button className="link" onClick={stop(onBuy)} disabled={busy} title="Add to inventory now">
+            <button className="plain" onClick={stop(onBuy)} disabled={busy} title="Add to inventory now">
               Bought
             </button>
-            <button className="link" onClick={stop(onEdit)}>Edit</button>
-            <button className="danger-link" onClick={stop(() => setConfirmRemove(true))}>Remove</button>
+            <button className="plain" onClick={stop(onEdit)}>Edit</button>
+            <button className="plain destructive" onClick={stop(() => setConfirmRemove(true))}>Remove</button>
           </>
         ) : (
           <>
             <span className="small">Remove from wishlist?</span>
             <button className="danger" onClick={stop(onRemove)}>Remove</button>
-            <button className="link" onClick={stop(() => setConfirmRemove(false))}>Cancel</button>
+            <button className="plain" onClick={stop(() => setConfirmRemove(false))}>Cancel</button>
           </>
         )}
       </div>

@@ -1,6 +1,6 @@
 """Import Tamiya's product catalogue (paints, finishing materials, tools, airbrush) for search.
 
-Run it (from the project folder) whenever you want new releases:
+Run it from Settings ("Refresh the Tamiya catalogue"), or from the project folder:
     docker exec hobby-inventory-api python -m app.tamiya_catalog
 
 Reads only the category LIST pages - 20 products per page, ~54 pages, 2 s apart (~3 min):
@@ -13,14 +13,13 @@ Each listing gives the item number, name, category and a small photo:
 Full details + photo for one product are fetched (once) only when you add it.
 """
 import re
-import sys
 import time
 
 import httpx
 from bs4 import BeautifulSoup
 
-from .db import db
-from .tamiya import HEADERS, TIMEOUT
+from .db import brand_id, db
+from .tamiya import HEADERS, TIMEOUT, product_code
 
 LIST_URL = "https://www.tamiya.com/english/products/list.html?genre_item={genre}&absolutepage={page}"
 GENRES = {
@@ -30,6 +29,7 @@ GENRES = {
     "e_5030": "Airbrush System",
 }
 DELAY_SECONDS = 2
+PER_PAGE = 20
 
 
 def parse_list(html: str) -> tuple[list[dict], int]:
@@ -58,27 +58,26 @@ def parse_list(html: str) -> tuple[list[dict], int]:
     return products, int(total.group(1).replace(",", "")) if total else len(products)
 
 
-def product_code(item: str) -> str:
-    """Your convention: Tamiya's number with a T in front (87131 -> T87131, 00XF1 -> T00XF1)."""
-    return "T" + item if item[:1].isdigit() else item
+def fetch_list(client, genre: str, page: int) -> str:
+    return client.get(LIST_URL.format(genre=genre, page=page)).raise_for_status() \
+        .content.decode("cp932", errors="replace")
 
 
-def main():
+def run(progress=print, delay: float = DELAY_SECONDS) -> int:
+    """Read every list page and save the products. `progress(message)` is told about each page.
+    Returns how many products the catalogue has afterwards."""
     with db() as conn:
-        tamiya = conn.execute("SELECT brand_id FROM brands WHERE name = 'Tamiya'").fetchone()
-    if tamiya is None:
-        sys.exit("Add 'Tamiya' to your brands first.")
+        tamiya_id = brand_id(conn, "Tamiya")
+    if tamiya_id is None:
+        raise RuntimeError("Add 'Tamiya' to your brands first.")
 
-    saved = 0
     with httpx.Client(headers=HEADERS, timeout=TIMEOUT, follow_redirects=True) as client:
         for genre, name in GENRES.items():
             page, pages = 1, 1
             while page <= pages:
-                time.sleep(DELAY_SECONDS)
-                html = client.get(LIST_URL.format(genre=genre, page=page)).raise_for_status() \
-                    .content.decode("cp932", errors="replace")
-                products, total = parse_list(html)
-                pages = max(1, -(-total // 20))  # ceiling division
+                time.sleep(delay)
+                products, total = parse_list(fetch_list(client, genre, page))
+                pages = max(1, -(-total // PER_PAGE))  # ceiling division
                 with db() as conn:
                     for p in products:
                         conn.execute("""
@@ -89,16 +88,14 @@ def main():
                                 title = EXCLUDED.title, genre = EXCLUDED.genre,
                                 thumb_url = EXCLUDED.thumb_url, source_url = EXCLUDED.source_url,
                                 imported_at = now()""",
-                            (tamiya["brand_id"], product_code(p["item"]), p["item"], p["title"],
+                            (tamiya_id, product_code(p["item"]), p["item"], p["title"],
                              p["genre"] or name, p["thumb_url"], p["source_url"]))
-                saved += len(products)
-                print(f"  {name}: page {page}/{pages} ({len(products)} products)", flush=True)
+                progress(f"{name}: page {page} of {pages}")
                 page += 1
 
     with db() as conn:
-        n = conn.execute("SELECT count(*) AS n FROM catalog_products").fetchone()["n"]
-    print(f"\nDone: {saved} listings read; the catalogue now has {n} products.")
+        return conn.execute("SELECT count(*) AS n FROM catalog_products").fetchone()["n"]
 
 
 if __name__ == "__main__":
-    main()
+    print(f"\nDone: the catalogue now has {run()} products.")

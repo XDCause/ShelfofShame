@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api, imageUrl, money } from '../api.js'
-import ScanButton from './ScanButton.jsx'
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -86,12 +85,6 @@ export default function InventoryView({ lookups, refreshKey, onOpen, onAdd, onAd
     }
   }
 
-  const onBarcode = async (barcode, photo) => {
-    const result = await api.scan(barcode)
-    if (result.supply_id) onOpen(result.supply_id)
-    else onAdd({ result, photo })
-  }
-
   const restock = async () => {
     try {
       const r = await api.wishRestock()
@@ -122,15 +115,14 @@ export default function InventoryView({ lookups, refreshKey, onOpen, onAdd, onAd
       <div className="toolbar">
         <input type="search" className="search" placeholder="Search name, code, brand, notes, barcode..."
           value={search} onChange={(e) => setSearch(e.target.value)} aria-label="Search" />
-        <ScanButton onBarcode={onBarcode} />
-        <button type="button" className="secondary" onClick={() => onAdd(null)}>+ Add</button>
+        <button type="button" className="primary" onClick={() => onAdd(null)}>+ Add</button>
       </div>
 
       {/* Totals follow the filters: "9 of 22 items · $35.55" when filtering. */}
       <p className="summary">
         {filtering
           ? <><strong>{rows.length}</strong> of {all.length} items · <strong>{money(shownValue)}</strong>{' '}
-              <button type="button" className="link" onClick={clearAll}>Clear filters</button></>
+              <button type="button" className="plain" onClick={clearAll}>Clear filters</button></>
           : <><strong>{all.length}</strong> items · <strong>{money(counts.value)}</strong></>}
       </p>
 
@@ -190,10 +182,10 @@ export default function InventoryView({ lookups, refreshKey, onOpen, onAdd, onAd
           {photoJob.done < photoJob.total
             ? `Fetching photos from tamiya.com... ${photoJob.done} of ${photoJob.total}`
             : `Done: ${photoJob.total - photoJob.failed.length} of ${photoJob.total} photos fetched.`}
-          {photoJob.done === photoJob.total && <button className="link" onClick={() => setPhotoJob(null)}>Dismiss</button>}
+          {photoJob.done === photoJob.total && <button className="plain" onClick={() => setPhotoJob(null)}>Dismiss</button>}
         </p>
       )}
-      {notice && <p className="alert ok small" role="status">{notice} <button className="link" onClick={() => setNotice(null)}>Dismiss</button></p>}
+      {notice && <p className="alert ok small" role="status">{notice} <button className="plain" onClick={() => setNotice(null)}>Dismiss</button></p>}
       {error && <p className="alert error" role="alert">{error}</p>}
 
       <div className="table-wrap">

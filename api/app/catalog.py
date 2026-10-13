@@ -1,12 +1,17 @@
-"""Shop Tamiya: search the imported catalogue (app/tamiya_catalog.py) and add to the wishlist."""
+"""Shop Tamiya: search the imported catalogue (app/tamiya_catalog.py), add to the wishlist, and
+refresh the catalogue from Settings."""
 import logging
 import re
+import threading
+from datetime import datetime
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
 
-from . import tamiya
-from .db import db
-from .wishlist import fetch_wish, tamiya_product
+from . import tamiya, tamiya_catalog
+from .db import db, found, update_row
+from .products import tamiya_product
+from .settings import price_for
+from .wishlist import fetch_wish
 
 log = logging.getLogger("uvicorn.error")
 
@@ -30,8 +35,7 @@ def search(q: str = Query("", max_length=100), limit: int = Query(40, ge=1, le=1
     if not terms:
         return []
     # Each word must appear in the name (hyphens ignored) or be the item number.
-    where = " AND ".join(
-        "(replace(upper(c.title), '-', '') LIKE %s OR c.item = %s)" for _ in terms)
+    where = " AND ".join("(replace(upper(c.title), '-', '') LIKE %s OR c.item = %s)" for _ in terms)
     params = [x for t in terms for x in (f"%{t}%", t)]
     with db() as conn:
         rows = conn.execute(f"""
@@ -49,38 +53,70 @@ def search(q: str = Query("", max_length=100), limit: int = Query(40, ge=1, le=1
     return [{**r, "name": tamiya.your_style_name(r["title"])} for r in rows]
 
 
+# ---------------------------------------------------------------------------
+# Refreshing the catalogue (from Settings): ~3 minutes, in the background
+# ---------------------------------------------------------------------------
+REFRESH = {"running": False, "message": None, "started_at": None, "finished_at": None, "error": None}
+_refresh_lock = threading.Lock()
+
+
+def _refresh():
+    try:
+        count = tamiya_catalog.run(progress=lambda m: REFRESH.update(message=m))
+        REFRESH.update(message=f"Done: {count} products")
+    except Exception as e:  # shown in Settings; the old catalogue stays as it was
+        log.exception("Tamiya catalogue refresh failed")
+        REFRESH.update(error=f"{e.__class__.__name__}: {e}")
+    finally:
+        REFRESH.update(running=False, finished_at=datetime.now().astimezone().isoformat())
+
+
 @router.get("/info")
 def info():
-    """How big the catalogue is and when it was last imported."""
+    """How big the catalogue is, when it was last imported, and how a refresh is going."""
     with db() as conn:
-        return conn.execute("SELECT count(*) AS products, max(imported_at) AS imported_at "
-                            "FROM catalog_products").fetchone()
+        row = conn.execute("SELECT count(*) AS products, max(imported_at) AS imported_at "
+                           "FROM catalog_products").fetchone()
+    return {**row, "refresh": REFRESH}
 
 
+@router.post("/refresh", status_code=202)
+def refresh(background: BackgroundTasks):
+    """Re-read Tamiya's product lists for new releases (2 s between pages, about 3 minutes)."""
+    with _refresh_lock:
+        if REFRESH["running"]:
+            raise HTTPException(409, "The catalogue is already being refreshed.")
+        REFRESH.update(running=True, message="Starting...", error=None, finished_at=None,
+                       started_at=datetime.now().astimezone().isoformat())
+    background.add_task(_refresh)
+    return REFRESH
+
+
+# ---------------------------------------------------------------------------
+# One tap: catalogue -> wishlist
+# ---------------------------------------------------------------------------
 @router.post("/{product_code}/wishlist", status_code=201)
 async def add_to_wishlist(product_code: str, background: BackgroundTasks):
     """One tap from a search result: add it to the wishlist straight away with your naming
-    style, category, paint type and finish guessed from the catalogue title. The product page
-    and photo are fetched from tamiya.com afterwards, in the background (that can take from a
-    second to most of a minute), and fill in the size and photo when they arrive."""
+    style, category, paint type, finish, size and usual price guessed from the catalogue title.
+    The product page and photo are fetched from tamiya.com afterwards, in the background (that
+    can take from a second to most of a minute), and fill in whatever is still empty."""
     with db() as conn:
-        row = conn.execute("SELECT brand_id, item, title, genre FROM catalog_products WHERE product_code = %s",
-                           (product_code,)).fetchone()
-        if row is None:
-            raise HTTPException(404, f"{product_code} isn't in the catalogue.")
+        row = found(conn.execute("SELECT brand_id, item, title, genre FROM catalog_products "
+                                 "WHERE product_code = %s", (product_code,)).fetchone(),
+                    f"{product_code} in the catalogue")
         info = conn.execute("SELECT title, series, description FROM product_info "
                             "WHERE brand_id = %s AND product_code = %s AND title IS NOT NULL",
                             (row["brand_id"], product_code)).fetchone()
-        guess = (tamiya.suggest(info["title"], info["series"], info["description"], row["item"]) if info
-                 else tamiya.suggest(row["title"], row["genre"], None, row["item"]))
+        source = info or {"title": row["title"], "series": row["genre"], "description": None}
+        guess = tamiya.suggest(source["title"], source["series"], source["description"], row["item"])
         wish = conn.execute("""
-            INSERT INTO wishlist (brand_id, product_code, name, category_id, paint_type, finish, size,
-                                  est_price)
+            INSERT INTO wishlist (brand_id, product_code, name, category_id, paint_type, finish, size, est_price)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (brand_id, product_code) DO NOTHING
             RETURNING wish_id""",
             (row["brand_id"], product_code, guess["name"], category_id(conn, guess["category"]),
-             guess["paint_type"], guess["finish"], guess["size"], guess["est_price"])).fetchone()
+             guess["paint_type"], guess["finish"], guess["size"], price_for(conn, source["title"], guess))).fetchone()
         if wish is None:
             raise HTTPException(409, "It's already on your wishlist.")
         result = fetch_wish(conn, wish["wish_id"])
@@ -90,8 +126,9 @@ async def add_to_wishlist(product_code: str, background: BackgroundTasks):
 
 
 def category_id(conn, name):
-    found = conn.execute("SELECT category_id FROM categories WHERE name = %s", (name or "Other",)).fetchone()         or conn.execute("SELECT category_id FROM categories WHERE name = 'Other'").fetchone()
-    return found["category_id"]
+    row = conn.execute("SELECT category_id FROM categories WHERE name = %s", (name or "Other",)).fetchone() \
+        or conn.execute("SELECT category_id FROM categories WHERE name = 'Other'").fetchone()
+    return row["category_id"]
 
 
 async def fill_in_from_tamiya(item: str, wish_id: int):
@@ -106,10 +143,12 @@ async def fill_in_from_tamiya(item: str, wish_id: int):
         info = conn.execute("SELECT title, series, description FROM product_info "
                             "WHERE brand_id = %s AND product_code = %s", (brand_id, code)).fetchone()
         guess = tamiya.suggest(info["title"], info["series"], info["description"], item)
-        conn.execute("""
-            UPDATE wishlist SET size = COALESCE(size, %s), paint_type = COALESCE(paint_type, %s),
-                                finish = COALESCE(finish, %s), est_price = COALESCE(est_price, %s),
-                                category_id = CASE WHEN category_id = %s THEN %s ELSE category_id END
-            WHERE wish_id = %s""",
-            (guess["size"], guess["paint_type"], guess["finish"], guess["est_price"],
-             category_id(conn, "Other"), category_id(conn, guess["category"]), wish_id))
+        wish = conn.execute("SELECT * FROM wishlist WHERE wish_id = %s", (wish_id,)).fetchone()
+        if wish is None:  # removed in the meantime
+            return
+        fills = {k: guess[k] for k in ("size", "paint_type", "finish") if wish[k] is None and guess[k]}
+        if wish["est_price"] is None and (price := price_for(conn, info["title"], guess)) is not None:
+            fills["est_price"] = price
+        if wish["category_id"] == category_id(conn, "Other") and guess["category"]:
+            fills["category_id"] = category_id(conn, guess["category"])
+        update_row(conn, "wishlist", "wish_id", wish_id, fills)

@@ -4,17 +4,24 @@ A self-hosted inventory for model-kit supplies (paints, thinners, tape, glue, to
 as a full-stack learning project. Runs entirely in Docker on your own PC; no accounts or
 subscriptions.
 
-- **Inventory**: search, filter, sort, photos, +/- stock, per-item stock history
+- **Inventory**: search, filter, sort, photos, +/- with Undo, per-item stock history, "used on"
+  (which models need it), colour matches, and "used up, not replacing it" removal
 - **Wishlist**: phone-friendly shopping list; tick things off in the shop, then move them into
-  inventory in one go
+  inventory in one go. **Shop Tamiya** searches ~1,000 Tamiya products and adds one in a tap
 - **Barcode scanning** from a phone photo (decoded in the browser), with a built-in catalogue
   of Tamiya Acrylic Mini paint barcodes
 - **Tamiya lookup**: type an item number or paint code (e.g. `XF-76`) to fill in the name,
-  photo, size, paint type and finish from tamiya.com
-- **Kit lookup** for Tamiya (kit number) and Hasegawa (series code or item number from the box)
-- **Models**: your kits with a paint checklist (what each paint is for), ticked automatically
-  for paints you own; paste a whole paint list at once; missing paints to the wishlist in one tap
-- Nightly backups and an automated API test suite
+  photo, size, paint type, finish and your usual price
+- **Models (kit stash)**: Wanted / In stash / In progress / On hold / Finished / Gone, what you
+  paid, a "shelf of shame" total, a paint checklist (ticked automatically for paints you own,
+  suggests a matching paint you do own), paints picked straight from a Tamiya kit's own paint
+  list, a timer and time log, and a build log with photos
+- **Colours**: matches between Tamiya ranges (same code, same colour name), your own matches
+  between any brands, and mixes ("XF-62 + XF-2 (3:1)") that work on model paint lists
+- **Settings**: spending (lifetime / year / month), price guide, default shop, backups (back up
+  now, download), CSV export for Excel, Tamiya catalogue refresh, brands / categories / locations
+- Styled after Apple's Human Interface Guidelines (bottom tab bar and sheets on phones, dark mode)
+- Nightly backups, 159 automated API tests and a 37-step browser walkthrough
 
 Three Docker containers:
 
@@ -30,43 +37,62 @@ Browser -> web (nginx) -> api (FastAPI) -> db (PostgreSQL)
 
 ## API endpoints
 
+Grouped as in `api/app/` (one module per part of the app):
+
 | Method | Path | Does |
 |---|---|---|
-| GET | `/api/supplies?q=&category=&brand=&status=&location=` | Search / filter |
+| **supplies.py** | | |
+| GET | `/api/supplies?q=&category=&brand=&status=&location=` | Search / filter (each with `used_on` models) |
 | GET | `/api/supplies/low-stock` | Everything Low or Out |
-| GET | `/api/supplies/{id}` | One supply |
+| GET/PATCH | `/api/supplies/{id}` | One supply / change some fields |
 | POST | `/api/supplies` | Add a supply |
-| PATCH | `/api/supplies/{id}` | Change some fields |
 | POST | `/api/supplies/{id}/adjust` | `{"delta": -1}` = used one, `{"delta": 2}` = bought two |
-| DELETE | `/api/supplies/{id}` | Delete a supply |
-| GET | `/api/wishlist?show=all\|needed\|got` | Wishlist, with photos and "you own N" |
-| POST | `/api/wishlist` | Add a wishlist item |
-| PATCH | `/api/wishlist/{id}` | Edit; `{"got_it": true}` ticks it off |
-| DELETE | `/api/wishlist/{id}` | Remove from wishlist |
-| POST | `/api/wishlist/{id}/buy` | Bought it: move to inventory `{"purchased_from": "..."}` |
-| POST | `/api/wishlist/buy-ticked` | Move every ticked item to inventory |
-| GET | `/api/catalog/search?q=panel line black` | Search the imported Tamiya catalogue (marks what you own / have on the wishlist) |
-| POST | `/api/catalog/{product_code}/wishlist` | Put a catalogue product on the wishlist (fetches its details + photo once) |
+| DELETE | `/api/supplies/{id}?also_wishlist=true` | Remove (used up, not replacing it) |
+| POST | `/api/supplies/{id}/wishlist` | Put one supply on the wishlist |
+| GET | `/api/supplies/{id}/history`, `/api/history` | Quantity changes (with the price at the time) |
+| **wishlist.py** | | |
+| GET/POST | `/api/wishlist` | Wishlist, with photos and "you own N" / add an item |
+| PATCH/DELETE | `/api/wishlist/{id}` | Edit (`{"got_it": true}` ticks it off) / remove |
+| POST | `/api/wishlist/{id}/buy`, `/api/wishlist/buy-ticked` | Bought: move to inventory (blank shop = your default shop) |
+| POST | `/api/wishlist/restock` | Everything Out or Low onto the wishlist |
+| **products.py** | | |
 | GET | `/api/lookup/tamiya/{item}` | Product details + photo from tamiya.com (cached after first time) |
-| GET | `/api/lookup/hasegawa/{code}` | Hasegawa kit by series code (`JT86`) or item number (`09086`): name, scale, box art |
-| GET | `/api/scan/{barcode}` | Identify an item from its barcode number (known / catalog / Tamiya / unknown) |
-| GET | `/api/supplies/{id}/history` | Quantity changes for one supply, newest first |
-| GET | `/api/history` | Quantity changes across everything |
-| GET | `/api/spending` | Lifetime spend: all time, this year, this month, latest purchases |
-| POST | `/api/supplies/{id}/wishlist` | Put one supply on the wishlist (things that run low are added automatically) |
-| POST | `/api/wishlist/restock` | Put everything that needs attention (Out or Low) on the wishlist |
+| GET | `/api/lookup/hasegawa/{code}` | Hasegawa kit by series code (`JT86`) or item number (`09086`) |
+| GET | `/api/scan/{barcode}` | Identify an item from its barcode (known / catalog / Tamiya / unknown) |
 | PUT | `/api/product-barcode` | Remember a barcode `{"brand_id", "product_code", "barcode"}` |
+| PUT/DELETE | `/api/product-photo?brand_id=&product_code=` | Your own photo for any item (image as the body) |
 | GET | `/api/product-images/{id}` | A cached product photo |
-| PUT | `/api/product-photo?brand_id=&product_code=` | Your own photo for any item (image file as the body) |
-| DELETE | `/api/product-photo?brand_id=&product_code=` | Remove an item's photo |
-| GET/POST | `/api/models` | List / add models (kits) |
-| GET/PATCH/DELETE | `/api/models/{id}` | One model with its paint checklist |
-| POST | `/api/models/{id}/paints` | Add a paint, or paste a list `{"text": "XF-76 Grey Green\tExterior"}` |
-| PATCH/DELETE | `/api/model-paints/{id}` | Edit (what it's for, ticked by hand) / remove a paint |
-| POST | `/api/models/{id}/wishlist` | Put the model's missing paints on the wishlist |
+| **catalog.py** (Shop Tamiya) | | |
+| GET | `/api/catalog/search?q=panel line black` | Search the Tamiya catalogue |
+| POST | `/api/catalog/{product_code}/wishlist` | Onto the wishlist (details + photo fetched in the background) |
+| GET | `/api/catalog/info` · POST `/api/catalog/refresh` | Size / refresh from tamiya.com (~3 min, in the background) |
+| **models.py** | | |
+| GET/POST | `/api/models` | List / add kits |
+| GET | `/api/models/summary` | Shelf of shame (unbuilt kits and their cost), counts per status, hours |
+| GET/PATCH/DELETE | `/api/models/{id}` | One kit with its checklist, sessions and build log |
+| POST | `/api/models/{id}/paints` | Add paints: `XF-76 Grey Green\tExterior`, or a mix `XF-62 + XF-2 (3:1)` |
+| PATCH/DELETE | `/api/model-paints/{id}` | Edit / remove a checklist line |
+| GET/POST | `/api/models/{id}/kit-paints` | Tamiya's "Colors required" for the kit / add the ones you picked |
+| POST | `/api/models/{id}/wishlist` | Missing paints (and missing parts of mixes) onto the wishlist |
+| **build.py** | | |
+| POST | `/api/models/{id}/timer/start`, `.../timer/stop` · GET `/api/timer` | Time tracking (one timer at a time) |
+| POST | `/api/models/{id}/sessions` · DELETE `/api/model-sessions/{id}` | Time added by hand |
+| POST | `/api/models/{id}/log` · PATCH/DELETE `/api/model-log/{id}` | Build log entries |
+| PUT/GET | `/api/model-log/{id}/photo` | A build log photo |
+| **colours.py** | | |
+| GET | `/api/colours/matches?brand_id=&product_code=` | Same code / same name / your matches |
+| GET/POST, PATCH/DELETE | `/api/colour-groups`, `/api/colour-groups/{id}` | Your own matches (any brand) |
+| GET/POST, PATCH/DELETE | `/api/mixes`, `/api/mixes/{id}` | Mixes `{"recipe": "XF-62 + XF-2 (3:1)"}` |
+| **spending.py** | | |
+| GET | `/api/spending` | Lifetime / year / month spend, latest purchases, kits |
+| GET | `/api/export/{inventory,wishlist,models,model-paints,history}.csv` | CSV for Excel |
+| **settings.py** | | |
+| GET/PATCH | `/api/settings` | Default shop |
+| GET/POST, PATCH/DELETE | `/api/price-guide`, `/api/price-guide/{id}` | Your usual prices |
+| GET/POST | `/api/backups` · GET `/api/backups/{name}` | List / back up now / download |
+| **lookups.py** | | |
 | GET | `/api/lookups` | Brands, categories, locations (with usage counts) + fixed choice lists |
-| POST | `/api/lookups/{brands\|categories\|locations}` | Add a list entry `{"name": "..."}` |
-| DELETE | `/api/lookups/{kind}/{id}` | Remove an unused list entry |
+| POST/DELETE | `/api/lookups/{brands,categories,locations}[/{id}]` | Add / remove a list entry |
 
 Try them interactively at http://localhost:8000/api/docs ("Try it out").
 
@@ -102,8 +128,8 @@ SUP-0001... numbering.
 | One-off query | `docker exec hobby-inventory-db psql -U hobby -d hobby_inventory -c "SELECT * FROM v_supplies"` |
 | **Wipe and rebuild** (deletes all data!) | `docker compose down -v`, `.\start.ps1`, then re-run the import |
 | Update the Tamiya paint barcode catalogue (new colours) | `docker exec hobby-inventory-api python -m app.catalog_import` |
-| Update the Shop Tamiya product list (~1,000 products, ~3 min) | `docker exec hobby-inventory-api python -m app.tamiya_catalog` |
-| Back up now (also runs nightly at 2 am) | `.\backup.ps1` (keeps the newest 14 in `backups\`) |
+| Update the Shop Tamiya product list (~1,000 products, ~3 min) | Settings > Tamiya catalogue > Refresh (or `docker exec hobby-inventory-api python -m app.tamiya_catalog`) |
+| Back up now (also runs nightly at 2 am) | Settings > Backups > Back up now, or `.\backup.ps1` (keeps the newest 14 in `backups\`) |
 | Back up and copy elsewhere | `.\backup.ps1 -CopyTo "D:\Backups"` |
 | Run the automated tests (never touches real data) | `.\run_tests.ps1` (or `.\run_tests.ps1 -k wishlist`) |
 | Click through the whole app in a browser (desktop + iPhone) | `.\run_e2e.ps1` (backs up, runs, restores; screenshots in `e2e\out\`) |

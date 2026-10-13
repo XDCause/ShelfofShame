@@ -33,7 +33,7 @@ export default function SimilarItems({ supplies, name, productCode, brandId, onO
         {matches.map((s) => (
           <li key={s.supply_id}>
             {s.item_ref} · {s.name} ({s.qty_on_hand} on hand)
-            {onOpen && <> <button type="button" className="link" onClick={() => onOpen(s.supply_id)}>Open</button></>}
+            {onOpen && <> <button type="button" className="plain" onClick={() => onOpen(s.supply_id)}>Open</button></>}
           </li>
         ))}
       </ul>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { api, imageUrl, uploadPhoto } from '../api.js'
+import { api, imageUrl } from '../api.js'
 import Drawer from './Drawer.jsx'
 import { shrink } from './PhotoUpload.jsx'
 import ScanButton from './ScanButton.jsx'
@@ -17,11 +17,11 @@ function scanMessage(r) {
 // Add a supply: scan or type a code first, check what was filled in, then add it to your
 // inventory - or to the wishlist instead, if you're standing in a shop.
 // `scanned` = {result, photo} when opened from the Inventory page's Scan button.
-export default function AddPanel({ lookups, scanned: initialScan, onClose, onAdded, onWished, onOpen }) {
+export default function AddPanel({ lookups, settings, scanned: initialScan, onClose, onAdded, onWished, onOpen }) {
   const [scan, setScan] = useState(initialScan ?? null)
   const [found, setFound] = useState(initialScan?.result?.match !== 'unknown' ? initialScan?.result : null)
   const [form, setForm] = useState(() => {
-    const start = emptyForm(lookups)
+    const start = emptyForm(lookups, settings)
     if (!initialScan) return start
     const r = initialScan.result
     return applyResult(r.match === 'unknown' && r.brand_id == null ? { ...start, brand_id: '' } : start, r)
@@ -37,9 +37,11 @@ export default function AddPanel({ lookups, scanned: initialScan, onClose, onAdd
 
   const set = (f) => (e) => setForm((x) => ({ ...x, [f]: e.target.value }))
 
-  // A new scan inside the panel. If you already own it, say so (and offer to open it).
+  // A new scan inside the panel: something you own opens it (like Scan in the nav bar);
+  // anything else fills in the form.
   const onBarcode = async (barcode, photo) => {
     const result = await api.scan(barcode)
+    if (result.supply_id) return onOpen(result.supply_id)
     setScan({ result, photo })
     setMessage(null)
     if (result.match !== 'unknown') setFound(result)
@@ -77,7 +79,7 @@ export default function AddPanel({ lookups, scanned: initialScan, onClose, onAdd
     }
     if (scan.photo && !hasImage) {
       try {
-        await uploadPhoto(brandId, productCode, await shrink(scan.photo))
+        await api.uploadPhoto(brandId, productCode, await shrink(scan.photo))
       } catch (e) {
         problems.push(`your photo wasn't saved (${e.message})`)
       }
@@ -131,7 +133,7 @@ export default function AddPanel({ lookups, scanned: initialScan, onClose, onAdd
       <button type="button" className="secondary" onClick={addToWishlist} disabled={busy !== ''}>
         {busy === 'wish' ? 'Adding...' : 'Add to wishlist'}
       </button>
-      <button type="button" className="link" onClick={onClose}>Cancel</button>
+      <button type="button" className="plain" onClick={onClose}>Cancel</button>
     </>
   )
 
@@ -160,7 +162,7 @@ export default function AddPanel({ lookups, scanned: initialScan, onClose, onAdd
       {owned && (
         <p className="alert low small">
           You already own {found.owned_qty} of these.{' '}
-          <button type="button" className="link" onClick={() => onOpen(owned)}>Open it</button> to add stock with +.
+          <button type="button" className="plain" onClick={() => onOpen(owned)}>Open it</button> to add stock with +.
         </p>
       )}
       {message && <p className={`alert ${message.tone} small`} role="alert">{message.text}</p>}

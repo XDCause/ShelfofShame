@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { api } from '../api.js'
+import Fold from './Fold.jsx'
 
 const LISTS = [
   { kind: 'brands', title: 'Brands', placeholder: 'New brand' },
@@ -7,74 +8,52 @@ const LISTS = [
   { kind: 'locations', title: 'Storage locations', placeholder: 'New location' },
 ]
 
-// Add or remove dropdown entries (shown in a panel from the gear button). Anything still used
-// by a supply can't be removed: the database's foreign keys refuse it, and the button is
-// disabled to match. Each list is a closed drop-down section, like Spending.
+// The choices offered when adding or editing. Anything still in use can't be removed: the
+// database's foreign keys refuse it, and the button is disabled to match.
 export default function ListsManager({ lookups, onChanged }) {
-  return (
-    <section className="lists">
-      <p className="muted">The choices offered when adding or editing. Numbers show how many supplies use each.</p>
-      <div className="lists-grid">
-        {LISTS.map((l) => (
-          <LookupList key={l.kind} {...l} items={lookups[l.kind]} onChanged={onChanged} />
-        ))}
-      </div>
-    </section>
-  )
+  return LISTS.map((l) => (
+    <Fold key={l.kind} title={l.title} detail={lookups[l.kind].length} className="lookup">
+      <LookupList {...l} items={lookups[l.kind]} onChanged={onChanged} />
+    </Fold>
+  ))
 }
 
-function LookupList({ kind, title, placeholder, items, onChanged }) {
+function LookupList({ kind, placeholder, items, onChanged }) {
   const [name, setName] = useState('')
   const [error, setError] = useState('')
 
-  const add = async (e) => {
-    e.preventDefault()
-    if (!name.trim()) return
+  const run = async (fn) => {
     try {
-      await api.addLookup(kind, name.trim())
-      setName('')
+      await fn()
       setError('')
       onChanged()
     } catch (err) {
       setError(err.message)
     }
   }
-
-  const remove = async (item) => {
-    try {
-      await api.deleteLookup(kind, item.id)
-      setError('')
-      onChanged()
-    } catch (err) {
-      setError(err.message)
-    }
+  const add = (e) => {
+    e.preventDefault()
+    if (name.trim()) run(async () => { await api.addLookup(kind, name.trim()); setName('') })
   }
 
   return (
-    <details className="lookup fold">
-      <summary>{title} <span className="count">{items.length}</span></summary>
-      <ul>
+    <>
+      <ul className="list">
         {items.map((item) => (
           <li key={item.id}>
-            <span>{item.name}</span>
-            <span className="uses" title={`Used by ${item.uses} supplies`}>{item.uses || ''}</span>
-            <button
-              className="remove"
-              onClick={() => remove(item)}
-              disabled={item.uses > 0}
-              title={item.uses > 0 ? 'In use - can’t remove' : `Remove ${item.name}`}
-              aria-label={`Remove ${item.name}`}
-            >
-              ×
-            </button>
+            <span className="grow">{item.name}</span>
+            <span className="muted small num" title={`Used ${item.uses} times`}>{item.uses || ''}</span>
+            <button type="button" className="icon-btn small" onClick={() => run(() => api.deleteLookup(kind, item.id))}
+              disabled={item.uses > 0} title={item.uses > 0 ? 'In use - can’t remove' : `Remove ${item.name}`}
+              aria-label={`Remove ${item.name}`}>✕</button>
           </li>
         ))}
       </ul>
       <form onSubmit={add} className="add-row">
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder={placeholder} aria-label={placeholder} />
-        <button type="submit" disabled={!name.trim()}>Add</button>
+        <button type="submit" className="secondary" disabled={!name.trim()}>Add</button>
       </form>
       {error && <p className="alert error small">{error}</p>}
-    </details>
+    </>
   )
 }

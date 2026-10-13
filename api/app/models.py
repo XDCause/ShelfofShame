@@ -1,24 +1,29 @@
-"""Models (kits) and the paints each one needs.
+"""Models (kits): your stash, and the paints each one needs.
 
-A model's paint list is a checklist. Each paint is matched to your inventory by brand +
-product code, so it shows as "have it" automatically while you own one; paints you don't track
-can be ticked by hand (have_it).
+Status runs Wanted -> In stash -> In progress / On hold -> Finished (or Gone: sold, given away).
+"Shelf of shame" = kits you own but haven't finished (In stash, In progress, On hold).
+
+A model's paint list is a checklist. Each paint is matched to your inventory by brand + product
+code, so it shows as "have it" automatically while you own one; a line can also be a mix (have
+it when you own every part); anything else can be ticked by hand (have_it). Time tracking and
+the build log are in build.py.
 """
-import re
+from datetime import date
+from decimal import Decimal
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Response
-from fastapi.concurrency import run_in_threadpool
-from psycopg import sql
 from pydantic import BaseModel, Field
 
-from . import hasegawa, tamiya
-from .db import db
+from . import colours, paints, tamiya
+from .db import MODEL_STATUSES, brand_id as brand_named, db, found, insert_row, update_row
+from .products import tamiya_product
+from .settings import price_for
 
 router = APIRouter(prefix="/api", tags=["models"])
 
-STATUSES = ["Not started", "In progress", "On hold", "Finished"]
-Status = Literal[tuple(STATUSES)]
+Status = Literal[tuple(MODEL_STATUSES)]
+UNBUILT = ("In stash", "In progress", "On hold")  # the shelf of shame
 
 
 def scalemates_url():
@@ -31,9 +36,12 @@ class ModelIn(BaseModel):
     brand_id: int | None = None
     product_code: str | None = None
     scale: str | None = None
-    status: Status = "Not started"
+    status: Status = "In stash"
     notes: str | None = None
     scalemates_url: str | None = scalemates_url()
+    price_paid: Decimal | None = Field(None, ge=0, max_digits=10, decimal_places=2)
+    purchase_date: date | None = None
+    purchased_from: str | None = None
 
 
 class ModelPatch(BaseModel):
@@ -44,11 +52,16 @@ class ModelPatch(BaseModel):
     status: Status | None = None
     notes: str | None = None
     scalemates_url: str | None = scalemates_url()
+    price_paid: Decimal | None = Field(None, ge=0, max_digits=10, decimal_places=2)
+    purchase_date: date | None = None
+    purchased_from: str | None = None
+    started_on: date | None = None
+    finished_on: date | None = None
 
 
 class PaintsIn(BaseModel):
-    """One paint per line: "XF-76 Grey Green (IJN) <tab> The whole exterior".
-    `purpose` is used for a single line typed without a tab."""
+    """One paint per line: "XF-76 Grey Green (IJN) <tab> The whole exterior", or a mix:
+    "XF-62 + XF-2 (3:1) - Exterior". `purpose` is used for a single line typed without a tab."""
     text: str = Field(min_length=1)
     purpose: str | None = None
 
@@ -60,30 +73,46 @@ class PaintPatch(BaseModel):
     sort_order: int | None = None
 
 
-MODEL_SELECT = """
+class KitPaint(BaseModel):
+    product_code: str = Field(min_length=1)
+    paint_name: str = Field(min_length=1)
+
+
+class KitPaintsIn(BaseModel):
+    paints: list[KitPaint]
+
+
+OWNED = ("EXISTS (SELECT 1 FROM supplies s WHERE s.brand_id = mp.brand_id "
+         "AND s.product_code = mp.product_code AND s.qty_on_hand > 0)")
+HAVE = f"(mp.have_it OR {OWNED} OR (mp.mix_id IS NOT NULL AND {colours.MIX_COMPLETE.format(col='mp.mix_id')}))"
+
+MODEL_SELECT = f"""
 SELECT m.*, b.name AS brand,
        p.product_info_id, (p.image IS NOT NULL) AS has_image, p.fetched_at AS photo_updated, p.source_url,
        (SELECT count(*) FROM model_paints mp WHERE mp.model_id = m.model_id) AS paints_total,
-       (SELECT count(*) FROM model_paints mp WHERE mp.model_id = m.model_id
-          AND (mp.have_it OR EXISTS (SELECT 1 FROM supplies s WHERE s.brand_id = mp.brand_id
-                                     AND s.product_code = mp.product_code AND s.qty_on_hand > 0))
-       ) AS paints_have
+       (SELECT count(*) FROM model_paints mp WHERE mp.model_id = m.model_id AND {HAVE}) AS paints_have,
+       (SELECT COALESCE(round(sum(extract(epoch FROM (COALESCE(x.ended_at, now()) - x.started_at))) / 60), 0)
+          FROM model_sessions x WHERE x.model_id = m.model_id)::int AS total_minutes,
+       (SELECT x.started_at FROM model_sessions x WHERE x.model_id = m.model_id AND x.ended_at IS NULL) AS running_since,
+       (SELECT count(*) FROM model_log l WHERE l.model_id = m.model_id) AS log_count
 FROM models m
 LEFT JOIN brands b ON b.brand_id = m.brand_id
 LEFT JOIN product_info p ON p.brand_id = m.brand_id AND p.product_code = m.product_code
 """
 
 # Each paint with what your inventory says about it.
-PAINTS_SELECT = """
-SELECT mp.*, b.name AS brand,
+PAINTS_SELECT = f"""
+SELECT mp.*, b.name AS brand, x.name AS mix_name,
        owned.supply_id, COALESCE(owned.qty_on_hand, 0) AS owned_qty, owned.condition, owned.stock_status,
        (COALESCE(owned.qty_on_hand, 0) > 0) AS in_inventory,
-       (COALESCE(owned.qty_on_hand, 0) > 0 OR mp.have_it) AS have,
+       {HAVE} AS have,
        EXISTS (SELECT 1 FROM wishlist w WHERE w.brand_id = mp.brand_id
                AND w.product_code = mp.product_code) AS on_wishlist,
-       p.product_info_id, (p.image IS NOT NULL) AS has_image, p.fetched_at AS photo_updated
+       p.product_info_id, (p.image IS NOT NULL) AS has_image, p.fetched_at AS photo_updated,
+       cp.thumb_url AS catalog_thumb
 FROM model_paints mp
 LEFT JOIN brands b ON b.brand_id = mp.brand_id
+LEFT JOIN mixes x ON x.mix_id = mp.mix_id
 LEFT JOIN LATERAL (
     SELECT v.supply_id, v.qty_on_hand, v.condition, v.stock_status
     FROM supplies s JOIN v_supplies v USING (supply_id)
@@ -91,69 +120,44 @@ LEFT JOIN LATERAL (
     LIMIT 1
 ) owned ON true
 LEFT JOIN product_info p ON p.brand_id = mp.brand_id AND p.product_code = mp.product_code
+LEFT JOIN catalog_products cp ON cp.brand_id = mp.brand_id AND cp.product_code = mp.product_code
 WHERE mp.model_id = %s
 ORDER BY mp.sort_order, mp.model_paint_id
 """
 
 
 def fetch_model(conn, model_id):
-    model = conn.execute(MODEL_SELECT + " WHERE m.model_id = %s", (model_id,)).fetchone()
-    if model is None:
-        raise HTTPException(404, f"Model {model_id} not found.")
-    return {**model, "paints": conn.execute(PAINTS_SELECT, (model_id,)).fetchall()}
+    model = found(conn.execute(MODEL_SELECT + " WHERE m.model_id = %s", (model_id,)).fetchone(),
+                  f"Model {model_id}")
+    rows = conn.execute(PAINTS_SELECT, (model_id,)).fetchall()
+    # Paints you don't have, but own something matching (same code / same name / your match).
+    alternatives = colours.owned_alternatives(conn, [
+        {"key": r["model_paint_id"], **r} for r in rows if not r["have"] and r["mix_id"] is None])
+    mixes = {r["mix_id"]: colours.fetch_mix(conn, r["mix_id"]) for r in rows if r["mix_id"]}
+    paints_ = [{**r, "alternative": alternatives.get(r["model_paint_id"]),
+                "mix": mixes.get(r["mix_id"])} for r in rows]
+    sessions = conn.execute(
+        "SELECT session_id, started_at, ended_at, note, "
+        "round(extract(epoch FROM (COALESCE(ended_at, now()) - started_at)) / 60)::int AS minutes "
+        "FROM model_sessions WHERE model_id = %s ORDER BY started_at DESC LIMIT 50", (model_id,)).fetchall()
+    log = conn.execute(
+        "SELECT entry_id, entry_date, text, (photo IS NOT NULL) AS has_photo, created_at "
+        "FROM model_log WHERE model_id = %s ORDER BY entry_date DESC, entry_id DESC", (model_id,)).fetchall()
+    return {**model, "paints": paints_, "sessions": sessions, "log": log}
 
 
-def write(conn, table, id_col, row_id, data):
-    query = sql.SQL("UPDATE {t} SET {sets} WHERE {id} = {rid}").format(
-        t=sql.Identifier(table), id=sql.Identifier(id_col), rid=sql.Placeholder("row_id"),
-        sets=sql.SQL(", ").join(sql.SQL("{} = {}").format(sql.Identifier(k), sql.Placeholder(k)) for k in data))
-    return conn.execute(query, {**data, "row_id": row_id}).rowcount
+def tamiya_id_of(conn):
+    return brand_named(conn, "Tamiya")
 
 
-# ---------------------------------------------------------------------------
-# Reading a paint list
-# ---------------------------------------------------------------------------
-# Between the paint and what it's for: a tab, or " - " / " – " / " — " / ": ".
-SPLIT = re.compile(r"\t+|\s+[-–—]\s+|:\s+")
-# Notes about buying aren't part of the name: the checklist works that out from your inventory.
-BUY_NOTE = re.compile(r"\s*\((?:still\s+)?(?:to|need to)\s+buy\)", re.I)
-LEADING_PAINT_CODE = re.compile(r"(XF|X)\s*-?\s*(\d{1,2})(A?)(?![\dA-Z])", re.I)
-
-
-def parse_line(line):
-    """'XF-76 Grey Green (IJN)<tab>The whole exterior' -> ('XF-76 Grey Green (IJN)', 'The whole exterior')"""
-    parts = SPLIT.split(line.strip(), maxsplit=1)
-    paint = re.sub(r"\s+", " ", BUY_NOTE.sub("", parts[0])).strip()
-    purpose = parts[1].strip() if len(parts) > 1 and parts[1].strip() else None
-    return paint, purpose
-
-
-def resolve(conn, paint, tamiya_id):
-    """Work out which product a typed paint is: (brand_id, product_code, display name)."""
-    first = paint.split()[0] if paint.split() else ""
-    m = LEADING_PAINT_CODE.match(paint)
-    if m and tamiya_id:                                    # XF-76 -> Tamiya T81776
-        code = "T" + tamiya.item_number(m.group(0))
-        # Only the code typed ("XF-76", "xf76")? Then look the name up instead of using the code.
-        return tamiya_id, code, None if tamiya.paint_code(paint) else paint
-    owned = conn.execute("SELECT brand_id, product_code FROM supplies WHERE upper(product_code) = upper(%s) "
-                         "LIMIT 1", (first,)).fetchone()
-    if owned:                                              # a code you own, e.g. MIL3
-        return owned["brand_id"], owned["product_code"], paint if paint != first else None
-    if re.fullmatch(r"T?\d{5}", first, re.I) and tamiya_id:  # a Tamiya item number
-        return tamiya_id, "T" + first.upper().lstrip("T"), paint if paint != first else None
-    return None, None, paint                               # not linked: tick it by hand
-
-
-def default_name(conn, brand_id, code, typed):
-    """Just a code was typed (e.g. 'XF-76'): use your own name for it, else Tamiya's."""
-    row = conn.execute("SELECT name FROM supplies WHERE brand_id = %s AND product_code = %s",
-                       (brand_id, code)).fetchone()
-    if row:
-        return row["name"]
-    info = conn.execute("SELECT title FROM product_info WHERE brand_id = %s AND product_code = %s",
-                        (brand_id, code)).fetchone()
-    return tamiya.your_style_name(info["title"]) if info and info["title"] else typed
+def date_status(conn, model_id, status):
+    """Starting a kit dates it; finishing it dates that too (unless you've set the dates yourself)."""
+    if status in ("In progress", "Finished"):
+        conn.execute("UPDATE models SET started_on = COALESCE(started_on, current_date) WHERE model_id = %s",
+                     (model_id,))
+    if status == "Finished":
+        conn.execute("UPDATE models SET finished_on = COALESCE(finished_on, current_date) WHERE model_id = %s",
+                     (model_id,))
 
 
 # ---------------------------------------------------------------------------
@@ -163,17 +167,34 @@ def default_name(conn, brand_id, code, typed):
 def list_models():
     with db() as conn:
         return conn.execute(MODEL_SELECT + """
-            ORDER BY CASE m.status WHEN 'In progress' THEN 0 WHEN 'Not started' THEN 1
-                                   WHEN 'On hold' THEN 2 ELSE 3 END, m.created_at DESC""").fetchall()
+            ORDER BY CASE m.status WHEN 'In progress' THEN 0 WHEN 'In stash' THEN 1 WHEN 'On hold' THEN 2
+                                   WHEN 'Wanted' THEN 3 WHEN 'Finished' THEN 4 ELSE 5 END,
+                     m.created_at DESC""").fetchall()
+
+
+# Declared before /models/{model_id} so "summary" isn't mistaken for an id.
+@router.get("/models/summary")
+def stash_summary():
+    """The shelf of shame: how many kits you own but haven't finished, and what they cost;
+    plus counts per status and hours spent."""
+    with db() as conn:
+        counts = {r["status"]: r["n"] for r in conn.execute(
+            "SELECT status, count(*) AS n FROM models GROUP BY status").fetchall()}
+        shame = conn.execute("SELECT count(*) AS kits, COALESCE(sum(price_paid), 0) AS value, "
+                             "count(*) FILTER (WHERE price_paid IS NULL) AS unpriced "
+                             "FROM models WHERE status = ANY(%s)", (list(UNBUILT),)).fetchone()
+        minutes = conn.execute("SELECT COALESCE(round(sum(extract(epoch FROM (COALESCE(ended_at, now()) - started_at)))"
+                               " / 60), 0)::int AS m FROM model_sessions").fetchone()["m"]
+        return {"counts": {s: counts.get(s, 0) for s in MODEL_STATUSES}, "shelf_of_shame": shame,
+                "total_minutes": minutes}
 
 
 @router.post("/models", status_code=201)
 def add_model(body: ModelIn):
-    data = body.model_dump()
-    query = sql.SQL("INSERT INTO models ({c}) VALUES ({v}) RETURNING model_id").format(
-        c=sql.SQL(", ").join(map(sql.Identifier, data)), v=sql.SQL(", ").join(map(sql.Placeholder, data)))
     with db() as conn:
-        return fetch_model(conn, conn.execute(query, data).fetchone()["model_id"])
+        model_id = insert_row(conn, "models", body.model_dump(), "model_id")
+        date_status(conn, model_id, body.status)
+        return fetch_model(conn, model_id)
 
 
 @router.get("/models/{model_id}")
@@ -186,177 +207,201 @@ def get_model(model_id: int):
 def update_model(model_id: int, body: ModelPatch):
     data = body.model_dump(exclude_unset=True)
     with db() as conn:
-        if data:
-            write(conn, "models", "model_id", model_id, data)
+        fetch_model(conn, model_id)
+        update_row(conn, "models", "model_id", model_id, data)
+        date_status(conn, model_id, data.get("status"))
         return fetch_model(conn, model_id)
 
 
 @router.delete("/models/{model_id}", status_code=204)
 def delete_model(model_id: int):
     with db() as conn:
-        if conn.execute("DELETE FROM models WHERE model_id = %s", (model_id,)).rowcount == 0:
-            raise HTTPException(404, f"Model {model_id} not found.")
+        found(conn.execute("DELETE FROM models WHERE model_id = %s RETURNING model_id", (model_id,)).fetchone(),
+              f"Model {model_id}")
     return Response(status_code=204)
 
 
 # ---------------------------------------------------------------------------
 # A model's paints
 # ---------------------------------------------------------------------------
+def next_order(conn, model_id) -> int:
+    return conn.execute("SELECT COALESCE(max(sort_order), 0) AS n FROM model_paints WHERE model_id = %s",
+                        (model_id,)).fetchone()["n"]
+
+
 @router.post("/models/{model_id}/paints", status_code=201)
 def add_paints(model_id: int, body: PaintsIn):
     """Add one paint, or paste a whole list (one per line). Codes like XF-76 or ones you own
-    are linked to your inventory; anything else is kept as a name you tick by hand."""
+    are linked to your inventory; "XF-62 + XF-2 (3:1)" becomes a mix; anything else is kept as
+    a name you tick by hand."""
     lines = [ln for ln in body.text.splitlines() if ln.strip()]
     with db() as conn:
         fetch_model(conn, model_id)  # 404 if the model doesn't exist
-        tamiya_row = conn.execute("SELECT brand_id FROM brands WHERE name = 'Tamiya'").fetchone()
-        tamiya_id = tamiya_row["brand_id"] if tamiya_row else None
-        order = conn.execute("SELECT COALESCE(max(sort_order), 0) AS n FROM model_paints WHERE model_id = %s",
-                             (model_id,)).fetchone()["n"]
+        tamiya_id = tamiya_id_of(conn)
+        order = next_order(conn, model_id)
         for line in lines:
-            paint, purpose = parse_line(line)
+            paint, purpose = paints.parse_line(line)
             if not paint:
                 continue
             if purpose is None and len(lines) == 1:
                 purpose = (body.purpose or "").strip() or None
-            brand_id, code, name = resolve(conn, paint, tamiya_id)
-            if name is None:
-                name = default_name(conn, brand_id, code, paint)
+            if paints.is_mix(paint):
+                mix_id = colours.create_mix(conn, paint)
+                row = {"brand_id": None, "product_code": None, "paint_name": paint, "mix_id": mix_id}
+            else:
+                row = {**paints.to_product(conn, paint, tamiya_id), "mix_id": None}
             order += 1
-            conn.execute("""
-                INSERT INTO model_paints (model_id, brand_id, product_code, paint_name, purpose, sort_order)
-                VALUES (%s, %s, %s, %s, %s, %s)""", (model_id, brand_id, code, name, purpose, order))
+            insert_row(conn, "model_paints", {**row, "model_id": model_id, "purpose": purpose,
+                                              "sort_order": order}, "model_paint_id")
         return fetch_model(conn, model_id)
+
+
+def paint_owner(conn, paint_id) -> int:
+    return found(conn.execute("SELECT model_id FROM model_paints WHERE model_paint_id = %s",
+                              (paint_id,)).fetchone(), "Paint")["model_id"]
 
 
 @router.patch("/model-paints/{paint_id}")
 def update_paint(paint_id: int, body: PaintPatch):
-    data = body.model_dump(exclude_unset=True)
     with db() as conn:
-        row = conn.execute("SELECT model_id FROM model_paints WHERE model_paint_id = %s", (paint_id,)).fetchone()
-        if row is None:
-            raise HTTPException(404, "Paint not found.")
-        if data:
-            write(conn, "model_paints", "model_paint_id", paint_id, data)
-        return fetch_model(conn, row["model_id"])
+        model_id = paint_owner(conn, paint_id)
+        update_row(conn, "model_paints", "model_paint_id", paint_id, body.model_dump(exclude_unset=True))
+        return fetch_model(conn, model_id)
 
 
 @router.delete("/model-paints/{paint_id}")
 def delete_paint(paint_id: int):
     with db() as conn:
-        row = conn.execute("DELETE FROM model_paints WHERE model_paint_id = %s RETURNING model_id",
-                           (paint_id,)).fetchone()
-        if row is None:
-            raise HTTPException(404, "Paint not found.")
-        return fetch_model(conn, row["model_id"])
-
-
-@router.get("/lookup/hasegawa/{code}")
-async def lookup_hasegawa(code: str, refresh: bool = False):
-    """A Hasegawa kit by series code (JT86) or item number (09086 / HSG09086): name, scale and
-    box photo from hasegawa-model.co.jp. Cached in product_info under product code HSG<item>."""
-    parsed = hasegawa.normalise(code)
-    if parsed is None:
-        raise HTTPException(422, "Enter the series code (e.g. JT86) or item number (e.g. 09086) from the box.")
-    kind, value = parsed
-
-    with db() as conn:
-        # Add Hasegawa to your brands the first time you look one of their kits up.
-        conn.execute("INSERT INTO brands (name) VALUES ('Hasegawa') ON CONFLICT (name) DO NOTHING")
-        brand_id = conn.execute("SELECT brand_id FROM brands WHERE name = 'Hasegawa'").fetchone()["brand_id"]
-        cached = conn.execute(
-            "SELECT product_code, series FROM product_info WHERE brand_id = %s AND title IS NOT NULL "
-            "AND (product_code = %s OR series = %s)",
-            (brand_id, f"HSG{value}", value)).fetchone()
-
-    if cached and not refresh:
-        product_code = cached["product_code"]
-    else:
-        if kind == "series":
-            candidates = [value]
-        elif cached and cached["series"]:
-            candidates = [cached["series"]]
-        else:
-            candidates = hasegawa.series_for_item(value)
-            if not candidates:
-                raise HTTPException(404, f"Can't work out the page for item {value} from the number alone. "
-                                         "Enter the series code printed next to it on the box (e.g. JT86).")
-        info = None
-        for series in candidates:
-            try:
-                found = await run_in_threadpool(hasegawa.fetch, series)
-            except tamiya.NotFound:
-                continue
-            except tamiya.LookupFailed as e:
-                raise HTTPException(502, str(e))
-            # Typed an item number: the page must say it's that item, or it's the wrong kit.
-            if kind == "series" or found["item"] == value:
-                info = found
-                break
-        if info is None:
-            raise HTTPException(404, f"Hasegawa has no kit page for {value}.")
-
-        product_code = f"HSG{info['item']}" if info["item"] else f"HSG-{info['series'] or value}"
-        description = " · ".join(filter(None, [f"Item no {info['series']} ({info['item']})"
-                                               if info["series"] and info["item"] else None,
-                                               info["scale"] and f"Scale {info['scale']}",
-                                               info["category"]]))
-        with db() as conn:
-            conn.execute("""
-                INSERT INTO product_info (brand_id, product_code, title, series, description,
-                                          source_url, image, image_type)
-                VALUES (%(b)s, %(code)s, %(title)s, %(series)s, %(desc)s, %(url)s, %(image)s, %(type)s)
-                ON CONFLICT (brand_id, product_code) DO UPDATE SET
-                    title = EXCLUDED.title, series = EXCLUDED.series, description = EXCLUDED.description,
-                    source_url = EXCLUDED.source_url,
-                    image = COALESCE(EXCLUDED.image, product_info.image),
-                    image_type = COALESCE(EXCLUDED.image_type, product_info.image_type),
-                    fetched_at = now()""",
-                {"b": brand_id, "code": product_code, "title": info["title"], "series": info["series"],
-                 "desc": description or None, "url": info["source_url"], "image": info["image"],
-                 "type": info["image_type"]})
-
-    with db() as conn:
-        p = conn.execute("""
-            SELECT product_info_id, title, series, description, source_url,
-                   fetched_at AS photo_updated, (image IS NOT NULL) AS has_image
-            FROM product_info WHERE brand_id = %s AND product_code = %s""", (brand_id, product_code)).fetchone()
-    scale = re.search(r"Scale (1/\d+)", p["description"] or "")
-    return {**p, "brand_id": brand_id, "product_code": product_code, "series_code": p["series"],
-            "name": tamiya._nice_name(p["title"]), "scale": scale.group(1) if scale else None,
-            "from_cache": bool(cached) and not refresh}
+        model_id = paint_owner(conn, paint_id)
+        conn.execute("DELETE FROM model_paints WHERE model_paint_id = %s", (paint_id,))
+        return fetch_model(conn, model_id)
 
 
 @router.post("/models/{model_id}/wishlist")
 def wish_for_missing_paints(model_id: int):
-    """Put every paint this model still needs on the wishlist. Paints without a brand + code
-    can't be matched to a product, so they're reported rather than added."""
+    """Put every paint this model still needs on the wishlist (parts of mixes too). Paints
+    without a brand + code can't be matched to a product, so they're reported rather than added."""
     with db() as conn:
         model = fetch_model(conn, model_id)
         paint_category = conn.execute("SELECT category_id FROM categories WHERE name = 'Paint'").fetchone()
-        added, skipped = [], []
+        wanted = []
         for p in model["paints"]:
-            if p["have"] or p["on_wishlist"]:
+            if p["have"]:
                 continue
+            if p["mix"]:
+                wanted += [{**part, "purpose": f"{p['purpose'] or 'mix'} ({p['paint_name']})"}
+                           for part in p["mix"]["parts"] if part["owned_qty"] <= 0]
+            else:
+                wanted.append(p)
+        added, skipped, seen = [], [], set()
+        for p in wanted:
             if p["brand_id"] is None or not p["product_code"]:
                 skipped.append(p["paint_name"])
                 continue
-            info = conn.execute("SELECT title, series, description FROM product_info "
-                                "WHERE brand_id = %s AND product_code = %s",
-                                (p["brand_id"], p["product_code"])).fetchone()
-            if not (info and info["title"]):  # not fetched yet: the Shop Tamiya catalogue knows it
-                info = conn.execute("SELECT title, genre AS series, NULL AS description FROM catalog_products "
-                                    "WHERE brand_id = %s AND product_code = %s",
-                                    (p["brand_id"], p["product_code"])).fetchone()
+            if (p["brand_id"], p["product_code"]) in seen:
+                continue
+            seen.add((p["brand_id"], p["product_code"]))
+            info = conn.execute("""
+                SELECT COALESCE(p.title, c.title) AS title, COALESCE(p.series, c.genre) AS series, p.description
+                FROM (SELECT %(b)s::int AS b, %(c)s::text AS c) x
+                LEFT JOIN product_info p ON p.brand_id = x.b AND p.product_code = x.c
+                LEFT JOIN catalog_products c ON c.brand_id = x.b AND c.product_code = x.c""",
+                {"b": p["brand_id"], "c": p["product_code"]}).fetchone()
             guess = tamiya.suggest(info["title"], info["series"], info["description"], p["product_code"]) \
-                if info and info["title"] else {}
-            conn.execute("""
+                if info["title"] else {}
+            note = f"For {model['name']}: {p['purpose']}" if p.get("purpose") else f"For {model['name']}"
+            row = conn.execute("""
                 INSERT INTO wishlist (brand_id, product_code, name, category_id, paint_type, finish,
                                       size, est_price, notes)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT (brand_id, product_code) DO NOTHING""",
+                ON CONFLICT (brand_id, product_code) DO NOTHING RETURNING wish_id""",
                 (p["brand_id"], p["product_code"], p["paint_name"], paint_category["category_id"],
-                 guess.get("paint_type"), guess.get("finish"), guess.get("size"), guess.get("est_price"),
-                 f"For {model['name']}: {p['purpose']}" if p["purpose"] else f"For {model['name']}"))
-            added.append(p["paint_name"])
+                 guess.get("paint_type"), guess.get("finish"), guess.get("size"),
+                 price_for(conn, info["title"], guess) if guess else None, note)).fetchone()
+            if row:
+                added.append(p["paint_name"])
         return {"added": added, "skipped": skipped, "model": fetch_model(conn, model_id)}
+
+
+# ---------------------------------------------------------------------------
+# Paints from a Tamiya kit's page ("Tamiya Colors required")
+# ---------------------------------------------------------------------------
+def kit_paint_entry(conn, paint: dict, on_model: set) -> dict:
+    """One paint from the kit page, as the product you'd actually buy. Tamiya lists X/XF colours
+    generically ("TAMIYA COLOR XF-62 OLIVE DRAB", item 0XF62); those become the Acrylic Mini,
+    the range you use (T81762)."""
+    colour = tamiya.colour_of(paint["title"])
+    code = tamiya.paint_code(colour[0]) if colour else None   # X / XF only
+    if code and not paint["item"].isdigit():                    # a generic colour page
+        product_code = "T" + tamiya.item_number(code)
+        suggested = True
+    else:
+        product_code = tamiya.product_code(paint["item"])
+        suggested = False
+    tamiya_id = tamiya_id_of(conn)
+    owned = conn.execute("SELECT supply_id, qty_on_hand FROM supplies WHERE brand_id = %s AND product_code = %s",
+                         (tamiya_id, product_code)).fetchone()
+    return {"group": paint["group"], "item": paint["item"], "title": paint["title"],
+            "product_code": product_code,
+            "paint_name": paints.default_name(conn, tamiya_id, product_code, tamiya.your_style_name(paint["title"])),
+            "suggested": suggested, "on_model": product_code in on_model,
+            "owned_qty": owned["qty_on_hand"] if owned else 0}
+
+
+def group_label(group: str, entries: list[dict]) -> str:
+    """Tamiya repeats "Tamiya Colors for brush and airbrush painting" for each range: say which."""
+    codes = {(tamiya.colour_of(e["title"]) or ("",))[0].split("-")[0] for e in entries}
+    if codes == {"LP"}:
+        return "Lacquer paints (LP)"
+    if codes and codes <= {"X", "XF"}:
+        return "Acrylic paints (X / XF) - as Acrylic Minis"
+    if codes and codes <= {"TS", "AS", "PS"}:
+        return "Spray cans"
+    return group
+
+
+@router.get("/models/{model_id}/kit-paints")
+async def kit_paints(model_id: int, refresh: bool = False):
+    """The paints Tamiya lists for this kit, grouped as on their page, each as the product you'd
+    buy. `suggested` = the main X/XF colours (pre-ticked); the rest (lacquers, sprays,
+    weathering, tools) are there if you want them. Read once from the kit page, then cached."""
+    with db() as conn:
+        model = fetch_model(conn, model_id)
+        tamiya_id = tamiya_id_of(conn)
+        if model["brand_id"] != tamiya_id or not model["product_code"]:
+            raise HTTPException(422, "Only Tamiya kits list their paints: set the brand to Tamiya and the kit code.")
+        cached = conn.execute("SELECT kit_paints FROM product_info WHERE brand_id = %s AND product_code = %s",
+                              (tamiya_id, model["product_code"])).fetchone()
+    if refresh or cached is None or cached["kit_paints"] is None:
+        await tamiya_product(tamiya.item_number(model["product_code"]), refresh=True)
+    with db() as conn:
+        listed = conn.execute("SELECT title, kit_paints FROM product_info WHERE brand_id = %s AND product_code = %s",
+                              (tamiya_id, model["product_code"])).fetchone()
+        on_model = {p["product_code"] for p in model["paints"] if p["product_code"]}
+        groups = []
+        for paint in listed["kit_paints"] or []:
+            if not groups or groups[-1]["section"] != paint.get("section"):
+                groups.append({"section": paint.get("section"), "heading": paint["group"], "paints": []})
+            groups[-1]["paints"].append(kit_paint_entry(conn, paint, on_model))
+        for g in groups:
+            g["label"] = group_label(g["heading"], g["paints"])
+        return {"kit": listed["title"], "groups": groups}
+
+
+@router.post("/models/{model_id}/kit-paints", status_code=201)
+def add_kit_paints(model_id: int, body: KitPaintsIn):
+    """Add the paints you picked from the kit's list (ones already on the checklist are skipped)."""
+    with db() as conn:
+        model = fetch_model(conn, model_id)
+        tamiya_id = tamiya_id_of(conn)
+        have = {p["product_code"] for p in model["paints"] if p["product_code"]}
+        order = next_order(conn, model_id)
+        for p in body.paints:
+            if p.product_code in have:
+                continue
+            have.add(p.product_code)
+            order += 1
+            insert_row(conn, "model_paints", {"model_id": model_id, "brand_id": tamiya_id,
+                                              "product_code": p.product_code, "paint_name": p.paint_name,
+                                              "sort_order": order}, "model_paint_id")
+        return fetch_model(conn, model_id)

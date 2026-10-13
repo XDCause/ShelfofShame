@@ -60,7 +60,7 @@ export default function ScanButton({ onBarcode, label = 'Scan barcode', classNam
         {status === 'reading' ? 'Reading barcode...' : status === 'busy' ? 'Looking up...' : label}
       </button>
       {status !== 'failed' && (
-        <button type="button" className="link" onClick={() => setStatus('failed')}>Type a barcode</button>
+        <button type="button" className="plain" onClick={() => setStatus('failed')}>Type a barcode</button>
       )}
 
       {status === 'failed' && (
@@ -85,7 +85,7 @@ export default function ScanButton({ onBarcode, label = 'Scan barcode', classNam
             />
             <button type="button" className="primary" disabled={!typed.trim()}
               onClick={() => handle(typed.trim(), photo)}>Look up</button>
-            <button type="button" className="link" onClick={cancel}>Cancel</button>
+            <button type="button" className="plain" onClick={cancel}>Cancel</button>
           </div>
         </div>
       )}

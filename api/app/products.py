@@ -1,0 +1,310 @@
+"""Products: looking things up (Tamiya, Hasegawa), barcodes, and product photos.
+
+product_info is the cache: one row per brand + product code with the manufacturer's title,
+description and photo (or your own photo), a barcode once you've linked one, and for Tamiya
+kits the paint list from the kit's page.
+"""
+import re
+
+from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi.concurrency import run_in_threadpool
+from psycopg.types.json import Jsonb
+from pydantic import BaseModel, Field
+
+from . import hasegawa, tamiya
+from .db import brand_id as brand_named, db
+from .images import photo_response, read_photo
+from .settings import price_for
+
+router = APIRouter(prefix="/api", tags=["products"])
+
+UPSERT_INFO = """
+INSERT INTO product_info (brand_id, product_code, title, series, description, source_url,
+                          image, image_type, kit_paints)
+VALUES (%(brand_id)s, %(code)s, %(title)s, %(series)s, %(description)s, %(source_url)s,
+        %(image)s, %(image_type)s, %(kit_paints)s)
+ON CONFLICT (brand_id, product_code) DO UPDATE SET
+    title = EXCLUDED.title, series = EXCLUDED.series, description = EXCLUDED.description,
+    source_url = EXCLUDED.source_url,
+    image = COALESCE(EXCLUDED.image, product_info.image),
+    image_type = COALESCE(EXCLUDED.image_type, product_info.image_type),
+    kit_paints = COALESCE(EXCLUDED.kit_paints, product_info.kit_paints),
+    fetched_at = now()"""
+
+
+async def tamiya_product(item: str, refresh: bool = False):
+    """Make sure product_info has this Tamiya item: from the cache, or fetched once from
+    tamiya.com. Returns (brand_id, product_code, from_cache)."""
+    product_code = tamiya.product_code(item)  # your convention: T81701
+
+    with db() as conn:
+        tamiya_id = brand_named(conn, "Tamiya")
+        if tamiya_id is None:
+            raise HTTPException(409, "Add 'Tamiya' to your brands list first.")
+        cached = conn.execute("SELECT title FROM product_info WHERE brand_id = %s AND product_code = %s",
+                              (tamiya_id, product_code)).fetchone()
+
+    # A row with no title is just a photo or barcode you added yourself: still worth fetching.
+    from_cache = cached is not None and cached["title"] is not None and not refresh
+    if not from_cache:
+        # Network call outside the database transaction, in a worker thread so the API
+        # keeps answering other requests while tamiya.com responds.
+        try:
+            info = await run_in_threadpool(tamiya.fetch, item)
+        except tamiya.NotFound as e:
+            raise HTTPException(404, str(e))
+        except tamiya.LookupFailed as e:
+            raise HTTPException(502, str(e))
+        with db() as conn:
+            conn.execute(UPSERT_INFO, {**info, "brand_id": tamiya_id, "code": product_code,
+                                       "kit_paints": Jsonb(info.get("kit_paints") or [])})
+    return tamiya_id, product_code, from_cache
+
+
+def suggestion(conn, brand_id, product_code, title, series, description) -> dict:
+    """Best-guess field values for a product, with category as an id and your usual price."""
+    guess = tamiya.suggest(title, series, description, product_code)
+    category = conn.execute("SELECT category_id FROM categories WHERE name = %s",
+                            (guess.pop("category") or "Other",)).fetchone()
+    return {**guess, "category_id": category["category_id"] if category else None,
+            "est_price": price_for(conn, title, guess)}
+
+
+def describe_product(conn, brand_id, product_code):
+    """Everything the add form needs for one brand + code: photo/description, suggested field
+    values, and whether you already own it or have it on the wishlist.
+
+    Suggestions prefer your own details (inventory, then wishlist) over the manufacturer's,
+    so a re-scanned item comes back named the way you named it.
+    """
+    p = conn.execute("""
+        SELECT product_info_id, title, series, description, source_url, barcode,
+               fetched_at AS photo_updated, (image IS NOT NULL) AS has_image
+        FROM product_info WHERE brand_id = %s AND product_code = %s""",
+        (brand_id, product_code)).fetchone() or {
+        "product_info_id": None, "title": None, "series": None, "description": None,
+        "source_url": None, "barcode": None, "photo_updated": None, "has_image": False}
+
+    fields = "name, category_id, paint_type, finish, size"
+    yours = (conn.execute(f"SELECT {fields} FROM supplies WHERE brand_id = %s AND product_code = %s",
+                          (brand_id, product_code)).fetchone()
+             or conn.execute(f"SELECT {fields} FROM wishlist WHERE brand_id = %s AND product_code = %s",
+                             (brand_id, product_code)).fetchone())
+    if yours:
+        suggested = dict(yours)
+    elif p["title"]:
+        suggested = suggestion(conn, brand_id, product_code, p["title"], p["series"], p["description"])
+    else:
+        suggested = {}
+
+    owned = conn.execute("SELECT supply_id, qty_on_hand FROM supplies WHERE brand_id = %s AND product_code = %s",
+                         (brand_id, product_code)).fetchone()
+    on_wishlist = conn.execute("SELECT wish_id FROM wishlist WHERE brand_id = %s AND product_code = %s",
+                               (brand_id, product_code)).fetchone()
+    return {
+        **p,
+        "brand_id": brand_id,
+        "product_code": product_code,
+        "suggested": suggested,
+        "owned_qty": owned["qty_on_hand"] if owned else 0,
+        "supply_id": owned["supply_id"] if owned else None,  # your inventory item, if any
+        "on_wishlist_id": on_wishlist["wish_id"] if on_wishlist else None,
+    }
+
+
+@router.get("/lookup/tamiya/{code}")
+async def lookup_tamiya(code: str, refresh: bool = False):
+    """Product details for a Tamiya item number (81701 or T81701) or Mini paint colour code
+    (XF-76), for filling in the form.
+
+    Served from the product_info cache when we have it; otherwise fetched once from tamiya.com.
+    """
+    item = tamiya.item_number(code)
+    if item is None:
+        raise HTTPException(422, "Enter a Tamiya item number (81776) or paint code (XF-76).")
+    brand_id, product_code, from_cache = await tamiya_product(item, refresh)
+    with db() as conn:
+        result = {**describe_product(conn, brand_id, product_code), "from_cache": from_cache}
+    # Typed a colour code? Double-check Tamiya's page is really that colour.
+    paint = tamiya.paint_code(code)
+    if paint and not tamiya.title_mentions(result["title"], paint):
+        result["warning"] = (f"Tamiya's page for item {item} doesn't mention {paint}. "
+                             "Check this is the right product.")
+    return result
+
+
+@router.get("/lookup/hasegawa/{code}")
+async def lookup_hasegawa(code: str, refresh: bool = False):
+    """A Hasegawa kit by series code (JT86) or item number (09086 / HSG09086): name, scale and
+    box photo from hasegawa-model.co.jp. Cached in product_info under product code HSG<item>."""
+    parsed = hasegawa.normalise(code)
+    if parsed is None:
+        raise HTTPException(422, "Enter the series code (e.g. JT86) or item number (e.g. 09086) from the box.")
+    kind, value = parsed
+
+    with db() as conn:
+        # Add Hasegawa to your brands the first time you look one of their kits up.
+        conn.execute("INSERT INTO brands (name) VALUES ('Hasegawa') ON CONFLICT (name) DO NOTHING")
+        hasegawa_id = brand_named(conn, "Hasegawa")
+        cached = conn.execute(
+            "SELECT product_code, series FROM product_info WHERE brand_id = %s AND title IS NOT NULL "
+            "AND (product_code = %s OR series = %s)", (hasegawa_id, f"HSG{value}", value)).fetchone()
+
+    if cached and not refresh:
+        product_code = cached["product_code"]
+    else:
+        if kind == "series":
+            candidates = [value]
+        elif cached and cached["series"]:
+            candidates = [cached["series"]]
+        else:
+            candidates = hasegawa.series_for_item(value)
+            if not candidates:
+                raise HTTPException(404, f"Can't work out the page for item {value} from the number alone. "
+                                         "Enter the series code printed next to it on the box (e.g. JT86).")
+        info = None
+        for series in candidates:
+            try:
+                page = await run_in_threadpool(hasegawa.fetch, series)
+            except tamiya.NotFound:
+                continue
+            except tamiya.LookupFailed as e:
+                raise HTTPException(502, str(e))
+            # Typed an item number: the page must say it's that item, or it's the wrong kit.
+            if kind == "series" or page["item"] == value:
+                info = page
+                break
+        if info is None:
+            raise HTTPException(404, f"Hasegawa has no kit page for {value}.")
+
+        product_code = f"HSG{info['item']}" if info["item"] else f"HSG-{info['series'] or value}"
+        description = " · ".join(filter(None, [
+            f"Item no {info['series']} ({info['item']})" if info["series"] and info["item"] else None,
+            info["scale"] and f"Scale {info['scale']}", info["category"]]))
+        with db() as conn:
+            conn.execute(UPSERT_INFO, {**info, "brand_id": hasegawa_id, "code": product_code,
+                                       "description": description or None, "kit_paints": None})
+
+    with db() as conn:
+        p = conn.execute("""
+            SELECT product_info_id, title, series, description, source_url,
+                   fetched_at AS photo_updated, (image IS NOT NULL) AS has_image
+            FROM product_info WHERE brand_id = %s AND product_code = %s""", (hasegawa_id, product_code)).fetchone()
+    scale = re.search(r"Scale (1/\d+)", p["description"] or "")
+    return {**p, "brand_id": hasegawa_id, "product_code": product_code, "series_code": p["series"],
+            "name": tamiya.nice_name(p["title"]), "scale": scale.group(1) if scale else None,
+            "from_cache": bool(cached) and not refresh}
+
+
+# ---------------------------------------------------------------------------
+# Barcodes
+# ---------------------------------------------------------------------------
+@router.get("/scan/{raw}")
+async def scan(raw: str):
+    """Identify a product from its barcode number.
+
+    match = "known"   - a barcode you've saved before (any brand): reliable
+            "catalog" - found in the imported barcode catalogue (app/catalog_import.py), then
+                        details fetched from tamiya.com: reliable
+            "tamiya"  - a Tamiya barcode whose digits matched a real item number: a GUESS that
+                        works for some products (e.g. cement) - check the photo/name
+            "unknown" - not recognised. For Tamiya barcodes brand_id is set to Tamiya, so the
+                        form can ask for the item number printed on the label.
+    The barcode is only stored when you save the item (PUT /api/product-barcode).
+    """
+    barcode = tamiya.normalise_barcode(raw)
+    if barcode is None:
+        raise HTTPException(422, "That isn't a valid barcode number (the check digit doesn't match).")
+
+    with db() as conn:
+        known = conn.execute("SELECT brand_id, product_code FROM product_info WHERE barcode = %s",
+                             (barcode,)).fetchone()
+        if known:
+            return {**describe_product(conn, known["brand_id"], known["product_code"]),
+                    "barcode": barcode, "match": "known"}
+        listed = conn.execute("SELECT product_code FROM barcode_catalog WHERE barcode = %s",
+                              (barcode,)).fetchone()
+        tamiya_id = brand_named(conn, "Tamiya")
+
+    async def from_tamiya(item, match):
+        found_id, product_code, _ = await tamiya_product(item)
+        with db() as conn:
+            return {**describe_product(conn, found_id, product_code), "barcode": barcode, "match": match}
+
+    if listed and tamiya_id:
+        return await from_tamiya(tamiya.item_number(listed["product_code"]), "catalog")
+
+    unknown = {"barcode": barcode, "match": "unknown", "suggested": {}, "brand_id": None}
+    if not tamiya.is_tamiya_barcode(barcode) or tamiya_id is None:
+        return unknown
+    unknown["brand_id"] = tamiya_id
+    try:
+        return await from_tamiya(tamiya.guess_item_from_barcode(barcode), "tamiya")
+    except HTTPException as e:
+        if e.status_code == 404:  # those digits aren't an item number for this product
+            return unknown
+        raise
+
+
+class BarcodeIn(BaseModel):
+    brand_id: int
+    product_code: str = Field(min_length=1)
+    barcode: str
+
+
+@router.put("/product-barcode")
+def set_barcode(body: BarcodeIn):
+    """Remember which brand + code a barcode belongs to, so scanning it works next time."""
+    barcode = tamiya.normalise_barcode(body.barcode)
+    if barcode is None:
+        raise HTTPException(422, "That isn't a valid barcode number.")
+    code = body.product_code.strip()
+    with db() as conn:
+        conn.execute("""
+            INSERT INTO product_info (brand_id, product_code, barcode) VALUES (%s, %s, %s)
+            ON CONFLICT (brand_id, product_code) DO UPDATE SET barcode = EXCLUDED.barcode""",
+            (body.brand_id, code, barcode))
+        return describe_product(conn, body.brand_id, code)
+
+
+# ---------------------------------------------------------------------------
+# Photos
+# ---------------------------------------------------------------------------
+@router.put("/product-photo")
+async def upload_photo(request: Request, brand_id: int, product_code: str):
+    """Your own photo for any brand + product code (phone camera, saved image, ...).
+
+    Send the image itself as the request body with its Content-Type, e.g. image/jpeg.
+    Replaces any existing photo for that item, including one fetched from tamiya.com.
+    """
+    image, image_type = await read_photo(request)
+    code = product_code.strip()
+    if not code:
+        raise HTTPException(422, "The item needs a product code to attach a photo to.")
+
+    def save():
+        with db() as conn:
+            return conn.execute("""
+                INSERT INTO product_info (brand_id, product_code, image, image_type)
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT (brand_id, product_code) DO UPDATE SET
+                    image = EXCLUDED.image, image_type = EXCLUDED.image_type, fetched_at = now()
+                RETURNING product_info_id""", (brand_id, code, image, image_type)).fetchone()
+    # Database work is blocking, so run it in a worker thread from this async endpoint.
+    return await run_in_threadpool(save)
+
+
+@router.delete("/product-photo", status_code=204)
+def delete_photo(brand_id: int, product_code: str):
+    with db() as conn:
+        conn.execute("UPDATE product_info SET image = NULL, image_type = NULL "
+                     "WHERE brand_id = %s AND product_code = %s", (brand_id, product_code.strip()))
+    return Response(status_code=204)
+
+
+@router.get("/product-images/{product_info_id}")
+def product_image(product_info_id: int):
+    with db() as conn:
+        row = conn.execute("SELECT image, image_type FROM product_info WHERE product_info_id = %s",
+                           (product_info_id,)).fetchone()
+    return photo_response(row and row["image"], row and row["image_type"])

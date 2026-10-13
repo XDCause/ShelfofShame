@@ -4,6 +4,7 @@ The tests run against a separate, freshly built database (hobby_inventory_test) 
 touch your real data. tamiya.com is replaced by a fake, so tests are fast and offline.
 """
 import os
+from pathlib import Path
 
 import pytest
 
@@ -23,7 +24,13 @@ def clean_database():
     """Every test starts with the seeded lookup lists and nothing else."""
     with db() as conn:
         conn.execute("TRUNCATE stock_movements, wishlist, barcode_catalog, product_info, supplies, "
-                     "model_paints, models, catalog_products RESTART IDENTITY CASCADE")
+                     "model_paints, models, catalog_products, model_sessions, model_log, colour_groups, "
+                     "colour_group_members, mixes, mix_parts, price_guide RESTART IDENTITY CASCADE")
+        # the seeded settings (db/init/15_settings.sql)
+        conn.execute("UPDATE settings SET value = 'Hobbyrama' WHERE key = 'default_shop'")
+        conn.execute("""INSERT INTO price_guide (label, title_contains, paint_type, size, price, sort_order)
+                        VALUES ('Panel Line Accent', 'PANEL LINE ACCENT', NULL, NULL, 10.95, 1),
+                               ('Acrylic paint, 10ml', NULL, 'Acrylic', '10ml', 3.95, 2)""")
         conn.execute("DELETE FROM brands WHERE name NOT IN ('Tamiya', 'Milliput', 'Microscale', 'Other')")
         conn.execute("DELETE FROM categories WHERE name LIKE 'Test %'")
         conn.execute("DELETE FROM storage_locations WHERE name LIKE 'Test %'")
@@ -72,6 +79,37 @@ FAKE_PRODUCTS = {
               "description": None},
 }
 
+FIXTURES = Path(__file__).parent / "fixtures"
+# The 1/48 M4A3E8 Sherman kit page, with its "Tamiya Colors required" list (trimmed copy).
+SHERMAN = tamiya.parse((FIXTURES / "tamiya_kit_32595.html").read_text(encoding="utf-8"))
+SHERMAN.pop("image_url")
+FAKE_PRODUCTS["32595"] = SHERMAN
+
+
+@pytest.fixture
+def tamiya_catalogue(ids):
+    """A few real Tamiya catalogue rows (titles as Tamiya writes them)."""
+    rows = [
+        ("81762", "ACRYLIC PAINT MINI XF-62 OLIVE DRAB", "Paints"),
+        ("80362", "XF-62 OLIVE DRAB", "Paints"),                   # enamel: same code
+        ("81362", "ACRYLIC PAINT XF-62 OLIVE DRAB", "Paints"),     # big jar: same code
+        ("82128", "LP-28 OLIVE DRAB", "Paints"),                   # lacquer: same name
+        ("85005", "TS-5 OLIVE DRAB", "Paints"),                    # spray: same name
+        ("81702", "ACRYLIC PAINT MINI XF-2 FLAT WHITE", "Paints"),
+        ("81701", "ACRYLIC PAINT MINI XF-1 FLAT BLACK", "Paints"),
+        ("82103", "LP-3 FLAT BLACK", "Paints"),
+        ("81507", "ACRYLIC PAINT MINI X-7 RED", "Paints"),
+        ("81520", "ACRYLIC PAINT MINI X-20A THINNER (10ml)", "Paints"),
+        ("87131", "PANEL LINE ACCENT COLOR (BLACK)", "Finishing Materials"),
+        ("X62", "TAMIYA COLOR XF-62 OLIVE DRAB", "Paints"),        # a generic page: ignored
+    ]
+    with db() as conn:
+        for item, title, genre in rows:
+            conn.execute("INSERT INTO catalog_products (brand_id, product_code, item, title, genre) "
+                         "VALUES (%s, %s, %s, %s, %s)",
+                         (ids["tamiya"], tamiya.product_code(item), item, title, genre))
+    return rows
+
 
 @pytest.fixture
 def fake_tamiya(monkeypatch):
@@ -82,7 +120,7 @@ def fake_tamiya(monkeypatch):
         calls.append(item)
         if item not in FAKE_PRODUCTS:
             raise tamiya.NotFound(f"Tamiya has no product page for item {item}.")
-        return {**FAKE_PRODUCTS[item],
+        return {"kit_paints": [], **FAKE_PRODUCTS[item],
                 "source_url": f"https://www.tamiya.com/english/products/{item}/index.html",
                 "image": b"\xff\xd8fake-jpeg", "image_type": "image/jpeg"}
 

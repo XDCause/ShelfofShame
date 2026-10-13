@@ -315,6 +315,72 @@ DBeaver, psql, and the one-off import script.
      (shared `.fold` style). After removing the test: $146.85 all time ($142.90 starting stock).
    - Inventory summary "$142.90" is CURRENT stock value (qty x price), not spend.
    - Tests: 105 API, 29 browser steps.
+3p. **Kit stash, time, build log, colours, settings, Apple-style refresh, clean-up** - DONE
+   (2026-10-13). User asked for all of it in one go.
+   - **DB** (each applied live after a backup): `13_kit_stash.sql` (statuses Wanted / In stash /
+     In progress / On hold / Finished / Gone - 'Not started' became 'In stash'; price_paid,
+     purchase_date, purchased_from, started_on, finished_on; `model_sessions` (ended_at NULL =
+     running, partial UNIQUE = one running per model); `model_log` (date, text, photo BYTEA);
+     product_info.kit_paints JSONB), `14_colours.sql` (colour_groups + members, mixes + mix_parts,
+     model_paints.mix_id ON DELETE SET NULL), `15_settings.sql` (settings key/value with
+     default_shop = Hobbyrama; price_guide rules seeded with the user's 3.95 / 10.95).
+   - **Kit stash**: "shelf of shame" = In stash + In progress + On hold (GET /api/models/summary:
+     kits, value of price_paid, unpriced). Status In progress / Finished fills started_on /
+     finished_on if empty. Spending also reports kits_spent (non-Wanted price_paid).
+   - **Time**: one timer at a time (starting one stops others); starting it moves Wanted /
+     In stash / On hold to In progress. Manual time = minutes on a day (12:00 local). Banner at
+     the top of the app while a timer runs (GET /api/timer).
+   - **Build log**: dated notes + optional photo (browser shrinks to 1600 px), newest first.
+   - **Kit paint lists**: tamiya.parse_kit_paints reads div.item_colors_used_ (h3 groups,
+     .ttl_ names, "ITEM No.xxxxx"). Each paint gets a `section` number because Tamiya gives the
+     LP list and the X/XF list the SAME heading. Generic colour items (000X7, 0XF62 - not all
+     digits) map to the Acrylic Mini (T815nn/T817nn) and are pre-ticked; LP / sprays /
+     weathering / tools are offered unticked. Cached in product_info.kit_paints; `?refresh=true`
+     re-reads once. Picker labels: "Lacquer paints (LP)", "Acrylic paints (X / XF) - as Acrylic
+     Minis", "Spray cans".
+   - **The user's Sherman** (model 3): Tamiya T32595 1/48 M4A3E8 "Easy Eight", In stash, no
+     price yet, 12 X/XF paints from the kit list (owns 2: X-10 Gun Metal, XF-1).
+   - **Colours** (colours.py): `tamiya.colour_of(name)` -> (code, colour name) after stripping
+     range words; GREY->GRAY; thinners aren't colours. Matches: same code (X-7 Mini = X-7 enamel =
+     X-7 jar; generic catalogue pages excluded), same name (LP-28 / TS-5 / XF-62 Olive Drab:
+     "likely close"), your colour groups. **No cross-brand chart is built in**: the only open
+     dataset found (github sergiogordeev-commits/tamiya-paints) has NO licence, so it can't go in
+     this public repo; Tamiya's pages don't state LP<->XF equivalents either. Mixes: recipe text
+     "XF-62 + XF-2 (3:1)" / "XF-62 3 + XF-2 1" (paints.parse_mix); a pasted checklist line with
+     "+" becomes a mix; have = every part owned; missing parts go to the wishlist.
+     Checklist lines you don't have show `alternative` = a supply you own with the same code /
+     same name / in your group.
+   - **Used on**: supplies carry used_on (models whose checklist has it, directly or in a mix);
+     item panel chips open the model; the "used up" box mentions them.
+   - **Settings panel** (gear): Spending, Price guide (first matching rule wins; conditions:
+     name contains / paint type / size, "10 ml" == "10ml"), Default shop (buy with a blank
+     shop = default; new items and kits pre-fill it), Backups (API runs pg_dump 17 - installed
+     from apt.postgresql.org in api/Dockerfile - into ./backups mounted at /backups; same file
+     names/log/keep-14 as backup.ps1; download link), Export to CSV (UTF-8 BOM for Excel),
+     Tamiya catalogue refresh (BackgroundTasks + module-level REFRESH state, polled every 2 s),
+     Brands / Categories / Storage locations. Every section is a closed `Fold`.
+   - **Apple HIG refresh** (styles.css rewritten): system font, systemBlue tint, grouped
+     background, inset grouped lists/panels, filled / tinted (`secondary`) / `plain` /
+     `destructive` buttons (old `link` / `danger-link` classes are gone), segmented control,
+     capsule chips, translucent nav bar with Scan + Settings; phones (<=700px): bottom tab bar
+     (Inventory, Wishlist, Models, Colours), sheets slide up with a grabber, 44px targets; dark
+     mode via system colours. The floating Scan button was replaced by Scan in the nav bar; the
+     Inventory toolbar's own scan was removed (typing a barcode is in the Add panel, which now
+     opens an item you already own). Drawer keeps a stack: Esc closes only the top panel.
+   - **Clean-up**: API split into modules - supplies, wishlist, products (lookups, scan,
+     barcodes, photos), catalog, models, build, colours, paints (typed paint -> product, shared),
+     spending (+ CSV), settings, lookups, images (upload rules); main.py only wires them.
+     db.py has insert_row / update_row / found / brand_id helpers (replacing 4 copies of the
+     SQL-building code). tamiya._nice_name -> nice_name (public), Roman numerals stay capitals.
+     Front end: api.js grouped by area; ModelPanel split into ModelForm, PaintChecklist,
+     KitPaintsPicker, TimeTracker, BuildLog; new Fold, Elapsed, icons, SettingsPanel,
+     PriceGuide, ColoursView, ColourMatches. pyflakes clean; no unused imports or CSS.
+   - **Tests**: 159 API (new test_settings, test_build, test_colours; fixture
+     tamiya_kit_32595.html is a trimmed copy - title + paint list only), 37 browser steps
+     (counts of supplies / models are read from the API at the start).
+   - **Lesson**: `docker compose up -d api` does NOT rebuild - code changes need
+     `docker compose up -d --build api` (the Sherman's paint list was first read by a stale
+     image and had to be refreshed).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"
@@ -344,20 +410,23 @@ DBeaver connection confirmed working (2026-10-11).
   (it added Milliput, Microscale); upserts on (brand, product_code); keeps SUP-#### numbers as
   supply_id and resets the SERIAL sequence; one transaction; applies `FINISH_FIXES`
   (XF-64/76/71 -> Flat / Matt, X-10 Gun Metal -> Metallic). Other sheets (Summary, FMP) ignored.
-- `api/`: FastAPI. `app/main.py` (supplies, lookups), `app/db.py` (connection, enum lists,
-  error mapping), `app/wishlist.py` (APIRouter: wishlist, buy/buy-ticked, Tamiya lookup,
-  `/api/product-images/{id}`), `app/tamiya.py` (scraper: httpx + BeautifulSoup, pages are
-  Shift_JIS -> decode cp932; `suggest()` guesses name/category/paint type/finish/size).
-  Connects to `db:5432` inside the Docker network.
-  Pydantic models validate input; enum lists (PAINT_TYPES/FINISHES/CONDITIONS) must match the
-  SQL CHECK constraints. DB errors are mapped to 409/422 with friendly messages
-  (CONSTRAINT_MESSAGES). One connection per request, no pool (fine at this scale).
+- `api/`: FastAPI, one module per part of the app (see main.py's docstring and 3p): supplies,
+  wishlist, products, catalog, models, build, colours, paints, spending, settings, lookups,
+  images; shared db.py (connection, enum lists that must match the SQL CHECKs, friendly
+  CONSTRAINT_MESSAGES, insert_row / update_row / found helpers); tamiya.py / hasegawa.py
+  (scrapers: httpx + BeautifulSoup; Tamiya pages are Shift_JIS -> decode cp932). Connects to
+  `db:5432` inside the Docker network. One connection per request, no pool (fine at this scale).
   Docs at `/api/docs`. Routes all start with `/api` so nginx can forward them unchanged.
+  The api container mounts ./backups at /backups (Settings > Backups) and has pg_dump 17.
 - `web/`: React 19 + Vite 6, multi-stage Dockerfile (node build -> nginx). `nginx.conf` proxies
   `/api/` to `api:8000` via Docker DNS (resolver 127.0.0.11), so no CORS is needed.
-  `src/api.js` = all fetch calls; components: App (tabs + which panel is open), InventoryView,
-  Drawer, ItemPanel, AddPanel, SupplyFields, ListsManager, ScanButton, PhotoUpload,
-  StockHistory, WishlistView (+ WishCard), WishForm. Last shop name is remembered in localStorage.
+  `src/api.js` = all fetch calls (grouped by area) + small formatters (money, duration,
+  shortDate, today). App = nav bar, tabs (tab bar on phones), panels, toast, timer banner.
+  Pages: InventoryView, WishlistView, ModelsView, ColoursView. Panels (Drawer): ItemPanel,
+  AddPanel, WishForm, ShopPanel, ModelPanel (ModelForm, PaintChecklist, KitPaintsPicker,
+  TimeTracker, BuildLog), SettingsPanel (Spending, PriceGuide, ListsManager). Shared: Fold,
+  ColourMatches, ScanButton, PhotoUpload, SimilarItems, StockHistory, OwnedBadge, Elapsed, icons.
+  Last shop typed is remembered in localStorage; otherwise the default shop setting is used.
   `package-lock.json` was generated in a node:22-alpine container (no Node on the host).
 - New-supply form defaults to the user's conventions: qty 1, reorder 0, Sealed, today, location Other.
 - `.venv` (git-ignored) with `requirements.txt`: openpyxl, psycopg[binary] (import script only)

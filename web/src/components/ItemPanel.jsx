@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { api, imageUrl, money } from '../api.js'
+import ColourMatches from './ColourMatches.jsx'
 import Drawer from './Drawer.jsx'
+import Fold from './Fold.jsx'
 import PhotoUpload from './PhotoUpload.jsx'
 import ScanButton from './ScanButton.jsx'
 import StockHistory from './StockHistory.jsx'
@@ -13,7 +15,7 @@ const longDate = (iso) =>
 // location, last purchased, notes) save as you make them; what the item IS sits behind
 // "Edit details".
 // reloadKey changes when something outside the panel (an Undo) changed this item.
-export default function ItemPanel({ supplyId, lookups, reloadKey, onClose, onChanged, onAdjusted, onRemoved }) {
+export default function ItemPanel({ supplyId, lookups, reloadKey, onClose, onChanged, onAdjusted, onRemoved, onOpenModel, onOpenItem }) {
   const [item, setItem] = useState(null)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState('') // short "Saved" confirmation
@@ -140,20 +142,20 @@ export default function ItemPanel({ supplyId, lookups, reloadKey, onClose, onCha
   const footer = editing ? (
     <>
       <button key="save" type="submit" form="details-form" className="primary" disabled={busy}>Save details</button>
-      <button key="cancel" type="button" className="link" onClick={() => setEditing(false)}>Cancel</button>
+      <button key="cancel" type="button" className="plain" onClick={() => setEditing(false)}>Cancel</button>
     </>
   ) : confirmDelete ? (
     <span className="confirm">
       Remove {item.name} from your inventory{item.on_wishlist ? ' and your wishlist' : ''}?
       <button type="button" className="danger" onClick={remove} disabled={busy}>Yes, remove</button>
-      <button type="button" className="link" onClick={() => setConfirmDelete(false)}>Cancel</button>
+      <button type="button" className="plain" onClick={() => setConfirmDelete(false)}>Cancel</button>
     </span>
   ) : (
     <>
       <button key="edit" type="button" className="secondary"
         onClick={() => { setDetails(toForm(item)); setEditing(true) }}>Edit details</button>
       <span className="spacer" />
-      <button type="button" className="danger-link" onClick={() => setConfirmDelete(true)}>Remove</button>
+      <button type="button" className="plain destructive" onClick={() => setConfirmDelete(true)}>Remove</button>
     </>
   )
 
@@ -211,9 +213,23 @@ export default function ItemPanel({ supplyId, lookups, reloadKey, onClose, onCha
                 <strong>{item.qty_on_hand === 0 ? 'All used up.' : `Your last one is ${item.condition.toLowerCase()}.`}</strong>{' '}
                 Not replacing it? Remove it from your inventory
                 {item.on_wishlist ? ' (and your wishlist)' : ''}. Its stock history is kept.
+                {item.used_on.length > 0 && ` Still on the paint list for ${item.used_on.map((m) => m.name).join(', ')}.`}
               </p>
               <button type="button" className="danger" onClick={() => setConfirmDelete(true)}
                 disabled={confirmDelete}>Remove from inventory</button>
+            </section>
+          )}
+
+          {item.used_on.length > 0 && (
+            <section className="panel-section">
+              <h4 className="section-title">Used on</h4>
+              <div className="chips">
+                {item.used_on.map((m) => (
+                  <button key={m.model_id} type="button" className="chip-filter" onClick={() => onOpenModel(m.model_id)}>
+                    {m.name} <span className="chip-count">{m.status}</span>
+                  </button>
+                ))}
+              </div>
             </section>
           )}
 
@@ -269,7 +285,7 @@ export default function ItemPanel({ supplyId, lookups, reloadKey, onClose, onCha
 
           <section className="panel-section">
             <h4 className="section-title">Photo &amp; barcode</h4>
-            <div className="photo-actions">
+            <div className="button-row">
               {item.brand === 'Tamiya' && item.product_code && (
                 <button type="button" className="secondary" onClick={getTamiyaPhoto} disabled={busy}>
                   {item.has_image ? 'Refresh from tamiya.com' : 'Get photo from tamiya.com'}
@@ -292,6 +308,15 @@ export default function ItemPanel({ supplyId, lookups, reloadKey, onClose, onCha
               )}
             </div>
           </section>
+
+          {item.product_code && item.brand_id && (
+            <section className="panel-section">
+              <Fold title="Colour matches" detail="same colour, other paints">
+                <ColourMatches brandId={item.brand_id} productCode={item.product_code} name={item.name}
+                  onOpenItem={onOpenItem} onChanged={onChanged} />
+              </Fold>
+            </section>
+          )}
 
           <section className="panel-section">
             <StockHistory supplyId={item.supply_id} version={`${item.qty_on_hand}-${item.updated_at}`} />

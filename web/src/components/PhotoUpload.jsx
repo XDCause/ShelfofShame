@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { deletePhoto, uploadPhoto } from '../api.js'
+import { api } from '../api.js'
 
 // Phone photos are often 3-5 MB. Shrink to at most 1000 px in the browser and save as JPEG
 // (~100-200 KB), so the database and its backups stay small. The white fill stops transparent
@@ -40,7 +40,7 @@ export default function PhotoUpload({ brandId, productCode, hasPhoto, onChanged 
     setBusy(true)
     setError('')
     try {
-      await uploadPhoto(brandId, productCode, await shrink(file))
+      await api.uploadPhoto(brandId, productCode, await shrink(file))
       onChanged('Photo saved.')
     } catch (err) {
       setError(err.message)
@@ -53,7 +53,7 @@ export default function PhotoUpload({ brandId, productCode, hasPhoto, onChanged 
     setBusy(true)
     setError('')
     try {
-      await deletePhoto(brandId, productCode)
+      await api.deletePhoto(brandId, productCode)
       onChanged('Photo removed.')
     } catch (err) {
       setError(err.message)
@@ -69,7 +69,7 @@ export default function PhotoUpload({ brandId, productCode, hasPhoto, onChanged 
         {busy ? 'Saving...' : hasPhoto ? 'Replace photo' : 'Upload photo'}
       </button>
       {hasPhoto && (
-        <button type="button" className="danger-link" onClick={remove} disabled={busy}>Remove photo</button>
+        <button type="button" className="plain destructive" onClick={remove} disabled={busy}>Remove photo</button>
       )}
       {error && <p className="alert error small">{error}</p>}
     </div>

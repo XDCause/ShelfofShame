@@ -35,6 +35,10 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      BACKUP_DIR: /backups
+    volumes:
+      # The same folder backup.ps1 writes to, so Settings can list, make and download backups.
+      - ./backups:/backups
     depends_on:
       db:
         condition: service_healthy  # don't start until Postgres accepts connections
