@@ -9,9 +9,10 @@
 # Don't use the app while it runs (~1 minute) - changes made meanwhile are undone by the restore.
 # Screenshots are saved to e2e\out\ (git-ignored).
 
-Set-Location -Path $PSScriptRoot
+. "$PSScriptRoot\scripts\common.ps1"
+Set-Location -Path $Root
 $image = 'mcr.microsoft.com/playwright/python:v1.47.0-jammy'
-$db = 'hobby-inventory-db'
+$db = $DbContainer
 
 powershell -NoProfile -ExecutionPolicy Bypass -File .\backup.ps1
 if ($LASTEXITCODE -ne 0) { Write-Host 'Backup failed - not running the walk-through.' -ForegroundColor Red; exit 1 }
@@ -21,14 +22,14 @@ Write-Host "Restore point: $($restorePoint.Name)" -ForegroundColor Cyan
 New-Item -ItemType Directory -Force e2e\out | Out-Null
 Remove-Item e2e\out\*.png -ErrorAction SilentlyContinue
 try {
-    docker run --rm --network hobby-inventory_default --ipc=host `
+    docker run --rm --network $Network --ipc=host `
         -v "${PSScriptRoot}\e2e:/e2e" -v "${PSScriptRoot}\e2e\out:/out" $image `
         sh -c 'pip install -q --disable-pip-version-check playwright==1.47.0 2>/dev/null; python /e2e/walkthrough.py'
     $result = $LASTEXITCODE
 } finally {
     Write-Host 'Restoring your data...' -ForegroundColor Cyan
     docker cp $restorePoint.FullName "${db}:/tmp/restore.dump" | Out-Null
-    docker exec -e 'PGOPTIONS=-c client_min_messages=warning' $db pg_restore -U hobby -d hobby_inventory --clean --if-exists /tmp/restore.dump
+    docker exec -e 'PGOPTIONS=-c client_min_messages=warning' $db pg_restore -U $DbUser -d $DbName --clean --if-exists /tmp/restore.dump
     if ($LASTEXITCODE -eq 0) { Write-Host 'Data restored.' -ForegroundColor Green }
     else { Write-Host "RESTORE FAILED - restore $($restorePoint.Name) by hand (see README)." -ForegroundColor Red }
     docker exec $db rm -f /tmp/restore.dump | Out-Null

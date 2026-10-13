@@ -152,3 +152,10 @@ def test_a_failed_refresh_is_reported(client, monkeypatch):
     client.post("/api/catalog/refresh")
     refresh = client.get("/api/catalog/info").json()["refresh"]
     assert refresh["running"] is False and "tamiya.com is down" in refresh["error"]
+
+
+def test_about_says_which_copy_this_is(client, monkeypatch):
+    monkeypatch.delenv("APP_ENV", raising=False)        # not set = prod
+    assert client.get("/api/about").json() == {"env": "prod"}
+    monkeypatch.setenv("APP_ENV", "dev")
+    assert client.get("/api/about").json() == {"env": "dev"}

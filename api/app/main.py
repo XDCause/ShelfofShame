@@ -9,6 +9,8 @@ Each part of the app is its own module with its own routes:
     colours    colour matches and mixes                    spending   spend + CSV exports
     settings   default shop, price guide, backups          lookups    brands / categories / locations
 """
+import os
+
 from fastapi import FastAPI
 
 from . import (build, catalog, colours, lookups, models, products, settings, spending, supplies,
@@ -26,3 +28,9 @@ def health():
     with db() as conn:
         conn.execute("SELECT 1")
     return {"status": "ok"}
+
+
+@app.get("/api/about")
+def about():
+    """Which copy of the app this is: "prod" (your real data) or "dev" (a test copy)."""
+    return {"env": os.environ.get("APP_ENV", "prod")}

@@ -103,6 +103,11 @@ a:hover { text-decoration: underline; }
 .navbar-row { display: flex; align-items: center; gap: 16px; min-height: 56px; padding-top: env(safe-area-inset-top, 0px); }
 .navbar h1 { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 auto 0 0; }
 .navbar-actions { display: flex; align-items: center; gap: 4px; }
+/* The dev copy says so, so it's never mistaken for your real data. */
+.env-badge {
+  margin-left: 8px; padding: 2px 8px; border-radius: 6px; vertical-align: middle;
+  background: var(--low); color: #fff; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+}
 .navbar .icon-btn { color: var(--tint); }
 
 /* ---------- Segmented control (also the page tabs on wide screens) ---------- */

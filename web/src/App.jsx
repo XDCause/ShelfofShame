@@ -36,6 +36,7 @@ export default function App() {
   const [undoKey, setUndoKey] = useState(0) // bump when an undo changes an item behind an open panel
   const [timer, setTimer] = useState(null) // {model_id, name, started_at} while a timer runs
   const [toast, setToast] = useState(null) // {text, actions: [{label, run}]}
+  const [appEnv, setAppEnv] = useState('prod') // "dev" = the test copy: shows a DEV badge
   const toastTimer = useRef(null)
 
   const loadLookups = useCallback(() => {
@@ -44,6 +45,10 @@ export default function App() {
   useEffect(() => {
     loadLookups()
     api.settings().then(setSettings).catch(() => {})
+    api.about().then(({ env }) => {
+      setAppEnv(env)
+      if (env !== 'prod') document.title = `[${env.toUpperCase()}] ${document.title}`
+    }).catch(() => {})
   }, [loadLookups])
   useEffect(() => { api.runningTimer().then(setTimer).catch(() => {}) }, [refreshKey])
 
@@ -112,7 +117,7 @@ export default function App() {
     <div className="app">
       <header className="navbar">
         <div className="navbar-row">
-          <h1>Shelf of Shame</h1>
+          <h1>Shelf of Shame{appEnv !== 'prod' && <span className="env-badge" title="A test copy - not your real data">{appEnv}</span>}</h1>
           <nav className="tabs segmented" role="tablist" aria-label="Pages">
             {TABS.map((t) => (
               <button key={t.id} role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)}>{t.label}</button>

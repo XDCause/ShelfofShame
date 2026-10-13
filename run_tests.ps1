@@ -11,8 +11,9 @@
 #   3. tamiya.com is replaced by a fake inside the tests, so they're fast and offline.
 param([string]$k = '')
 
-Set-Location -Path $PSScriptRoot
-$db = 'hobby-inventory-db'
+. "$PSScriptRoot\scripts\common.ps1"
+Set-Location -Path $Root
+$db = $DbContainer
 $testDb = 'hobby_inventory_test'
 
 if ((docker inspect --format '{{.State.Health.Status}}' $db 2>$null) -ne 'healthy') {
@@ -34,7 +35,7 @@ foreach ($file in Get-ChildItem db\init\*.sql | Sort-Object Name) {
 Write-Host 'Running tests...' -ForegroundColor Cyan
 $pytestArgs = @('-q')
 if ($k) { $pytestArgs += @('-k', $k) }
-docker compose run --rm --no-deps --name hobby-inventory-tests `
+docker compose run --rm --no-deps --name "$Prefix-tests" `
     -e "POSTGRES_DB=$testDb" -v "${PSScriptRoot}\api:/app" `
     api python -m pytest @pytestArgs
 $result = $LASTEXITCODE

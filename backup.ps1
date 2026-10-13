@@ -7,6 +7,7 @@
 # Restore (replaces the current data!):
 #   docker cp .\backups\<file>.dump hobby-inventory-db:/tmp/restore.dump
 #   docker exec hobby-inventory-db pg_restore -U hobby -d hobby_inventory --clean --if-exists /tmp/restore.dump
+# (in the dev copy the container is hobby-dev-db; names come from .env via scripts\common.ps1)
 #
 # Format: pg_dump "custom" format (-Fc) - compressed, and restorable table by table.
 # It's written inside the container and copied out with docker cp, so PowerShell never touches
@@ -16,9 +17,10 @@ param(
     [string]$CopyTo = ''
 )
 
-Set-Location -Path $PSScriptRoot
-$container = 'hobby-inventory-db'
-$folder = Join-Path $PSScriptRoot 'backups'
+. "$PSScriptRoot\scripts\common.ps1"
+Set-Location -Path $Root
+$container = $DbContainer
+$folder = $BackupDir
 New-Item -ItemType Directory -Force $folder | Out-Null
 $name = "hobby_inventory_$(Get-Date -Format yyyyMMdd_HHmmss).dump"
 $log = Join-Path $folder 'backup.log'
@@ -35,7 +37,7 @@ if ($state -ne 'healthy') {
     exit 1
 }
 
-docker exec $container pg_dump -U hobby -d hobby_inventory -Fc -f "/tmp/$name"
+docker exec $container pg_dump -U $DbUser -d $DbName -Fc -f "/tmp/$name"
 if ($LASTEXITCODE -ne 0) { Log 'FAILED: pg_dump returned an error'; exit 1 }
 docker cp "${container}:/tmp/$name" (Join-Path $folder $name) | Out-Null
 $copied = $LASTEXITCODE

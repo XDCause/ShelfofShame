@@ -118,6 +118,7 @@ export const api = {
   backUpNow: () => request('/backups', send('POST')),
   spending: () => request('/spending'),
   lookups: () => request('/lookups'),
+  about: () => request('/about'),
   addLookup: (kind, name) => request(`/lookups/${kind}`, send('POST', { name })),
   deleteLookup: (kind, id) => request(`/lookups/${kind}/${id}`, send('DELETE')),
 }

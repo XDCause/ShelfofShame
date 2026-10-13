@@ -1,12 +1,14 @@
 # Start Shelf of Shame (database, API, web app) and print where to find them.
 # Usage (from this folder):  .\start.ps1
+# Works in both copies (prod = this folder, dev = ..\hobby-inventory-dev): names come from .env.
 # If blocked by execution policy:  powershell -ExecutionPolicy Bypass -File .\start.ps1
 
 # Note: no $ErrorActionPreference = 'Stop' here. In Windows PowerShell 5.1 that turns any
 # stderr output from docker (warnings, build progress) into a fatal error. We check
 # $LASTEXITCODE after each docker command instead.
-Set-Location -Path $PSScriptRoot
-$containers = @('hobby-inventory-db', 'hobby-inventory-api', 'hobby-inventory-web')
+. "$PSScriptRoot\scripts\common.ps1"
+Set-Location -Path $Root
+$containers = @($DbContainer, $ApiContainer, $WebContainer)
 
 # 1. Docker Desktop running?  'docker info' fails if the engine is not up.
 docker info *> $null
@@ -26,7 +28,7 @@ Get-Content '.env' | Where-Object { $_ -match '^\s*([^#=\s]+)\s*=\s*(.*)$' } | F
 }
 
 # 3. Build the image and start the container in the background.
-Write-Host 'Building and starting...' -ForegroundColor Cyan
+Write-Host "Building and starting ($AppEnv)..." -ForegroundColor Cyan
 docker compose up -d --build
 if ($LASTEXITCODE -ne 0) {
     Write-Host 'docker compose up failed - see the messages above.' -ForegroundColor Red

@@ -1,8 +1,14 @@
+# Two copies of the app can run on this PC (see README "Dev and prod"):
+#   prod  this folder (main branch)        names hobby-inventory-*, web on 8080, volume hobby_pgdata
+#   dev   ..\hobby-inventory-dev (dev branch) names hobby-dev-*, web on 8081, volume hobby_dev_pgdata
+# Which one is set by .env (APP_PREFIX, APP_ENV, ports, DB_VOLUME); the defaults are prod's.
+name: ${APP_PREFIX:-hobby-inventory}
+
 services:
   db:
     build: ./db
-    image: hobby-inventory-db:1.0
-    container_name: hobby-inventory-db
+    image: ${APP_PREFIX:-hobby-inventory}-db:1.0
+    container_name: ${APP_PREFIX:-hobby-inventory}-db
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
@@ -26,8 +32,8 @@ services:
   # FastAPI backend: the only service that connects to the database.
   api:
     build: ./api
-    image: hobby-inventory-api:1.0
-    container_name: hobby-inventory-api
+    image: ${APP_PREFIX:-hobby-inventory}-api:1.0
+    container_name: ${APP_PREFIX:-hobby-inventory}-api
     restart: unless-stopped
     environment:
       DB_HOST: db      # the service name above; Docker's network resolves it
@@ -36,6 +42,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       BACKUP_DIR: /backups
+      APP_ENV: ${APP_ENV:-prod}   # "dev" shows a DEV badge in the app
     volumes:
       # The same folder backup.ps1 writes to, so Settings can list, make and download backups.
       - ./backups:/backups
@@ -57,8 +64,8 @@ services:
   # React front end, served by nginx, which also forwards /api/* to the api service.
   web:
     build: ./web
-    image: hobby-inventory-web:1.0
-    container_name: hobby-inventory-web
+    image: ${APP_PREFIX:-hobby-inventory}-web:1.0
+    container_name: ${APP_PREFIX:-hobby-inventory}-web
     restart: unless-stopped
     depends_on:
       api:
@@ -76,4 +83,4 @@ services:
 
 volumes:
   hobby_pgdata:
-    name: hobby_pgdata
+    name: ${DB_VOLUME:-hobby_pgdata}
