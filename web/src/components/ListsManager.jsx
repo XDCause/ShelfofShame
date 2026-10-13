@@ -9,7 +9,7 @@ const LISTS = [
 
 // Add or remove dropdown entries (shown in a panel from the gear button). Anything still used
 // by a supply can't be removed: the database's foreign keys refuse it, and the button is
-// disabled to match.
+// disabled to match. Each list is a closed drop-down section, like Spending.
 export default function ListsManager({ lookups, onChanged }) {
   return (
     <section className="lists">
@@ -51,8 +51,8 @@ function LookupList({ kind, title, placeholder, items, onChanged }) {
   }
 
   return (
-    <div className="lookup">
-      <h3>{title} <span className="count">{items.length}</span></h3>
+    <details className="lookup fold">
+      <summary>{title} <span className="count">{items.length}</span></summary>
       <ul>
         {items.map((item) => (
           <li key={item.id}>
@@ -75,6 +75,6 @@ function LookupList({ kind, title, placeholder, items, onChanged }) {
         <button type="submit" disabled={!name.trim()}>Add</button>
       </form>
       {error && <p className="alert error small">{error}</p>}
-    </div>
+    </details>
   )
 }

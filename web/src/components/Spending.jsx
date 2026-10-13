@@ -15,7 +15,7 @@ export default function Spending() {
   }
 
   return (
-    <details className="spending" onToggle={load}>
+    <details className="spending fold" onToggle={load}>
       <summary>Spending</summary>
       {error && <p className="alert error small">{error}</p>}
       {!data && !error && <p className="muted small">Loading...</p>}

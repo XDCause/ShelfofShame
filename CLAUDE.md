@@ -304,13 +304,15 @@ DBeaver, psql, and the one-off import script.
 3o. **Lifetime spend** - DONE (2026-10-13). User asked for it, "can be hidden".
    - `db/init/12_spend.sql`: stock_movements.unit_price, set by the trigger from the supply's
      price at that moment (OLD.unit_price on delete). Older rows backfilled with the current
-     price; the removed Dark Brown panel line's rows set to 10.95 by hand.
+     price. The Dark Brown panel line (T87140, SUP-0023) was a TEST, never bought: its 3 history
+     rows were deleted on the user's request (2026-10-13).
    - GET /api/spending (main.py PURCHASES/SPEND): purchases = added, bought, bought (wishlist),
      starting stock, import (change > 0) x unit_price, minus 'undo' rows with change < 0.
      used / deleted / edited / manual don't count. Returns all_time, this_year, this_month,
      starting_stock, unpriced, by_year, recent (10, excluding starting stock).
    - UI: `Spending` component = closed <details> at the top of the gear (Manage lists) drawer;
-     loads only when opened. First figures: $157.80 all time ($142.90 starting stock).
+     loads only when opened. Brands / Categories / Storage locations are closed <details> too
+     (shared `.fold` style). After removing the test: $146.85 all time ($142.90 starting stock).
    - Inventory summary "$142.90" is CURRENT stock value (qty x price), not spend.
    - Tests: 105 API, 29 browser steps.
 4. ~~Excel reads via Power Query~~ - dropped

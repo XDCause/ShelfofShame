@@ -150,6 +150,11 @@ def edit_details(page):
 def manage_lists(page):
     page.get_by_role("button", name="Manage lists").click()
     expect(drawer(page)).to_contain_text("Brands")
+    # every section is a closed drop-down: Brands opens when tapped
+    brands = drawer(page).locator("details.lookup", has_text="Brands")
+    expect(brands.get_by_role("button", name="Remove Hasegawa")).to_be_hidden()
+    brands.locator("summary").click()
+    expect(brands.get_by_role("button", name="Remove Hasegawa")).to_be_visible()
     shot(page, "d05_manage_lists")
     # Spending is closed until you open it
     spend = drawer(page).locator("details.spending")
@@ -375,6 +380,7 @@ def model_edit(page):
 @step("Manage lists: brand used only by a model can't be removed")
 def lists_protect(page):
     page.get_by_role("button", name="Manage lists").click()
+    drawer(page).locator("details.lookup", has_text="Brands").locator("summary").click()
     expect(drawer(page).get_by_role("button", name="Remove Hasegawa")).to_be_disabled()
     page.keyboard.press("Escape")
 
