@@ -91,6 +91,28 @@ def chip(page):
     expect(page.locator("tr.row")).to_have_count(TOTAL)
 
 
+@step("Groups: close one, close all, remembered after a reload, search opens them")
+def groups(page):
+    expect(page.get_by_label("Group by")).to_have_value("category")
+    paint = page.locator("details.inv-group", has=page.locator("summary", has_text=re.compile(r"^Paint")))
+    expect(paint.locator("summary")).to_contain_text(f"{PAINTS} ·")
+    paint.locator("summary").click()
+    expect(paint.locator("tr.row").first).to_be_hidden()
+    expect(page.locator("tr.row:visible")).to_have_count(TOTAL - PAINTS)
+    page.get_by_role("button", name="Close all").click()
+    expect(page.locator("tr.row:visible")).to_have_count(0)
+    shot(page, "d02b_groups_closed", full=False)
+    page.reload()
+    expect(page.locator("details.inv-group").first).to_be_visible(timeout=15000)
+    expect(page.locator("tr.row:visible")).to_have_count(0)      # remembered
+    page.get_by_label("Search").fill("XF1 Flat Black")
+    expect(page.locator("tr.row:visible", has_text="Acrylic XF1 Flat Black")).to_be_visible()
+    page.get_by_label("Search").fill("")
+    expect(page.locator("tr.row:visible")).to_have_count(0)      # closed again after the search
+    page.get_by_role("button", name="Open all").click()
+    expect(page.locator("tr.row:visible")).to_have_count(TOTAL)
+
+
 @step("Item panel opens; condition Nearly empty makes it Low")
 def condition_low(page):
     page.locator("tr.row", has_text="Acrylic XF1 Flat Black").click()
@@ -588,7 +610,7 @@ with sync_playwright() as p:
     browser = p.chromium.launch()
     desk = browser.new_page(viewport={"width": 1280, "height": 860})
     watch(desk, "desktop")
-    for fn in (inventory_loads, search, chip, condition_low, plus_minus, notes, edit_details, settings,
+    for fn in (inventory_loads, search, chip, groups, condition_low, plus_minus, notes, edit_details, settings,
                add_lookup, add_to_wishlist, wishlist_buy, delete_bought, scan_owned, scan_unknown,
                models, model_paste, add_model_hasegawa, undo, add_to_wishlist_button, duplicate_check, wishlist_panel, shop_tamiya, used_up,
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,

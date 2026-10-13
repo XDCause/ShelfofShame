@@ -132,20 +132,22 @@ export default function App() {
         </div>
       </header>
 
-      {timer && (
-        <button type="button" className="timer-banner" onClick={() => openModel(timer.model_id)}>
-          <TimerIcon size={18} /> Working on <strong>{timer.name}</strong>
-          <Elapsed since={timer.started_at} />
-        </button>
-      )}
-      {error && <p className="alert error">{error}</p>}
-      {flash && (
-        <p className={`alert ${flash.type}`} role="status">
-          {flash.text} <button className="plain" onClick={() => setFlash(null)}>Dismiss</button>
-        </p>
-      )}
+      <div className="content">
+        {timer && (
+          <button type="button" className="timer-banner" onClick={() => openModel(timer.model_id)}>
+            <TimerIcon size={18} /> Working on <strong>{timer.name}</strong>
+            <Elapsed since={timer.started_at} />
+          </button>
+        )}
+        {error && <p className="alert error">{error}</p>}
+        {flash && (
+          <p className={`alert ${flash.type}`} role="status">
+            {flash.text} <button className="plain" onClick={() => setFlash(null)}>Dismiss</button>
+          </p>
+        )}
 
-      <main>{page}</main>
+        <main>{page}</main>
+      </div>
 
       <nav className="tabbar" aria-label="Pages">
         {TABS.map(({ id, label, Icon }) => (

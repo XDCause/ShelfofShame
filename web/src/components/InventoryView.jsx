@@ -18,8 +18,47 @@ const SORTS = {
   purchased: { label: 'Last purchased', by: (r) => r.purchase_date ?? '', dir: -1 },
 }
 
+// Group the list into drop-downs by one of the same things the chips filter on.
+// `order` puts the groups in a sensible order (alphabetical when there isn't one).
+const GROUPS = {
+  category: { label: 'By category', of: (r) => r.category ?? 'No category' },
+  condition: { label: 'By condition', of: (r) => r.condition ?? 'No condition', order: CONDITION_ORDER },
+  attention: { label: 'Needs attention / OK', of: (r) => (r.stock_status === 'OK' ? 'All good' : 'Needs attention'), order: ['Needs attention', 'All good'] },
+  brand: { label: 'By brand', of: (r) => r.brand ?? 'No brand' },
+  location: { label: 'By location', of: (r) => r.location ?? 'No location' },
+  none: { label: 'No groups' },
+}
+
+// Which grouping you picked and which groups you closed are remembered on this device.
+// Closed ones are stored (not open ones) so a new category shows up open.
+const STORE = 'hobby-inventory.inventoryGroups'
+function loadView() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORE)) ?? {}
+    return { groupBy: GROUPS[saved.groupBy] ? saved.groupBy : 'category', closed: saved.closed ?? {} }
+  } catch {
+    return { groupBy: 'category', closed: {} }
+  }
+}
+function saveView(view) {
+  try { localStorage.setItem(STORE, JSON.stringify(view)) } catch { /* private window: just don't remember */ }
+}
+
+function groupRows(rows, groupBy) {
+  const { of, order = [] } = GROUPS[groupBy]
+  const groups = new Map()
+  for (const r of rows) {
+    const key = of(r)
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key).push(r)
+  }
+  const rank = (k) => (order.includes(k) ? order.indexOf(k) : order.length)
+  return [...groups].sort(([a], [b]) => rank(a) - rank(b) || a.localeCompare(b))
+}
+
 // Count how many rows have each value of `key`, e.g. {Paint: 9, Thinner: 2}.
 const countBy = (rows, key) => rows.reduce((m, r) => (r[key] ? { ...m, [r[key]]: (m[r[key]] ?? 0) + 1 } : m), {})
+const valueOf = (rows) => rows.reduce((s, r) => s + Number(r.total_value ?? 0), 0)
 
 // The inventory list. Tap a row for everything about that item (opens a side panel).
 // Scan: something you own opens its panel; anything else opens "Add a supply" pre-filled.
@@ -35,6 +74,10 @@ export default function InventoryView({ lookups, refreshKey, onOpen, onAdd, onAd
   const [notice, setNotice] = useState(null)
   const [photoJob, setPhotoJob] = useState(null) // {done, total, failed} while fetching photos
   const [reload, setReload] = useState(0)
+  const [view, setView] = useState(loadView)
+  // While searching or filtering every group with a match is open (so nothing you're looking for
+  // is hidden); groups you close then are forgotten when you clear the search.
+  const [closedWhileFiltering, setClosedWhileFiltering] = useState([])
 
   useEffect(() => {
     let current = true
@@ -51,7 +94,7 @@ export default function InventoryView({ lookups, refreshKey, onOpen, onAdd, onAd
     category: countBy(all, 'category'),
     brand: countBy(all, 'brand'),
     location: countBy(all, 'location'),
-    value: all.reduce((s, r) => s + Number(r.total_value ?? 0), 0),
+    value: valueOf(all),
   }), [all])
 
   const rows = useMemo(() => {
@@ -69,9 +112,34 @@ export default function InventoryView({ lookups, refreshKey, onOpen, onAdd, onAd
   }, [all, search, filters, sort])
 
   const filtering = search.trim() !== '' || Object.values(filters).some(Boolean)
-  const shownValue = rows.reduce((s, r) => s + Number(r.total_value ?? 0), 0)
+  const shownValue = valueOf(rows)
   const toggle = (key, value) => setFilters((f) => ({ ...f, [key]: f[key] === value ? NO_FILTERS[key] : value }))
   const clearAll = () => { setSearch(''); setFilters(NO_FILTERS) }
+
+  useEffect(() => { if (!filtering) setClosedWhileFiltering([]) }, [filtering])
+
+  const groups = useMemo(() => (view.groupBy === 'none' ? null : groupRows(rows, view.groupBy)), [rows, view.groupBy])
+  const closed = filtering ? closedWhileFiltering : (view.closed[view.groupBy] ?? [])
+  const setClosed = (names) => {
+    if (filtering) return setClosedWhileFiltering(names)
+    const next = { ...view, closed: { ...view.closed, [view.groupBy]: names } }
+    setView(next)
+    saveView(next)
+  }
+  const setGroupOpen = (name, open) => {
+    if (open !== closed.includes(name)) return // already that way (the toggle event also fires for our own changes)
+    setClosed(open ? closed.filter((n) => n !== name) : [...closed, name])
+  }
+  const setGroupBy = (groupBy) => {
+    const next = { ...view, groupBy }
+    setView(next)
+    saveView(next)
+  }
+  const allClosed = groups && groups.every(([name]) => closed.includes(name))
+  const toggleAll = () => {
+    const names = groups.map(([name]) => name)
+    setClosed(allClosed ? closed.filter((n) => !names.includes(n)) : [...new Set([...closed, ...names])])
+  }
   const missingPhotos = all.filter((r) => r.brand === 'Tamiya' && r.product_code && !r.has_image)
 
   const adjust = async (row, delta) => {
@@ -169,12 +237,23 @@ export default function InventoryView({ lookups, refreshKey, onOpen, onAdd, onAd
             Get {missingPhotos.length} Tamiya photo{missingPhotos.length > 1 ? 's' : ''}
           </button>
         )}
-        <label className="sort">
-          <span className="muted small">Sort</span>
-          <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort by">
-            {Object.entries(SORTS).map(([k, s]) => <option key={k} value={k}>{s.label}</option>)}
-          </select>
-        </label>
+        <div className="view-controls">
+          <label className="sort">
+            <span className="muted small">Group</span>
+            <select value={view.groupBy} onChange={(e) => setGroupBy(e.target.value)} aria-label="Group by">
+              {Object.entries(GROUPS).map(([k, g]) => <option key={k} value={k}>{g.label}</option>)}
+            </select>
+          </label>
+          <label className="sort">
+            <span className="muted small">Sort</span>
+            <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort by">
+              {Object.entries(SORTS).map(([k, s]) => <option key={k} value={k}>{s.label}</option>)}
+            </select>
+          </label>
+          {groups && groups.length > 1 && (
+            <button type="button" className="plain small" onClick={toggleAll}>{allClosed ? 'Open all' : 'Close all'}</button>
+          )}
+        </div>
       </div>
 
       {photoJob && (
@@ -188,54 +267,82 @@ export default function InventoryView({ lookups, refreshKey, onOpen, onAdd, onAd
       {notice && <p className="alert ok small" role="status">{notice} <button className="plain" onClick={() => setNotice(null)}>Dismiss</button></p>}
       {error && <p className="alert error" role="alert">{error}</p>}
 
-      <div className="table-wrap">
-        <table className="inventory">
-          <thead>
-            <tr>
-              <th className="thumb-col"><span className="visually-hidden">Photo</span></th>
-              <th>Item</th>
-              <th className="hide-sm">Category</th>
-              <th className="hide-xs">Condition</th>
-              <th className="num">Stock</th>
-              <th className="num hide-sm">Value</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.supply_id} className={r.stock_status === 'OK' ? 'row' : 'row attention'}
-                onClick={() => onOpen(r.supply_id)} tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && onOpen(r.supply_id)}>
-                <td className="thumb-col">
-                  {r.has_image
-                    ? <img className="thumb" src={imageUrl(r)} alt="" loading="lazy" />
-                    : <span className="thumb thumb-empty" aria-hidden="true" />}
-                </td>
-                <td className="item-cell">
-                  <span className="item-title">{r.name}</span>
-                  <span className="item-meta">
-                    {[r.brand, r.product_code, r.size].filter(Boolean).join(' · ')}
-                    {/* On phones the Condition column is hidden, so show it here instead */}
-                    <span className="show-xs"><Condition row={r} /></span>
-                  </span>
-                </td>
-                <td className="hide-sm">{r.category}</td>
-                <td className="hide-xs"><Condition row={r} /></td>
-                <td className="num">
-                  <span className="qty" onClick={(e) => e.stopPropagation()}>
-                    <button aria-label={`Use one ${r.name}`} disabled={r.qty_on_hand <= 0} onClick={() => adjust(r, -1)}>−</button>
-                    <span>{r.qty_on_hand}</span>
-                    <button aria-label={`Add one ${r.name}`} onClick={() => adjust(r, 1)}>+</button>
-                  </span>
-                </td>
-                <td className="num hide-sm">{money(r.total_value)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {!loading && rows.length === 0 && (
-          <p className="empty">{filtering ? 'Nothing matches. Try clearing the filters.' : 'No supplies yet. Scan or add your first one.'}</p>
-        )}
-      </div>
+      {groups ? (
+        <div className="inv-groups">
+          {groups.map(([name, items]) => {
+            const attention = items.filter((r) => r.stock_status !== 'OK').length
+            return (
+              <details key={name} className="fold inv-group" open={!closed.includes(name)}
+                onToggle={(e) => setGroupOpen(name, e.currentTarget.open)}>
+                <summary>
+                  <span className="fold-title">{name}</span>
+                  {attention > 0 && view.groupBy !== 'attention' && <span className="badge low">{attention} need attention</span>}
+                  <span className="fold-detail">{items.length} · {money(valueOf(items))}</span>
+                </summary>
+                <SupplyTable rows={items} showCategory={view.groupBy !== 'category'} onOpen={onOpen} adjust={adjust} />
+              </details>
+            )
+          })}
+        </div>
+      ) : (
+        <div className="table-wrap">
+          <SupplyTable rows={rows} showHead showCategory onOpen={onOpen} adjust={adjust} />
+        </div>
+      )}
+      {!loading && rows.length === 0 && (
+        <p className="empty">{filtering ? 'Nothing matches. Try clearing the filters.' : 'No supplies yet. Scan or add your first one.'}</p>
+      )}
     </section>
+  )
+}
+
+// One table of supplies: the whole list, or one group. Every group's table has the same fixed
+// column widths, so the columns line up down the page. Grouped by category, the Category column
+// is left out (every row in a "Paint" group says Paint).
+function SupplyTable({ rows, showHead = false, showCategory = false, onOpen, adjust }) {
+  return (
+    <table className="inventory">
+      <thead className={showHead ? '' : 'quiet'}>
+        <tr>
+          <th className="thumb-col"><span className="visually-hidden">Photo</span></th>
+          <th>Item</th>
+          {showCategory && <th className="col-category hide-sm">Category</th>}
+          <th className="col-condition hide-xs">Condition</th>
+          <th className="col-stock num">Stock</th>
+          <th className="col-value num hide-sm">Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => (
+          <tr key={r.supply_id} className={r.stock_status === 'OK' ? 'row' : 'row attention'}
+            onClick={() => onOpen(r.supply_id)} tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && onOpen(r.supply_id)}>
+            <td className="thumb-col">
+              {r.has_image
+                ? <img className="thumb" src={imageUrl(r)} alt="" loading="lazy" />
+                : <span className="thumb thumb-empty" aria-hidden="true" />}
+            </td>
+            <td className="item-cell">
+              <span className="item-title">{r.name}</span>
+              <span className="item-meta">
+                {[r.brand, r.product_code, r.size].filter(Boolean).join(' · ')}
+                {/* On phones the Condition column is hidden, so show it here instead */}
+                <span className="show-xs"><Condition row={r} /></span>
+              </span>
+            </td>
+            {showCategory && <td className="hide-sm">{r.category}</td>}
+            <td className="hide-xs"><Condition row={r} /></td>
+            <td className="num">
+              <span className="qty" onClick={(e) => e.stopPropagation()}>
+                <button aria-label={`Use one ${r.name}`} disabled={r.qty_on_hand <= 0} onClick={() => adjust(r, -1)}>−</button>
+                <span>{r.qty_on_hand}</span>
+                <button aria-label={`Add one ${r.name}`} onClick={() => adjust(r, 1)}>+</button>
+              </span>
+            </td>
+            <td className="num hide-sm">{money(r.total_value)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   )
 }
 

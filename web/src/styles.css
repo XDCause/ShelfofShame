@@ -75,7 +75,10 @@ a:hover { text-decoration: underline; }
 :focus-visible { outline: 3px solid color-mix(in srgb, var(--tint) 55%, transparent); outline-offset: 2px; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-.app { max-width: 1200px; margin: 0 auto; padding: 0 20px 48px; }
+/* The nav bar runs the full width of the window (like a Mac/iOS toolbar); the page content and
+   the bar's own contents line up in a centred column, so wide screens don't get boxed-in edges. */
+.app { --gutter: 20px; --column: 1200px; padding-bottom: 48px; }
+.content, .navbar-row { max-width: var(--column); margin: 0 auto; padding-left: var(--gutter); padding-right: var(--gutter); }
 .page { display: flex; flex-direction: column; gap: 14px; }
 .loading { padding: 40px 0; text-align: center; }
 
@@ -93,7 +96,7 @@ a:hover { text-decoration: underline; }
 
 /* ---------- Navigation bar ---------- */
 .navbar {
-  position: sticky; top: 0; z-index: 30; margin: 0 -20px 14px; padding: 0 20px;
+  position: sticky; top: 0; z-index: 30; margin: 0 0 14px;
   background: var(--bar); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
   border-bottom: 0.5px solid var(--separator);
 }
@@ -238,7 +241,8 @@ legend, .section-title, .history h4, .fold-body h4 {
 .toolbar .chip-row { flex: 1 1 260px; }
 .search { flex: 1 1 260px; }
 .filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
-.sort { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; }
+.sort { display: inline-flex; align-items: center; gap: 6px; }
+.view-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-left: auto; }
 .section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
 .section-head .section-title, .section-head h2 { margin: 0; }
 .section-head h2 { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.01em; margin-top: 10px; }
@@ -319,13 +323,35 @@ th.thumb-col, td.thumb-col { width: 60px; padding: 6px 4px 6px 12px; }
 }
 .qty button:hover:not(:disabled) { background: var(--tint-soft); }
 
+/* Grouped list: each group is a drop-down card like the Settings sections. The tables share fixed
+   column widths so the columns line up from one group to the next; their header row is there for
+   screen readers and to set those widths, but takes no space. */
+.inv-groups { display: flex; flex-direction: column; gap: 10px; }
+.inv-group { overflow: hidden; box-shadow: var(--card-shadow); }
+.inv-group summary { position: relative; }
+.inv-group[open] > summary { border-bottom: 0.5px solid var(--separator); }
+.inv-group .fold-detail { font-variant-numeric: tabular-nums; }
+.inv-group table { table-layout: fixed; }
+.inv-group table td { border-top: 0; }
+.inv-group tbody tr + tr td { border-top: 0.5px solid var(--separator); }
+thead.quiet th { height: 0; padding-top: 0; padding-bottom: 0; font-size: 0; line-height: 0; overflow: hidden; }
+th.col-category { width: 20%; }
+th.col-condition { width: 26%; }
+th.col-stock { width: 130px; }
+th.col-value { width: 96px; }
+
 /* Fewer columns as the screen narrows: the item and stock always stay. */
 .show-xs { display: none; }
 @media (max-width: 700px) { .hide-sm { display: none; } }
 @media (max-width: 480px) {
   .hide-xs { display: none; }
   .show-xs { display: inline; }
-  .sort { margin-left: 0; }
+  /* Group and Sort side by side; their options say what they are ("By category", "Newest first"). */
+  .view-controls { margin-left: 0; width: 100%; flex-wrap: nowrap; }
+  .view-controls .sort { flex: 1; min-width: 0; }
+  .view-controls .sort > span { display: none; }
+  .view-controls select { width: 100%; }
+  .view-controls .plain { flex: none; }
 }
 
 /* ---------- Panels: a side panel on wide screens, a sheet from the bottom on phones ---------- */
@@ -557,9 +583,9 @@ th.thumb-col, td.thumb-col { width: 60px; padding: 6px 4px 6px 12px; }
   :root { --tabbar-h: 50px; font-size: 16px; }
   /* iPhones zoom into any input with text under 16px when you tap it; 16px stops that. */
   input, select, textarea { font-size: 16px; }
-  .app { padding: 0 16px 40px; }
+  .app { --gutter: 16px; padding-bottom: 40px; }
   main { padding-bottom: calc(var(--tabbar-h) + 20px + env(safe-area-inset-bottom, 0px)); }
-  .navbar { margin: 0 -16px 12px; padding: 0 16px; }
+  .navbar { margin-bottom: 12px; }
   .navbar h1 { font-size: 1.6rem; }
   .navbar .tabs { display: none; }
   /* The tab bar: icons + labels at the bottom, the page you're on in the tint colour. */

@@ -381,6 +381,18 @@ DBeaver, psql, and the one-off import script.
    - **Lesson**: `docker compose up -d api` does NOT rebuild - code changes need
      `docker compose up -d --build api` (the Sherman's paint list was first read by a stale
      image and had to be refreshed).
+3q. **Full-width nav bar + grouped inventory** - DONE (2026-10-13).
+   - User saw "big black bars" down the sides on their desktop (dark mode): the nav bar stopped
+     at the 1200px column. Now `.navbar` spans the window and `.navbar-row` / `.content` share
+     the centred column (`--column`, `--gutter` on `.app`).
+   - Inventory is grouped into drop-down cards (same `.fold` look as Settings): Group by
+     category (default) / condition / needs attention / brand / location / no groups. Header shows
+     count, value and "N need attention". Choice + CLOSED groups remembered in localStorage
+     `hobby-inventory.inventoryGroups` (closed stored, so new groups appear open). Searching or
+     filtering opens every group with a match; closing while filtering is temporary. "Close all /
+     Open all". Each group is its own table with fixed column widths (quiet zero-height thead)
+     so columns line up; Category column dropped when grouped by category.
+   - Tests: 38 browser steps (new "Groups" step).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

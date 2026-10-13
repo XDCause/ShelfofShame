@@ -4,7 +4,7 @@ A self-hosted inventory for model-kit supplies (paints, thinners, tape, glue, to
 as a full-stack learning project. Runs entirely in Docker on your own PC; no accounts or
 subscriptions.
 
-- **Inventory**: search, filter, sort, photos, +/- with Undo, per-item stock history, "used on"
+- **Inventory**: search, filter, sort, grouped into drop-downs (by category, condition, brand...; remembered), photos, +/- with Undo, per-item stock history, "used on"
   (which models need it), colour matches, and "used up, not replacing it" removal
 - **Wishlist**: phone-friendly shopping list; tick things off in the shop, then move them into
   inventory in one go. **Shop Tamiya** searches ~1,000 Tamiya products and adds one in a tap
@@ -21,7 +21,7 @@ subscriptions.
 - **Settings**: spending (lifetime / year / month), price guide, default shop, backups (back up
   now, download), CSV export for Excel, Tamiya catalogue refresh, brands / categories / locations
 - Styled after Apple's Human Interface Guidelines (bottom tab bar and sheets on phones, dark mode)
-- Nightly backups, 159 automated API tests and a 37-step browser walkthrough
+- Nightly backups, 159 automated API tests and a 38-step browser walkthrough
 
 Three Docker containers:
 
