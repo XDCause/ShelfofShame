@@ -18,19 +18,29 @@ Hobby modules:
     models     kits (stash), checklists, kit paint lists  build      timer and build log
     colours    colour matches and mixes
     boardgames your games and every play                  volleyball games, gear and videos
+    videogames Steam games and achievements (steam.py = the official Steam Web API)
 """
 import os
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
 from . import (activity, boardgames, build, calendar, catalog, colours, journal, journal_drawings, lookups, models,
-               products, settings, spending, supplies, volleyball, wishlist)
+               products, settings, spending, supplies, videogames, volleyball, wishlist)
 from .db import db
 
-app = FastAPI(title="Off the Clock API", docs_url="/api/docs", openapi_url="/api/openapi.json")
+@asynccontextmanager
+async def lifespan(_app):
+    """While the API runs: the daily Steam sync (videogames.py) - only when a key is set."""
+    if os.environ.get("STEAM_API_KEY"):
+        videogames.start_daily_sync()
+    yield
+
+
+app = FastAPI(title="Off the Clock API", docs_url="/api/docs", openapi_url="/api/openapi.json", lifespan=lifespan)
 
 for part in (activity, journal_drawings, journal, calendar, supplies, wishlist, products, catalog, models, build, colours,
-             boardgames, volleyball, spending, settings, lookups):
+             boardgames, volleyball, videogames, spending, settings, lookups):
     app.include_router(part.router)
 
 

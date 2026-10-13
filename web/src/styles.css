@@ -1178,3 +1178,34 @@ body.writing-mode .journal-title { font-size: 2.2rem; }
 .card-pills { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; flex: none; }
 .day-heading { display: flex; align-items: center; gap: 8px; }
 .day-heading .pill { text-transform: none; letter-spacing: 0; }
+
+/* ---------- Video games (modules/videogames) ---------- */
+.sync-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.sync-bar .grow { display: flex; flex-direction: column; gap: 2px; min-width: 200px; }
+.sync-bar .fill-bar { max-width: 360px; }
+.sync-error { flex-basis: 100%; margin: 0; }
+.steam-setup { max-width: 640px; }
+.game-capsule { flex: none; width: 92px; height: 43px; object-fit: cover; border-radius: 6px; background: var(--fill); }
+.achievement-icon { flex: none; width: 44px; height: 44px; border-radius: 8px; object-fit: cover; background: var(--fill); }
+.game-header { display: block; width: 100%; max-height: 220px; object-fit: cover; border-radius: 12px; margin-top: 12px; }
+.achievements li { display: flex; align-items: center; gap: 12px; padding: 10px 12px; }
+.achievements .grow { display: flex; flex-direction: column; min-width: 0; }
+.achievement:not(.got) .item-title { color: var(--muted); }
+.achievement:not(.got) .achievement-icon { opacity: 0.7; }
+.perfect-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.perfect-card {
+  position: relative; display: flex; flex-direction: column; gap: 2px; padding: 0 0 8px; overflow: hidden; text-align: left;
+  border: 1px solid var(--border); border-radius: 12px; background: var(--fill-2); color: var(--text);
+}
+.perfect-card img { width: 100%; aspect-ratio: 460 / 215; object-fit: cover; }
+.perfect-badge {
+  position: absolute; top: 6px; right: 6px; padding: 2px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 700;
+  color: #fff; background: var(--ok);
+}
+.perfect-name { padding: 4px 8px 0; font-weight: 600; font-size: 0.88rem; }
+.perfect-card .muted { padding: 0 8px; }
+.game-list .row-button .fill-bar { max-width: 320px; }
+.mention-videogame { color: var(--purple); background: var(--purple-bg); }
+@media (max-width: 700px) {
+  .game-capsule { width: 72px; height: 34px; }
+}

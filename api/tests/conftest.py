@@ -27,7 +27,9 @@ def clean_database():
                      "model_paints, models, catalog_products, model_sessions, model_log, colour_groups, "
                      "colour_group_members, mixes, mix_parts, price_guide, journal_pages, tags, page_tags, "
                      "journal_links, journal_images, journal_drawings, calendar_events, board_games, board_game_plays, gear, "
-                     "volleyball_games, volleyball_videos RESTART IDENTITY CASCADE")
+                     "volleyball_games, volleyball_videos, vg_achievements, vg_games RESTART IDENTITY CASCADE")
+        conn.execute("UPDATE vg_sync SET profile = NULL, steam_id = NULL, persona_name = NULL, last_sync_at = NULL, "
+                     "last_full_at = NULL, last_error = NULL")
         # the seeded settings (db/init/15_settings.sql)
         conn.execute("UPDATE settings SET value = 'Hobbyrama' WHERE key = 'default_shop'")
         conn.execute("""INSERT INTO price_guide (label, title_contains, paint_type, size, price, sort_order)
@@ -37,6 +39,18 @@ def clean_database():
         conn.execute("DELETE FROM categories WHERE name LIKE 'Test %'")
         conn.execute("DELETE FROM storage_locations WHERE name LIKE 'Test %'")
     yield
+
+
+@pytest.fixture(autouse=True)
+def no_real_steam(monkeypatch):
+    """Tests never call Steam (and never use the real key): a test that forgets to fake it fails."""
+    from app import steam, videogames
+
+    def refuse(*_a, **_k):
+        raise AssertionError("A test tried to call the real Steam API")
+    monkeypatch.setattr(steam, "_get", refuse)
+    monkeypatch.setattr(steam, "pause", lambda: None)
+    videogames.SYNC.update(running=False, done=0, total=0, message=None, error=None, finished_at=None)
 
 
 @pytest.fixture

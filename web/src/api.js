@@ -144,6 +144,15 @@ export const api = {
   updateVideo: (id, data) => request(`/volleyball/videos/${id}`, send('PATCH', data)),
   deleteVideo: (id) => request(`/volleyball/videos/${id}`, send('DELETE')),
 
+  // Video games (Steam achievements)
+  steamAccount: () => request('/videogames/account'),
+  setSteamProfile: (profile) => request('/videogames/account', send('PUT', { profile })),
+  syncSteam: (full = false) => request(`/videogames/sync${full ? '?full=true' : ''}`, send('POST')),
+  videoGameSummary: () => request('/videogames/summary'),
+  listVideoGames: (show = 'all') => request(`/videogames?show=${show}`),
+  getVideoGame: (id) => request(`/videogames/${id}`),
+  hideVideoGame: (id, hidden) => request(`/videogames/${id}`, send('PATCH', { hidden })),
+
   // A photo kept on its own row (board games, gear): path = '/board-games/3' or '/gear/2'
   uploadRowPhoto: (path, blob) => request(`${path}/photo`, image('PUT', blob)),
   deleteRowPhoto: (path) => request(`${path}/photo`, send('DELETE')),

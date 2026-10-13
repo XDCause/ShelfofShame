@@ -11,9 +11,10 @@
 // Adding a hobby = adding a folder here and one line below. See docs/ROADMAP.md.
 import boardgames from './boardgames/manifest.jsx'
 import models from './models/manifest.jsx'
+import videogames from './videogames/manifest.jsx'
 import volleyball from './volleyball/manifest.jsx'
 
-export const MODULES = [models, boardgames, volleyball]
+export const MODULES = [models, boardgames, volleyball, videogames]
 
 // Every module's panels in one map, for App to open by type.
 export const MODULE_PANELS = Object.assign({}, ...MODULES.map((m) => m.panels ?? {}))

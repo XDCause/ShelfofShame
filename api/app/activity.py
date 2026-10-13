@@ -8,6 +8,7 @@
     board games a play                               (board_game_plays)
     volleyball  a game or training                   (volleyball_games)
     gear        bought                               (gear's purchase date)
+    video games achievements unlocked (one entry per game per day), and games 100%'d (vg_*)
 
 Each item: {at, day, kind, ref, verb, title, detail, photo_url}; the photo (if any) is the
 product's, the game's or the gear's. Newest first. Part of the core: Home shows the latest, and
@@ -88,6 +89,17 @@ WITH feed AS (
            CASE WHEN photo IS NOT NULL THEN '/api/gear/' || gear_id || '/photo?v='
                 || (extract(epoch FROM photo_updated) * 1000)::bigint END
     FROM gear WHERE purchase_date IS NOT NULL
+  UNION ALL
+    SELECT max(a.unlocked_at), 'videogame', a.app_id, 'Unlocked', g.name,
+           CASE WHEN count(*) = 1 THEN min(a.name) ELSE count(*) || ' achievements' END, NULL, NULL,
+           'https://cdn.cloudflare.steamstatic.com/steam/apps/' || a.app_id || '/header.jpg'
+    FROM vg_achievements a JOIN vg_games g USING (app_id)
+    WHERE a.achieved AND a.unlocked_at IS NOT NULL AND NOT g.hidden
+    GROUP BY a.app_id, g.name, (a.unlocked_at AT TIME ZONE current_setting('TimeZone'))::date
+  UNION ALL
+    SELECT completed_at, 'videogame', app_id, 'Perfected', name, '100%% · ' || achievements_total || ' achievements',
+           NULL, NULL, 'https://cdn.cloudflare.steamstatic.com/steam/apps/' || app_id || '/header.jpg'
+    FROM vg_games WHERE completed_at IS NOT NULL AND NOT hidden
 )
 SELECT f.at, (f.at AT TIME ZONE current_setting('TimeZone'))::date AS day,
        f.kind, f.ref, f.verb, f.title, NULLIF(f.detail, '') AS detail,

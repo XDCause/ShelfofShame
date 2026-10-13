@@ -131,6 +131,7 @@ CASE l.target_kind
     WHEN 'page'   THEN (SELECT COALESCE(NULLIF(title, ''), 'Untitled') FROM journal_pages WHERE page_id = l.target_id)
     WHEN 'game'   THEN (SELECT name FROM board_games WHERE game_id = l.target_id)
     WHEN 'gear'   THEN (SELECT name FROM gear WHERE gear_id = l.target_id)
+    WHEN 'videogame' THEN (SELECT name FROM vg_games WHERE app_id = l.target_id)
 END"""
 
 
@@ -246,7 +247,10 @@ def mentionable(q: str = ""):
              WHERE name ILIKE %(q)s ORDER BY name LIMIT 8)
             UNION ALL
             (SELECT 'gear', gear_id, name, 'Gear' FROM gear
-             WHERE name ILIKE %(q)s OR kind ILIKE %(q)s ORDER BY name LIMIT 8)""", {"q": like}).fetchall()
+             WHERE name ILIKE %(q)s OR kind ILIKE %(q)s ORDER BY name LIMIT 8)
+            UNION ALL
+            (SELECT 'videogame', app_id, name, 'Video game' FROM vg_games
+             WHERE name ILIKE %(q)s AND NOT hidden ORDER BY last_played DESC NULLS LAST LIMIT 8)""", {"q": like}).fetchall()
     return rows
 
 

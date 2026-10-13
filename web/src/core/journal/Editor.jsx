@@ -63,7 +63,7 @@ const schema = BlockNoteSchema.create({
   inlineContentSpecs: { ...defaultInlineContentSpecs, mention: Mention },
 })
 
-const WHAT = { model: 'Model', supply: 'Supply', page: 'Journal page', game: 'Board game', gear: 'Gear' }
+const WHAT = { model: 'Model', supply: 'Supply', page: 'Journal page', game: 'Board game', gear: 'Gear', videogame: 'Video game' }
 
 // previews: {drawingId: preview URL}; onDraw(id) opens the canvas for a drawing.
 export default function Editor({ pageId, initialContent, onChange, onOpenMention, previews = {}, onDraw }) {

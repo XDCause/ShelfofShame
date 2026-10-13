@@ -83,7 +83,7 @@ def home(page):
     expect(stats.filter(has_text="Supplies")).to_contain_text(str(TOTAL))
     for tile in ("Shelf of shame", "Board games", "Volleyball", "Next game"):
         expect(stats.filter(has_text=tile)).to_be_visible()
-    expect(stats).to_have_count(8)
+    expect(stats).to_have_count(10)
     expect(page.locator(".home-card", has_text="Recent activity").locator(".pill").first).to_be_visible()
     expect(page.locator(".home-card", has_text="Coming up")).to_be_visible()
     expect(page.locator(".quick-action")).to_have_count(8)
@@ -1039,6 +1039,18 @@ def mood(page):
     expect(page.locator(".day-detail .mood-line")).to_contain_text("Felt good")
 
 
+@step("Video games: the dashboard (or connecting Steam) and the games list")
+def video_games(page):
+    go(page, "Video games")
+    expect(page.locator(".section-tabs a[aria-current=page]")).to_have_text("Dashboard")
+    # Connected: the sync bar; not yet: the form to connect a profile (this never calls Steam).
+    expect(page.locator(".sync-bar").or_(page.get_by_label("Steam profile"))).to_be_visible(timeout=15000)
+    shot(page, "d41_video_games", full=False)
+    page.locator(".section-tabs").get_by_role("link", name="Games").click()
+    expect(page.get_by_label("Search your games")).to_be_visible()
+    expect(page.locator(".game-list li").first.or_(page.locator(".empty", has_text="No games here"))).to_be_visible()
+
+
 @step("Settings: price guide, default shop, backups, exports, catalogue")
 def settings_more(page):
     page.get_by_role("button", name="Settings").click()
@@ -1099,10 +1111,10 @@ def phone(page):
         page.locator(".tabbar a", has_text=tab).click()
         fits(tab)
     page.locator(".tabbar a", has_text="Hobbies").click()
-    expect(page.locator(".hobby-card")).to_have_count(3)
+    expect(page.locator(".hobby-card")).to_have_count(4)
     fits("Hobbies")
     for hobby, tabs in (("Models", ("Kits", "Colours")), ("Board games", ("Games", "Plays")),
-                        ("Volleyball", ("Games", "Gear", "Videos"))):
+                        ("Volleyball", ("Games", "Gear", "Videos")), ("Video games", ("Dashboard", "Games"))):
         page.locator(".tabbar a", has_text="Hobbies").click()
         page.locator(".hobby-head", has_text=hobby).click()
         for tab in tabs:
@@ -1130,7 +1142,7 @@ with sync_playwright() as p:
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
                matches, used_on, gundam, bandai_lookup, warhammer, journal_write, journal_links, journal_from_model,
                journal_suggestion, journal_todo, global_search, journal_wishlist, appearance,
-               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, settings_more, no_panel):
+               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, settings_more, no_panel):
         fn(desk)
     ctx = browser.new_context(**p.devices["iPhone 13"], timezone_id=zone)
     mob = ctx.new_page()

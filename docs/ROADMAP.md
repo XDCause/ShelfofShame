@@ -82,6 +82,7 @@ Each phase is built and tested in the dev copy, then promoted (`promote.ps1`).
 | 5 | **Volleyball** | DONE 2026-10-13 (in dev): games / training with sets, gear, video links, calendar "Log the result". Later: your own stats per game |
 | 5b | **Drawing in the journal** | DONE 2026-10-14 (in dev): whiteboard pages and `/` Drawing sketches (Excalidraw, pen pressure, pen mode). Handwriting -> text in pages: Samsung S Pen to text works in **Samsung Internet** (not Chrome) |
 | 5c | **Handwriting -> text on a canvas** | LATER (user's preference: **AI on this PC**, e.g. a local Ollama vision model - free and private, ~30-90 s per page on this CPU). A "Convert to text" button on a sketch / whiteboard. Considered: MyScript (what reMarkable uses; cloud, free monthly quota, needs keys), Claude vision (cloud, paid per use), Chrome's Handwriting Recognition API (not confirmed on Android) |
+| 5d | **Video games** | DONE 2026-10-14 (in dev): Steam achievements dashboard from the official Steam Web API (daily sync), activity / calendar / journal links |
 | 6+ | Scuba, woodworking, pottery... | One module at a time |
 
 ## Before going public

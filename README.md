@@ -44,6 +44,12 @@ have five tabs: Home, Journal, Calendar, Supplies (with the wishlist) and Hobbie
   a face on that day in the Calendar, and as **Your week** (the last seven days) on Home; the
   journal list can show just one mood's days. The list groups pages by **Day** (with the day's mood)
   or **Month**, and each card says what it is (Journal / Whiteboard) in its corner.
+- **Video games** (Steam achievement hunting): a dashboard of games at 100%, games in progress,
+  achievements and hours; **Closest to 100%**, **Recently unlocked** and **Rarest you have** (with
+  the % of players who have each); your latest 100%s; every game with a completion bar (filter,
+  search, sort); a game's achievements (hidden ones kept secret until unlocked). Data comes from the
+  official Steam Web API: set `STEAM_API_KEY` in `.env` and connect your profile name once. It
+  syncs by itself once a day (only games played since the last sync) or with **Sync now**.
 - **Journal -> actions**: write "Just bought @Sherman and started it right away" and the page
   offers "Sherman: Mark as In progress?" (Yes / Not now); "primed @Zero" offers the build step;
   "I want to buy new @XF-10 for a new project" offers "Add to wishlist?".
@@ -147,6 +153,11 @@ Grouped as in `api/app/` (one module per part of the app):
 | GET / PUT / DELETE | `/api/journal/drawings/{id}` | A drawing's scene (strokes, shapes) / save it / delete a sketch |
 | PUT | `/api/journal/drawings/{id}/files` | Pictures on the canvas (each sent once, merged in) |
 | GET / PUT | `/api/journal/drawings/{id}/preview` | Its PNG picture |
+| **videogames.py** (+ steam.py) | | |
+| GET / PUT | `/api/videogames/account` | The Steam profile followed, its last sync, the sync running now / set the profile (then a full sync) |
+| POST | `/api/videogames/sync?full=` | Sync now (in the background) |
+| GET | `/api/videogames/summary` | Dashboard: totals, closest to 100%, recent unlocks, rarest, latest 100%s |
+| GET / PATCH | `/api/videogames[?show=]`, `/api/videogames/{app_id}` | Games / one game with its achievements / hide it |
 | **calendar.py** (core) | | |
 | GET | `/api/calendar?start=&end=` | `events` (repeats expanded) and what `happened` each day |
 | GET | `/api/calendar/upcoming?limit=` | The next events from today |

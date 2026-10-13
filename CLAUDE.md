@@ -719,6 +719,33 @@ DBeaver, psql, and the one-off import script.
      pill from its latest-edited page with a mood) or Month; remembered in localStorage
      offtheclock.journalGroups. Fixed: the volleyball video form remounted (key=games.length)
      when the games list arrived, wiping a title typed before it loaded.
+3zd. **Video games (Steam 100% dashboard)** - DONE in dev (2026-10-14). User tracks 100% completions on
+   steamhunters.com (not bot friendly - never scrape it) and wanted their own dashboard. Uses the
+   official Steam Web API; key is in BOTH .env files as STEAM_API_KEY (passed to the api container by
+   docker-compose; never print it, never commit it; the user pasted it into the chat once).
+   The user's profile is set in the app (vg_sync), not written here: this repo is public. First full
+   sync: ~200 games in ~4 minutes.
+   - 26_videogames.sql: vg_games (app_id PK, playtime, last_played, has_achievements NULL = not read,
+     totals, completed_at = last unlock once 100%, hidden, synced_at, rarity_synced_at),
+     vg_achievements (PK app_id + api_name; name/description/icons from the schema, global_percent,
+     achieved, unlocked_at), vg_sync (one row: profile, steam_id, persona_name, last_sync_at,
+     last_full_at, last_error). journal_links kinds + 'videogame'.
+   - api/app/steam.py: resolve (vanity name / id / profile URL), persona, owned_games (private ->
+     friendly SteamError), player_achievements (NoStats for games without), schema,
+     global_percentages (no key). Errors never contain the key. PAUSE 0.15 s between calls.
+   - videogames.py: run_sync reads every game the first time / with full=true, otherwise only
+     games whose rtime_last_played moved or that were never read; schema re-read when the count of
+     achievements changes; rarity weekly. Background via BackgroundTasks (routes) or a thread (the
+     daily loop started in main.py's lifespan when STEAM_API_KEY is set: checks hourly, syncs if
+     >20 h). SYNC dict = progress, polled by the UI every 2 s while running.
+   - Activity: "Unlocked" (one row per game per day: the achievement's name, or "N achievements")
+     and "Perfected" (completed_at); photo = Steam header image. Tests: conftest's autouse
+     no_real_steam makes any real Steam call fail; test_videogames.py fakes steam.py.
+   - Web modules/videogames: Dashboard (SyncBar, SteamSetup, tiles, Closest to 100%, Recently
+     unlocked, Rarest you have, Latest 100%), Games (show filter, search, sort), VideoGamePanel
+     (header, bar, achievements All / Unlocked / Still to get, rarity pills: <=5% orange, <=20%
+     purple; Store page and Steam achievements links; Hide). Home tiles: Games at 100%, Achievements.
+   - Tests: 267 API, 59 browser steps (video_games: dashboard or the connect form, games list).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"
