@@ -11,6 +11,8 @@ Page layout this relies on (checked 2026-10-11, e.g. /english/products/81701/ind
 The pages are Shift_JIS encoded, not UTF-8.
 """
 import re
+import unicodedata
+from decimal import Decimal
 
 import httpx
 from bs4 import BeautifulSoup
@@ -190,7 +192,37 @@ FINISH_KEYWORDS = [  # semi-gloss before gloss, metallic words before plain colo
 ]
 
 
-def suggest(title: str, series: str | None, description: str | None) -> dict:
+# What a Tamiya item number says about the product: Tamiya numbers its paints in ranges.
+# (prefixes, paint type, size). Used when the page itself doesn't say (panel line pages have no
+# description at all) and when adding straight from the catalogue before the page is fetched.
+ITEM_RANGES = [
+    (("815", "817"), "Acrylic", "10ml"),    # Acrylic Paint Mini X-/XF-
+    (("810", "813"), "Acrylic", "23ml"),    # Acrylic Paint X-/XF- (big jar)
+    (("800", "803"), "Enamel", "10ml"),     # Tamiya Color enamel X-/XF-
+    (("821",), "Lacquer", "10ml"),          # LP lacquer
+    (("850", "851", "865"), "Lacquer", "100ml"),  # TS / AS spray cans
+    (("860",), None, "100ml"),              # PS polycarbonate sprays
+]
+
+# Your usual shop prices (AUD, 2026-10), used as the expected price on the wishlist and as the
+# price when adding to inventory. First match wins. Change them here when prices go up.
+PRICE_GUIDE = [
+    (lambda title, guess: "PANEL LINE ACCENT" in title.upper(), Decimal("10.95")),
+    (lambda title, guess: guess["paint_type"] == "Acrylic" and guess["size"] == "10ml", Decimal("3.95")),
+]
+
+
+def tidy(text: str | None) -> str | None:
+    """Tamiya sometimes uses full-width characters: 'COLOR（DARK BROWN）' -> 'COLOR (DARK BROWN)'."""
+    if text is None:
+        return None
+    return re.sub(r"(\S)\(", r"\1 (", unicodedata.normalize("NFKC", text))  # "COLOR(" -> "COLOR ("
+
+
+def suggest(title: str, series: str | None, description: str | None, item: str | None = None) -> dict:
+    """Best guesses for a new supply / wishlist item. `item` = Tamiya item number or our product
+    code (81776 or T81776): its number range fills in paint type and size the page lacks."""
+    title, series, description = tidy(title), tidy(series), tidy(description)
     words = " ".join(filter(None, [title, series])).lower()
     category = next((c for keys, c in CATEGORY_KEYWORDS if any(k in words for k in keys)), None)
 
@@ -198,6 +230,9 @@ def suggest(title: str, series: str | None, description: str | None) -> dict:
     finish = None
     if category in ("Paint", "Clear / Varnish", "Primer / Surfacer"):
         finish = next((f for keys, f in FINISH_KEYWORDS if any(k in title.lower() for k in keys)), None)
+        code = re.search(r"\b(XF|X)-\d", title.upper())
+        if finish is None and code:  # Tamiya's own rule: XF = flat, X = gloss
+            finish = "Flat / Matt" if code.group(1) == "XF" else "Gloss"
     elif category:
         paint_type = paint_type if category == "Thinner" else "N/A"
         finish = "N/A"
@@ -213,13 +248,32 @@ def suggest(title: str, series: str | None, description: str | None) -> dict:
             size = m.group(1) + m.group(2).lower()
             break
 
-    return {
+    range_type, range_size = _item_range(item, title)
+    if "PANEL LINE ACCENT" in title.upper():  # enamel-based, 40ml (pages don't say)
+        range_type, range_size = "Enamel", "40ml"
+    if range_type and paint_type in (None, "N/A"):
+        paint_type = range_type
+    size = size or range_size
+
+    guess = {
         "name": your_style_name(title),
         "category": category,
         "paint_type": paint_type,
         "finish": finish,
         "size": size,
     }
+    guess["est_price"] = next((price for rule, price in PRICE_GUIDE if rule(title, guess)), None)
+    return guess
+
+
+def _item_range(item: str | None, title: str) -> tuple[str | None, str | None]:
+    if "MINI" in title.upper().split() and "ACRYLIC" in title.upper():
+        return "Acrylic", "10ml"  # some minis sit in the 813xx range
+    number = re.sub(r"^T(?=\d)", "", item or "")
+    if not number.isdigit():
+        return None, None
+    return next(((kind, size) for prefixes, kind, size in ITEM_RANGES if number[:3] in prefixes),
+                (None, None))
 
 
 # Abbreviations that must stay in capitals, e.g. "GRAY GREEN (IJN)" -> "Gray Green (IJN)".
@@ -235,7 +289,8 @@ def your_style_name(title: str) -> str:
     """Names the way the user writes them: 'ACRYLIC PAINT MINI XF-2 FLAT WHITE' ->
     'Acrylic XF2 Flat White' (like their 'Acrylic XF1 Flat Black'). Anything else is just
     tidied: 'TAMIYA EXTRA-THIN CEMENT (40ml)' -> 'Tamiya Extra-Thin Cement (40ml)'."""
-    m = ACRYLIC_MINI.match(title.strip())
+    title = tidy(title)
+    m = ACRYLIC_MINI.match(title)
     if m:
         return f"Acrylic {m.group(1).upper()}{m.group(2).upper()} {_nice_name(m.group(3))}".strip()
     return _nice_name(title)

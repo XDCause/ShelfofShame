@@ -196,9 +196,10 @@ def buy_one(wish_id: int, body: Buy | None = None):
 
 
 # "Is this supply already on the wishlist?" - same brand + code, or same name if it has no code.
-ON_WISHLIST = """EXISTS (SELECT 1 FROM wishlist w
-                  WHERE (w.brand_id = s.brand_id AND w.product_code = s.product_code)
+# A wishlist row w is "this supply" s: same brand + code, or the same name when there's no code.
+ON_WISHLIST_MATCH = """((w.brand_id = s.brand_id AND w.product_code = s.product_code)
                      OR (s.product_code IS NULL AND w.name = s.name))"""
+ON_WISHLIST = f"EXISTS (SELECT 1 FROM wishlist w WHERE {ON_WISHLIST_MATCH})"
 
 
 def wish_from_supplies(conn, where, params=(), notes=None):
@@ -297,7 +298,7 @@ def describe_product(conn, brand_id, product_code):
     if yours:
         suggested = dict(yours)
     elif p["title"]:
-        guess = tamiya.suggest(p["title"], p["series"], p["description"])
+        guess = tamiya.suggest(p["title"], p["series"], p["description"], product_code)
         category = conn.execute("SELECT category_id FROM categories WHERE name = %s",
                                 (guess.pop("category"),)).fetchone()
         suggested = {**guess, "category_id": category["category_id"] if category else None}

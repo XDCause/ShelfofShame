@@ -90,6 +90,22 @@ def test_delete(client, make_supply):
     assert client.delete(f"/api/supplies/{s['supply_id']}").status_code == 404
 
 
+def test_used_up_and_not_replacing_it(client, make_supply):
+    """Using the last one puts it on the wishlist; removing it with also_wishlist takes it off."""
+    s = make_supply()
+    assert client.post(f"/api/supplies/{s['supply_id']}/adjust", json={"delta": -1}).json()["auto_wish_id"]
+    other = make_supply(product_code="T81702", name="Acrylic XF2 Flat White")
+    client.post(f"/api/supplies/{other['supply_id']}/wishlist")
+
+    assert client.delete(f"/api/supplies/{s['supply_id']}?also_wishlist=true").status_code == 204
+    assert [w["name"] for w in client.get("/api/wishlist").json()] == ["Acrylic XF2 Flat White"]
+    # without the flag the wishlist is left alone
+    assert client.delete(f"/api/supplies/{other['supply_id']}").status_code == 204
+    assert len(client.get("/api/wishlist").json()) == 1
+    # the history still has it, by name
+    assert client.get("/api/history").json()[0]["reason"] == "deleted"
+
+
 def test_uses_count_wishlist_and_models_too(client, ids):
     """A brand used only by a model (or wishlist item) still counts as in use."""
     vallejo = client.post("/api/lookups/brands", json={"name": "Vallejo"}).json()

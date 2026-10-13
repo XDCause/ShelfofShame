@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 
 from . import catalog, models, wishlist
 from .db import CONDITIONS, FINISHES, PAINT_TYPES, PRIORITIES, db, stock_reason
-from .wishlist import ON_WISHLIST, wish_from_supplies
+from .wishlist import ON_WISHLIST, ON_WISHLIST_MATCH, wish_from_supplies
 
 app = FastAPI(
     title="Shelf of Shame API",
@@ -255,9 +255,16 @@ def add_supply_to_wishlist(supply_id: int):
 
 
 @app.delete("/api/supplies/{supply_id}", status_code=204)
-def delete_supply(supply_id: int):
+def delete_supply(supply_id: int, also_wishlist: bool = False):
+    """Remove an item from the inventory (e.g. used up and not replacing it). The stock history
+    keeps its name. also_wishlist=true also takes it off the wishlist (running out put it there),
+    unless it's already ticked as bought."""
     with db() as conn:
         stock_reason(conn, "deleted")
+        if also_wishlist:
+            conn.execute(f"""
+                DELETE FROM wishlist w USING supplies s
+                WHERE s.supply_id = %s AND NOT w.got_it AND {ON_WISHLIST_MATCH}""", (supply_id,))
         if conn.execute("DELETE FROM supplies WHERE supply_id = %s", (supply_id,)).rowcount == 0:
             raise HTTPException(404, f"Supply {supply_id} not found.")
     return Response(status_code=204)

@@ -68,13 +68,13 @@ def test_one_tap_add_to_wishlist(client, ids, fake_tamiya, monkeypatch):
     load_catalogue(ids)
     r = client.post("/api/catalog/T87131/wishlist")
     assert r.status_code == 201
-    wish = r.json()  # straight away, from the catalogue title alone
-    assert (wish["name"], wish["category"], wish["size"]) == ("Panel Line Accent Color (Black)", "Weathering", None)
+    wish = r.json()  # straight away, from the catalogue title + item number alone
+    assert (wish["name"], wish["category"], wish["paint_type"], wish["size"], wish["est_price"]) ==         ("Panel Line Accent Color (Black)", "Weathering", "Enamel", "40ml", 10.95)
     assert wish["has_image"] is False and wish["catalog_thumb"] is None  # (no thumb_url in this test catalogue)
     # ...then tamiya.com is fetched in the background and fills in the size and photo
     assert fake_tamiya == ["87131"]
     [later] = [w for w in client.get("/api/wishlist").json() if w["wish_id"] == wish["wish_id"]]
-    assert (later["size"], later["has_image"]) == ("40ml", True)
+    assert (later["size"], later["has_image"]) == ("40ml", True)  # page said 40ml too; nothing overwritten
     assert client.get("/api/catalog/search", params={"q": "panel line black"}).json()[0]["on_wishlist"] is True
 
     assert client.post("/api/catalog/T87131/wishlist").status_code == 409
@@ -87,3 +87,18 @@ def test_add_still_works_when_tamiya_is_down(client, ids, fake_tamiya):
     assert r.status_code == 201 and r.json()["name"] == "Panel Line Accent Color (Brown)"
     assert fake_tamiya == ["87132"]
     assert [w["name"] for w in client.get("/api/wishlist").json()] == ["Panel Line Accent Color (Brown)"]
+
+
+def test_full_width_brackets_are_tidied(client, ids):
+    with db() as conn:
+        conn.execute("INSERT INTO catalog_products (brand_id, product_code, item, title, genre) VALUES "
+                     "(%s, 'T87140', '87140', 'PANEL LINE ACCENT COLOR（DARK BROWN）', 'Finishing Materials')",
+                     (ids["tamiya"],))
+    [r] = client.get("/api/catalog/search", params={"q": "dark brown"}).json()
+    assert r["name"] == "Panel Line Accent Color (Dark Brown)"
+
+
+def test_acrylic_mini_gets_type_size_finish_and_price(client, ids, fake_tamiya):
+    load_catalogue(ids)
+    wish = client.post("/api/catalog/T81776/wishlist").json()
+    assert (wish["paint_type"], wish["finish"], wish["size"], wish["est_price"]) ==         ("Acrylic", "Flat / Matt", "10ml", 3.95)

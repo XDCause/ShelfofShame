@@ -344,15 +344,19 @@ def wish_for_missing_paints(model_id: int):
             info = conn.execute("SELECT title, series, description FROM product_info "
                                 "WHERE brand_id = %s AND product_code = %s",
                                 (p["brand_id"], p["product_code"])).fetchone()
-            guess = tamiya.suggest(info["title"], info["series"], info["description"]) \
+            if not (info and info["title"]):  # not fetched yet: the Shop Tamiya catalogue knows it
+                info = conn.execute("SELECT title, genre AS series, NULL AS description FROM catalog_products "
+                                    "WHERE brand_id = %s AND product_code = %s",
+                                    (p["brand_id"], p["product_code"])).fetchone()
+            guess = tamiya.suggest(info["title"], info["series"], info["description"], p["product_code"]) \
                 if info and info["title"] else {}
             conn.execute("""
                 INSERT INTO wishlist (brand_id, product_code, name, category_id, paint_type, finish,
-                                      size, notes)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                                      size, est_price, notes)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (brand_id, product_code) DO NOTHING""",
                 (p["brand_id"], p["product_code"], p["paint_name"], paint_category["category_id"],
-                 guess.get("paint_type"), guess.get("finish"), guess.get("size"),
+                 guess.get("paint_type"), guess.get("finish"), guess.get("size"), guess.get("est_price"),
                  f"For {model['name']}: {p['purpose']}" if p["purpose"] else f"For {model['name']}"))
             added.append(p["paint_name"])
         return {"added": added, "skipped": skipped, "model": fetch_model(conn, model_id)}

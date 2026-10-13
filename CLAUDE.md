@@ -282,6 +282,25 @@ DBeaver, psql, and the one-off import script.
      OwnedBadge moved to its own component.
    - Tests: 91 API (test_catalog.py + trimmed fixture tamiya_list_e_5010.html), 28 browser steps
      (search only - the e2e never fetches tamiya.com; thumbnails are blank in its screenshots).
+3n. **Usual prices, item ranges, removing used-up items** - DONE (2026-10-13).
+   - `tamiya.suggest(title, series, description, item)`: Tamiya item-number ranges fill paint type
+     and size (ITEM_RANGES: 815/817 Acrylic Mini 10ml, 810/813 Acrylic 23ml, 800/803 Enamel 10ml,
+     821 LP Lacquer 10ml, 850/851/865 TS/AS Lacquer 100ml, 860 PS 100ml; "ACRYLIC ... MINI" in
+     the title wins - some minis are 813xx). Panel Line Accent = Enamel 40ml (pages have no
+     description). Finish fallback: XF- = Flat / Matt, X- = Gloss.
+   - **PRICE_GUIDE (user's numbers):** every 10ml Acrylic = $3.95, Panel Line Accent = $10.95.
+     Returned as `est_price` by suggest(); used for wishlist est_price (catalogue add, model
+     "missing to wishlist" - which now also falls back to catalog_products when the page was
+     never fetched) and prefilled in AddPanel / WishForm price fields (applyResult; String()!).
+   - `tamiya.tidy()`: NFKC normalises Tamiya's full-width brackets "（DARK BROWN）".
+     your_style_name and suggest use it. Fixed live: wishlist T87140 and SUP-0023.
+   - **Removing**: DELETE /api/supplies/{id}?also_wishlist=true also deletes the matching
+     un-ticked wishlist row (wishlist.ON_WISHLIST_MATCH). ItemPanel: amber "All used up. Not
+     replacing it?" box (qty 0, or last one Empty / Dried out) -> "Remove from inventory";
+     footer "Delete" renamed "Remove". Toast after using the last one: Undo + "Not replacing?"
+     (opens the item). Toast now takes several actions. History reason stays 'deleted'.
+   - e2e reads TOTAL / PAINTS from the API instead of hard-coding 22 / 9.
+   - Tests: 104 API, 29 browser steps.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

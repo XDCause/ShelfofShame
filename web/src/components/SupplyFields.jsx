@@ -46,6 +46,10 @@ export function applyResult(f, r) {
     paint_type: s.paint_type ?? f.paint_type,
     finish: s.finish ?? f.finish,
     size: s.size ?? f.size,
+    // the usual price (Acrylic Minis, panel lines...) unless you've typed one. Form fields are
+    // text, and the API sends the price as a number.
+    ...('unit_price' in f && { unit_price: f.unit_price || String(s.est_price ?? '') }),
+    ...('est_price' in f && { est_price: f.est_price || String(s.est_price ?? '') }),
   }
 }
 

@@ -13,7 +13,7 @@ const longDate = (iso) =>
 // location, last purchased, notes) save as you make them; what the item IS sits behind
 // "Edit details".
 // reloadKey changes when something outside the panel (an Undo) changed this item.
-export default function ItemPanel({ supplyId, lookups, reloadKey, onClose, onChanged, onAdjusted }) {
+export default function ItemPanel({ supplyId, lookups, reloadKey, onClose, onChanged, onAdjusted, onRemoved }) {
   const [item, setItem] = useState(null)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState('') // short "Saved" confirmation
@@ -114,8 +114,10 @@ export default function ItemPanel({ supplyId, lookups, reloadKey, onClose, onCha
   const remove = async () => {
     setBusy(true)
     try {
-      await api.deleteSupply(supplyId)
+      // Running out put it on the wishlist; removing it means you're not replacing it.
+      await api.deleteSupply(supplyId, item.on_wishlist)
       onChanged()
+      onRemoved?.(item)
       onClose()
     } catch (e) {
       setError(e.message)
@@ -132,6 +134,7 @@ export default function ItemPanel({ supplyId, lookups, reloadKey, onClose, onCha
   }
 
   const canLink = item.brand_id && item.product_code
+  const usedUp = item.qty_on_hand === 0 || (item.qty_on_hand === 1 && ['Empty', 'Dried out'].includes(item.condition))
   // The keys matter: without them React reuses the "Edit details" button as "Save details",
   // turning it into a submit button mid-click, so the browser submits (saves) straight away.
   const footer = editing ? (
@@ -141,8 +144,8 @@ export default function ItemPanel({ supplyId, lookups, reloadKey, onClose, onCha
     </>
   ) : confirmDelete ? (
     <span className="confirm">
-      Delete {item.name} permanently?
-      <button type="button" className="danger" onClick={remove} disabled={busy}>Yes, delete</button>
+      Remove {item.name} from your inventory{item.on_wishlist ? ' and your wishlist' : ''}?
+      <button type="button" className="danger" onClick={remove} disabled={busy}>Yes, remove</button>
       <button type="button" className="link" onClick={() => setConfirmDelete(false)}>Cancel</button>
     </span>
   ) : (
@@ -150,7 +153,7 @@ export default function ItemPanel({ supplyId, lookups, reloadKey, onClose, onCha
       <button key="edit" type="button" className="secondary"
         onClick={() => { setDetails(toForm(item)); setEditing(true) }}>Edit details</button>
       <span className="spacer" />
-      <button type="button" className="danger-link" onClick={() => setConfirmDelete(true)}>Delete</button>
+      <button type="button" className="danger-link" onClick={() => setConfirmDelete(true)}>Remove</button>
     </>
   )
 
@@ -201,6 +204,18 @@ export default function ItemPanel({ supplyId, lookups, reloadKey, onClose, onCha
               </span>
             </div>
           </section>
+
+          {usedUp && (
+            <section className="panel-section used-up">
+              <p>
+                <strong>{item.qty_on_hand === 0 ? 'All used up.' : `Your last one is ${item.condition.toLowerCase()}.`}</strong>{' '}
+                Not replacing it? Remove it from your inventory
+                {item.on_wishlist ? ' (and your wishlist)' : ''}. Its stock history is kept.
+              </p>
+              <button type="button" className="danger" onClick={() => setConfirmDelete(true)}
+                disabled={confirmDelete}>Remove from inventory</button>
+            </section>
+          )}
 
           <section className="panel-section">
             <h4 className="section-title" id="condition-label">Condition</h4>

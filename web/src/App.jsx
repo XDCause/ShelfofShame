@@ -24,7 +24,7 @@ export default function App() {
   const [flash, setFlash] = useState(null) // {type, text} shown under the header
   const [refreshKey, setRefreshKey] = useState(0) // bump to reload the lists
   const [undoKey, setUndoKey] = useState(0) // bump when an undo changes an item behind an open panel
-  const [toast, setToast] = useState(null) // {text, action: {label, run}}
+  const [toast, setToast] = useState(null) // {text, actions: [{label, run}]}
   const toastTimer = useRef(null)
 
   const loadLookups = useCallback(() => {
@@ -40,18 +40,24 @@ export default function App() {
   const close = useCallback(() => setPanel(null), [])
   const show = (type, text) => setFlash({ type, text })
 
-  const showToast = useCallback((text, action = null) => {
+  const showToast = useCallback((text, ...actions) => {
     clearTimeout(toastTimer.current)
-    setToast({ text, action })
+    setToast({ text, actions })
     toastTimer.current = setTimeout(() => setToast(null), 6000)
   }, [])
 
   // After any -/+ (list or panel): "Used one: XF-1 · Undo". Undo puts back the quantity AND the
   // last-purchased date (+1 sets it to today), and is logged as "undo" in the stock history.
   // If the change put the item on the wishlist (it just ran out), Undo takes it back off.
+  // Used the last one: also offer "Not replacing?", which opens the item to remove it.
   const adjusted = useCallback((before, delta, autoWishId = null) => {
     const wished = autoWishId ? ' · added to your wishlist' : ''
-    showToast(`${delta < 0 ? 'Used one' : 'Added one'}: ${before.name}${wished}`, {
+    const last = delta < 0 && before.qty_on_hand + delta === 0
+    const notReplacing = { label: 'Not replacing?', run: () => {
+      setToast(null)
+      setPanel({ type: 'item', id: before.supply_id })
+    } }
+    showToast(`${delta < 0 ? (last ? 'Used the last one' : 'Used one') : 'Added one'}: ${before.name}${wished}`, {
       label: 'Undo',
       run: async () => {
         setToast(null)
@@ -64,7 +70,7 @@ export default function App() {
           showToast(`Couldn't undo: ${e.message}`)
         }
       },
-    })
+    }, ...(last ? [notReplacing] : []))
   }, [changed, showToast])
 
   // Scan from anywhere: something you own opens its panel; anything else opens Add.
@@ -116,7 +122,8 @@ export default function App() {
 
       {lookups && panel?.type === 'item' && (
         <ItemPanel key={panel.id} supplyId={panel.id} lookups={lookups} reloadKey={undoKey}
-          onClose={close} onChanged={changed} onAdjusted={adjusted} />
+          onClose={close} onChanged={changed} onAdjusted={adjusted}
+          onRemoved={(item) => show('ok', `${item.name} removed from your inventory.`)} />
       )}
       {lookups && panel?.type === 'add' && (
         <AddPanel key={panel.scan?.result?.barcode ?? 'add'} lookups={lookups} scanned={panel.scan}
@@ -154,7 +161,7 @@ export default function App() {
       {toast && (
         <div className="toast" role="status" aria-live="polite">
           <span>{toast.text}</span>
-          {toast.action && <button type="button" onClick={toast.action.run}>{toast.action.label}</button>}
+          {toast.actions.map((a) => <button key={a.label} type="button" onClick={a.run}>{a.label}</button>)}
           <button type="button" className="toast-close" aria-label="Dismiss" onClick={() => setToast(null)}>✕</button>
         </div>
       )}

@@ -71,15 +71,16 @@ async def add_to_wishlist(product_code: str, background: BackgroundTasks):
         info = conn.execute("SELECT title, series, description FROM product_info "
                             "WHERE brand_id = %s AND product_code = %s AND title IS NOT NULL",
                             (row["brand_id"], product_code)).fetchone()
-        guess = (tamiya.suggest(info["title"], info["series"], info["description"]) if info
-                 else tamiya.suggest(row["title"], row["genre"], None))
+        guess = (tamiya.suggest(info["title"], info["series"], info["description"], row["item"]) if info
+                 else tamiya.suggest(row["title"], row["genre"], None, row["item"]))
         wish = conn.execute("""
-            INSERT INTO wishlist (brand_id, product_code, name, category_id, paint_type, finish, size)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO wishlist (brand_id, product_code, name, category_id, paint_type, finish, size,
+                                  est_price)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (brand_id, product_code) DO NOTHING
             RETURNING wish_id""",
             (row["brand_id"], product_code, guess["name"], category_id(conn, guess["category"]),
-             guess["paint_type"], guess["finish"], guess["size"])).fetchone()
+             guess["paint_type"], guess["finish"], guess["size"], guess["est_price"])).fetchone()
         if wish is None:
             raise HTTPException(409, "It's already on your wishlist.")
         result = fetch_wish(conn, wish["wish_id"])
@@ -104,11 +105,11 @@ async def fill_in_from_tamiya(item: str, wish_id: int):
     with db() as conn:
         info = conn.execute("SELECT title, series, description FROM product_info "
                             "WHERE brand_id = %s AND product_code = %s", (brand_id, code)).fetchone()
-        guess = tamiya.suggest(info["title"], info["series"], info["description"])
+        guess = tamiya.suggest(info["title"], info["series"], info["description"], item)
         conn.execute("""
             UPDATE wishlist SET size = COALESCE(size, %s), paint_type = COALESCE(paint_type, %s),
-                                finish = COALESCE(finish, %s),
+                                finish = COALESCE(finish, %s), est_price = COALESCE(est_price, %s),
                                 category_id = CASE WHEN category_id = %s THEN %s ELSE category_id END
             WHERE wish_id = %s""",
-            (guess["size"], guess["paint_type"], guess["finish"],
+            (guess["size"], guess["paint_type"], guess["finish"], guess["est_price"],
              category_id(conn, "Other"), category_id(conn, guess["category"]), wish_id))

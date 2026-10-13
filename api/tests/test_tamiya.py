@@ -1,4 +1,5 @@
 """The Tamiya helpers on their own: parsing real saved pages, codes, barcodes, guesses."""
+from decimal import Decimal
 from pathlib import Path
 
 import pytest
@@ -63,12 +64,35 @@ def test_normalise_barcode(raw, normalised):
 def test_suggestions_from_titles():
     s = tamiya.suggest("ACRYLIC PAINT MINI XF-1 FLAT BLACK", "Tamiya Color Acrylic Paint Mini", "Contents: 10ml")
     assert s == {"name": "Acrylic XF1 Flat Black", "category": "Paint",
-                 "paint_type": "Acrylic", "finish": "Flat / Matt", "size": "10ml"}
+                 "paint_type": "Acrylic", "finish": "Flat / Matt", "size": "10ml",
+                 "est_price": Decimal("3.95")}
     tape = tamiya.suggest("MASKING TAPE 10mm", "Tamiya Craft Tools", "Contents: 18m")
     assert (tape["category"], tape["size"]) == ("Masking Tape", "18m")  # length, not width
     assert tamiya.suggest("ACRYLIC PAINT MINI X-35 SEMI GLOSS CLEAR", "", None)["finish"] == "Semi-gloss"
     assert tamiya.suggest("ACRYLIC PAINT MINI X-10 GUN METAL", "", None)["finish"] == "Metallic"
     assert tamiya._nice_name("SURFACE PRIMER L (GRAY)") == "Surface Primer L (Gray)"
+
+
+@pytest.mark.parametrize("title, item, paint_type, finish, size, price", [
+    # the item number's range fills in what the title / page doesn't say
+    ("PANEL LINE ACCENT COLOR (BLACK)", "87131", "Enamel", "N/A", "40ml", "10.95"),
+    ("ACRYLIC PAINT MINI XF-76 GRAY GREEN (IJN)", "T81776", "Acrylic", "Flat / Matt", "10ml", "3.95"),
+    ("ACRYLIC MINI XF-70 DARK GREEN 2 (IJN)", "81370", "Acrylic", "Flat / Matt", "10ml", "3.95"),  # odd range
+    ("ACRYLIC PAINT X-1 BLACK", "81001", "Acrylic", "Gloss", "23ml", None),  # big jar: no usual price
+    ("XF-1 FLAT BLACK", "80301", "Enamel", "Flat / Matt", "10ml", None),
+    ("X-7 RED", "80007", "Enamel", "Gloss", "10ml", None),
+    ("LP-1 BLACK", "82101", "Lacquer", None, "10ml", None),
+    ("TS-1 RED BROWN", "85001", "Lacquer", None, "100ml", None),
+    ("TAMIYA MASKING TAPE 40mm BLUE", "87240", "N/A", "N/A", "40mm", None),
+])
+def test_item_ranges_and_usual_prices(title, item, paint_type, finish, size, price):
+    s = tamiya.suggest(title, "Paints", None, item)
+    assert (s["paint_type"], s["finish"], s["size"]) == (paint_type, finish, size)
+    assert s["est_price"] == (Decimal(price) if price else None)
+
+
+def test_full_width_characters():
+    assert tamiya.your_style_name("PANEL LINE ACCENT COLOR（DARK BROWN）") == "Panel Line Accent Color (Dark Brown)"
 
 
 @pytest.mark.parametrize("title, name", [

@@ -3,18 +3,25 @@
 Run it with .\\run_e2e.ps1 (backs up first and restores afterwards - this script changes data).
 Runs inside the Playwright container on the app's Docker network, against http://web.
 Prints a PASS/FAIL line per step, all browser errors, and saves screenshots to /out.
-Written against the user's real data (22 supplies, the Zero and P-40E models).
+Written against the user's real data (the Zero and P-40E models, XF-1 etc.); item counts are
+read from the API at the start, so adding or removing supplies doesn't break it.
 """
 import json
 import re
 import time
 import traceback
+import urllib.request
 
 from playwright.sync_api import expect, sync_playwright
 
 BASE = "http://web"
 OUT = "/out"
 results, errors = [], []
+
+# How many supplies there are right now (and how many are Paint), for the list checks.
+_supplies = json.load(urllib.request.urlopen(f"{BASE}/api/supplies"))
+TOTAL = len(_supplies)
+PAINTS = sum(s["category"] == "Paint" for s in _supplies)
 
 
 def step(name):
@@ -51,35 +58,35 @@ def watch(page, label):
 
 
 # ---------------------------------------------------------------- desktop
-@step("Inventory loads with 22 items")
+@step("Inventory loads with every item")
 def inventory_loads(page):
     page.goto(BASE)
     expect(page.locator("tr.row").first).to_be_visible(timeout=15000)
-    expect(page.locator("p.summary")).to_contain_text("22 items")
-    assert page.locator("tr.row").count() == 22
+    expect(page.locator("p.summary")).to_contain_text(f"{TOTAL} items")
+    assert page.locator("tr.row").count() == TOTAL
     shot(page, "d01_inventory")
 
 
 @step("Search narrows the list and the total follows")
 def search(page):
     page.get_by_label("Search").fill("flat")
-    expect(page.locator("p.summary")).to_contain_text("of 22 items", timeout=5000)
+    expect(page.locator("p.summary")).to_contain_text(f"of {TOTAL} items", timeout=5000)
     n = page.locator("tr.row").count()
-    assert 0 < n < 22, n
+    assert 0 < n < TOTAL, n
     shot(page, "d02_search_flat", full=False)
     page.get_by_label("Search").fill("")
-    expect(page.locator("tr.row")).to_have_count(22)
+    expect(page.locator("tr.row")).to_have_count(TOTAL)
 
 
 @step("Category chip filters, tapping again clears")
 def chip(page):
     paint = page.get_by_role("button", name=re.compile(r"^Paint \d+$"))
     paint.click()
-    expect(page.locator("p.summary")).to_contain_text("of 22 items")
+    expect(page.locator("p.summary")).to_contain_text(f"of {TOTAL} items")
     n = page.locator("tr.row").count()
-    assert n == 9, n
+    assert n == PAINTS, n
     paint.click()
-    expect(page.locator("tr.row")).to_have_count(22)
+    expect(page.locator("tr.row")).to_have_count(TOTAL)
 
 
 @step("Item panel opens; condition Nearly empty makes it Low")
@@ -185,8 +192,8 @@ def delete_bought(page):
     page.locator("tr.row", has_text="XF2 Flat White").click()
     d = drawer(page)
     expect(d.get_by_label("Last bought from")).to_have_value("E2E shop")
-    d.get_by_role("button", name="Delete").click()
-    page.get_by_role("button", name="Yes, delete").click()
+    d.get_by_role("button", name="Remove", exact=True).click()
+    page.get_by_role("button", name="Yes, remove").click()
     expect(page.locator("tr.row", has_text="XF2 Flat White")).to_have_count(0)
 
 
@@ -311,6 +318,27 @@ def shop_tamiya(page):
     page.keyboard.press("Escape")
 
 
+@step("Used the last one, not replacing it: remove from inventory and wishlist")
+def used_up(page):
+    page.get_by_role("tab", name="Inventory").click()
+    row = page.locator("tr.row", has_text="Acrylic XF71 Cockpit Green")
+    row.get_by_role("button", name=re.compile("^Use one")).click()
+    toast = page.locator(".toast")
+    expect(toast).to_contain_text("Used the last one: Acrylic XF71 Cockpit Green")
+    toast.get_by_role("button", name="Not replacing?").click()
+    d = drawer(page)
+    expect(d.locator(".used-up")).to_contain_text("All used up")
+    expect(d.locator(".used-up")).to_contain_text("(and your wishlist)")  # running out put it there
+    shot(page, "d16_used_up", full=False)
+    d.get_by_role("button", name="Remove from inventory").click()
+    page.get_by_role("button", name="Yes, remove").click()
+    expect(page.locator("p.alert", has_text="removed from your inventory")).to_be_visible()
+    expect(page.locator("tr.row", has_text="XF71 Cockpit Green")).to_have_count(0)
+    page.get_by_role("tab", name="Wishlist").click()
+    expect(page.locator("article.wish-card", has_text="XF71")).to_have_count(0)
+    page.get_by_role("tab", name="Inventory").click()
+
+
 @step("Model: Search Scalemates link")
 def scalemates(page):
     page.get_by_role("tab", name="Models").click()
@@ -389,7 +417,7 @@ with sync_playwright() as p:
     watch(desk, "desktop")
     for fn in (inventory_loads, search, chip, condition_low, plus_minus, notes, edit_details, manage_lists,
                add_lookup, add_to_wishlist, wishlist_buy, delete_bought, scan_owned, scan_unknown,
-               models, model_paste, add_model_hasegawa, undo, add_to_wishlist_button, duplicate_check, wishlist_panel, shop_tamiya,
+               models, model_paste, add_model_hasegawa, undo, add_to_wishlist_button, duplicate_check, wishlist_panel, shop_tamiya, used_up,
                scalemates, fab_desktop, model_edit, lists_protect, no_panel):
         fn(desk)
     ctx = browser.new_context(**p.devices["iPhone 13"])
