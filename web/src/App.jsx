@@ -9,6 +9,7 @@ import ItemPanel from './components/ItemPanel.jsx'
 import ModelPanel from './components/ModelPanel.jsx'
 import SettingsPanel from './components/SettingsPanel.jsx'
 import { AppContext } from './core/app-context.js'
+import GlobalSearch from './core/GlobalSearch.jsx'
 import Home from './core/Home.jsx'
 import JournalList from './core/journal/JournalList.jsx'
 import JournalPage from './core/journal/JournalPage.jsx'
@@ -127,6 +128,7 @@ export default function App() {
                 {module && <span className="nav-context">{module.name}</span>}
                 {title}{envBadge}
               </h1>
+              {lookups && <GlobalSearch />}
               <div className="navbar-actions">
                 {lookups && !panel && <ScanButtonNav onBarcode={scanned} onError={showToast}
                   onUnreadable={() => {

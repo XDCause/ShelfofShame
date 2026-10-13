@@ -28,6 +28,9 @@ const enc = encodeURIComponent
 const image = (method, blob) => ({ method, body: blob, headers: { 'Content-Type': blob.type } })
 
 export const api = {
+  // What you've done lately (core): stock, kits, build log, time, journal
+  activity: (limit = 20) => request(`/activity?limit=${limit}`),
+
   // Journal (core): pages, tags, @mentions, photos
   listPages: (params = {}) => request(`/journal?${new URLSearchParams(Object.entries(params).filter(([, v]) => v))}`),
   addPage: (page = {}) => request('/journal', send('POST', page)),
@@ -147,6 +150,18 @@ export const logPhotoUrl = (entry) => `/api/model-log/${entry.entry_id}/photo?v=
 // browser doesn't keep showing its cached copy of the old one.
 export const imageUrl = (item) =>
   `/api/product-images/${item.product_info_id}?v=${enc(item.photo_updated ?? '')}`
+
+// "just now", "5 min ago", "2h ago", "yesterday", "3 days ago", else the date.
+export const timeAgo = (when) => {
+  const minutes = (Date.now() - new Date(when).getTime()) / 60000
+  if (minutes < 1) return 'just now'
+  if (minutes < 60) return `${Math.floor(minutes)} min ago`
+  if (minutes < 24 * 60) return `${Math.floor(minutes / 60)}h ago`
+  const days = Math.floor(minutes / (24 * 60))
+  if (days === 1) return 'yesterday'
+  if (days < 7) return `${days} days ago`
+  return shortDate(when)
+}
 
 export const money = (n) =>
   n == null || n === '' ? '' : Number(n).toLocaleString('en-AU', { style: 'currency', currency: 'AUD' })

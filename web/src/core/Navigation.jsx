@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router'
-import { HomeIcon, JournalIcon } from '../components/icons.jsx'
+import { BoltIcon, ClockIcon, HomeIcon, JournalIcon } from '../components/icons.jsx'
 import { MODULES, moduleFor } from '../modules/index.js'
 
 // The core's own pages, for every hobby (the calendar joins them in phase 3, docs/ROADMAP.md).
@@ -12,12 +12,22 @@ export const corePageFor = (pathname) =>
 
 const pageLink = (module, page) => `/${module.id}/${page.path}`
 
+// The card at the foot of the sidebar: a different nudge each day.
+const NUDGES = [
+  ['Keep building.', 'One model at a time.'],
+  ['Thin your paints.', 'Two thin coats beat one thick one.'],
+  ['Progress, not perfection.', 'Ten minutes at the bench still counts.'],
+  ['Clear the shelf.', 'Finish one before you open another.'],
+  ['Write it down.', 'Future you will want to know what you mixed.'],
+]
+const nudge = () => NUDGES[Math.floor(Date.now() / 86400000) % NUDGES.length]
+
 // Wide screens: a sidebar like the Mac's (Notes, Mail): Home and Journal, then each hobby and
 // its pages. Between 701 and 1000 px it shrinks to icons only (CSS).
 export function Sidebar() {
   return (
     <aside className="sidebar">
-      <p className="brand">Off the Clock</p>
+      <p className="brand"><span className="brand-mark"><ClockIcon size={20} /></span>Off the Clock</p>
       <nav aria-label="Sections">
         {CORE_PAGES.map((p) => (
           <NavLink key={p.path} to={p.path} end={p.path === '/'} className="side-link" title={p.label}>
@@ -36,6 +46,10 @@ export function Sidebar() {
           </div>
         ))}
       </nav>
+      <div className="nudge" aria-hidden="true">
+        <BoltIcon size={18} />
+        <span><strong>{nudge()[0]}</strong>{nudge()[1]}</span>
+      </div>
     </aside>
   )
 }

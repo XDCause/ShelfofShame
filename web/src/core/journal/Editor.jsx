@@ -7,9 +7,9 @@ import '@blocknote/mantine/style.css'
 import { BlockNoteSchema, defaultInlineContentSpecs } from '@blocknote/core'
 import { BlockNoteView } from '@blocknote/mantine'
 import { createReactInlineContentSpec, SuggestionMenuController, useCreateBlockNote } from '@blocknote/react'
-import { useEffect, useState } from 'react'
 import { api } from '../../api.js'
 import { shrink } from '../../components/PhotoUpload.jsx'
+import { useTheme } from '../theme.js'
 
 // A mention is stored in the page as {type: "mention", props: {kind, ref, label}}; the API reads
 // them on save to link the page to what it mentions (api/app/journal.py).
@@ -33,21 +33,8 @@ const schema = BlockNoteSchema.create({
 
 const WHAT = { model: 'Model', supply: 'Supply', page: 'Journal page' }
 
-// The editor follows the device's light / dark setting, like the rest of the app.
-function useColourScheme() {
-  const query = '(prefers-color-scheme: dark)'
-  const [dark, setDark] = useState(() => window.matchMedia(query).matches)
-  useEffect(() => {
-    const media = window.matchMedia(query)
-    const changed = (e) => setDark(e.matches)
-    media.addEventListener('change', changed)
-    return () => media.removeEventListener('change', changed)
-  }, [])
-  return dark ? 'dark' : 'light'
-}
-
 export default function Editor({ pageId, initialContent, onChange, onOpenMention }) {
-  const theme = useColourScheme()
+  const theme = useTheme() // light / dark, like the rest of the app
   const editor = useCreateBlockNote({
     schema,
     initialContent: initialContent?.length ? initialContent : undefined,

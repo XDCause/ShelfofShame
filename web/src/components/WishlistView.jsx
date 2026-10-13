@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router'
 import { api, imageUrl, money } from '../api.js'
 import OwnedBadge from './OwnedBadge.jsx'
 import ScanButton from './ScanButton.jsx'
@@ -25,7 +26,8 @@ export default function WishlistView({ lookups, settings, refreshKey, onChanged 
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState(null)
   const [scanned, setScanned] = useState(null) // {result, photo} -> form pre-filled
-  const [shopping, setShopping] = useState(false) // Shop Tamiya panel open
+  const [params, setParams] = useSearchParams()
+  const [shopping, setShopping] = useState(() => params.get('shop') === '1') // Shop Tamiya open (?shop=1 from Home)
 
   const openForm = (wish, scan = null) => {
     setScanned(scan)
@@ -128,7 +130,7 @@ export default function WishlistView({ lookups, settings, refreshKey, onChanged 
       </div>
 
       {shopping && (
-        <ShopPanel onClose={() => setShopping(false)}
+        <ShopPanel onClose={() => { setShopping(false); if (params.has('shop')) setParams({}, { replace: true }) }}
           onAdded={(p) => {
             setMessage({ type: 'ok', text: `${p.name} added to your wishlist.` })
             load()

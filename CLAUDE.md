@@ -553,6 +553,40 @@ DBeaver, psql, and the one-off import script.
    - e2e: journal_suggestion (makes a Wanted "Kit-<MARK>" via the API), journal_todo (/check in the
      editor; focus + Control+End, since clicking mid-line can hit a mention pill).
      215 API tests, 47 browser steps (dev).
+3x. **Creative refresh + journal -> wishlist** - DONE in dev (2026-10-13). User sent two reference
+   designs (one "Shelf of Shame" dark navy dashboard, one "Off the Clock" journal/inventory) and
+   asked to "up the creativity", pulling the best of each. Still NOT promoted.
+   - Journal: supply mentions + BUY_WORDS ("want to buy", "need more", "order", "running low on",
+     "ran out of"...; NOT "bought") -> "Add to wishlist" (key supply:<id>:wishlist:yes; applied with
+     wishlist.wish_from_supplies, notes "From the journal: <title>"); skipped if already on it.
+   - `api/app/activity.py`: GET /api/activity?limit&since - UNION of stock_movements (added /
+     bought / used / deleted), models' purchase_date / started_on / finished_on (at noon; Wanted kits'
+     purchase dates skipped), model_log, stopped model_sessions, journal_pages; product photo
+     joined. Journal list rows: cover_url (first image block) else product_info of the first
+     mentioned kit / supply (LATERAL).
+   - Theme: `core/theme.js` sets <html data-theme> (localStorage `offtheclock.theme`: system /
+     light / dark; Settings > Appearance). CSS tokens: light + `:root[data-theme='dark']` navy
+     (#0a0f1c bg, #111a2c surface); new tokens --border, --sidebar, --tint-2, --teal, --hero-shade.
+     No more prefers-color-scheme in CSS; the editor uses useTheme(). Cards / panels / folds get a
+     1px --border.
+   - Tone classes `.tint .ok .low .out .purple .teal` set --tone / --tone-bg for `.pill`,
+     `.stat-icon`, `.thumb-icon`, `.fill-bar`.
+   - Home (core/Home.jsx): hero (photo of the latest kit in the activity feed, gradient shade,
+     daily TAGLINES, "Write today's entry"), each module's `home.Stats`, grid [Recent activity |
+     Quick actions + JournalHome], each module's `home.Cards`. Manifest `home: {Stats, Cards}`
+     replaced HomeCard; models: ModelsStats / ModelsCards (Building now with step bars, Running low
+     with fill bars) sharing one fetch via core/useShared.js.
+   - modules/models/fill.jsx: FILL by condition (Sealed 100, Opened 85, Half used 50, Nearly empty
+     15, Empty / Dried out 0), FillBar; used in Home, the inventory Condition column, ItemPanel.
+     Inventory Category column = CategoryPill (colour from a hash of the name).
+   - core/GlobalSearch.jsx in the nav bar (uses /journal/mentionable; Ctrl/Cmd+K; arrows + Enter;
+     phones: a search button that opens the box over the title). Sidebar: brand mark + daily
+     "nudge" card. Journal list = PageCard (date block, picture, first tag pill, two-line snippet,
+     tags, Pinned) + Newest / Oldest sort. Home's Shop Tamiya -> /models/wishlist?shop=1 opens it.
+   - Gotcha: on phones a single grid column must be `minmax(0, 1fr)`, not `1fr` (which won't
+     shrink below a long one-line title and widened the page).
+   - e2e: inventory search is `get_by_label("Search", exact=True)` (the top bar has "Search
+     everything"); new steps global_search, journal_wishlist, appearance. 221 API tests, 50 steps.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api, imageUrl, money } from '../api.js'
+import { FillBar, fillOf } from '../modules/models/fill.jsx'
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -329,8 +330,8 @@ function SupplyTable({ rows, showHead = false, showCategory = false, onOpen, adj
                 <span className="show-xs"><Condition row={r} /></span>
               </span>
             </td>
-            {showCategory && <td className="hide-sm">{r.category}</td>}
-            <td className="hide-xs"><Condition row={r} /></td>
+            {showCategory && <td className="hide-sm"><CategoryPill name={r.category} /></td>}
+            <td className="hide-xs"><Condition row={r} /><FillBar percent={fillOf(r)} /></td>
             <td className="num">
               <span className="qty" onClick={(e) => e.stopPropagation()}>
                 <button aria-label={`Use one ${r.name}`} disabled={r.qty_on_hand <= 0} onClick={() => adjust(r, -1)}>−</button>
@@ -355,6 +356,14 @@ function Condition({ row }) {
       {row.on_wishlist && <span className="tag">On wishlist</span>}
     </span>
   )
+}
+
+// Each category always gets the same colour (from its name), so they're easy to tell apart.
+const PILL_TONES = ['tint', 'purple', 'teal', 'low', 'ok', 'out']
+export function CategoryPill({ name }) {
+  if (!name) return null
+  const tone = PILL_TONES[[...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % PILL_TONES.length]
+  return <span className={`pill ${tone}`}>{name}</span>
 }
 
 function Chip({ label, count, on, onClick, tone = '' }) {

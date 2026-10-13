@@ -3,7 +3,7 @@ import { BoxIcon, CartIcon, DropsIcon, PlaneIcon } from '../../components/icons.
 import InventoryView from '../../components/InventoryView.jsx'
 import ModelsView from '../../components/ModelsView.jsx'
 import WishlistView from '../../components/WishlistView.jsx'
-import ModelsHome from './ModelsHome.jsx'
+import { ModelsCards, ModelsStats } from './ModelsHome.jsx'
 
 // Shelf of Shame: model kits and their supplies (the original app). Pages live at /models/<path>.
 export default {
@@ -12,7 +12,7 @@ export default {
   what: 'Model kits',
   short: 'Shelf',          // its tab on phones
   Icon: PlaneIcon,
-  HomeCard: ModelsHome,
+  home: { Stats: ModelsStats, Cards: ModelsCards },   // its parts of the Home page
   pages: [
     {
       path: 'inventory', label: 'Inventory', Icon: BoxIcon,

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { api, backupUrl, exportUrl, shortDate } from '../api.js'
+import { readTheme, setTheme, THEMES } from '../core/theme.js'
 import Drawer from './Drawer.jsx'
 import Fold from './Fold.jsx'
 import ListsManager from './ListsManager.jsx'
@@ -11,6 +12,7 @@ export default function SettingsPanel({ lookups, settings, onClose, onSettings, 
   return (
     <Drawer title="Settings" onClose={onClose}>
       <div className="settings">
+        <Fold title="Appearance" detail={THEMES.find(([k]) => k === readTheme())?.[1]}><Appearance /></Fold>
         <Fold title="Spending"><Spending /></Fold>
         <Fold title="Price guide" detail="your usual prices"><PriceGuide lookups={lookups} /></Fold>
         <Fold title="Default shop" detail={settings.default_shop}>
@@ -22,6 +24,22 @@ export default function SettingsPanel({ lookups, settings, onClose, onSettings, 
         <ListsManager lookups={lookups} onChanged={onListsChanged} />
       </div>
     </Drawer>
+  )
+}
+
+// Light, dark, or whatever the device is set to. Remembered on this device.
+function Appearance() {
+  const [choice, setChoice] = useState(readTheme)
+  return (
+    <>
+      <div className="segmented" role="group" aria-label="Appearance">
+        {THEMES.map(([key, label]) => (
+          <button key={key} type="button" aria-pressed={choice === key}
+            onClick={() => { setChoice(key); setTheme(key) }}>{label}</button>
+        ))}
+      </div>
+      <p className="hint">System follows your device's light or dark setting.</p>
+    </>
   )
 }
 

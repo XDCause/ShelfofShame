@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api, imageUrl, money } from '../api.js'
 import JournalMentions from '../core/journal/JournalMentions.jsx'
+import { FillBar, fillOf } from '../modules/models/fill.jsx'
 import ColourMatches from './ColourMatches.jsx'
 import Drawer from './Drawer.jsx'
 import Fold from './Fold.jsx'
@@ -235,7 +236,11 @@ export default function ItemPanel({ supplyId, lookups, reloadKey, onClose, onCha
           )}
 
           <section className="panel-section">
-            <h4 className="section-title" id="condition-label">Condition</h4>
+            <div className="section-head">
+              <h4 className="section-title" id="condition-label">Condition</h4>
+              <span className="muted small">{item.qty_on_hand <= 0 ? 'None left' : `About ${fillOf(item)}% left`}</span>
+            </div>
+            <FillBar percent={fillOf(item)} />
             <div className="condition-picker" role="group" aria-labelledby="condition-label">
               {lookups.conditions.map((c) => (
                 <button key={c} type="button" aria-pressed={item.condition === c}

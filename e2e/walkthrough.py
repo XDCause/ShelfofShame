@@ -70,13 +70,15 @@ def watch(page, label):
 @step("Home: greeting, the Shelf of Shame card, and its numbers open their pages")
 def home(page):
     page.goto(BASE)
-    expect(page.locator(".home-head h2")).to_have_text(re.compile("^Good (morning|afternoon|evening)$"), timeout=15000)
-    card = page.locator(".home-card", has_text="Shelf of Shame")
-    expect(card.locator(".home-stat")).to_have_count(4)
-    expect(card.locator(".home-stat", has_text="Needs attention")).to_contain_text(f"of {TOTAL} supplies")
-    expect(card.locator(".home-stat", has_text="Shelf of shame")).to_be_visible()
+    expect(page.locator(".hero h2")).to_have_text(re.compile("^Good (morning|afternoon|evening)$"), timeout=15000)
+    stats = page.locator(".home-stat")
+    expect(stats).to_have_count(4)
+    expect(stats.filter(has_text="Supplies")).to_contain_text(str(TOTAL))
+    expect(stats.filter(has_text="Shelf of shame")).to_be_visible()
+    expect(page.locator(".home-card", has_text="Recent activity").locator(".pill").first).to_be_visible()
+    expect(page.locator(".quick-action")).to_have_count(4)
     shot(page, "d00_home", full=False)
-    card.locator(".home-stat", has_text="To buy").click()
+    stats.filter(has_text="To buy").click()
     expect(page).to_have_url(BASE + "/models/wishlist")
     expect(page.locator(".navbar h1")).to_contain_text("Wishlist")
     page.go_back()
@@ -96,12 +98,12 @@ def inventory_loads(page):
 
 @step("Search narrows the list and the total follows")
 def search(page):
-    page.get_by_label("Search").fill("flat")
+    page.get_by_label("Search", exact=True).fill("flat")
     expect(page.locator("p.summary")).to_contain_text(f"of {TOTAL} items", timeout=5000)
     n = page.locator("tr.row").count()
     assert 0 < n < TOTAL, n
     shot(page, "d02_search_flat", full=False)
-    page.get_by_label("Search").fill("")
+    page.get_by_label("Search", exact=True).fill("")
     expect(page.locator("tr.row")).to_have_count(TOTAL)
 
 
@@ -130,9 +132,9 @@ def groups(page):
     page.reload()
     expect(page.locator("details.inv-group").first).to_be_visible(timeout=15000)
     expect(page.locator("tr.row:visible")).to_have_count(0)      # remembered
-    page.get_by_label("Search").fill("XF1 Flat Black")
+    page.get_by_label("Search", exact=True).fill("XF1 Flat Black")
     expect(page.locator("tr.row:visible", has_text="Acrylic XF1 Flat Black")).to_be_visible()
-    page.get_by_label("Search").fill("")
+    page.get_by_label("Search", exact=True).fill("")
     expect(page.locator("tr.row:visible")).to_have_count(0)      # closed again after the search
     page.get_by_role("button", name="Open all").click()
     expect(page.locator("tr.row:visible")).to_have_count(TOTAL)
@@ -675,12 +677,12 @@ def journal_links(page):
     page.keyboard.press("Escape")
     go(page, "Journal")
     page.get_by_label("Search the journal").fill(f"primer {MARK}")
-    expect(page.locator(".page-row")).to_have_count(1)
+    expect(page.locator(".journal-card")).to_have_count(1)
     page.get_by_label("Search the journal").fill("volleyball")
-    expect(page.locator(".page-row")).to_have_count(0)
+    expect(page.locator(".journal-card")).to_have_count(0)
     page.get_by_label("Search the journal").fill("")
     page.get_by_role("button", name=re.compile(f"^#tag{MARK}")).click()
-    expect(page.locator(".page-row")).to_have_count(1)
+    expect(page.locator(".journal-card")).to_have_count(1)
     shot(page, "d27_journal_list", full=False)
 
 
@@ -739,6 +741,51 @@ def journal_todo(page):
     assert any(MARK in t["text"] for t in open_), open_
 
 
+@step("Top-bar search: Ctrl+K, type, Enter opens the kit")
+def global_search(page):
+    go(page, "Home")
+    page.keyboard.press("Control+k")
+    page.keyboard.type("Sherman")
+    expect(page.locator(".search-results li").first).to_contain_text("Sherman")
+    page.keyboard.press("Enter")
+    expect(drawer(page).locator(".item-name")).to_contain_text("Sherman")
+    page.keyboard.press("Escape")
+
+
+@step("Journal: 'I want to buy new @paint' offers the wishlist; Yes adds it")
+def journal_wishlist(page):
+    go(page, "Journal")
+    page.get_by_role("button", name="+ New page").click()
+    page.locator(".bn-editor").click(timeout=20000)
+    page.keyboard.type("I want to buy new @XF10")
+    page.get_by_role("option", name=re.compile("XF10")).click()
+    page.keyboard.type("paint for a new project")
+    suggestion = page.locator(".suggestion", has_text="Add to wishlist?")
+    expect(suggestion).to_be_visible(timeout=10000)
+    suggestion.get_by_role("button", name="Yes").click()
+    expect(page.locator(".toast")).to_contain_text("added to your wishlist")
+    wishes = page.request.get(f"{BASE}/api/wishlist").json()
+    assert any("XF10" in w["name"] and (w["notes"] or "").startswith("From the journal") for w in wishes), wishes
+
+
+@step("Settings: Appearance switches light and dark; Home's Shop Tamiya opens the shop")
+def appearance(page):
+    page.get_by_role("button", name="Settings").click()
+    d = drawer(page)
+    d.locator("summary", has_text="Appearance").click()
+    d.get_by_role("button", name="Dark").click()
+    assert page.evaluate("document.documentElement.dataset.theme") == "dark"
+    d.get_by_role("button", name="Light").click()
+    assert page.evaluate("document.documentElement.dataset.theme") == "light"
+    d.get_by_role("button", name="System").click()
+    page.keyboard.press("Escape")
+    go(page, "Home")
+    page.locator(".quick-action", has_text="Shop Tamiya").click()
+    expect(page).to_have_url(re.compile(r"/models/wishlist\?shop=1$"))
+    expect(page.get_by_label("Search Tamiya", exact=True)).to_be_visible()
+    page.keyboard.press("Escape")
+
+
 @step("Settings: price guide, default shop, backups, exports, catalogue")
 def settings_more(page):
     page.get_by_role("button", name="Settings").click()
@@ -776,7 +823,7 @@ def phone(page):
     expect(page.locator("tr.row").first).to_be_visible()
     shot(page, "m01_inventory", full=False)
     expect(page.get_by_role("button", name="Scan a barcode")).to_be_visible()
-    size = page.get_by_label("Search").evaluate("e => getComputedStyle(e).fontSize")
+    size = page.get_by_label("Search", exact=True).evaluate("e => getComputedStyle(e).fontSize")
     assert size == "16px", f"search box font {size} (iPhone zooms in below 16px)"
     page.locator("tr.row").first.click()
     expect(drawer(page)).to_be_visible()
@@ -809,7 +856,7 @@ with sync_playwright() as p:
                models, model_paste, add_model_hasegawa, undo, add_to_wishlist_button, duplicate_check, wishlist_panel, shop_tamiya, used_up,
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
                matches, used_on, gundam, bandai_lookup, warhammer, journal_write, journal_links, journal_from_model,
-               journal_suggestion, journal_todo,
+               journal_suggestion, journal_todo, global_search, journal_wishlist, appearance,
                settings_more, no_panel):
         fn(desk)
     ctx = browser.new_context(**p.devices["iPhone 13"])

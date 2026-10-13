@@ -4,7 +4,7 @@
 //             is its tab on phones (Shelf)
 //   Icon      its icon in the sidebar
 //   pages     [{path, label, Icon, render(app)}] - render gets the app context (core/app-context.js)
-//   HomeCard  its card on the Home page
+//   home      its parts of the Home page: {Stats (a row of tiles), Cards (a grid of cards)}
 // Adding a hobby = adding a folder here and one line below. See docs/ROADMAP.md.
 import models from './models/manifest.jsx'
 
