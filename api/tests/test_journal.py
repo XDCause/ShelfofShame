@@ -222,3 +222,46 @@ def test_todos_from_every_page_and_ticking_them_off(client):
     page = client.get(f"/api/journal/{a['page_id']}").json()
     assert page["content"][0]["props"]["checked"] is True       # it's ticked on the page too
     assert client.patch(f"/api/journal/{a['page_id']}/todos/nope", json={"checked": True}).status_code == 404
+
+
+def test_wanting_a_supply_offers_the_wishlist(client, make_supply):
+    """The user's example: 'I want to buy new @Acrylic XF10 Flat Brown paint for a new project'."""
+    brown = make_supply(product_code="T81710", name="Acrylic XF10 Flat Brown", qty_on_hand=1)
+    page = client.post("/api/journal", json={"title": "New project", "content": [paragraph(
+        text("I want to buy new "), mention("supply", brown["supply_id"], "Acrylic XF10 Flat Brown"),
+        text(" paint for a new project"))]}).json()
+    [s] = page["suggestions"]
+    assert (s["kind"], s["name"], s["label"]) == ("supply", "Acrylic XF10 Flat Brown", "Add to wishlist")
+
+    page = client.post(f"/api/journal/{page['page_id']}/suggestions/apply", json={"key": s["key"]}).json()
+    assert page["suggestions"] == []                        # on the wishlist now: nothing to offer
+    [wish] = client.get("/api/wishlist").json()
+    assert (wish["product_code"], wish["notes"]) == ("T81710", "From the journal: New project")
+
+
+def test_bought_or_just_mentioning_a_supply_offers_nothing(client, make_supply):
+    xf1 = make_supply(product_code="T81701", name="Acrylic XF1 Flat Black", qty_on_hand=1)
+    for words in ("Bought more ", "Painted the tyres with ", "Reordering is for later: "):
+        page = client.post("/api/journal", json={"content": [paragraph(
+            text(words), mention("supply", xf1["supply_id"], "XF-1"))]}).json()
+        assert page["suggestions"] == [], words          # done already, just used, or not a whole word
+    page = client.post("/api/journal", json={"content": [paragraph(
+        text("Running low on "), mention("supply", xf1["supply_id"], "XF-1"))]}).json()
+    assert [s["label"] for s in page["suggestions"]] == ["Add to wishlist"]
+
+
+def test_list_pictures_first_photo_then_a_mentioned_kit(client, ids):
+    kit = client.post("/api/models", json={"name": "Sherman", "brand_id": ids["tamiya"], "product_code": "T32595"}).json()
+    client.put(f"/api/product-photo?brand_id={ids['tamiya']}&product_code=T32595", content=b"\x89PNGbox",
+               headers={"content-type": "image/png"})
+    client.post("/api/journal", json={"title": "Photo page", "content": [
+        paragraph(mention("model", kit["model_id"], "Sherman")), {"type": "image", "props": {"url": "/api/journal/images/7"}}]})
+    client.post("/api/journal", json={"title": "Kit page", "content": [paragraph(mention("model", kit["model_id"], "Sherman"))]})
+    client.post("/api/journal", json={"title": "Plain", "content": [paragraph(text("words"))]})
+    rows = {p["title"]: p for p in client.get("/api/journal").json()}
+    assert rows["Photo page"]["cover_url"] == "/api/journal/images/7"           # its own photo first
+    box = client.get(f"/api/models/{kit['model_id']}").json()                   # its photo, now uploaded
+    assert box["has_image"] is True
+    assert rows["Kit page"]["cover_url"] is None                                  # no photo of its own...
+    assert rows["Kit page"]["product_info_id"] == box["product_info_id"]          # ...so the kit's box photo
+    assert rows["Plain"]["cover_url"] is None and rows["Plain"]["product_info_id"] is None

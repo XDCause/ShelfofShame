@@ -1,9 +1,10 @@
 """Turning journal pages into actions.
 
-Suggestions: a block that @mentions a model and says what happened to it offers the change, for
-the user to apply with one tap (never automatically):
+Suggestions: a block that @mentions a model or a supply and says what happened offers the
+change, for the user to apply with one tap (never automatically):
     "Just bought @Sherman and started it right away"   -> Sherman: In progress
     "Primed the @Zero today"                            -> Zero: build step Primed
+    "I want to buy new @XF-10 for a new project"        -> XF-10: add to the wishlist
 When a block says several things ("bought ... and started"), the word written last wins: it's
 where the story ends. Only changes that move a model forward are offered, so a suggestion goes
 away once it's applied (or the model has moved on), and one waved away stays away (dismissed).
@@ -15,6 +16,7 @@ import re
 
 from .db import STAGES
 from .journal_text import inline_text, mentions
+from .wishlist import ON_WISHLIST
 
 # Words -> the status they suggest, and the statuses it makes sense to move from.
 STATUS_WORDS = [
@@ -36,6 +38,12 @@ STEP_WORDS = {
     "Top coat": r"top[- ]?coat(?:ed|ing)?|clear[- ]?coat(?:ed)?",
     "Based": r"based|basing",
 }
+
+
+# Words saying you want (more of) a supply. "bought" isn't one: that's already done.
+BUY_WORDS = (r"want(?:s|ed)? to (?:buy|get|order)|need(?:s)? (?:to buy|to get|more|another|a new|some)|"
+             r"buy(?:ing)?|order(?:ing)?|restock|re-?order|pick up|get (?:more|another|a new|some)|"
+             r"running low on|ran out of|run out of|out of|low on|(?:add|put) (?:it )?(?:on|to) (?:the|my) wishlist")
 
 
 def _last(pattern: str, text: str) -> int:
@@ -60,12 +68,16 @@ def _blocks(blocks):
 
 def suggestions(conn, page: dict) -> list[dict]:
     """What the page's words suggest doing to the models it mentions (not yet done or dismissed)."""
-    wanted = {}   # (model_id, field) -> (position, value, word)
+    wanted = {}   # (model_id, field) -> what the words say
+    supplies = set()
     for block in _blocks(page["content"]):
-        ids = {target for kind, target in mentions(block.get("content")) if kind == "model"}
+        mentioned = mentions(block.get("content"))
+        text = inline_text(block.get("content"))
+        if _last(BUY_WORDS, text) >= 0:
+            supplies |= {target for kind, target in mentioned if kind == "supply"}
+        ids = {target for kind, target in mentioned if kind == "model"}
         if not ids:
             continue
-        text = inline_text(block.get("content"))
         status = _latest((_last(words, text), (to, start)) for words, to, start in STATUS_WORDS)
         step = _latest((_last(words, text), step) for step, words in STEP_WORDS.items())
         for model_id in ids:
@@ -73,13 +85,13 @@ def suggestions(conn, page: dict) -> list[dict]:
                 wanted[(model_id, "status")] = status
             if step:
                 wanted[(model_id, "stage")] = step
+    result = _supply_suggestions(conn, page, supplies)
     if not wanted:
-        return []
+        return result
 
     models = {m["model_id"]: m for m in conn.execute(
         "SELECT model_id, name, hobby, status, stage, purchase_date, started_on FROM models WHERE model_id = ANY(%s)",
         (list({model_id for model_id, _ in wanted}),)).fetchall()}
-    result = []
     for (model_id, field), found in sorted(wanted.items()):
         m = models.get(model_id)
         if m is None:
@@ -106,6 +118,22 @@ def suggestions(conn, page: dict) -> list[dict]:
             continue
         result.append({"key": key, "kind": "model", "id": model_id, "name": m["name"], "label": label,
                        "changes": changes})
+    return result
+
+
+def _supply_suggestions(conn, page: dict, supply_ids: set[int]) -> list[dict]:
+    """"Add to wishlist" for supplies the page says you want, unless they're on it already."""
+    if not supply_ids:
+        return []
+    rows = conn.execute(f"SELECT s.supply_id, s.name, {ON_WISHLIST} AS on_wishlist FROM supplies s "
+                        "WHERE s.supply_id = ANY(%s) ORDER BY s.name", (list(supply_ids),)).fetchall()
+    result = []
+    for s in rows:
+        key = f"supply:{s['supply_id']}:wishlist:yes"
+        if s["on_wishlist"] or key in page.get("dismissed", []):
+            continue
+        result.append({"key": key, "kind": "supply", "id": s["supply_id"], "name": s["name"],
+                       "label": "Add to wishlist", "changes": {"wishlist": True}})
     return result
 
 

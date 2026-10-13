@@ -18,6 +18,7 @@ from .images import photo_response, read_photo
 from .journal_actions import set_checked, suggestions, todos_in
 from .journal_text import mentions, plain_text
 from .models import ModelPatch, update_model
+from .wishlist import wish_from_supplies
 
 router = APIRouter(prefix="/api", tags=["journal"])
 
@@ -70,12 +71,28 @@ def save_links(conn, page_id: int, content: list):
                      (page_id, kind, target))
 
 
+# A page in a list. Its picture: the first photo in the page (cover_url), else the photo of
+# the first kit (or supply) it mentions (product_info_id + photo_updated, like everywhere else).
 PAGE_LIST = """
 SELECT p.page_id, p.title, p.icon, p.entry_date, p.pinned, p.created_at, p.updated_at,
        left(p.text, 200) AS snippet,
        COALESCE((SELECT array_agg(t.name ORDER BY lower(t.name)) FROM page_tags pt JOIN tags t USING (tag_id)
-                 WHERE pt.page_id = p.page_id), '{}') AS tags
+                 WHERE pt.page_id = p.page_id), '{}') AS tags,
+       (SELECT b -> 'props' ->> 'url' FROM jsonb_array_elements(p.content) b
+        WHERE b ->> 'type' = 'image' AND b -> 'props' ->> 'url' <> '' LIMIT 1) AS cover_url,
+       pic.product_info_id, pic.photo_updated
 FROM journal_pages p
+LEFT JOIN LATERAL (
+    SELECT pi.product_info_id, pi.fetched_at AS photo_updated
+    FROM journal_links jl
+    LEFT JOIN models m ON jl.target_kind = 'model' AND m.model_id = jl.target_id
+    LEFT JOIN supplies s ON jl.target_kind = 'supply' AND s.supply_id = jl.target_id
+    JOIN product_info pi ON pi.image IS NOT NULL AND pi.brand_id = COALESCE(m.brand_id, s.brand_id)
+                        AND pi.product_code = COALESCE(m.product_code, s.product_code)
+    WHERE jl.page_id = p.page_id
+    ORDER BY jl.target_kind <> 'model', jl.target_id
+    LIMIT 1
+) pic ON true
 """
 
 # What a link points at, by name (deleted things show as gone).
@@ -227,7 +244,13 @@ def apply_suggestion(page_id: int, body: SuggestionIn):
     if body.key not in offered:
         raise HTTPException(409, "That suggestion no longer applies (it may have been done already).")
     s = offered[body.key]
-    update_model(s["id"], ModelPatch(**s["changes"]))     # the usual rules: dates, build steps...
+    if s["kind"] == "supply":                              # "Add to wishlist"
+        with db() as conn:
+            page = fetch_page(conn, page_id)
+            note = f"From the journal: {page['title'] or page['entry_date']}"
+            wish_from_supplies(conn, "s.supply_id = %s", (s["id"],), notes=note)
+    else:
+        update_model(s["id"], ModelPatch(**s["changes"]))  # the usual rules: dates, build steps...
     with db() as conn:
         return fetch_page(conn, page_id)
 

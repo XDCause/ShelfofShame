@@ -62,7 +62,8 @@ export default function JournalPage() {
     return () => { window.removeEventListener('beforeunload', beforeUnload); flush() }
   }, [flush])
 
-  // "Sherman: Mark as In progress" - Apply does it (and says so), Not now hides it for this page.
+  // "Sherman: Mark as In progress?" / "XF-10: Add to wishlist?" - Yes does it (and says so),
+  // Not now hides it for this page.
   const answer = async (s, apply) => {
     try {
       await flush()
@@ -70,7 +71,9 @@ export default function JournalPage() {
       setPage((p) => ({ ...p, ...derived(saved) }))
       if (apply) {
         changed()
-        showToast(`${s.name}: ${s.label.replace(/^Mark as /, 'now ').replace(/^Tick build step /, 'build step ')} ✓`)
+        const done = { 'Add to wishlist': 'added to your wishlist' }[s.label]
+          ?? s.label.replace(/^Mark as /, 'now ').replace(/^Tick build step /, 'build step ')
+        showToast(`${s.name}: ${done} ✓`)
       }
     } catch (e) {
       setError(e.message)
@@ -142,7 +145,7 @@ export default function JournalPage() {
           {page.suggestions.map((s) => (
             <div key={s.key} className="suggestion">
               <span className="grow">
-                <button type="button" className="mention mention-model" onClick={() => openModel(s.id)}>@{s.name}</button>
+                <button type="button" className={`mention mention-${s.kind}`} onClick={() => openMention(s.kind, s.id)}>@{s.name}</button>
                 {' '}{s.label}?
               </span>
               <button type="button" className="secondary" onClick={() => answer(s, true)}>Yes</button>
