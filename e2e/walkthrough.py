@@ -24,6 +24,7 @@ _supplies = json.load(urllib.request.urlopen(f"{BASE}/api/supplies"))
 TOTAL = len(_supplies)
 PAINTS = sum(s["category"] == "Paint" for s in _supplies)
 MODELS = len(json.load(urllib.request.urlopen(f"{BASE}/api/models")))
+MARK = f"e2e{int(time.time())}"   # a word only this run's journal page contains
 
 
 def step(name):
@@ -640,6 +641,62 @@ def warhammer(page):
     hobby.get_by_role("button", name=re.compile("^All")).click()
 
 
+@step("Journal: today's entry, typing, an @mention, saves by itself and survives a reload")
+def journal_write(page):
+    page.goto(BASE)
+    page.get_by_role("button", name="Write today's entry").click()
+    expect(page).to_have_url(re.compile(r"/journal/\d+$"))
+    expect(page.get_by_label("Title")).not_to_have_value("")             # today's date as the title
+    editor = page.locator(".bn-editor")
+    editor.click(timeout=20000)                                          # the editor loads on demand
+    page.keyboard.type("Started the hull of the @Sher")
+    page.get_by_role("option", name=re.compile("Sherman")).click()
+    page.keyboard.type(f"today. Primer next. {MARK}")
+    expect(page.locator(".save-status")).to_have_text("Saved", timeout=10000)
+    expect(page.locator(".journal-links")).to_contain_text("Sherman")
+    page.get_by_label("Add a tag").fill(f"tag{MARK}")
+    page.keyboard.press("Enter")
+    expect(page.locator(".tag-chip")).to_have_text(re.compile(f"#tag{MARK}"))
+    expect(page.locator(".save-status")).to_have_text("Saved", timeout=10000)
+    shot(page, "d26_journal_page", full=False)
+    page.reload()
+    expect(page.locator(".bn-editor")).to_contain_text("Primer next.", timeout=20000)
+    expect(page.locator(".bn-editor .mention")).to_contain_text("Sherman")
+    expect(page.locator(".tag-chip")).to_have_text(re.compile(f"#tag{MARK}"))
+
+
+@step("Journal: a mention opens the model, which lists the page; search and tags find it")
+def journal_links(page):
+    page.locator(".bn-editor .mention").first.click()
+    d = drawer(page)
+    expect(d.locator(".item-name")).to_contain_text("Sherman")
+    section = d.locator(".panel-section", has_text="In the journal")
+    expect(section.locator(".page-row", has_text=MARK)).to_have_count(1)
+    page.keyboard.press("Escape")
+    go(page, "Journal")
+    page.get_by_label("Search the journal").fill(f"primer {MARK}")
+    expect(page.locator(".page-row")).to_have_count(1)
+    page.get_by_label("Search the journal").fill("volleyball")
+    expect(page.locator(".page-row")).to_have_count(0)
+    page.get_by_label("Search the journal").fill("")
+    page.get_by_role("button", name=re.compile(f"^#tag{MARK}")).click()
+    expect(page.locator(".page-row")).to_have_count(1)
+    shot(page, "d27_journal_list", full=False)
+
+
+@step("Journal: + Write about it from a model, then delete the page")
+def journal_from_model(page):
+    go(page, "Models")
+    page.locator(".model-card", has_text="Zero").click()
+    drawer(page).get_by_role("button", name="+ Write about it").click()
+    expect(page.locator("aside.drawer")).to_have_count(0)                # the panel closed
+    expect(page.locator(".bn-editor .mention")).to_contain_text("Zero", timeout=20000)
+    expect(page.locator(".journal-links")).to_contain_text("Zero")
+    page.get_by_role("button", name="Delete").click()
+    page.get_by_role("button", name="Delete", exact=True).last.click()
+    expect(page).to_have_url(BASE + "/journal")
+
+
 @step("Settings: price guide, default shop, backups, exports, catalogue")
 def settings_more(page):
     page.get_by_role("button", name="Settings").click()
@@ -671,7 +728,9 @@ def phone(page):
     expect(page.locator(".tabbar")).to_be_visible()             # tabs at the bottom on phones
     expect(page.locator(".sidebar")).to_be_hidden()             # no sidebar
     expect(page.locator(".tabbar a[aria-current=page]")).to_have_text("Home")
-    go(page, "Inventory")
+    page.locator(".tabbar a", has_text="Shelf").click()                 # a hobby's tab...
+    expect(page).to_have_url(BASE + "/models/inventory")                 # ...opens its first page
+    expect(page.locator(".module-tabs a[aria-current=page]")).to_have_text("Inventory")
     expect(page.locator("tr.row").first).to_be_visible()
     shot(page, "m01_inventory", full=False)
     expect(page.get_by_role("button", name="Scan a barcode")).to_be_visible()
@@ -684,13 +743,14 @@ def phone(page):
     shot(page, "m02_item_panel", full=False)
     page.keyboard.press("Escape")
     for name in ("Wishlist", "Models", "Colours", "Inventory"):
-        page.locator(".tabbar a", has_text=name).click()
-        expect(page.locator(".tabbar a[aria-current=page]")).to_have_text(name)
+        page.locator(".module-tabs a", has_text=name).click()
+        expect(page.locator(".module-tabs a[aria-current=page]")).to_have_text(name)
+        expect(page.locator(".tabbar a[aria-current=page]")).to_have_text("Shelf")
         page.wait_for_timeout(300)
         shot(page, f"m_{name.lower()}", full=False)
         width = page.evaluate("document.documentElement.scrollWidth")
         assert width <= 390, f"{name} is {width}px wide on a 390px phone"
-    page.locator(".tabbar a", has_text="Models").click()
+    page.locator(".module-tabs a", has_text="Models").click()
     page.locator(".model-card", has_text="Zero").click()
     page.wait_for_timeout(400)
     shot(page, "m06_model_panel", full=False)
@@ -706,7 +766,8 @@ with sync_playwright() as p:
                add_lookup, add_to_wishlist, wishlist_buy, delete_bought, scan_owned, scan_unknown,
                models, model_paste, add_model_hasegawa, undo, add_to_wishlist_button, duplicate_check, wishlist_panel, shop_tamiya, used_up,
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
-               matches, used_on, gundam, bandai_lookup, warhammer, settings_more, no_panel):
+               matches, used_on, gundam, bandai_lookup, warhammer, journal_write, journal_links, journal_from_model,
+               settings_more, no_panel):
         fn(desk)
     ctx = browser.new_context(**p.devices["iPhone 13"])
     mob = ctx.new_page()

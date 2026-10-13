@@ -10,6 +10,7 @@ export default {
   id: 'models',
   name: 'Shelf of Shame',
   what: 'Model kits',
+  short: 'Shelf',          // its tab on phones
   Icon: PlaneIcon,
   HomeCard: ModelsHome,
   pages: [

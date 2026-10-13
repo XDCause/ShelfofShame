@@ -28,6 +28,16 @@ const enc = encodeURIComponent
 const image = (method, blob) => ({ method, body: blob, headers: { 'Content-Type': blob.type } })
 
 export const api = {
+  // Journal (core): pages, tags, @mentions, photos
+  listPages: (params = {}) => request(`/journal?${new URLSearchParams(Object.entries(params).filter(([, v]) => v))}`),
+  addPage: (page = {}) => request('/journal', send('POST', page)),
+  getPage: (id) => request(`/journal/${id}`),
+  updatePage: (id, data) => request(`/journal/${id}`, send('PATCH', data)),
+  deletePage: (id) => request(`/journal/${id}`, send('DELETE')),
+  journalTags: () => request('/journal/tags'),
+  mentionable: (q) => request(`/journal/mentionable?q=${enc(q)}`),
+  uploadJournalImage: (blob, pageId) => request(`/journal/images${pageId ? `?page_id=${pageId}` : ''}`, image('POST', blob)),
+
   // Inventory
   listSupplies: () => request('/supplies'),
   getSupply: (id) => request(`/supplies/${id}`),

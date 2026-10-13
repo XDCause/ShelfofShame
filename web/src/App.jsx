@@ -10,13 +10,16 @@ import ModelPanel from './components/ModelPanel.jsx'
 import SettingsPanel from './components/SettingsPanel.jsx'
 import { AppContext } from './core/app-context.js'
 import Home from './core/Home.jsx'
-import { Sidebar, TabBar } from './core/Navigation.jsx'
+import JournalList from './core/journal/JournalList.jsx'
+import JournalPage from './core/journal/JournalPage.jsx'
+import { corePageFor, ModuleTabs, Sidebar, TabBar } from './core/Navigation.jsx'
 import { MODULES, moduleFor, pageFor } from './modules/index.js'
 
 const APP_NAME = 'Off the Clock'
 
-// Off the Clock: Home, then a module per hobby (modules/index.js), each with its own pages at
-// /<module>/<page>. Sidebar on wide screens, tab bar on phones (core/Navigation.jsx).
+// Off the Clock: the core pages (Home, Journal at /journal), then a module per hobby
+// (modules/index.js), each with its own pages at /<module>/<page>. Sidebar on wide screens, tab
+// bar on phones (core/Navigation.jsx).
 // Panels slide over any page:
 //   item      one supply: stock, condition, used on, colour matches, photo, history, details
 //   add       add a supply (scan or type a code first), to inventory or the wishlist
@@ -102,14 +105,15 @@ export default function App() {
     lookups, settings, refreshKey, changed, openItem, openModel, openAdd, adjusted, showToast,
   }), [lookups, settings, refreshKey, changed, openItem, openModel, openAdd, adjusted, showToast])
 
-  // Where we are: "Inventory" in "Shelf of Shame", or Home.
+  // Where we are: "Inventory" in "Shelf of Shame", the Journal, or Home.
   const module = moduleFor(pathname)
   const page = pageFor(pathname)
-  const title = page ? page.label : pathname === '/' ? APP_NAME : 'Not found'
+  const core = corePageFor(pathname)
+  const title = page ? page.label : core ? (core.path === '/' ? APP_NAME : core.label) : 'Not found'
   useEffect(() => {
-    const name = page ? `${page.label} · ${module.name}` : APP_NAME
+    const name = page ? `${page.label} · ${module.name}` : core && core.path !== '/' ? `${core.label} · ${APP_NAME}` : APP_NAME
     document.title = appEnv === 'prod' ? name : `[${appEnv.toUpperCase()}] ${name}`
-  }, [page, module, appEnv])
+  }, [page, module, core, appEnv])
   const envBadge = appEnv !== 'prod' && <span className="env-badge" title="A test copy - not your real data">{appEnv}</span>
 
   return (
@@ -151,10 +155,13 @@ export default function App() {
               </p>
             )}
 
-            <main>
+            <ModuleTabs />
+          <main>
               {!lookups ? (!error && <p className="muted loading">Loading...</p>) : (
                 <Routes>
                   <Route path="/" element={<Home />} />
+              <Route path="/journal" element={<JournalList />} />
+              <Route path="/journal/:id" element={<JournalPage />} />
                   {MODULES.map((m) => (
                     <Route key={m.id} path={m.id}>
                       <Route index element={<Navigate to={m.pages[0].path} replace />} />

@@ -8,8 +8,13 @@ It's one app with a **Home** page and a **module per hobby**, each with its own 
 **Shelf of Shame** (model kits and their supplies), described below. A journal, a calendar and more
 hobbies (board games, volleyball...) are planned: see [docs/ROADMAP.md](docs/ROADMAP.md).
 
-- **Home**: today at a glance. Each hobby shows its numbers (needs attention, to buy, unfinished
-  kits, time spent), what you're building and the latest changes.
+- **Home**: today at a glance: the journal ("Write today's entry", latest pages), then each hobby's
+  numbers (needs attention, to buy, unfinished kits, time spent), what you're building and the
+  latest changes.
+- **Journal**: Notion-style pages (BlockNote editor): type `/` for headings, lists, to-dos, quotes,
+  tables and photos; type `@` to mention a model, a supply or another page (a pill that opens it).
+  Pages save as you type, have a date, an emoji, tags and a pin; search and tag filters. A model's
+  or supply's panel lists the pages that mention it, with "+ Write about it".
 
 ## Shelf of Shame (model kits)
 
@@ -37,7 +42,7 @@ hobbies (board games, volleyball...) are planned: see [docs/ROADMAP.md](docs/ROA
   now, download), CSV export for Excel, Tamiya catalogue refresh, brands / categories / locations
 - Styled after Apple's Human Interface Guidelines (sidebar on wide screens, tab bar and sheets on
   phones, dark mode)
-- Nightly backups, 197 automated API tests and a 42-step browser walkthrough
+- Nightly backups, 209 automated API tests and a 45-step browser walkthrough
 
 Three Docker containers:
 
@@ -101,6 +106,11 @@ Grouped as in `api/app/` (one module per part of the app):
 
 | Method | Path | Does |
 |---|---|---|
+| **journal.py** (core) | | |
+| GET/POST | `/api/journal?q=&tag=&mention=model:3` | Pages (newest first, pinned on top) / start a page |
+| GET/PATCH/DELETE | `/api/journal/{id}` | One page with its blocks, tags, mentions and "mentioned in" |
+| GET | `/api/journal/tags`, `/api/journal/mentionable?q=` | Tags in use / what `@` can mention |
+| POST | `/api/journal/images` · GET `/api/journal/images/{id}` | A photo in a page (image as the body) |
 | **supplies.py** | | |
 | GET | `/api/supplies?q=&category=&brand=&status=&location=` | Search / filter (each with `used_on` models) |
 | GET | `/api/supplies/low-stock` | Everything Low or Out |

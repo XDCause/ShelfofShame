@@ -88,6 +88,8 @@ their licence notices:
 | Library | Licence | Note |
 |---|---|---|
 | React, React DOM, React Router | MIT | |
+| BlockNote (`@blocknote/core`, `/react`, `/mantine`), the journal editor | MPL-2.0 | File-level copyleft: changes to BlockNote's own files must be shared; using it is fine. Its "XL" add-ons (PDF / Word export, AI) are GPL or commercial - not used. |
+| Mantine (BlockNote's menus) | MIT | |
 | @zxing/library (barcode reading) | Apache-2.0 | Distribute its licence and any NOTICE file. |
 | FastAPI, uvicorn, httpx, Beautiful Soup | MIT / BSD | |
 | psycopg 3 | LGPL-3.0 | Fine to use as a library unmodified. If you change psycopg itself and distribute it, those changes must be shared. |

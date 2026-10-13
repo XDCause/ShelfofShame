@@ -11,18 +11,21 @@ Each part of the app is its own module with its own routes:
     models     kits (stash), checklists, kit paint lists  build      timer and build log
     colours    colour matches and mixes                    spending   spend + CSV exports
     settings   default shop, price guide, backups          lookups    brands / categories / locations
+Core (every hobby):
+    journal    Notion-style pages, tags, @mentions, photos
 """
 import os
 
 from fastapi import FastAPI
 
-from . import (build, catalog, colours, lookups, models, products, settings, spending, supplies,
-               wishlist)
+from . import (build, catalog, colours, journal, lookups, models, products, settings, spending,
+               supplies, wishlist)
 from .db import db
 
 app = FastAPI(title="Off the Clock API", docs_url="/api/docs", openapi_url="/api/openapi.json")
 
-for part in (supplies, wishlist, products, catalog, models, build, colours, spending, settings, lookups):
+for part in (journal, supplies, wishlist, products, catalog, models, build, colours, spending, settings,
+             lookups):
     app.include_router(part.router)
 
 

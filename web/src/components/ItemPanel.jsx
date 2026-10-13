@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api, imageUrl, money } from '../api.js'
+import JournalMentions from '../core/journal/JournalMentions.jsx'
 import ColourMatches from './ColourMatches.jsx'
 import Drawer from './Drawer.jsx'
 import Fold from './Fold.jsx'
@@ -321,6 +322,7 @@ export default function ItemPanel({ supplyId, lookups, reloadKey, onClose, onCha
           <section className="panel-section">
             <StockHistory supplyId={item.supply_id} version={`${item.qty_on_hand}-${item.updated_at}`} />
           </section>
+          <JournalMentions kind="supply" id={item.supply_id} name={item.name} onLeave={onClose} />
         </>
       )}
     </Drawer>

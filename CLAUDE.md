@@ -497,6 +497,34 @@ DBeaver, psql, and the one-off import script.
      "[DEV] ..." in dev. Panels, toast, timer banner, Scan + Settings unchanged.
    - e2e: `go(page, name)` clicks the nav link (sidebar or tab bar); new Home step; phone step uses
      `.tabbar a`. 197 API tests, 42 browser steps (dev).
+3v. **Phase 2: Journal** - DONE in dev (2026-10-13). The user wasn't sure about the phase 1 look
+   ("I'm not sure i love it") and said to keep prod as it is, keep developing in dev and review later.
+   **Don't promote until the user has reviewed dev.**
+   - `db/init/18_journal.sql`: journal_pages (title, icon, entry_date, content JSONB = BlockNote
+     blocks, text = plain text for search, pinned, updated_at trigger), tags + page_tags (unused
+     tags deleted), journal_links (page -> model / supply / page, from @mentions, rebuilt on each
+     save), journal_images (BYTEA). Applied to dev with migrate.ps1.
+   - `api/app/journal.py`: plain_text() / mentions() walk the blocks (mention = inline
+     {type: "mention", props: {kind, ref, label}}); GET /journal (q = every word in title or text,
+     tag, mention=kind:id; pinned first, then date), POST, GET/PATCH/DELETE /journal/{id} (links,
+     mentioned_in), /journal/tags, /journal/mentionable?q= (8 each of models / supplies / pages),
+     POST /journal/images (read_photo rules) + GET. Tests: test_journal.py (12).
+   - Front end: BlockNote 0.54.2 + @mantine/core 8.3.18 (`web/src/core/journal/`): Editor.jsx
+     (lazy-loaded chunk ~0.9 MB, 335 KB gzipped; custom `mention` inline spec, `@`
+     SuggestionMenuController -> /mentionable, uploadFile shrinks to 1600 px, theme follows
+     prefers-color-scheme; clicking a pill opens the model / supply panel or the page),
+     JournalPage.jsx (autosave 700 ms after typing, flush on leave; reply only refreshes links so
+     typing isn't overwritten), JournalList.jsx (search, tag chips, Pinned + month groups;
+     useNewPage, PageRow), JournalHome.jsx (Home card: "Write today's entry" = page titled with
+     today's date, latest 3), JournalMentions.jsx ("In the journal" + "+ Write about it" in
+     ModelPanel and ItemPanel), TagsInput.jsx.
+   - Navigation: CORE_PAGES (Home, Journal) in core/Navigation.jsx. Phones: tab bar = Home, Journal,
+     one tab per hobby (manifest `short`: "Shelf"); a hobby's pages = `.module-tabs` segmented
+     control under the nav bar (ModuleTabs).
+   - nginx: gzip on for css / js / json / svg.
+   - e2e: journal_write / journal_links / journal_from_model (MARK = unique word per run, so pages
+     already in the data don't matter); phone step uses the Shelf tab + .module-tabs.
+     209 API tests, 45 browser steps (dev).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api, imageUrl, money, shortDate } from '../api.js'
+import JournalMentions from '../core/journal/JournalMentions.jsx'
 import BuildLog from './BuildLog.jsx'
 import BuildSteps from './BuildSteps.jsx'
 import Drawer from './Drawer.jsx'
@@ -135,6 +136,7 @@ export default function ModelPanel({ modelId, lookups, settings, onClose, onChan
       <TimeTracker model={model} onModel={onModel} run={run} />
       <PaintChecklist model={model} onModel={onModel} run={run} flash={flash} onOpenSupply={onOpenSupply} />
       <BuildLog modelId={model.model_id} entries={model.log} reload={reload} run={run} />
+      <JournalMentions kind="model" id={model.model_id} name={model.name} onLeave={onClose} />
 
       <section className="panel-section">
         <label className="field">

@@ -1,6 +1,7 @@
 // Every hobby module. A module is one manifest:
 //   id        its address: /<id>/<page path>
-//   name      what it's called (Shelf of Shame); `what` says what it is (Model kits)
+//   name      what it's called (Shelf of Shame); `what` says what it is (Model kits); `short`
+//             is its tab on phones (Shelf)
 //   Icon      its icon in the sidebar
 //   pages     [{path, label, Icon, render(app)}] - render gets the app context (core/app-context.js)
 //   HomeCard  its card on the Home page
