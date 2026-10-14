@@ -821,6 +821,8 @@ DBeaver, psql, and the one-off import script.
      rows show plain numbers (icons only in the headings, no key); <= 900px cards keep icon chips and
      the key; <= 700px the block isn't pinned (it would cover half a phone screen). The e2e scrolls
      3000px and checks the search box is still near the top.
+   - Games toolbar also has "Sync now" (steam.jsx SyncButton: quick sync, shows "Syncing 12 of 40..." while
+     running, list reloads when done; tooltip = last synced). Full sync stays on the dashboard.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

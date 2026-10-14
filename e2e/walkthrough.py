@@ -1067,6 +1067,8 @@ def video_games(page):
     box = page.get_by_label("Search your games").bounding_box()
     assert box and 0 <= box["y"] < 160, box
     expect(page.locator(".game-head")).to_be_visible()
+    if page.locator(".game-rows li").count():   # connected: Sync now is pinned too (not pressed - no Steam here)
+        expect(page.locator(".games-pinned").get_by_role("button", name="Sync now")).to_be_visible()
     shot(page, "d44_video_games_list", full=False)
     page.mouse.wheel(0, -6000)
     page.get_by_label("Search your games").fill("Clair Obscur")

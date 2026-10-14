@@ -4,7 +4,7 @@ import { BellCurveIcon, ClockIcon, GamepadIcon, TrophyIcon } from '../../compone
 import { useApp } from '../../core/app-context.js'
 import Stat, { StatSkeleton } from '../../core/Stat.jsx'
 import {
-  CompletionBar, GamePicture, playtime, rarity, SteamSetup, SyncBar, useSteamAccount, useSteamSummary,
+  CompletionBar, GamePicture, playtime, rarity, SteamSetup, SyncBar, SyncButton, useSteamAccount, useSteamSummary,
 } from './steam.jsx'
 
 // The dashboard: the account and sync, profile completion against your goal, headline tiles,
@@ -263,6 +263,7 @@ export function GamesView() {
             {Object.entries(SORTS).map(([id, [label]]) => <option key={id} value={id}>{label}</option>)}
           </select>
         </label>
+        <SyncButton />
         <button type="button" className="secondary" onClick={() => setAdding(!adding)}>+ Add a game</button>
       </div>
       <div className="chip-row scroll" role="group" aria-label="Show">

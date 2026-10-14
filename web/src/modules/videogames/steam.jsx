@@ -107,6 +107,32 @@ export function SyncBar({ account, setAccount }) {
   )
 }
 
+// A small "Sync now" for the Games page's toolbar: while a sync runs it shows how far it's got, and
+// the list reloads by itself when it finishes (useSteamAccount calls changed()).
+export function SyncButton() {
+  const { showToast } = useApp()
+  const { account, setAccount } = useSteamAccount()
+  const [busy, setBusy] = useState(false)
+  if (!account?.steam_id) return null
+  const sync = account.sync
+  const start = async () => {
+    setBusy(true)
+    try {
+      setAccount({ ...account, sync: (await api.syncSteam(false)).sync })
+    } catch (e) {
+      showToast(e.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <button type="button" className="secondary" onClick={start} disabled={busy || sync.running}
+      title={account.last_sync_at ? `Synced ${timeAgo(account.last_sync_at)}` : 'Not synced yet'}>
+      {sync.running ? `Syncing${sync.total > 0 ? ` ${sync.done} of ${sync.total}` : ''}...` : 'Sync now'}
+    </button>
+  )
+}
+
 // First time: which Steam profile to follow.
 export function SteamSetup({ account, setAccount }) {
   const [profile, setProfile] = useState('')
