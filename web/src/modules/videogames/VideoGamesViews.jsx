@@ -207,9 +207,36 @@ const SORTS = {
   name: ['Name', (a, b) => a.name.localeCompare(b.name)],
 }
 
-// Every game: which to show, a search, a sort, and a row each with its completion.
+// Every game: which to show, a search, a sort, and a row each with its completion. "+ Add a game"
+// tracks one Steam's owned-games list leaves out (a free game like Counter-Strike 2, or one you no
+// longer own) by its store link or app id.
 export function GamesView() {
-  const { refreshKey, openPanel } = useApp()
+  const { refreshKey, openPanel, changed, showToast } = useApp()
+  const [adding, setAdding] = useState(false)
+  const [link, setLink] = useState('')
+  const [addError, setAddError] = useState('')
+  const [busy, setBusy] = useState(false)
+  const addGame = async (e) => {
+    e.preventDefault()
+    setAddError('')
+    // The same check the API makes: a plain app id, or a link with /app/<id> or /stats/<id> in it.
+    if (!/^\s*\d+\s*$|\/(app|stats)\/\d+/.test(link)) {
+      setAddError("Paste the game's Steam store link (store.steampowered.com/app/...) or its app id.")
+      return
+    }
+    setBusy(true)
+    try {
+      const game = await api.addExtraVideoGame(link)
+      setAdding(false)
+      setLink('')
+      changed()
+      showToast(`Added ${game.name}: ${game.achievements_done} of ${game.achievements_total} achievements`)
+    } catch (err) {
+      setAddError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
   const [show, setShow] = useState(() => new URLSearchParams(window.location.search).get('show') ?? 'all')
   const [sort, setSort] = useState('played')
   const [q, setQ] = useState('')
@@ -232,7 +259,21 @@ export function GamesView() {
             {Object.entries(SORTS).map(([id, [label]]) => <option key={id} value={id}>{label}</option>)}
           </select>
         </label>
+        <button type="button" className="secondary" onClick={() => setAdding(!adding)}>+ Add a game</button>
       </div>
+      {adding && (
+        <form className="card add-game" onSubmit={addGame}>
+          <p className="small muted">For a game with achievements that isn't in your Steam library list, like a free
+            game (Counter-Strike 2) or one you no longer own. Paste its Steam store link or app id.</p>
+          <div className="lookup-row">
+            <input value={link} onChange={(e) => setLink(e.target.value)} required autoFocus
+              placeholder="https://store.steampowered.com/app/730/..." aria-label="Steam store link or app id" />
+            <button type="submit" className="primary" disabled={busy || !link.trim()}>{busy ? 'Adding...' : 'Add'}</button>
+            <button type="button" className="plain" onClick={() => setAdding(false)}>Cancel</button>
+          </div>
+          {addError && <p className="alert error small">{addError}</p>}
+        </form>
+      )}
       <div className="chip-row scroll" role="group" aria-label="Show">
         {SHOWS.map(([id, label]) => (
           <button key={id} type="button" className="chip-filter" aria-pressed={show === id} onClick={() => setShow(id)}>{label}</button>
@@ -253,6 +294,7 @@ export function GamesView() {
                   </span>
                   <CompletionBar game={g} />
                 </span>
+                {g.extra && <span className="pill" title="Added by hand">Added</span>}
                 {g.completed_at && <span className="pill ok">100%</span>}
               </button>
             </li>

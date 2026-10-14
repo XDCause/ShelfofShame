@@ -24,6 +24,11 @@ export default function VideoGamePanel({ id, onClose }) {
     setGame(await api.hideVideoGame(id, !game.hidden))
     changed()
   }
+  const remove = async () => {
+    await api.removeExtraVideoGame(id)
+    changed()
+    onClose()
+  }
   const list = game.achievements.filter((a) => show === 'all' || (show === 'got' ? a.achieved : !a.achieved))
   const footer = (
     <>
@@ -33,7 +38,9 @@ export default function VideoGamePanel({ id, onClose }) {
           target="_blank" rel="noreferrer">Your achievements on Steam ↗</a>
       )}
       <span className="spacer" />
-      <button type="button" className="plain" onClick={hide}>{game.hidden ? 'Show on dashboard' : 'Hide'}</button>
+      {game.extra
+        ? <button type="button" className="plain destructive" onClick={remove}>Remove</button>
+        : <button type="button" className="plain" onClick={hide}>{game.hidden ? 'Show on dashboard' : 'Hide'}</button>}
     </>
   )
 
@@ -47,7 +54,9 @@ export default function VideoGamePanel({ id, onClose }) {
           {game.completed_at && <span className="pill ok">100% · {shortDate(game.completed_at)}</span>}
         </div>
         <CompletionBar game={game} />
-        <p className="muted small">{playtime(game.playtime_minutes)} played{game.last_played && ` · last played ${shortDate(game.last_played)}`}</p>
+        {game.extra
+          ? <p className="muted small">Added by hand: Steam doesn't list it in your library, so playtime isn't known.</p>
+          : <p className="muted small">{playtime(game.playtime_minutes)} played{game.last_played && ` · last played ${shortDate(game.last_played)}`}</p>}
       </section>
 
       {game.achievements.length > 0 && (

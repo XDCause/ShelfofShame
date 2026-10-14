@@ -59,6 +59,8 @@ class FakeSteam:
         # The store knows Hades' new-style picture; Celeste falls back to the old address; the demo has none.
         pictures = {20: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/20/abc123/header.jpg"}
         monkeypatch.setattr(steam, "header_pictures", log("pictures", lambda ids: {i: pictures.get(i) for i in ids}))
+        monkeypatch.setattr(steam, "store_items", log("store", lambda ids: {
+            i: {"name": "Counter-Strike 2", "header": "https://shared.akamai.steamstatic.com/cs2.jpg"} for i in ids if i == 730}))
         return self
 
 
@@ -251,3 +253,41 @@ def test_stats_for_the_charts(client, fake):
     assert (completion["25–49%"], completion["100%"], completion["Under 10%"]) == (1, 1, 0)   # Hades 33%, Celeste
     assert [g["name"] for g in s["most_played"]] == ["Hades", "Celeste", "Free Demo"]
     assert client.get("/api/videogames/stats?months=0").status_code == 422
+
+
+def test_adding_a_game_the_owned_list_leaves_out(client, fake):
+    """Counter-Strike 2: free, so not in the owned list, but you have its one achievement."""
+    setup(client)
+    fake.mine[730] = [{"apiname": "WIN", "achieved": 1, "unlocktime": T(5)}]
+    fake.names[730] = [{"name": "WIN", "displayName": "A New Beginning", "icon": "i/win.jpg"}]
+    r = client.post("/api/videogames/extra", json={"game": "https://store.steampowered.com/app/730/CounterStrike_2/"})
+    assert r.status_code == 201, r.text
+    cs2 = r.json()
+    assert (cs2["name"], cs2["extra"], cs2["percent"], cs2["header_url"]) == (
+        "Counter-Strike 2", True, 100, "https://shared.akamai.steamstatic.com/cs2.jpg")
+    s = client.get("/api/videogames/summary").json()
+    assert (s["perfect"], s["goal"]["achievements"]) == (2, 4)                    # it counts like any game
+    assert client.post("/api/videogames/extra", json={"game": "730"}).status_code == 409   # already there
+    # Synced every time (no "last played" for it), even when nothing else is.
+    fake.calls.clear()
+    client.post("/api/videogames/sync")
+    assert [c[2] for c in fake.calls if c[0] == "player_achievements"] == [730]
+    assert client.delete("/api/videogames/extra/20").status_code == 404           # library games: hide instead
+    assert client.delete("/api/videogames/extra/730").status_code == 204
+    assert client.get("/api/videogames/730").status_code == 404
+
+
+def test_adding_a_game_explains_what_went_wrong(client, fake):
+    assert client.post("/api/videogames/extra", json={"game": "730"}).status_code == 409    # no profile yet
+    setup(client)
+    assert client.post("/api/videogames/extra", json={"game": "a game"}).status_code == 422
+    assert "no achievements" in client.post("/api/videogames/extra", json={"game": "999"}).json()["detail"]
+    fake.mine[731] = [{"apiname": "A", "achieved": 0, "unlocktime": 0}]
+    assert "haven't unlocked" in client.post("/api/videogames/extra", json={"game": "731"}).json()["detail"]
+
+
+def test_app_ids_from_links():
+    assert steam.app_id_from("730") == 730
+    assert steam.app_id_from("https://store.steampowered.com/app/730/CounterStrike_2/") == 730
+    assert steam.app_id_from("https://steamcommunity.com/profiles/1/stats/730/achievements") == 730
+    assert steam.app_id_from("Counter-Strike") is None

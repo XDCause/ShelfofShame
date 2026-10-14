@@ -1054,6 +1054,12 @@ def video_games(page):
     page.locator(".section-tabs").get_by_role("link", name="Games").click()
     expect(page.get_by_label("Search your games")).to_be_visible()
     expect(page.locator(".game-list li").first.or_(page.locator(".empty", has_text="No games here"))).to_be_visible()
+    # + Add a game: a link that isn't a Steam game is refused before anything asks Steam.
+    page.get_by_role("button", name="+ Add a game").click()
+    page.get_by_label("Steam store link or app id").fill("not a game")
+    page.locator(".add-game").get_by_role("button", name="Add", exact=True).click()
+    expect(page.locator(".add-game .alert")).to_contain_text("store link")
+    page.locator(".add-game").get_by_role("button", name="Cancel").click()
     page.locator(".section-tabs").get_by_role("link", name="Stats").click()
     expect(page.locator(".chart")).to_have_count(4)
     slot = page.locator(".chart-slot").first

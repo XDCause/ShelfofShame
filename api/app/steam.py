@@ -11,7 +11,9 @@ error messages.
     player_achievements(...)  which achievements you have, and when you unlocked them
     schema(app_id)            each achievement's name, description and icons
     global_percentages(...)   how many players have each achievement (its rarity)
-    header_pictures(app_ids)  each game's header picture address (store API, 50 games a call)
+    store_items(app_ids)      each game's name and header picture address (store API, 50 a call)
+    header_pictures(app_ids)  just the pictures
+    app_id_from(text)         a store link, community link or plain number -> the app id
 """
 import json
 import os
@@ -123,9 +125,19 @@ def global_percentages(app_id: int) -> dict[str, float]:
     return {r["name"]: float(r["percent"]) for r in rows if "name" in r and "percent" in r}
 
 
-def header_pictures(app_ids: list[int]) -> dict[int, str | None]:
-    """{app id: the game's header picture address, or None if the store has none (e.g. a game
-    removed from the store)}. Asks IStoreBrowseService/GetItems 50 games at a time."""
+def app_id_from(text: str) -> int | None:
+    """730, "https://store.steampowered.com/app/730/CounterStrike_2/", ".../stats/730/achievements" -> 730."""
+    text = text.strip()
+    if text.isdigit():
+        return int(text)
+    m = re.search(r"/(?:app|stats)/(\d+)", text)
+    return int(m.group(1)) if m else None
+
+
+def store_items(app_ids: list[int]) -> dict[int, dict]:
+    """{app id: {"name", "header"}} from the store (IStoreBrowseService/GetItems, 50 games a call).
+    header is None when the store has no picture (e.g. a game removed from the store); games the
+    store doesn't know at all are left out."""
     found = {}
     for start in range(0, len(app_ids), 50):
         batch = app_ids[start:start + 50]
@@ -133,12 +145,20 @@ def header_pictures(app_ids: list[int]) -> dict[int, str | None]:
                    "data_request": {"include_assets": True}}
         _, data = _get("IStoreBrowseService/GetItems/v1/", {"input_json": json.dumps(request)})
         for item in data.get("response", {}).get("store_items", []) or []:
+            if not item.get("appid"):
+                continue
             assets = item.get("assets") or {}
             form, header = assets.get("asset_url_format"), assets.get("header")
-            if item.get("appid") and form and header:
-                found[item["appid"]] = PICTURES + form.replace("${FILENAME}", header)
+            found[item["appid"]] = {"name": item.get("name"),
+                                    "header": PICTURES + form.replace("${FILENAME}", header) if form and header else None}
         pause()
-    return {a: found.get(a) for a in app_ids}
+    return found
+
+
+def header_pictures(app_ids: list[int]) -> dict[int, str | None]:
+    """{app id: the game's header picture address, or None if the store has none}."""
+    items = store_items(app_ids)
+    return {a: (items.get(a) or {}).get("header") for a in app_ids}
 
 
 def pause():

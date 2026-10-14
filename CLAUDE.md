@@ -783,6 +783,14 @@ DBeaver, psql, and the one-off import script.
      points_to_go, plan = quickest route (100% the started games with fewest achievements left
      until the average reaches the goal: games + achievements), days_at_pace from those
      achievements. Live: 38.2% avg, 33.2% total, 11.8 points, 31 games / 445 achievements.
+   - **Games added by hand** (28_videogame_extra.sql vg_games.extra): the user's missing game was
+     Counter-Strike 2 (app 730, 1/1): GetPlayerAchievements has it, but GetOwnedGames returns
+     game_count 0 even with appids_filter (free game). POST /api/videogames/extra {game: store link /
+     app id} (steam.app_id_from; refuses no-stats and none-unlocked games; name + picture from
+     steam.store_items, which header_pictures now wraps), DELETE /api/videogames/extra/{id} (only
+     extras - library games can only be hidden). Extras are re-read on every sync. Games page
+     "+ Add a game"; "Added" pill; panel note + Remove. After adding CS2: 23 completed and 38.7%
+     average (both match SteamHunters); one more 1-achievement game is still unknown. 275 API tests.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

@@ -19,7 +19,7 @@ import math
 import threading
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 
 from . import steam
@@ -45,6 +45,10 @@ class ProfileIn(BaseModel):
 
 class GamePatch(BaseModel):
     hidden: bool
+
+
+class ExtraIn(BaseModel):
+    game: str = Field(min_length=1, max_length=300)   # its store link, or its app id
 
 
 class GoalIn(BaseModel):
@@ -158,6 +162,12 @@ def run_sync(full: bool = False):
             if full or not old or not old["synced_at"] or (played and (not old["last_played"] or played > old["last_played"])):
                 rarity_due = full or not old or not old["rarity_synced_at"] or now - old["rarity_synced_at"] > RARITY_EVERY
                 to_read.append((g["appid"], g.get("name"), rarity_due))
+        # Games added by hand (not in the owned list): read every time - Steam doesn't say when they
+        # were last played.
+        with db() as conn:
+            for r in conn.execute("SELECT app_id, name, rarity_synced_at FROM vg_games WHERE extra").fetchall():
+                rarity_due = full or not r["rarity_synced_at"] or now - r["rarity_synced_at"] > RARITY_EVERY
+                to_read.append((r["app_id"], r["name"], rarity_due))
         SYNC.update(total=len(to_read), done=0)
         for app_id, name, rarity_due in to_read:
             SYNC.update(message=f"Reading {name}...")
@@ -401,6 +411,45 @@ def list_games(show: str = Query("all", pattern="^(all|perfect|started|untouched
     with db() as conn:
         rows = conn.execute(GAME_SELECT + f" WHERE {where} ORDER BY g.last_played DESC NULLS LAST, lower(g.name)").fetchall()
     return [with_pictures(g) for g in rows]
+
+
+@router.post("/videogames/extra", status_code=201)
+def add_extra(body: ExtraIn):
+    """Track a game Steam's owned-games list leaves out (a free game like Counter-Strike 2, or one you
+    no longer own) by its store link or app id. Its achievements are read straight away."""
+    app_id = steam.app_id_from(body.game)
+    if not app_id:
+        raise HTTPException(422, "Paste the game's Steam store link (store.steampowered.com/app/...) or its app id.")
+    with db() as conn:
+        account = conn.execute("SELECT steam_id FROM vg_sync WHERE id = 1").fetchone()
+        if not account["steam_id"]:
+            raise HTTPException(409, "Set your Steam profile first.")
+        existing = conn.execute("SELECT name, extra FROM vg_games WHERE app_id = %s", (app_id,)).fetchone()
+    if existing:
+        raise HTTPException(409, f"{existing['name']} is already in your games.")
+    try:
+        item = steam.store_items([app_id]).get(app_id) or {}
+        mine = steam.player_achievements(account["steam_id"], app_id)
+    except steam.NoStats:
+        raise HTTPException(422, "That game has no achievements on Steam.")
+    except steam.SteamError as e:
+        raise HTTPException(422, str(e))
+    if not any(a.get("achieved") for a in mine):
+        raise HTTPException(422, "You haven't unlocked any of that game's achievements yet.")
+    with db() as conn:
+        conn.execute("INSERT INTO vg_games (app_id, name, header_url, extra) VALUES (%s, %s, %s, true)",
+                     (app_id, item.get("name") or f"App {app_id}", item.get("header") or ""))
+        sync_game(conn, account["steam_id"], app_id, rarity_due=True)
+    return get_game(app_id)
+
+
+@router.delete("/videogames/extra/{app_id}", status_code=204)
+def remove_extra(app_id: int):
+    """Stop tracking a game you added by hand (games from your library can only be hidden)."""
+    with db() as conn:
+        found(conn.execute("DELETE FROM vg_games WHERE app_id = %s AND extra RETURNING app_id",
+                           (app_id,)).fetchone(), "A game you added")
+    return Response(status_code=204)
 
 
 @router.get("/videogames/{app_id}")

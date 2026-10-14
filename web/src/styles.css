@@ -1288,3 +1288,5 @@ body.writing-mode .journal-title { font-size: 2.2rem; }
   .chart-labels span { font-size: 0.62rem; }
 }
 .goal-card p { margin: 0; }
+.add-game { display: flex; flex-direction: column; gap: 8px; }
+.add-game p { margin: 0; }
