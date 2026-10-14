@@ -1070,6 +1070,12 @@ DBeaver, psql, and the one-off import script.
    bye_wins ("incl. 1 bye" on the record). Activity: verb "Had", title "Volleyball bye", detail "Counted as a
    win" / "No result". Form: "Played | Bye – win | Bye – no result" (not for Training) hides Against + sets;
    score() / gameTitle() show "Bye – win" / "Bye". Tests: 314 API, 61 browser steps.
+3zs. **Volleyball Games page redesign** (2026-10-15; user: 13 games in one narrow column looked bad on a PC).
+   .vb-layout: seasons (one card per team: name, "12 social games · 7-4-1 won-lost · location", form dots) with a
+   row per game (date | vs opponent, venue only if not the team's, notes / videos | result pill), the season's
+   usual kind said once (rows mark exceptions); side column (sticky, 300px) Form (last 10 + run) and Head to
+   head (record per opponent, top 8 + All). <=1000px the side cards go below; phones: dots on their own line.
+   Prod has "vs BYE 0-0" on 29 Sept (made before byes existed) and venue typo "Aquatice" (12 games + team).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

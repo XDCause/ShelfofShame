@@ -901,7 +901,7 @@ def calendar(page):
 @step("Volleyball: the game is listed; add gear and a video")
 def volleyball(page):
     go(page, "Volleyball")
-    expect(page.locator(".journal-card", has_text="vs Spikers").first).to_contain_text("Won 3–1")
+    expect(page.locator(".vb-row", has_text="vs Spikers").first).to_contain_text("Won 3–1")
     expect(page.locator(".next-up")).to_contain_text(MARK)
     # Register a team with where it plays, as the default: a new game starts with both.
     page.get_by_role("button", name="+ Add team").click()
@@ -920,7 +920,7 @@ def volleyball(page):
     d.get_by_role("group", name="Played or a bye").get_by_role("button", name="Bye – win").click()
     expect(d.get_by_label("Against")).to_have_count(0)
     d.get_by_role("button", name="Log it").click()
-    expect(page.locator(".journal-card", has_text="Bye").first).to_contain_text("Bye – win")
+    expect(page.locator(".vb-row", has_text="Bye").first).to_contain_text("Bye – win")
     expect(page.locator(".stat-grid")).to_contain_text("incl. 1 bye")
     go(page, "Gear")
     page.get_by_role("button", name="+ Add gear").click()

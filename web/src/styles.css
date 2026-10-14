@@ -1654,3 +1654,41 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .wikidata-results .thumb { width: 52px; height: 52px; object-fit: cover; border-radius: 8px; flex: none; }
 .wikidata-results .row-button.static { cursor: default; }
 .wikidata-results .row-button.static:hover { background: none; }
+
+/* Volleyball games: seasons (one card per team) across the page, form + head to head beside them on a
+   computer, below them on a phone. Each game is one row: date, what, result. */
+.vb-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
+.vb-seasons { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.vb-side { display: flex; flex-direction: column; gap: 16px; position: sticky; top: calc(72px + env(safe-area-inset-top)); }
+.vb-season { padding: 0; overflow: hidden; }
+.vb-season-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 14px 18px;
+  border-bottom: 1px solid var(--border); }
+.vb-season-head .grow { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.vb-season-head h2 { margin: 0; }
+.vb-rows { list-style: none; margin: 0; padding: 0; }
+.vb-rows li + li { border-top: 1px solid var(--separator); }
+.vb-row { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; align-items: center; gap: 14px; width: 100%;
+  padding: 10px 18px; border: 0; background: none; color: var(--text); text-align: left; cursor: pointer; }
+.vb-row:hover { background: var(--fill); }
+.vb-date { display: flex; flex-direction: column; line-height: 1.2; white-space: nowrap; }
+.vb-date strong { font-variant-numeric: tabular-nums; }
+.vb-date span { font-size: 0.78rem; color: var(--muted); }
+.vb-what { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.vb-what .item-meta { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.form-dots { display: inline-flex; gap: 3px; }
+.form-dot { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 5px; font-size: 0.62rem;
+  font-weight: 700; color: #fff; background: #64748b; }
+.form-dots.big .form-dot { width: 24px; height: 24px; font-size: 0.75rem; border-radius: 6px; }
+.form-dot.f-W { background: #15803d; }
+.form-dot.f-L { background: #b91c1c; }
+.form-dot.f-D { background: #b45309; }
+.h2h li { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
+@media (max-width: 1000px) {
+  .vb-layout { grid-template-columns: minmax(0, 1fr); }
+  .vb-side { position: static; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+}
+@media (max-width: 700px) {
+  .vb-row { grid-template-columns: 58px minmax(0, 1fr) auto; gap: 10px; padding: 10px 14px; }
+  .vb-season-head { padding: 12px 14px; }
+  .vb-season-head .form-dots { flex-basis: 100%; }     /* its own line under the team's details */
+}
