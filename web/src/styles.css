@@ -828,14 +828,13 @@ button.mention:disabled { color: var(--muted); background: var(--fill); text-dec
 .timer-dot { position: absolute; top: 10px; right: 10px; padding: 3px 9px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; color: #fff; background: var(--out); }
 
 .status-badge { padding: 3px 10px; border-radius: 999px; font-size: 0.78rem; font-weight: 600; white-space: nowrap; background: var(--fill); color: var(--text); }
-.model-photo .status-badge { position: absolute; top: 10px; left: 10px; background: rgb(255 255 255 / 0.92); color: #3a3a3c; }
+.model-photo .status-badge { position: absolute; top: 10px; left: 10px; }
 .status-badge.s-wanted, .status-picker .s-wanted { background: var(--purple-bg); color: var(--purple); }
 .status-badge.s-in-stash, .status-picker .s-in-stash { background: var(--fill); color: var(--text); }
 .status-badge.s-in-progress, .status-picker .s-in-progress { background: var(--tint); color: var(--on-tint); }
 .status-badge.s-on-hold, .status-picker .s-on-hold { background: var(--low-bg); color: var(--low); }
 .status-badge.s-finished, .status-picker .s-finished { background: var(--ok-bg); color: var(--ok); }
 .status-badge.s-gone, .status-picker .s-gone { background: var(--fill); color: var(--muted); }
-.model-photo .status-badge.s-in-progress { background: var(--tint); color: #fff; }
 
 /* Timer */
 .timer { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 6px 0 10px; }
@@ -1043,7 +1042,6 @@ button.mention:disabled { color: var(--muted); background: var(--fill); text-dec
 .home-stats .home-stat.skeleton { min-height: 82px; }
 .home-stats { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
 .big-icon { color: var(--faint); }
-.model-photo .status-badge.pill:is(.ok, .low, .out, .tint, .purple, .teal) { color: var(--tone); }
 .ellipsis { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .next-up { display: flex; align-items: center; gap: 14px; width: 100%; border: 1px solid var(--border); text-align: left; color: inherit; }
 .next-up .grow { display: flex; flex-direction: column; min-width: 0; }
@@ -1594,3 +1592,28 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
   .book-grid { grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
   .book-cover.large { width: 88px; }
 }
+
+/* A build step that was skipped (no detailing on a snap-fit kit): a dashed ring and a dash. */
+.steps li.skipped .step-dot { background: none; color: var(--muted); box-shadow: inset 0 0 0 1.5px var(--muted);
+  outline: 1.5px dashed var(--surface); outline-offset: -1.5px; }
+.steps li.skipped .step-name { color: var(--muted); font-style: italic; }
+.steps li.skipped .step-name::after { content: ' · skipped'; font-size: 0.75em; }
+.step-bar span.skip { background: repeating-linear-gradient(90deg, var(--fill) 0 3px, transparent 3px 5px); }
+
+/* Badges over a photo (kit, board game and gear cards). A photo can be any colour, so these are
+   solid with white text, a thin white ring and a shadow - never the see-through tints the same
+   badges use on plain backgrounds. Fixed colours, not theme tokens: the photo is the same in light
+   and dark mode. Each passes 4.5:1 with white text. !important beats the status / tone colours. */
+.model-photo > .status-badge, .model-photo > .timer-dot {
+  --badge: #334155;
+  background: var(--badge) !important; color: #fff !important;
+  box-shadow: 0 0 0 1.5px rgb(255 255 255 / 0.85), 0 2px 6px rgb(0 0 0 / 0.35);
+}
+.model-photo > .status-badge:is(.s-wanted, .purple) { --badge: #6d28d9; }
+.model-photo > .status-badge:is(.s-in-progress, .tint) { --badge: #1d4ed8; }
+.model-photo > .status-badge:is(.s-on-hold, .low) { --badge: #b45309; }
+.model-photo > .status-badge:is(.s-finished, .ok) { --badge: #15803d; }
+.model-photo > .status-badge.out, .model-photo > .timer-dot { --badge: #b91c1c; }
+.model-photo > .status-badge.teal { --badge: #0f766e; }
+.model-photo > .status-badge.s-gone { --badge: #52525b; }
+.photo-pick { display: inline-flex; flex-wrap: wrap; gap: 8px; }

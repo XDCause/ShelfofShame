@@ -151,10 +151,25 @@ def test_changing_hobby_drops_a_step_it_does_not_have(client, ids):
     assert m["stage"] == "Primed"                                  # both hobbies have it: kept
 
 
-def test_finished_kits_keep_their_status_when_a_step_changes(client, ids):
-    m = make_model(client, ids, status="Finished")
-    m = client.patch(f"/api/models/{m['model_id']}", json={"stage": "Weathered"}).json()
-    assert m["status"] == "Finished"
+def test_complete_finishes_a_kit_and_detailing_can_be_skipped(client, ids):
+    m = make_model(client, ids, hobby="Gundam", stage="Built")
+    url = f"/api/models/{m['model_id']}"
+    m = client.patch(url, json={"stage": "Complete"}).json()          # a snap-fit HG: no detailing
+    assert (m["status"], m["skipped_steps"], bool(m["finished_on"])) == ("Finished", ["Panel lined", "Decals", "Top coat"], True)
+    m = client.patch(url, json={"skipped_steps": ["Decals", "Top coat"]}).json()   # panel lined after all
+    assert (m["stage"], m["skipped_steps"], m["status"]) == ("Complete", ["Decals", "Top coat"], "Finished")
+    r = client.patch(url, json={"skipped_steps": ["Built"]})
+    assert r.status_code == 422                                     # Built can't be skipped
+    m = client.patch(url, json={"status": "In progress"}).json()     # not finished after all
+    assert (m["stage"], m["skipped_steps"]) == ("Panel lined", [])
+    m = client.patch(url, json={"stage": "Decals"}).json()            # one step at a time: nothing skipped
+    assert (m["stage"], m["skipped_steps"], m["status"]) == ("Decals", [], "In progress")
+    m = client.patch(url, json={"status": "Finished"}).json()        # marked Finished: Complete
+    assert (m["stage"], m["skipped_steps"]) == ("Complete", ["Top coat"])
+    m = client.patch(url, json={"stage": "Top coat"}).json()          # back a step: not finished
+    assert (m["stage"], m["status"]) == ("Top coat", "In progress")
+    new = client.post("/api/models", json={"name": "Done already", "hobby": "Gundam", "status": "Finished"}).json()
+    assert (new["stage"], new["skipped_steps"]) == ("Complete", ["Panel lined", "Decals", "Top coat"])
 
 
 def test_warhammer_box_counts_minis(client):
@@ -174,7 +189,7 @@ def test_warhammer_box_counts_minis(client):
 def test_lookups_list_hobbies_and_their_steps(client):
     lk = client.get("/api/lookups").json()
     assert lk["hobbies"] == ["Scale model", "Warhammer", "Gundam"]
-    assert lk["stages"]["Gundam"] == ["Built", "Panel lined", "Decals", "Top coat"]
+    assert lk["stages"]["Gundam"] == ["Built", "Panel lined", "Decals", "Top coat", "Complete"]
     assert lk["hobby_brands"]["Gundam"] == "Bandai" and lk["gundam_grades"]["MG"] == "1/100"
 
 

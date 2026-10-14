@@ -1,5 +1,6 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { api } from '../api.js'
+import PhotoPick from './PhotoPick.jsx'
 
 // Phone photos are often 3-5 MB. Shrink to at most 1000 px in the browser and save as JPEG
 // (~100-200 KB), so the database and its backups stay small. The white fill stops transparent
@@ -23,9 +24,8 @@ export async function shrink(file, maxSide = 1000) {
 }
 
 // "Upload photo" / "Remove photo" for one brand + product code. Works for any brand.
-// On a phone, the file picker offers the camera as well as the photo library.
+// On a phone or tablet: Take photo (the camera) or Gallery (PhotoPick).
 export default function PhotoUpload({ brandId, productCode, hasPhoto, onChanged }) {
-  const input = useRef(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -33,10 +33,7 @@ export default function PhotoUpload({ brandId, productCode, hasPhoto, onChanged 
     return <p className="hint">Set a brand and product code to add a photo.</p>
   }
 
-  const pick = async (e) => {
-    const file = e.target.files?.[0]
-    e.target.value = '' // so choosing the same file again still triggers a change
-    if (!file) return
+  const pick = async (file) => {
     setBusy(true)
     setError('')
     try {
@@ -64,10 +61,8 @@ export default function PhotoUpload({ brandId, productCode, hasPhoto, onChanged 
 
   return (
     <div className="photo-upload">
-      <input ref={input} type="file" accept="image/*" onChange={pick} hidden />
-      <button type="button" className="secondary" onClick={() => input.current.click()} disabled={busy}>
-        {busy ? 'Saving...' : hasPhoto ? 'Replace photo' : 'Upload photo'}
-      </button>
+      {busy ? <span className="muted small">Saving...</span>
+        : <PhotoPick onFile={pick} label={hasPhoto ? 'Replace photo' : 'Upload photo'} />}
       {hasPhoto && (
         <button type="button" className="plain destructive" onClick={remove} disabled={busy}>Remove photo</button>
       )}

@@ -1004,6 +1004,22 @@ DBeaver, psql, and the one-off import script.
      Quotes; panels book (BookPanel) and addbook (search / Scan ISBN / type it in). BookIcon, QuoteIcon.
    - Tests: 308 API (test_reading.py, fake Open Library), 61 browser steps (reading; Home counts:
      10 quick actions, 6 hobby cards, tiles + READING).
+3zm. **Complete + skipped steps, photo badges, camera** (2026-10-14).
+   - Every hobby's steps end with "Complete" (db.STAGES; 36_build_complete.sql CHECK). models.skipped_steps
+     TEXT[]: steps passed over (snap-fit HG Gunpla: Built -> Complete). models.build_steps() rules: moving
+     the stage ahead skips the steps between (never the first, Built); back forgets skips after it;
+     skipped_steps sent alone toggle skipped <-> done (only between Built and the stage); Complete =>
+     Finished; status Finished => Complete; leaving Complete / Finished goes back to the last step really
+     done and In progress. Old Finished kits got Complete with the steps after their last tick skipped.
+     BuildSteps: tap ahead = jump (toast says how many skipped), last ticked = untick, earlier = toggle
+     skipped; skipped = dashed dot "· skipped"; StepBar .skip; card text "Complete (3 skipped)".
+   - Badges over card photos (kits, board games, gear) were see-through tints (the s-* / tone colours
+     came later in the CSS than the white "on photo" rule). Now solid fixed colours, white text, white
+     ring + shadow (end of styles.css, !important over the tints).
+   - components/PhotoPick.jsx: touch screens ((pointer: coarse)) get Take photo (capture=environment) +
+     Gallery; computers one button. Used by BuildLog, PhotoUpload, RowPhoto (RecordFields). Inputs carry
+     data-source=camera|gallery (the e2e uses gallery). Journal images still use BlockNote's own picker.
+   - Tests: 308 API, 61 browser steps (gundam: Built -> Complete skips 3; phone: Take photo / Gallery).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

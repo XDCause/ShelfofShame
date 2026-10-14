@@ -28,10 +28,12 @@ CONDITIONS = ["Sealed", "Opened", "Half used", "Nearly empty", "Empty", "Dried o
 PRIORITIES = ["High", "Normal", "Low"]
 MODEL_STATUSES = ["Wanted", "In stash", "In progress", "On hold", "Finished", "Gone"]
 # Each hobby's build steps in order (db/init/16_hobbies.sql); a model's stage = the last one done.
+# Each hobby's build steps, in order (db/init/36_build_complete.sql must match). Every build ends at
+# Complete; the steps in between can be skipped (models.skipped_steps), never the first.
 STAGES = {
-    "Scale model": ["Built", "Primed", "Painted", "Decals", "Weathered"],
-    "Warhammer": ["Built", "Primed", "Painted", "Based"],
-    "Gundam": ["Built", "Panel lined", "Decals", "Top coat"],
+    "Scale model": ["Built", "Primed", "Painted", "Decals", "Weathered", "Complete"],
+    "Warhammer": ["Built", "Primed", "Painted", "Based", "Complete"],
+    "Gundam": ["Built", "Panel lined", "Decals", "Top coat", "Complete"],
 }
 HOBBIES = list(STAGES)
 # Who usually makes each hobby's kits: a new Warhammer / Gundam model starts with that brand.

@@ -1,5 +1,6 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { api } from '../api.js'
+import PhotoPick from './PhotoPick.jsx'
 import { shrink } from './PhotoUpload.jsx'
 import { Field } from './SupplyFields.jsx'
 
@@ -57,7 +58,6 @@ export default function RecordFields({ fields, form, set }) {
 // A photo kept on the record itself (a board game's box, a pair of shoes): show it, replace it,
 // remove it. `path` is the record's API address ('/board-games/3'); `url` its current photo URL.
 export function RowPhoto({ path, url, onChanged, label = 'photo' }) {
-  const input = useRef(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -73,22 +73,16 @@ export function RowPhoto({ path, url, onChanged, label = 'photo' }) {
       setBusy(false)
     }
   }
-  const pick = (e) => {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (file) run(async () => api.uploadRowPhoto(path, await shrink(file)), 'Photo saved ✓')
-  }
+  const pick = (file) => run(async () => api.uploadRowPhoto(path, await shrink(file)), 'Photo saved ✓')
 
   return (
     <div className="row-photo">
       <div className="item-photo">
         {url ? <img src={url} alt="" /> : <span className="photo-missing">No {label}</span>}
       </div>
-      <input ref={input} type="file" accept="image/*" onChange={pick} hidden />
       <span className="button-row">
-        <button type="button" className="plain small" onClick={() => input.current.click()} disabled={busy}>
-          {busy ? 'Saving...' : url ? 'Replace photo' : 'Add a photo'}
-        </button>
+        {busy ? <span className="muted small">Saving...</span>
+          : <PhotoPick onFile={pick} className="plain small" label={url ? 'Replace photo' : 'Add a photo'} />}
         {url && <button type="button" className="plain small destructive" disabled={busy}
           onClick={() => run(() => api.deleteRowPhoto(path), 'Photo removed')}>Remove</button>}
       </span>

@@ -50,6 +50,7 @@ class ModelIn(BaseModel):
     purchased_from: str | None = None
     hobby: Hobby = "Scale model"
     stage: str | None = None
+    skipped_steps: list[str] | None = None
     grade: str | None = None
     faction: str | None = None
     figures: int = Field(1, ge=1)
@@ -72,6 +73,7 @@ class ModelPatch(BaseModel):
     finished_on: date | None = None
     hobby: Hobby | None = None
     stage: str | None = None
+    skipped_steps: list[str] | None = None
     grade: str | None = None
     faction: str | None = None
     figures: int | None = Field(None, ge=1)
@@ -180,11 +182,52 @@ def date_status(conn, model_id, status):
                      (model_id,))
 
 
+def build_steps(current: dict, data: dict, steps: list[str]):
+    """How the stage, the skipped steps and Finished go together (changes `data`):
+    - Complete is the last step: reaching it finishes the kit; a kit marked Finished is put at
+      Complete; un-finishing a kit at Complete takes it back to its last step really done
+    - moving the stage ahead skips the steps in between (not the first, Built: snap-fit kits go
+      Built -> Complete); moving it back forgets skips after it
+    - skipped_steps sent on their own mark steps before the stage skipped / done again"""
+    last = steps[-1]
+    old_stage, old_skipped = current.get("stage"), list(current.get("skipped_steps") or [])
+    status = data.get("status")
+    if "stage" not in data and old_stage:
+        if status == "Finished" and old_stage != last:
+            data["stage"] = last
+        elif status and status != "Finished" and old_stage == last:
+            data["stage"] = next((s for s in reversed(steps[:-1]) if s not in old_skipped), None)
+    elif not data.get("stage") and not old_stage and status == "Finished":
+        data["stage"] = last
+    if data.get("stage") == last and "status" not in data and current.get("status") != "Finished":
+        data["status"] = "Finished"
+    elif "stage" in data and data["stage"] != last and "status" not in data and current.get("status") == "Finished":
+        data["status"] = "In progress"
+    stage = data["stage"] if "stage" in data else old_stage
+    at = steps.index(stage) if stage in steps else -1
+    if "skipped_steps" in data and data["skipped_steps"] is not None:
+        wanted = data["skipped_steps"]
+        bad = [s for s in wanted if s not in steps[1:at]]
+        if bad:
+            raise HTTPException(422, f"Only steps between {steps[0]} and the step you're on can be skipped "
+                                     f"(not {', '.join(bad)}).")
+        data["skipped_steps"] = [s for s in steps if s in wanted]
+    elif "stage" in data:
+        was = steps.index(old_stage) if old_stage in steps else -1
+        if at > was:
+            data["skipped_steps"] = [s for s in steps if s in old_skipped or s in steps[max(was + 1, 1):at]]
+        else:
+            data["skipped_steps"] = [s for s in old_skipped if s in steps and steps.index(s) < at]
+    else:
+        data.pop("skipped_steps", None)
+
+
 def tidy_model(conn, current: dict, data: dict) -> dict:
     """The rules for a new or changed model, applied to `data` (the fields being set):
     - brand_name: a brand you haven't used yet is added to your brands
     - the stage must be one of the hobby's steps; changing hobby drops a stage it doesn't have
     - ticking off a step on a kit you haven't started moves it to In progress
+    - steps (see build_steps): jumping ahead skips the steps between; Complete = Finished
     - fewer minis in the box than you'd marked done lowers the done count to match"""
     name = data.pop("brand_name", None)
     if name and data.get("brand_id") is None:
@@ -195,6 +238,7 @@ def tidy_model(conn, current: dict, data: dict) -> dict:
         if "stage" in data:
             raise HTTPException(422, f"'{stage}' isn't a {hobby} build step. Steps: {', '.join(STAGES[hobby])}.")
         data["stage"] = None                        # the hobby changed: start its steps afresh
+    build_steps(current, data, STAGES[hobby])
     if data.get("stage") and "status" not in data and current.get("status", "In stash") in NOT_STARTED:
         data["status"] = "In progress"
     figures = data.get("figures") or current.get("figures") or 1

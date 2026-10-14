@@ -540,7 +540,7 @@ def timer(page):
 def build_log(page):
     d = open_model(page, "Sherman")
     d.get_by_label("Build log note").fill("Hull assembled, ready for primer")
-    d.locator(".log-form input[type=file]").set_input_files(
+    d.locator(".log-form input[data-source=gallery]").set_input_files(
         {"name": "hull.png", "mimeType": "image/png", "buffer": PIXEL})
     d.get_by_role("button", name="Add to log").click()
     entry = d.locator(".log li").first
@@ -623,7 +623,7 @@ def used_on(page):
 def gundam(page):
     d = open_model(page, "RX-78-2")
     expect(d.locator(".item-sub").first).to_contain_text("HG · 1/144 · Bandai · G5057403")
-    expect(d.locator(".steps button")).to_have_count(4)
+    expect(d.locator(".steps button")).to_have_count(5)                      # ... Top coat, Complete
     expect(d.locator(".checklist li", has_text="Panel Line Gray")).to_contain_text("In inventory")
     d.locator(".steps button", has_text="Panel lined").click()
     expect(d.locator(".steps button[aria-pressed='true']")).to_have_count(2)   # Built + Panel lined
@@ -631,9 +631,21 @@ def gundam(page):
     shot(page, "d23_gundam", full=False)
     d.locator(".steps button", has_text="Panel lined").click()                 # untick: back to Built
     expect(d.locator(".steps button[aria-pressed='true']")).to_have_count(1)
+    # No detailing on a snap-fit kit: Built -> Complete skips the steps between and finishes it.
+    d.locator(".steps button", has_text="Complete").click()
+    expect(d.locator(".steps li.skipped")).to_have_count(3)
+    expect(d.locator(".status-picker [aria-pressed='true']")).to_have_text("Finished")
+    d.locator(".steps button", has_text="Panel lined").click()                 # did panel line it after all
+    expect(d.locator(".steps li.skipped")).to_have_count(2)
+    shot(page, "d23b_gundam_skipped", full=False)
+    d.locator(".steps button", has_text="Complete").click()                    # not finished: back to Panel lined
+    expect(d.locator(".status-picker [aria-pressed='true']")).to_have_text("In progress")
+    d.locator(".steps button", has_text="Panel lined").click()                 # and back to Built
+    expect(d.locator(".steps button[aria-pressed='true']")).to_have_count(1)
+    expect(d.locator(".steps li.skipped")).to_have_count(0)
     page.keyboard.press("Escape")
     # In progress, Built: the next step shows as underway
-    expect(page.locator(".model-card", has_text="RX-78-2")).to_contain_text("Panel lining · step 2 of 4")
+    expect(page.locator(".model-card", has_text="RX-78-2")).to_contain_text("Panel lining · step 2 of 5")
     expect(page.locator(".model-card", has_text="RX-78-2").locator("img")).to_be_visible()  # HLJ box photo
 
 
@@ -1273,6 +1285,9 @@ def phone(page):
     expect(page.locator(".tabbar")).to_be_hidden()              # a sheet covers the tab bar
     page.wait_for_timeout(400)  # let the sheet finish sliding up
     shot(page, "m02_item_panel", full=False)
+    drawer(page).get_by_text("Photo options").click()             # a touch screen: camera or gallery
+    expect(drawer(page).get_by_role("button", name="Take photo")).to_be_visible()
+    expect(drawer(page).get_by_role("button", name="Gallery")).to_be_visible()
     page.keyboard.press("Escape")
     def fits(name):
         page.wait_for_timeout(300)

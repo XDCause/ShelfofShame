@@ -1,5 +1,6 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { api, logPhotoUrl, shortDate, today } from '../api.js'
+import PhotoPick from './PhotoPick.jsx'
 import { shrink } from './PhotoUpload.jsx'
 
 // The build log: dated notes, each with an optional photo (phones offer the camera).
@@ -9,7 +10,6 @@ export default function BuildLog({ modelId, entries, reload, run }) {
   const [day, setDay] = useState(today())
   const [photo, setPhoto] = useState(null)
   const [busy, setBusy] = useState(false)
-  const input = useRef(null)
 
   const add = (e) => {
     e.preventDefault()
@@ -39,10 +39,9 @@ export default function BuildLog({ modelId, entries, reload, run }) {
           placeholder="What did you do today? e.g. Primed the hull, tracks assembled" aria-label="Build log note" />
         <div className="button-row">
           <input type="date" value={day} onChange={(e) => setDay(e.target.value)} aria-label="Date" />
-          <input ref={input} type="file" accept="image/*" hidden onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} />
-          <button type="button" className="secondary" onClick={() => input.current.click()}>
-            {photo ? 'Photo ✓' : 'Add photo'}
-          </button>
+          <PhotoPick onFile={setPhoto} label={photo ? 'Photo ✓' : 'Add photo'} />
+          {photo && <span className="muted small">Photo ✓ <button type="button" className="icon-btn small"
+            aria-label="Don't add the photo" onClick={() => setPhoto(null)}>✕</button></span>}
           <button type="submit" className="primary" disabled={busy || (!text.trim() && !photo)}>
             {busy ? 'Saving...' : 'Add to log'}
           </button>
