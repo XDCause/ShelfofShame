@@ -83,3 +83,10 @@ export const GamepadIcon = (p) => (
   <Icon {...p}><path d="M7 7.5h10a4.5 4.5 0 0 1 4.4 5.5l-1 4.4a2.3 2.3 0 0 1-4 .9L14.5 16h-5l-1.9 2.3a2.3 2.3 0 0 1-4-.9l-1-4.4A4.5 4.5 0 0 1 7 7.5z" />
     <path d="M8 10.5v3M6.5 12h3M15.5 11.2h.01M17.5 13h.01" /></Icon>
 )
+// A bell curve: "the median" (the middle of everyone's times).
+export const BellCurveIcon = (p) => (
+  <Icon {...p}><path d="M2.5 19.5h19" /><path d="M3 17.5c3.5 0 4.5-1.5 6-6S11 5.5 12 5.5s1.5 1.5 3 6 2.5 6 6 6" /></Icon>
+)
+export const HourglassIcon = (p) => (
+  <Icon {...p}><path d="M7 3.5h10M7 20.5h10" /><path d="M8 3.5c0 4.5 8 5.5 8 8.5s-8 4-8 8.5M16 3.5c0 4.5-8 5.5-8 8.5s8 4 8 8.5" /></Icon>
+)

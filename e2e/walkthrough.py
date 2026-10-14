@@ -1053,7 +1053,7 @@ def video_games(page):
     shot(page, "d41_video_games", full=False)
     page.locator(".section-tabs").get_by_role("link", name="Games").click()
     expect(page.get_by_label("Search your games")).to_be_visible()
-    expect(page.locator(".game-list li").first.or_(page.locator(".empty", has_text="No games here"))).to_be_visible()
+    expect(page.locator(".game-rows li").first.or_(page.locator(".empty", has_text="No games here"))).to_be_visible()
     # + Add a game: a link that isn't a Steam game is refused before anything asks Steam.
     page.get_by_role("button", name="+ Add a game").click()
     page.get_by_label("Steam store link or app id").fill("not a game")
@@ -1061,8 +1061,9 @@ def video_games(page):
     expect(page.locator(".add-game .alert")).to_contain_text("store link")
     page.locator(".add-game").get_by_role("button", name="Cancel").click()
     # A game's panel: how you compare with other players (when the community numbers are in).
+    shot(page, "d44_video_games_list", full=False)
     page.get_by_label("Search your games").fill("Clair Obscur")
-    row = page.locator(".game-list .row-button").first
+    row = page.locator(".game-row").first
     if row.count():
         row.click()
         expect(drawer(page).locator(".item-title, .section-head").first).to_be_visible()

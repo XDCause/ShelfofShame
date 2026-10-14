@@ -3,6 +3,7 @@ import { api, shortDate } from '../../api.js'
 import Drawer from '../../components/Drawer.jsx'
 import { useApp } from '../../core/app-context.js'
 import JournalMentions from '../../core/journal/JournalMentions.jsx'
+import { BellCurveIcon, ClockIcon, HourglassIcon, TrophyIcon } from '../../components/icons.jsx'
 import { CompletionBar, GamePicture, playtime, rarity } from './steam.jsx'
 
 // One game: its picture, completion, every achievement (unlocked first; locked ones greyed, hidden
@@ -94,28 +95,40 @@ export default function VideoGamePanel({ id, onClose }) {
   )
 }
 
-// How you compare: your playtime beside the median and fastest times to 100% (SteamHunters), how
-// many players who started it 100%'d it (SteamHunters), and Steam's cross-check - its rarest
-// achievement's share of all players, the most that can have 100%'d it.
+// How you compare, as icon tiles: your time, the median and fastest times to 100%, and how many
+// players who started it 100%'d it (SteamHunters); bars to compare the times; Steam's cross-check -
+// its rarest achievement's share of all players, the most that can have 100%'d it.
 function Compared({ game: g }) {
   const hasCommunity = g.sh_median_minutes || g.perfect_rate != null
   if (!hasCommunity && g.rarest_percent == null) return null
-  const times = [
-    ['You', g.playtime_minutes, 'you'],
-    ['Median to 100%', g.sh_median_minutes, 'median'],
-    ['Fastest 100%', g.sh_fastest_minutes, 'fastest'],
-  ].filter(([, minutes]) => minutes)
+  const tiles = [
+    ['you', ClockIcon, 'Your time', g.playtime_minutes > 0 ? playtime(g.playtime_minutes) : null, 'tint'],
+    ['median', BellCurveIcon, 'Median to 100%', g.sh_median_minutes > 0 ? playtime(g.sh_median_minutes) : null, 'purple'],
+    ['fastest', HourglassIcon, 'Fastest 100%', g.sh_fastest_minutes > 0 ? playtime(g.sh_fastest_minutes) : null, 'teal'],
+    ['rate', TrophyIcon, '100% rate', g.perfect_rate != null ? `${Number(g.perfect_rate)}%` : null, 'ok'],
+  ].filter(([, , , value]) => value)
+  const times = [['You', g.playtime_minutes, 'you'], ['Median', g.sh_median_minutes, 'median'], ['Fastest', g.sh_fastest_minutes, 'fastest']]
+    .filter(([, minutes]) => minutes)
   const longest = Math.max(1, ...times.map(([, m]) => m))
   return (
     <section className="panel-section compared">
       <h4 className="section-title">Compared with other players</h4>
+      {tiles.length > 0 && (
+        <div className="compare-tiles">
+          {tiles.map(([key, Icon, label, value, tone]) => (
+            <div key={key} className="compare-tile">
+              <span className={`stat-icon ${tone}`}><Icon size={20} /></span>
+              <span><strong>{value}</strong><span className="muted small">{label}</span></span>
+            </div>
+          ))}
+        </div>
+      )}
       {g.sh_median_minutes > 0 && times.length > 1 && (
-        <ul className="time-bars" aria-label="Playtime">
+        <ul className="time-bars" aria-label="Playtime compared">
           {times.map(([label, minutes, kind]) => (
             <li key={kind}>
               <span className="time-label">{label}</span>
               <span className="time-track"><span className={`time-fill ${kind}`} style={{ width: `${(100 * minutes) / longest}%` }} /></span>
-              <span className="time-value">{playtime(minutes)}</span>
             </li>
           ))}
         </ul>
@@ -123,12 +136,9 @@ function Compared({ game: g }) {
       {g.sh_median_minutes > 0 && g.playtime_minutes > 0 && (
         <p className="small">{g.playtime_minutes <= g.sh_median_minutes
           ? `You've played ${Math.round((100 * g.playtime_minutes) / g.sh_median_minutes)}% of the median time to 100%.`
-          : `You've played ${(g.playtime_minutes / g.sh_median_minutes).toFixed(1)}× the median time to 100%.`}</p>
-      )}
-      {g.perfect_rate != null && (
-        <p className="small"><strong>{Number(g.perfect_rate)}%</strong> of players who started it have 100%'d it
-          <span className="muted"> ({g.sh_players_perfected.toLocaleString()} of {g.sh_players_started.toLocaleString()})</span>
-          {g.sh_points ? <span className="muted"> · {g.sh_points.toLocaleString()} points</span> : null}</p>
+          : `You've played ${(g.playtime_minutes / g.sh_median_minutes).toFixed(1)}× the median time to 100%.`}
+          {g.perfect_rate != null && ` ${g.sh_players_perfected.toLocaleString()} of ${g.sh_players_started.toLocaleString()} players who started it have 100%'d it`}
+          {g.sh_points ? ` · ${g.sh_points.toLocaleString()} points.` : '.'}</p>
       )}
       {g.rarest_percent != null && (
         <p className="small muted">Steam's cross-check: its rarest achievement is held by {Number(g.rarest_percent)}% of all

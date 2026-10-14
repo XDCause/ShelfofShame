@@ -1294,9 +1294,58 @@ body.writing-mode .journal-title { font-size: 2.2rem; }
 /* A game compared with other players: your time beside the median and fastest times to 100%. */
 .compared p { margin: 6px 0 0; }
 .time-bars { list-style: none; margin: 0 0 4px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.time-bars li { display: grid; grid-template-columns: 120px minmax(0, 1fr) 64px; align-items: center; gap: 10px; }
+.time-bars li { display: grid; grid-template-columns: 70px minmax(0, 1fr); align-items: center; gap: 10px; }
 .time-label { font-size: 0.85rem; }
 .time-track { height: 10px; border-radius: 5px; background: var(--fill); overflow: hidden; }
 .time-fill { display: block; height: 100%; border-radius: 0 4px 4px 0; background: var(--muted); }
 .time-fill.you { background: var(--tint); }
 .time-value { font-size: 0.8rem; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ---------- The games list: a table on a PC, cards on a phone ---------- */
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.game-table { --game-cols: 120px minmax(0, 2fr) minmax(170px, 1.5fr) 92px 92px 96px; }
+.game-key { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 0 0 8px; }
+.game-key span, .game-head-cell, .game-stat { display: inline-flex; align-items: center; gap: 6px; }
+.game-head {
+  display: grid; grid-template-columns: var(--game-cols); gap: 16px; align-items: end; padding: 0 14px 6px;
+  font-size: 0.78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em;
+}
+.game-head-cell { padding: 4px 0; border: 0; background: none; color: inherit; font: inherit; text-transform: inherit; letter-spacing: inherit; cursor: pointer; text-align: left; }
+.game-head-cell:hover, .game-head-cell[aria-pressed='true'] { color: var(--text); }
+.game-rows { list-style: none; margin: 0; padding: 0; border-radius: var(--radius); overflow: hidden; background: var(--surface); border: 1px solid var(--border); }
+.game-rows li + li { border-top: 1px solid var(--separator); }
+.game-row {
+  display: grid; grid-template-columns: var(--game-cols); gap: 16px; align-items: center; width: 100%;
+  padding: 10px 14px; border: 0; background: none; color: var(--text); text-align: left;
+}
+.game-row:hover { background: var(--fill-2); }
+.game-table .game-capsule { width: 120px; height: 56px; }
+.game-name { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.game-name .item-title { font-size: 0.98rem; font-weight: 600; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.game-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.game-progress { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.game-progress .fill-bar { max-width: none; margin: 0; }
+.game-progress-text { font-size: 0.88rem; font-variant-numeric: tabular-nums; }
+.game-stat { font-size: 0.92rem; font-variant-numeric: tabular-nums; }
+.game-stat svg { color: var(--muted); flex: none; }
+.game-stat.none { color: var(--faint); }
+/* On a PC the three stats are table cells (their wrapper steps aside); on narrower screens each game
+   is a card - picture beside the name and bar, then the three stats as one even row of chips. */
+.game-stats { display: contents; }
+@media (max-width: 900px) {
+  .game-head { display: none; }
+  .game-row { grid-template-columns: 96px minmax(0, 1fr); grid-template-areas: "pic name" "pic progress" "stats stats"; gap: 6px 12px; }
+  .game-table .game-capsule { grid-area: pic; width: 96px; height: 45px; }
+  .game-name { grid-area: name; }
+  .game-progress { grid-area: progress; }
+  .game-stats { grid-area: stats; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 2px; }
+  .game-stat { justify-content: center; padding: 4px 8px; border-radius: 999px; background: var(--fill-2); font-size: 0.82rem; }
+}
+/* The game panel's comparison: icon tiles. */
+.compare-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+@media (max-width: 700px) { .compare-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.compare-tile { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 12px; background: var(--fill-2); }
+.compare-tile strong { display: block; font-size: 1.15rem; line-height: 1.2; }
+.compare-tile .stat-icon { width: 38px; height: 38px; border-radius: 11px; }
+.time-fill.median { background: var(--purple); }
+.time-fill.fastest { background: var(--teal); }

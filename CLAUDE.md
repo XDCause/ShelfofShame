@@ -807,6 +807,14 @@ DBeaver, psql, and the one-off import script.
      median", "33.3% of players who started it have 100%'d it", cross-check), list meta + sorts
      "Rarest to 100%" / "Quickest to 100% (median)", Latest 100% cards show the rate.
      BEFORE_GOING_PUBLIC row: ask SteamHunters first. 278 API tests, 59 browser steps.
+   - Readability pass (user asked for icons: trophy for the 100% rate, a bell curve for the median, and
+     a better layout on PC): Games is now GameTable - on a PC a table (picture 120px, name + 100% pill
+     + last played, progress "56 / 76 · 73.7%" with bar, then ClockIcon your time / BellCurveIcon
+     median / TrophyIcon 100% rate) with clickable sort headings and an icon key above; <= 900px each
+     game is a card with the three stats as an even row of chips (.game-stats is display: contents on a
+     PC, a 3-column grid on phones). Panel "Compared with other players": four icon tiles (Your time,
+     Median, Fastest = HourglassIcon, 100% rate) + coloured time bars. New icons BellCurveIcon,
+     HourglassIcon (a first bell curve looked like a warning triangle at 14px - redrawn softer).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

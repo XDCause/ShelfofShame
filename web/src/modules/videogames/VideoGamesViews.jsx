@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api, shortDate, timeAgo } from '../../api.js'
-import { GamepadIcon, TrophyIcon } from '../../components/icons.jsx'
+import { BellCurveIcon, ClockIcon, GamepadIcon, TrophyIcon } from '../../components/icons.jsx'
 import { useApp } from '../../core/app-context.js'
 import Stat, { StatSkeleton } from '../../core/Stat.jsx'
 import {
@@ -282,28 +282,7 @@ export function GamesView() {
         ))}
       </div>
       {!games ? <p className="muted loading">Loading...</p> : visible.length === 0 ? <p className="empty card">No games here.</p> : (
-        <ul className="list game-list">
-          {visible.map((g) => (
-            <li key={g.app_id}>
-              <button type="button" className="row-button" onClick={() => openPanel('videogame', { id: g.app_id })}>
-                <GamePicture game={g} className="game-capsule" />
-                <span className="grow">
-                  <span className="item-title">{g.name}</span>
-                  <span className="item-meta">
-                    {g.achievements_total ? `${g.achievements_done} of ${g.achievements_total} · ${g.percent}%`
-                      : g.has_achievements === false ? 'No achievements' : 'Not read yet'}
-                    {g.playtime_minutes > 0 && ` · ${playtime(g.playtime_minutes)}`}
-                    {g.sh_median_minutes > 0 && ` · median 100% ${playtime(g.sh_median_minutes)}`}
-                    {g.perfect_rate != null && ` · ${Number(g.perfect_rate)}% 100%'d`}
-                  </span>
-                  <CompletionBar game={g} />
-                </span>
-                {g.extra && <span className="pill" title="Added by hand">Added</span>}
-                {g.completed_at && <span className="pill ok">100%</span>}
-              </button>
-            </li>
-          ))}
-        </ul>
+        <GameTable games={visible} sort={sort} setSort={setSort} onOpen={(g) => openPanel('videogame', { id: g.app_id })} />
       )}
     </section>
   )
@@ -320,5 +299,76 @@ export function VideoGamesTiles() {
       <Stat to="/videogames/dashboard" Icon={GamepadIcon} tone="purple" value={`${s.goal.percent}%`}
         label="Profile completion" sub={s.goal.reached ? `goal ${s.goal.goal_percent}% reached` : `goal ${s.goal.goal_percent}% · ${s.goal.points_to_go} points to go`} />
     </>
+  )
+}
+
+// What each number is: an icon, a name and what it means (headers, tooltips, the key).
+const COLUMNS = {
+  time: { Icon: ClockIcon, label: 'Your time', what: 'Your playtime' },
+  median: { Icon: BellCurveIcon, label: 'Median', what: 'Median time to 100% (SteamHunters players)' },
+  rate: { Icon: TrophyIcon, label: '100% rate', what: "Players who started it and 100%'d it (SteamHunters)" },
+}
+
+function Stat1({ kind, value }) {
+  const { Icon, what } = COLUMNS[kind]
+  return (
+    <span className={value == null ? 'game-stat none' : 'game-stat'} title={what}>
+      <Icon size={16} aria-hidden="true" /><span>{value ?? '—'}</span>
+      <span className="visually-hidden">{what}</span>
+    </span>
+  )
+}
+
+// The games as a table on a PC (click a heading to sort by it) and as cards on a phone: picture,
+// name, progress, then your time / median time to 100% / 100% rate, each with its icon.
+function GameTable({ games, sort, setSort, onOpen }) {
+  const heads = [['name', 'Game'], ['percent', 'Progress'], ['time', COLUMNS.time], ['quick', COLUMNS.median], ['rare', COLUMNS.rate]]
+  return (
+    <div className="game-table">
+      <p className="game-key small muted" aria-hidden="true">
+        {Object.values(COLUMNS).map(({ Icon, what }) => <span key={what}><Icon size={14} /> {what}</span>)}
+      </p>
+      <div className="game-head" role="row">
+        <span />
+        {heads.map(([key, head]) => (
+          <button key={key} type="button" className="game-head-cell" aria-pressed={sort === key}
+            onClick={() => setSort(key)} title={`Sort by ${typeof head === 'string' ? head.toLowerCase() : head.what.toLowerCase()}`}>
+            {typeof head === 'string' ? head : <><head.Icon size={15} aria-hidden="true" /> {head.label}</>}
+            {sort === key && <span aria-hidden="true"> ▾</span>}
+          </button>
+        ))}
+      </div>
+      <ul className="game-rows">
+        {games.map((g) => (
+          <li key={g.app_id}>
+            <button type="button" className="game-row" onClick={() => onOpen(g)}>
+              <GamePicture game={g} className="game-capsule" />
+              <span className="game-name">
+                <span className="item-title">{g.name}</span>
+                <span className="game-tags">
+                  {g.completed_at && <span className="pill ok"><TrophyIcon size={12} /> 100%</span>}
+                  {g.extra && <span className="pill" title="Added by hand">Added</span>}
+                  {g.last_played && <span className="muted small">Played {shortDate(g.last_played)}</span>}
+                </span>
+              </span>
+              <span className="game-progress">
+                {g.achievements_total ? (
+                  <>
+                    <span className="game-progress-text"><strong>{g.achievements_done}</strong> / {g.achievements_total}
+                      <span className="muted"> · {Number(g.percent)}%</span></span>
+                    <CompletionBar game={g} />
+                  </>
+                ) : <span className="muted small">{g.has_achievements === false ? 'No achievements' : 'Not read yet'}</span>}
+              </span>
+              <span className="game-stats">
+                <Stat1 kind="time" value={g.playtime_minutes > 0 ? playtime(g.playtime_minutes) : null} />
+                <Stat1 kind="median" value={g.sh_median_minutes > 0 ? playtime(g.sh_median_minutes) : null} />
+                <Stat1 kind="rate" value={g.perfect_rate != null ? `${Number(g.perfect_rate)}%` : null} />
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }
