@@ -478,6 +478,11 @@ def set_goal(body: GoalIn):
     return summary()
 
 
+# Sync bookkeeping the Games list never shows (the game's own page still has it all).
+LIST_LEAVES_OUT = ("synced_at", "rarity_synced_at", "sh_synced_at", "exo_synced_at", "exo_url", "sh_has_dlc",
+                   "icon_hash", "playtime_2weeks", "sh_players_perfected", "sh_players_started", "sh_points")
+
+
 @router.get("/videogames")
 def list_games(show: str = Query("all", pattern="^(all|perfect|started|untouched|no_achievements|hidden)$")):
     """Every game, most recently played first. show = perfect / started / untouched / no_achievements / hidden."""
@@ -491,7 +496,7 @@ def list_games(show: str = Query("all", pattern="^(all|perfect|started|untouched
     }[show]
     with db() as conn:
         rows = conn.execute(GAME_SELECT + f" WHERE {where} ORDER BY g.last_played DESC NULLS LAST, lower(g.name)").fetchall()
-    return [with_pictures(g) for g in rows]
+    return [{k: v for k, v in with_pictures(g).items() if k not in LIST_LEAVES_OUT} for g in rows]
 
 
 @router.post("/videogames/extra", status_code=201)

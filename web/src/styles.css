@@ -1207,7 +1207,6 @@ body.writing-mode .journal-title { font-size: 2.2rem; }
 }
 .perfect-name { padding: 4px 8px 0; font-weight: 600; font-size: 0.88rem; }
 .perfect-card .muted { padding: 0 8px; }
-.game-list .row-button .fill-bar { max-width: 320px; }
 .mention-videogame { color: var(--purple); background: var(--purple-bg); }
 @media (max-width: 700px) {
   .game-capsule { width: 72px; height: 34px; }
@@ -1299,7 +1298,6 @@ body.writing-mode .journal-title { font-size: 2.2rem; }
 .time-track { height: 10px; border-radius: 5px; background: var(--fill); overflow: hidden; }
 .time-fill { display: block; height: 100%; border-radius: 0 4px 4px 0; background: var(--muted); }
 .time-fill.you { background: var(--tint); }
-.time-value { font-size: 0.8rem; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
 
 /* ---------- The games list: a table on a PC, cards on a phone ---------- */
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

@@ -356,6 +356,7 @@ def test_which_achievements_come_with_a_dlc(client, fake):
     games = {g["name"]: g for g in client.get("/api/videogames").json()}
     assert (games["Hades"]["dlc_count"], games["Hades"]["dlc_achievements"], games["Hades"]["dlc_done"]) == (1, 1, 0)
     assert games["Celeste"]["dlc_count"] == 0                             # the list's DLC badge
+    assert "exo_url" not in games["Hades"] and "synced_at" not in games["Hades"]     # the list leaves out bookkeeping
     fake.calls.clear()
     client.post("/api/videogames/sync")
     assert not [c for c in fake.calls if c[0] == "dlc"]                  # read already

@@ -25,7 +25,7 @@ const GEAR_FIELDS = [
   { name: 'notes', label: 'Notes', type: 'textarea' },
 ]
 const GEAR_KINDS = ['Shoes', 'Knee pads', 'Ball', 'Clothing', 'Bag', 'Ankle brace', 'Water bottle']
-export const VIDEO_TOPICS = ['Highlights', 'Full game', 'Serving', 'Passing', 'Setting', 'Attacking', 'Blocking', 'Defence']
+const VIDEO_TOPICS = ['Highlights', 'Full game', 'Serving', 'Passing', 'Setting', 'Attacking', 'Blocking', 'Defence']
 
 // "Won 3-1", "Lost 0-3", or nothing before the result's in.
 export const score = (g) => (g.sets_won == null || g.sets_lost == null ? '' : `${g.result} ${g.sets_won}–${g.sets_lost}`)

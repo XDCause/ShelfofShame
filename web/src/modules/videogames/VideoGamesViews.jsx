@@ -390,7 +390,7 @@ function GameTable({ games, onOpen }) {
 
 // "DLC" beside a game's name when a DLC adds achievements (they count towards 100%); the tooltip says
 // how many DLCs, how many achievements they add and how many of those you have.
-export function DlcBadge({ game: g }) {
+function DlcBadge({ game: g }) {
   const what = `${g.dlc_count} DLC${g.dlc_count === 1 ? '' : 's'} with achievements: ${g.dlc_done} of ${g.dlc_achievements}`
   return <span className="pill purple dlc-badge" title={what} aria-label={what}><PuzzleIcon size={12} /> DLC</span>
 }

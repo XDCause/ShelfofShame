@@ -10,7 +10,7 @@ import { Field } from './SupplyFields.jsx'
 // The form holds strings (what inputs give); toPayload turns blanks into null and numbers into
 // numbers, the way the API wants them.
 
-export const formFrom = (fields, record, defaults = {}) => Object.fromEntries(fields.map((f) => {
+const formFrom = (fields, record, defaults = {}) => Object.fromEntries(fields.map((f) => {
   const v = record?.[f.name] ?? defaults[f.name]
   return [f.name, v == null ? '' : f.type === 'time' ? String(v).slice(0, 5) : String(v)]
 }))

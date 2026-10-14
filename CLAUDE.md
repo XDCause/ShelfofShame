@@ -295,7 +295,8 @@ DBeaver, psql, and the one-off import script.
      chips, thumbnails hot-linked from Tamiya's CDN with no-referrer, OwnedBadge, "+ Wishlist").
      OwnedBadge moved to its own component.
    - Tests: 91 API (test_catalog.py + trimmed fixture tamiya_list_e_5010.html), 28 browser steps
-     (search only - the e2e never fetches tamiya.com; thumbnails are blank in its screenshots).
+     (catalogue search only; thumbnails are blank in its screenshots). NOTE: the e2e's Tamiya (XF-2) and
+     Hasegawa (PT29) lookups DO fetch those sites each run - its data restore removes the cached rows.
 3n. **Usual prices, item ranges, removing used-up items** - DONE (2026-10-13).
    - `tamiya.suggest(title, series, description, item)`: Tamiya item-number ranges fill paint type
      and size (ITEM_RANGES: 815/817 Acrylic Mini 10ml, 810/813 Acrylic 23ml, 800/803 Enamel 10ml,
@@ -848,6 +849,16 @@ DBeaver, psql, and the one-off import script.
      list shows a purple "DLC" pill with a PuzzleIcon (DlcBadge; tooltip "2 DLCs with achievements:
      3 of 12"). Dev result: 40 games with DLC, all found on Exophase (e.g. Dead by Daylight 46 DLCs).
    - Tests: 283 API, 59 browser steps (video_games opens the game with the most DLCs).
+3ze. **Check-over: speed, dead code** (2026-10-14). Every GET endpoint < 80 ms on dev data (timing
+   script + a read-only Playwright page tour: no page repeats a request; pages settle ~0.7 s; Games
+   list shows rows at 0.6 s, the rest is Steam's CDN with lazy images). Cached lookups 4-14 ms.
+   Entry bundle 456 KB (135 KB gz); Excalidraw / BlockNote / mermaid chunks load lazily.
+   Removed BoardIcon, .game-list / .time-value CSS, 12 needless exports; /api/videogames list leaves
+   out sync bookkeeping (LIST_LEAVES_OUT; the game's own endpoint has everything). vite 6.3.5 ->
+   6.4.4 (dev-server advisories). pip-audit clean; npm audit = only the known braces chain (sass's
+   watcher inside Excalidraw, build time only). ESLint: the same 3 deliberate warnings.
+   Async routes (photo uploads, Tamiya / Hasegawa / Bandai lookups, scan) do short blocking DB calls
+   on the event loop - fine for one user; would matter with many.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"
@@ -882,7 +893,7 @@ DBeaver connection confirmed working (2026-10-11).
   images; shared db.py (connection, enum lists that must match the SQL CHECKs, friendly
   CONSTRAINT_MESSAGES, insert_row / update_row / found helpers); tamiya.py / hasegawa.py
   (scrapers: httpx + BeautifulSoup; Tamiya pages are Shift_JIS -> decode cp932). Connects to
-  `db:5432` inside the Docker network. One connection per request, no pool (fine at this scale).
+  `db:5432` inside the Docker network. psycopg_pool ConnectionPool (see 3z).
   Docs at `/api/docs`. Routes all start with `/api` so nginx can forward them unchanged.
   The api container mounts ./backups at /backups (Settings > Backups) and has pg_dump 17.
 - `web/`: React 19 + Vite 6, multi-stage Dockerfile (node build -> nginx). `nginx.conf` proxies

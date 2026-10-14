@@ -11,7 +11,7 @@ function words(text) {
     .filter((w) => w.length >= 2 && !FILLER.has(w))
 }
 
-export function findSimilar(supplies, { name, productCode, brandId }) {
+function findSimilar(supplies, { name, productCode, brandId }) {
   const typed = words(name)
   const code = (productCode ?? '').trim().toUpperCase()
   if (!typed.length && !code) return []

@@ -7,7 +7,7 @@ import { MODULES, moduleFor } from '../modules/index.js'
 // The core: pages for every hobby. Supplies and the wishlist are shared (paints, glue, tape...
 // for any hobby), so they sit here rather than inside a hobby. `title` is the page heading when
 // it differs from the menu label.
-export const CORE_PAGES = [
+const CORE_PAGES = [
   { path: '/', label: 'Home', Icon: HomeIcon },
   { path: '/journal', label: 'Journal', Icon: JournalIcon },
   { path: '/calendar', label: 'Calendar', Icon: CalendarIcon },
@@ -15,7 +15,7 @@ export const CORE_PAGES = [
   { path: '/wishlist', label: 'Wishlist', Icon: CartIcon },
 ]
 const SUPPLY_PAGES = CORE_PAGES.slice(3)
-export const HOBBIES_PAGE = { path: '/hobbies', label: 'Hobbies', Icon: GridIcon }
+const HOBBIES_PAGE = { path: '/hobbies', label: 'Hobbies', Icon: GridIcon }
 
 const under = (pathname, path) => pathname === path || pathname.startsWith(`${path}/`)
 export const corePageFor = (pathname) =>

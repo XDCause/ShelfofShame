@@ -360,7 +360,7 @@ function Condition({ row }) {
 
 // Each category always gets the same colour (from its name), so they're easy to tell apart.
 const PILL_TONES = ['tint', 'purple', 'teal', 'low', 'ok', 'out']
-export function CategoryPill({ name }) {
+function CategoryPill({ name }) {
   if (!name) return null
   const tone = PILL_TONES[[...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % PILL_TONES.length]
   return <span className={`pill ${tone}`}>{name}</span>

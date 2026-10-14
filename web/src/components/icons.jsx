@@ -75,10 +75,6 @@ export const TrophyIcon = (p) => (
 export const PenIcon = (p) => (
   <Icon {...p}><path d="M15.5 4.5 19.5 8.5 8.5 19.5 3.5 20.5 4.5 15.5z" /><path d="M13 7l4 4" /></Icon>
 )
-export const BoardIcon = (p) => (
-  <Icon {...p}><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21l4-4 4 4" />
-    <path d="M7 12.5c1.5-3 3-3 4 0s2.5 3 4-1" /></Icon>
-)
 export const GamepadIcon = (p) => (
   <Icon {...p}><path d="M7 7.5h10a4.5 4.5 0 0 1 4.4 5.5l-1 4.4a2.3 2.3 0 0 1-4 .9L14.5 16h-5l-1.9 2.3a2.3 2.3 0 0 1-4-.9l-1-4.4A4.5 4.5 0 0 1 7 7.5z" />
     <path d="M8 10.5v3M6.5 12h3M15.5 11.2h.01M17.5 13h.01" /></Icon>

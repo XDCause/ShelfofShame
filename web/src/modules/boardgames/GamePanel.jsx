@@ -19,7 +19,7 @@ export const GAME_FIELDS = [
   { name: 'notes', label: 'Notes', type: 'textarea' },
 ]
 
-export const PLAY_FIELDS = [
+const PLAY_FIELDS = [
   { name: 'played_on', label: 'Day', type: 'date', required: true },
   { name: 'minutes', label: 'How long (minutes)', type: 'number', min: 1 },
   { name: 'players', label: 'Who played', wide: true, placeholder: 'e.g. Sam, Jo, me' },
@@ -183,7 +183,7 @@ function GameForm({ game, onClose, onCancel, onSaved }) {
 }
 
 // Log a play: inside a game's panel (gameId given), or on its own with a game picker (PlayPanel).
-export function PlayForm({ gameId, games, onSaved, onCancel }) {
+function PlayForm({ gameId, games, onSaved, onCancel }) {
   const { form, set, payload } = useRecordForm(PLAY_FIELDS, null, { played_on: today() })
   const [pick, setPick] = useState(gameId ?? '')
   const [busy, setBusy] = useState(false)
