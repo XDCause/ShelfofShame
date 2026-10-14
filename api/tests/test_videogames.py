@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from app import steam
+from app import steam, steamhunters
 
 ME = "76561198000000001"
 T = lambda d: int(datetime(2026, 10, d, 20, 0, tzinfo=timezone.utc).timestamp())  # noqa: E731
@@ -59,6 +59,10 @@ class FakeSteam:
         # The store knows Hades' new-style picture; Celeste falls back to the old address; the demo has none.
         pictures = {20: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/20/abc123/header.jpg"}
         monkeypatch.setattr(steam, "header_pictures", log("pictures", lambda ids: {i: pictures.get(i) for i in ids}))
+        # SteamHunters: Celeste 5,685 of 23,079 players 100%'d it (24.6%), median 2,994 min; it doesn't know Hades.
+        community = {10: {"sh_median_minutes": 2994, "sh_fastest_minutes": 214, "sh_players_perfected": 5685,
+                          "sh_players_started": 23079, "sh_points": 4669}}
+        monkeypatch.setattr(steamhunters, "game", log("community", lambda app_id: community.get(app_id)))
         monkeypatch.setattr(steam, "store_items", log("store", lambda ids: {
             i: {"name": "Counter-Strike 2", "header": "https://shared.akamai.steamstatic.com/cs2.jpg"} for i in ids if i == 730}))
         return self
@@ -291,3 +295,48 @@ def test_app_ids_from_links():
     assert steam.app_id_from("https://store.steampowered.com/app/730/CounterStrike_2/") == 730
     assert steam.app_id_from("https://steamcommunity.com/profiles/1/stats/730/achievements") == 730
     assert steam.app_id_from("Counter-Strike") is None
+
+
+def test_how_other_players_did_from_steamhunters(client, fake):
+    """Started games only (not the demo), saved; a game SteamHunters doesn't know is remembered as read."""
+    setup(client)
+    assert sorted(c[1] for c in fake.calls if c[0] == "community") == [10, 20]
+    celeste = client.get("/api/videogames/10").json()
+    assert (celeste["sh_median_minutes"], celeste["sh_fastest_minutes"], float(celeste["perfect_rate"])) == (2994, 214, 24.6)
+    assert float(celeste["rarest_percent"]) == 4.2                       # Steam's cross-check: its rarest achievement
+    hades = client.get("/api/videogames/20").json()
+    assert hades["perfect_rate"] is None and hades["sh_synced_at"]           # not known there, but not asked again...
+    fake.calls.clear()
+    client.post("/api/videogames/sync")
+    assert not [c for c in fake.calls if c[0] == "community"]               # ...nothing played since: none asked
+    client.post("/api/videogames/sync?full=true")
+    assert sorted(c[1] for c in fake.calls if c[0] == "community") == [10, 20]
+
+
+def test_steamhunters_being_down_doesnt_spoil_the_sync(client, fake, monkeypatch):
+    def down(_app_id):
+        raise steamhunters.Unavailable("SteamHunters didn't answer (HTTP 503).")
+    monkeypatch.setattr(steamhunters, "game", down)
+    setup(client)
+    account = client.get("/api/videogames/account").json()
+    assert account["last_error"] is None and "didn't answer" in account["sync"]["message"]
+    assert client.get("/api/videogames/summary").json()["perfect"] == 1     # Steam's part is saved
+    monkeypatch.setattr(steamhunters, "game", lambda app_id: None)
+    client.post("/api/videogames/sync")                                      # never read: tried again
+    assert client.get("/api/videogames/10").json()["sh_synced_at"]
+
+
+def test_the_steamhunters_client_reads_its_answers(monkeypatch):
+    import httpx
+
+    def answer(status, body, kind="application/json"):
+        return lambda url: httpx.Response(status, content=body.encode(), headers={"content-type": kind})
+    monkeypatch.setattr(steamhunters, "_get", answer(200, '{"medianCompletionTime": 2994, "playersPerfectedCount": 5685, '
+                                                         '"playersStartedCount": 23079, "points": 4669}'))
+    got = steamhunters.game(504230)
+    assert (got["sh_median_minutes"], got["sh_players_perfected"], got["sh_fastest_minutes"]) == (2994, 5685, None)
+    monkeypatch.setattr(steamhunters, "_get", answer(404, "<html>"))
+    assert steamhunters.game(1) is None
+    monkeypatch.setattr(steamhunters, "_get", answer(403, "<html>Just a moment...</html>", "text/html"))   # a bot check
+    with pytest.raises(steamhunters.Unavailable):
+        steamhunters.game(1)

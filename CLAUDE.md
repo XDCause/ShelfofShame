@@ -791,6 +791,22 @@ DBeaver, psql, and the one-off import script.
      extras - library games can only be hidden). Extras are re-read on every sync. Games page
      "+ Add a game"; "Added" pill; panel note + Remove. After adding CS2: 23 completed and 38.7%
      average (both match SteamHunters); one more 1-achievement game is still unknown. 275 API tests.
+     (The user found it: an old demo they DON'T want counted - leave it out.)
+   - **How other players did** (user's choice "Both"): SteamHunters' web pages are behind a Cloudflare
+     bot check (even robots.txt), but its public JSON API https://steamhunters.com/api/apps/<id>
+     answers plain requests (used by their MIT browser extension): medianCompletionTime /
+     fastestCompletionTime (minutes to 100%), playersPerfectedCount / playersStartedCount, points.
+     No published terms/limits -> api/app/steamhunters.py: started games only, 1 request/s,
+     identifying User-Agent; videogames.sync_community() after the Steam part of every sync: games
+     just read, never read, or >7 days old (all on full sync); 404 = unknown but marked read; if
+     SteamHunters fails the Steam sync still counts and the note says so. 29_videogame_community.sql
+     vg_games.sh_* columns. GAME_SELECT adds perfect_rate and Steam's cross-check rarest_percent
+     (min global_percent: no more players than that can have 100%'d it). SteamSpy was checked and
+     rejected: bot-friendly, but median_forever is now 0 (Steam stopped sharing playtime).
+     UI: panel "Compared with other players" (you / median / fastest bars, "you've played 93% of the
+     median", "33.3% of players who started it have 100%'d it", cross-check), list meta + sorts
+     "Rarest to 100%" / "Quickest to 100% (median)", Latest 100% cards show the rate.
+     BEFORE_GOING_PUBLIC row: ask SteamHunters first. 278 API tests, 59 browser steps.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

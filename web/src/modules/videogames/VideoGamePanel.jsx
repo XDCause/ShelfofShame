@@ -59,6 +59,8 @@ export default function VideoGamePanel({ id, onClose }) {
           : <p className="muted small">{playtime(game.playtime_minutes)} played{game.last_played && ` · last played ${shortDate(game.last_played)}`}</p>}
       </section>
 
+      <Compared game={game} />
+
       {game.achievements.length > 0 && (
         <section className="panel-section">
           <div className="segmented" role="group" aria-label="Show achievements">
@@ -89,5 +91,51 @@ export default function VideoGamePanel({ id, onClose }) {
       )}
       <JournalMentions kind="videogame" id={game.app_id} name={game.name} onLeave={onClose} />
     </Drawer>
+  )
+}
+
+// How you compare: your playtime beside the median and fastest times to 100% (SteamHunters), how
+// many players who started it 100%'d it (SteamHunters), and Steam's cross-check - its rarest
+// achievement's share of all players, the most that can have 100%'d it.
+function Compared({ game: g }) {
+  const hasCommunity = g.sh_median_minutes || g.perfect_rate != null
+  if (!hasCommunity && g.rarest_percent == null) return null
+  const times = [
+    ['You', g.playtime_minutes, 'you'],
+    ['Median to 100%', g.sh_median_minutes, 'median'],
+    ['Fastest 100%', g.sh_fastest_minutes, 'fastest'],
+  ].filter(([, minutes]) => minutes)
+  const longest = Math.max(1, ...times.map(([, m]) => m))
+  return (
+    <section className="panel-section compared">
+      <h4 className="section-title">Compared with other players</h4>
+      {g.sh_median_minutes > 0 && times.length > 1 && (
+        <ul className="time-bars" aria-label="Playtime">
+          {times.map(([label, minutes, kind]) => (
+            <li key={kind}>
+              <span className="time-label">{label}</span>
+              <span className="time-track"><span className={`time-fill ${kind}`} style={{ width: `${(100 * minutes) / longest}%` }} /></span>
+              <span className="time-value">{playtime(minutes)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {g.sh_median_minutes > 0 && g.playtime_minutes > 0 && (
+        <p className="small">{g.playtime_minutes <= g.sh_median_minutes
+          ? `You've played ${Math.round((100 * g.playtime_minutes) / g.sh_median_minutes)}% of the median time to 100%.`
+          : `You've played ${(g.playtime_minutes / g.sh_median_minutes).toFixed(1)}× the median time to 100%.`}</p>
+      )}
+      {g.perfect_rate != null && (
+        <p className="small"><strong>{Number(g.perfect_rate)}%</strong> of players who started it have 100%'d it
+          <span className="muted"> ({g.sh_players_perfected.toLocaleString()} of {g.sh_players_started.toLocaleString()})</span>
+          {g.sh_points ? <span className="muted"> · {g.sh_points.toLocaleString()} points</span> : null}</p>
+      )}
+      {g.rarest_percent != null && (
+        <p className="small muted">Steam's cross-check: its rarest achievement is held by {Number(g.rarest_percent)}% of all
+          players, so no more than that have 100%'d it.</p>
+      )}
+      {hasCommunity && <p className="hint">Median, fastest and 100% rate: SteamHunters' players, refreshed with Sync now.</p>}
+      {!hasCommunity && g.achievements_done > 0 && <p className="hint">SteamHunters has no numbers for this game (yet).</p>}
+    </section>
   )
 }

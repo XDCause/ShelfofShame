@@ -192,7 +192,7 @@ function PerfectCard({ game: g }) {
       <GamePicture game={g} className="perfect-picture" />
       <span className="perfect-badge">100%</span>
       <span className="perfect-name">{g.name}</span>
-      <span className="muted small">{shortDate(g.completed_at)}</span>
+      <span className="muted small">{shortDate(g.completed_at)}{g.perfect_rate != null && ` · ${Number(g.perfect_rate)}% of players`}</span>
     </button>
   )
 }
@@ -204,6 +204,8 @@ const SORTS = {
   percent: ['Completion', (a, b) => Number(b.percent ?? -1) - Number(a.percent ?? -1) || a.left_to_get - b.left_to_get],
   left: ['Fewest to go', (a, b) => (a.left_to_get || 1e9) - (b.left_to_get || 1e9)],
   time: ['Most played', (a, b) => b.playtime_minutes - a.playtime_minutes],
+  rare: ['Rarest to 100%', (a, b) => Number(a.perfect_rate ?? 1e9) - Number(b.perfect_rate ?? 1e9)],
+  quick: ['Quickest to 100% (median)', (a, b) => (a.sh_median_minutes || 1e9) - (b.sh_median_minutes || 1e9)],
   name: ['Name', (a, b) => a.name.localeCompare(b.name)],
 }
 
@@ -291,6 +293,8 @@ export function GamesView() {
                     {g.achievements_total ? `${g.achievements_done} of ${g.achievements_total} · ${g.percent}%`
                       : g.has_achievements === false ? 'No achievements' : 'Not read yet'}
                     {g.playtime_minutes > 0 && ` · ${playtime(g.playtime_minutes)}`}
+                    {g.sh_median_minutes > 0 && ` · median 100% ${playtime(g.sh_median_minutes)}`}
+                    {g.perfect_rate != null && ` · ${Number(g.perfect_rate)}% 100%'d`}
                   </span>
                   <CompletionBar game={g} />
                 </span>

@@ -1,6 +1,8 @@
 """Video games (a hobby module): your Steam games and achievements, for a 100% dashboard.
 
-    sync      reads Steam (steam.py) into vg_games / vg_achievements. The first sync reads every
+    sync      reads Steam (steam.py) into vg_games / vg_achievements, then how other players did
+              (steamhunters.py: median and fastest time to 100%, how many 100%'d it) for started
+              games - played since, a week old or never read (all of them on a full sync). The first sync reads every
               game; after that only games played since the last sync (or never read), unless
               full=true. Runs in the background; GET /videogames/sync shows how it's going.
               A sync also runs by itself once a day while the app is up (start_daily_sync).
@@ -22,7 +24,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 
-from . import steam
+from . import steam, steamhunters
 from .db import db, found
 from .settings import get_setting
 
@@ -32,6 +34,7 @@ log = logging.getLogger("videogames")
 HEADER = "https://cdn.cloudflare.steamstatic.com/steam/apps/{app_id}/header.jpg"
 ICON = "https://media.steampowered.com/steamcommunity/public/images/apps/{app_id}/{hash}.jpg"
 RARITY_EVERY = timedelta(days=7)     # rarity changes slowly: re-read it weekly at most
+COMMUNITY_EVERY = timedelta(days=7)  # SteamHunters' numbers: the same
 DAILY = timedelta(hours=20)          # the automatic sync's spacing
 
 # How the background sync is going (one at a time).
@@ -58,10 +61,14 @@ class GoalIn(BaseModel):
 GOAL_KEY, GOAL_DEFAULT = "vg_goal_percent", 50
 
 
+# perfect_rate: the % of SteamHunters' players who started the game and 100%'d it. rarest_percent:
+# Steam's cross-check - its rarest achievement's global %, the most players that can have 100%'d it.
 GAME_SELECT = """
 SELECT g.*, CASE WHEN g.achievements_total > 0
                  THEN round(100.0 * g.achievements_done / g.achievements_total, 1) END AS percent,
-       g.achievements_total - g.achievements_done AS left_to_get
+       g.achievements_total - g.achievements_done AS left_to_get,
+       round(100.0 * g.sh_players_perfected / NULLIF(g.sh_players_started, 0), 1) AS perfect_rate,
+       (SELECT min(a.global_percent) FROM vg_achievements a WHERE a.app_id = g.app_id) AS rarest_percent
 FROM vg_games g"""
 
 
@@ -178,7 +185,8 @@ def run_sync(full: bool = False):
         with db() as conn:
             conn.execute("UPDATE vg_sync SET last_sync_at = now(), last_error = NULL"
                          + (", last_full_at = now()" if full or not account["last_full_at"] else "") + " WHERE id = 1")
-        SYNC.update(message=f"Done: {len(owned)} games, {len(to_read)} read from Steam")
+        community = sync_community(full, {app_id for app_id, _, _ in to_read})
+        SYNC.update(message=f"Done: {len(owned)} games, {len(to_read)} read from Steam{community}")
     except steam.SteamError as e:
         SYNC.update(error=str(e), message=None)
         with db() as conn:
@@ -188,6 +196,38 @@ def run_sync(full: bool = False):
         SYNC.update(error=f"The sync stopped: {e.__class__.__name__}.", message=None)
     finally:
         SYNC.update(running=False, finished_at=datetime.now(timezone.utc).isoformat())
+
+
+def sync_community(full: bool, read_now: set[int]) -> str:
+    """How other players did, from SteamHunters, for started games: ones just read from Steam, ones a
+    week old or never read, or all of them on a full sync. One a second. If SteamHunters can't be
+    reached the Steam sync still counts; this part tries again next time. Returns a note for the
+    sync's message."""
+    cutoff = datetime.now(timezone.utc) - COMMUNITY_EVERY
+    with db() as conn:
+        due = [(r["app_id"], r["name"]) for r in conn.execute(
+            "SELECT app_id, name, sh_synced_at FROM vg_games WHERE achievements_done > 0 AND NOT hidden "
+            "ORDER BY last_played DESC NULLS LAST").fetchall()
+            if full or r["app_id"] in read_now or not r["sh_synced_at"] or r["sh_synced_at"] < cutoff]
+    if not due:
+        return ""
+    SYNC.update(total=len(due), done=0)
+    for app_id, name in due:
+        SYNC.update(message=f"How others did: {name}...")
+        try:
+            numbers = steamhunters.game(app_id)
+        except steamhunters.Unavailable as e:
+            log.warning("SteamHunters: %s", e)
+            return f" (SteamHunters didn't answer, so {len(due) - SYNC['done']} games' community numbers wait for the next sync)"
+        with db() as conn:
+            fields = numbers or {}
+            conn.execute("UPDATE vg_games SET sh_median_minutes = %s, sh_fastest_minutes = %s, sh_players_perfected = %s, "
+                         "sh_players_started = %s, sh_points = %s, sh_synced_at = now() WHERE app_id = %s",
+                         (fields.get("sh_median_minutes"), fields.get("sh_fastest_minutes"),
+                          fields.get("sh_players_perfected"), fields.get("sh_players_started"), fields.get("sh_points"), app_id))
+        SYNC["done"] += 1
+        steamhunters.pause()
+    return f", community numbers for {len(due)}"
 
 
 def start_sync(background: BackgroundTasks | None, full: bool) -> bool:

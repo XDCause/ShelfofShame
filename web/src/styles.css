@@ -1290,3 +1290,13 @@ body.writing-mode .journal-title { font-size: 2.2rem; }
 .goal-card p { margin: 0; }
 .add-game { display: flex; flex-direction: column; gap: 8px; }
 .add-game p { margin: 0; }
+
+/* A game compared with other players: your time beside the median and fastest times to 100%. */
+.compared p { margin: 6px 0 0; }
+.time-bars { list-style: none; margin: 0 0 4px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.time-bars li { display: grid; grid-template-columns: 120px minmax(0, 1fr) 64px; align-items: center; gap: 10px; }
+.time-label { font-size: 0.85rem; }
+.time-track { height: 10px; border-radius: 5px; background: var(--fill); overflow: hidden; }
+.time-fill { display: block; height: 100%; border-radius: 0 4px 4px 0; background: var(--muted); }
+.time-fill.you { background: var(--tint); }
+.time-value { font-size: 0.8rem; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }

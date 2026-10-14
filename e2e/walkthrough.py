@@ -1060,6 +1060,17 @@ def video_games(page):
     page.locator(".add-game").get_by_role("button", name="Add", exact=True).click()
     expect(page.locator(".add-game .alert")).to_contain_text("store link")
     page.locator(".add-game").get_by_role("button", name="Cancel").click()
+    # A game's panel: how you compare with other players (when the community numbers are in).
+    page.get_by_label("Search your games").fill("Clair Obscur")
+    row = page.locator(".game-list .row-button").first
+    if row.count():
+        row.click()
+        expect(drawer(page).locator(".item-title, .section-head").first).to_be_visible()
+        if drawer(page).locator(".compared").count():
+            expect(drawer(page).locator(".compared")).to_contain_text("Compared with other players")
+            shot(page, "d43_video_game_compared", full=False)
+        page.keyboard.press("Escape")
+    page.get_by_label("Search your games").fill("")
     page.locator(".section-tabs").get_by_role("link", name="Stats").click()
     expect(page.locator(".chart")).to_have_count(4)
     slot = page.locator(".chart-slot").first
