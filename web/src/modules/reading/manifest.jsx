@@ -1,0 +1,26 @@
+import { BookIcon, GridIcon, QuoteIcon, TrophyIcon } from '../../components/icons.jsx'
+import BookPanel from './BookPanel.jsx'
+import { AddBookPanel } from './readingParts.jsx'
+import { BooksView, Dashboard, QuotesView, ReadingTiles, StatsView } from './ReadingViews.jsx'
+
+// Reading: your books (api/app/reading.py) - found on Open Library by title, author or a scanned
+// ISBN, or imported from Goodreads - with the page you're on, a yearly goal, stars, reviews and
+// quotes. Pages live at /reading/<path>; reading days show on the calendar, books can be
+// mentioned in the journal.
+export default {
+  id: 'reading',
+  name: 'Reading',
+  what: "Books: what you're reading, your goal, ratings and quotes",
+  Icon: BookIcon,
+  home: { Tiles: ReadingTiles },
+  actions: [
+    { label: 'Add a book', Icon: BookIcon, run: (app) => app.openPanel('addbook', {}) },
+  ],
+  panels: { book: BookPanel, addbook: AddBookPanel },
+  pages: [
+    { path: 'dashboard', label: 'Dashboard', Icon: TrophyIcon, render: () => <Dashboard /> },
+    { path: 'books', label: 'Books', Icon: BookIcon, render: () => <BooksView /> },
+    { path: 'stats', label: 'Stats', Icon: GridIcon, render: () => <StatsView /> },
+    { path: 'quotes', label: 'Quotes', Icon: QuoteIcon, render: () => <QuotesView /> },
+  ],
+}

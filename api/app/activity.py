@@ -11,6 +11,7 @@
     video games achievements unlocked (one entry per game per day), and games 100%'d (vg_*)
     chess       online games: one entry per time control per day ("Blitz chess: 12 games · 7-4-1");
                 over the board: each game                    (chess_games)
+    reading     pages read (one entry per book per day), started, finished / stopped   (reading_log, books)
 
 Each item: {at, day, kind, ref, verb, title, detail, photo_url}; the photo (if any) is the
 product's, the game's or the gear's. Newest first. Part of the core: Home shows the latest, and
@@ -116,6 +117,20 @@ WITH feed AS (
            concat_ws(' · ', CASE c.result WHEN 'win' THEN 'Won' WHEN 'loss' THEN 'Lost' ELSE 'Drew' END,
                      NULLIF(c.event, '')), NULL, NULL, NULL
     FROM chess_games c WHERE c.source = 'otb'
+  UNION ALL
+    SELECT {_on_day('l.logged_on', 'max(l.created_at)')}, 'book', l.book_id, 'Read', b.title,
+           sum(l.pages) || CASE WHEN sum(l.pages) = 1 THEN ' page' ELSE ' pages' END
+               || COALESCE(' · ' || sum(l.minutes) || ' min', ''), NULL, NULL, CASE WHEN b.cover_id IS NOT NULL THEN 'https://covers.openlibrary.org/b/id/' || b.cover_id || '-M.jpg' END
+    FROM reading_log l JOIN books b USING (book_id) WHERE l.pages > 0
+    GROUP BY l.book_id, l.logged_on, b.title, b.cover_id
+  UNION ALL
+    SELECT {NOON.format('b.started_on')}, 'book', b.book_id, 'Started reading', b.title, b.author, NULL, NULL, CASE WHEN b.cover_id IS NOT NULL THEN 'https://covers.openlibrary.org/b/id/' || b.cover_id || '-M.jpg' END
+    FROM books b WHERE b.started_on IS NOT NULL
+  UNION ALL
+    SELECT {NOON.format('b.finished_on')}, 'book', b.book_id,
+           CASE WHEN b.status = 'dnf' THEN 'Stopped reading' ELSE 'Finished' END, b.title,
+           concat_ws(' · ', b.author, repeat('★', b.rating)), NULL, NULL, CASE WHEN b.cover_id IS NOT NULL THEN 'https://covers.openlibrary.org/b/id/' || b.cover_id || '-M.jpg' END
+    FROM books b WHERE b.finished_on IS NOT NULL AND b.status IN ('finished', 'dnf')
 )
 SELECT f.at, (f.at AT TIME ZONE current_setting('TimeZone'))::date AS day,
        f.kind, f.ref, f.verb, f.title, NULLIF(f.detail, '') AS detail,

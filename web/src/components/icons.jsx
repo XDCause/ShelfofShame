@@ -88,6 +88,15 @@ export const ChessIcon = (p) => (
   <Icon {...p}><path d="M6.5 20.5h11" /><path d="M8 20.5c0-3.2 1.2-5.2 3.4-7.1-2.1.2-3.6-.4-4.4-1.8 1.4-2.4 3.3-5 5.6-6.6 3.2.6 5.4 3.6 5.4 7.6 0 3.2-.9 5.6-.9 7.9" />
     <path d="M12.3 8.6h.01" /></Icon>
 )
+// An open book: reading.
+export const BookIcon = (p) => (
+  <Icon {...p}><path d="M12 6.5c-1.8-1.3-4.3-2-7.5-2v13c3.2 0 5.7.7 7.5 2 1.8-1.3 4.3-2 7.5-2v-13c-3.2 0-5.7.7-7.5 2z" />
+    <path d="M12 6.5v13" /></Icon>
+)
+// Speech marks: a saved quote.
+export const QuoteIcon = (p) => (
+  <Icon {...p}><path d="M5 17.5c2.5-1 4-3.2 4-6.5V7H4.5v5H8M15 17.5c2.5-1 4-3.2 4-6.5V7h-4.5v5H18" /></Icon>
+)
 // A puzzle piece: an add-on (DLC).
 export const PuzzleIcon = (p) => (
   <Icon {...p}><path d="M4.5 8.5h4a2.2 2.2 0 1 1 4.4 0h4.6v4.6a2.2 2.2 0 1 1 0 4.4v3h-13z" /></Icon>

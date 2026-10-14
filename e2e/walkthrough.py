@@ -25,6 +25,8 @@ TOTAL = len(_supplies)
 PAINTS = sum(s["category"] == "Paint" for s in _supplies)
 MODELS = len(json.load(urllib.request.urlopen(f"{BASE}/api/models")))
 CHESS = bool(json.load(urllib.request.urlopen(f"{BASE}/api/chess/account"))["username"])   # Home gets a rating tile
+_reading = json.load(urllib.request.urlopen(f"{BASE}/api/reading/summary"))
+READING = (any(_reading["counts"].values())) + bool(_reading["reading"])   # Home: books this year (+ reading now)
 MARK = f"e2e{int(time.time())}"   # a word only this run's journal page contains
 
 
@@ -84,10 +86,10 @@ def home(page):
     expect(stats.filter(has_text="Supplies")).to_contain_text(str(TOTAL))
     for tile in ("Shelf of shame", "Board games", "Volleyball", "Next game"):
         expect(stats.filter(has_text=tile)).to_be_visible()
-    expect(stats).to_have_count(10 + CHESS)
+    expect(stats).to_have_count(10 + CHESS + READING)
     expect(page.locator(".home-card", has_text="Recent activity").locator(".pill").first).to_be_visible()
     expect(page.locator(".home-card", has_text="Coming up")).to_be_visible()
-    expect(page.locator(".quick-action")).to_have_count(9)        # + Log a chess game
+    expect(page.locator(".quick-action")).to_have_count(10)       # + Log a chess game, Add a book
     shot(page, "d00_home", full=False)
     stats.filter(has_text="To buy").click()
     expect(page).to_have_url(BASE + "/wishlist")
@@ -1184,6 +1186,48 @@ def chess(page):
     shot(page, "d50_chess_openings", full=False)
 
 
+@step("Reading: add a book by hand, update the page, a quote, finish it with stars; books, quotes and stats pages")
+def reading(page):
+    go(page, "Reading")
+    expect(page.locator(".goal-card, .empty-start").first).to_be_visible()
+    page.locator(".section-tabs").get_by_role("link", name="Books").click()
+    page.get_by_role("button", name="+ Add a book").click()
+    d = drawer(page)
+    d.get_by_role("group", name="Shelf").get_by_role("button", name="Reading").click()
+    d.get_by_role("button", name="Not there? Type it in").click()       # (no Open Library search in the walkthrough)
+    d.get_by_label("Title").fill(f"Book-{MARK}")
+    d.get_by_label("Author").fill("E. Twoe")
+    d.get_by_label("Pages").fill("300")
+    d.get_by_role("button", name="Add book").click()
+    d = drawer(page)
+    expect(d.get_by_role("heading", name=f"Book-{MARK}")).to_be_visible()
+    expect(d.get_by_role("group", name="Shelf").get_by_role("button", name="Reading")).to_have_attribute("aria-pressed", "true")
+    d.get_by_label(f"Page you're on in Book-{MARK}").fill("120")
+    d.get_by_role("button", name="Update").click()
+    expect(d.locator(".book-progress")).to_contain_text("p. 120 of 300 · 40%")
+    expect(d.locator(".reading-log")).to_contain_text("120 pages")
+    d.get_by_role("button", name="+ Save a quote").click()
+    d.get_by_label("Quote").fill(f"Words worth keeping {MARK}")
+    d.get_by_label("Page", exact=True).fill("42")
+    d.get_by_role("button", name="Save quote").click()
+    expect(d.locator(".quote-list")).to_contain_text(f"Words worth keeping {MARK}")
+    d.get_by_role("group", name="Shelf").get_by_role("button", name="Finished").click()
+    d.get_by_role("button", name="4 stars").click()
+    expect(d.get_by_role("button", name="4 stars")).to_have_attribute("aria-pressed", "true")
+    shot(page, "d51_reading_book", full=False)
+    page.keyboard.press("Escape")
+    page.get_by_label("Search your books").fill(MARK)
+    expect(page.locator(".book-card", has_text=f"Book-{MARK}")).to_contain_text("★★★★")
+    page.locator(".section-tabs").get_by_role("link", name="Quotes").click()
+    expect(page.locator(".quote-wall")).to_contain_text(f"Words worth keeping {MARK}")
+    page.locator(".section-tabs").get_by_role("link", name="Stats").click()
+    expect(page.locator(".home-card-title", has_text="Reading calendar")).to_be_visible()
+    expect(page.locator(".heatmap-week")).to_have_count(53)
+    page.locator(".section-tabs").get_by_role("link", name="Dashboard").click()
+    expect(page.locator(".goal-card")).to_contain_text("reading goal")
+    shot(page, "d52_reading_dashboard", full=False)
+
+
 @step("Settings: price guide, default shop, backups, exports, catalogue")
 def settings_more(page):
     page.get_by_role("button", name="Settings").click()
@@ -1244,7 +1288,7 @@ def phone(page):
         page.locator(".tabbar a", has_text=tab).click()
         fits(tab)
     page.locator(".tabbar a", has_text="Hobbies").click()
-    expect(page.locator(".hobby-card")).to_have_count(5)          # models, board games, volleyball, video games, chess
+    expect(page.locator(".hobby-card")).to_have_count(6)          # models, board games, volleyball, video games, chess, reading
     fits("Hobbies")
     for hobby, tabs in (("Models", ("Kits", "Colours")), ("Board games", ("Games", "Plays")),
                         ("Volleyball", ("Games", "Gear", "Videos")), ("Video games", ("Dashboard", "Games", "Stats"))):
@@ -1275,7 +1319,7 @@ with sync_playwright() as p:
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
                matches, used_on, gundam, bandai_lookup, warhammer, journal_write, journal_links, journal_from_model,
                journal_suggestion, journal_todo, global_search, journal_wishlist, appearance,
-               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, settings_more, no_panel):
+               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, settings_more, no_panel):
         fn(desk)
     ctx = browser.new_context(**p.devices["iPhone 13"], timezone_id=zone)
     mob = ctx.new_page()

@@ -5,7 +5,7 @@ Inline content is text ({"type": "text", "text": ...}), links (with their own co
 mentions ({"type": "mention", "props": {"kind": "model", "ref": "3", "label": "Sherman"}}), or,
 for tables, {"type": "tableContent", "rows": [{"cells": [...]}]}.
 """
-KINDS = ("model", "supply", "page", "game", "gear", "videogame", "chess")   # game = a board game; chess = a chess game
+KINDS = ("model", "supply", "page", "game", "gear", "videogame", "chess", "book")   # game = a board game; chess = a chess game
 
 
 def inline_text(content) -> str:

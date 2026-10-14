@@ -132,6 +132,7 @@ export default function App() {
     else if (kind === 'gear') openPanel('gear', { id })
     else if (kind === 'videogame') openPanel('videogame', { id })
     else if (kind === 'chess') openPanel('chessgame', { id })
+    else if (kind === 'book') openPanel('book', { id })
   }, [openModel, openItem, navigate, openPanel])
   const app = useMemo(() => ({
     lookups, settings, refreshKey, changed, openItem, openModel, openAdd, openPanel, openThing, adjusted, showToast,

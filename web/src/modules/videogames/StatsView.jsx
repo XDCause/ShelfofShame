@@ -121,7 +121,8 @@ function Recap({ counting }) {
 // A year of unlock days, a square a day (weeks across, Monday at the top), darker = more unlocked
 // that day, with your current and longest streaks. Levels are your own quartiles, so one huge day
 // doesn't wash the rest out. Hover a day for its count; the table lists every day with an unlock.
-function UnlockCalendar({ days, today, streak }) {
+// days = [{day, count}]; one / many name what's counted (Reading uses it for pages).
+export function UnlockCalendar({ days, today, streak, title = 'Unlock calendar', one = 'achievement', many = 'achievements' }) {
   const [hover, setHover] = useState(null)
   const counts = new Map(days.map((d) => [d.day, d.count]))
   const sorted = days.map((d) => d.count).sort((a, b) => a - b)
@@ -142,14 +143,14 @@ function UnlockCalendar({ days, today, streak }) {
   const total = inYear.reduce((s, d) => s + d.count, 0)
   return (
     <section className="card home-card wide-card">
-      <h2 className="home-card-title">Unlock calendar</h2>
+      <h2 className="home-card-title">{title}</h2>
       <p className="muted small chart-sub">
-        {total.toLocaleString()} achievements on {inYear.length} days in the last year
+        {total.toLocaleString()} {many} on {inYear.length} days in the last year
         {' · '}streak: <strong>{streak.current} day{streak.current === 1 ? '' : 's'}</strong>
         {' · '}longest: <strong>{streak.longest} days</strong>{streak.longest_end && ` (to ${longDay(streak.longest_end)})`}
       </p>
       <div className="heatmap-scroll">
-        <div className="heatmap" role="img" aria-label={`Unlock calendar: ${total} achievements on ${inYear.length} days in the last year`}>
+        <div className="heatmap" role="img" aria-label={`${title}: ${total} ${many} on ${inYear.length} days in the last year`}>
           <div className="heatmap-months" aria-hidden="true">
             {weeks.map((w, i) => <span key={w[0].iso}>{w[0].first || i === 0 ? monthName(w[0].iso.slice(0, 7)).split(' ')[0] : ''}</span>)}
           </div>
@@ -167,14 +168,14 @@ function UnlockCalendar({ days, today, streak }) {
       </div>
       <div className="heatmap-foot">
         <span className="muted small" aria-live="polite">
-          {hover ? <><strong>{hover.n}</strong> {hover.n === 1 ? 'achievement' : 'achievements'} on {longDay(hover.iso)}</> : 'Hover a day to see its count'}
+          {hover ? <><strong>{hover.n}</strong> {hover.n === 1 ? one : many} on {longDay(hover.iso)}</> : 'Hover a day to see its count'}
         </span>
         <span className="heatmap-key muted small" aria-hidden="true">Less{[0, 1, 2, 3, 4].map((l) => <span key={l} className={`heatmap-day l${l}`} />)}More</span>
       </div>
       <details className="chart-table">
         <summary>Show as a table</summary>
         <table>
-          <thead><tr><th scope="col">Day</th><th scope="col">Achievements</th></tr></thead>
+          <thead><tr><th scope="col">Day</th><th scope="col">{many[0].toUpperCase() + many.slice(1)}</th></tr></thead>
           <tbody>{[...inYear].reverse().map((d) => <tr key={d.day}><td>{longDay(d.day)}</td><td>{d.count}</td></tr>)}</tbody>
         </table>
       </details>

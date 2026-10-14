@@ -982,6 +982,28 @@ DBeaver, psql, and the one-off import script.
    alone) on Dashboard and Stats, shared via useCounting() (module store; a reload = all again). Home
    tiles count all. Ubisoft ticks have no date: they count in totals, never as "this week" or the calendar.
    Tests: 301 API, 60 browser steps.
+3zl. **Reading** (2026-10-14). User chose all four: progress + reading log, yearly goal + stats, ISBN
+   scan, ratings / reviews / quotes; plus a Goodreads import. Open Library (no key) for book data.
+   - 35_reading.sql: books (title, author, isbn 13, ol_work, cover_id, pages, year, genres TEXT[], format
+     paper/ebook/audio, status want/reading/finished/dnf, current_page, started_on, finished_on, rating 1-5,
+     review, goodreads_id UNIQUE, looked_up_at), reading_log (page reached + pages since the last update,
+     logged_on, minutes), book_quotes. Goal = settings reading_goal_<year>. journal_links + 'book'.
+   - openlibrary.py: search.json (q / isbn / title+author), isbn13() (ISBN-10 -> 13, check digits),
+     genres_of() (subjects -> up to 3 plain genres; a matched genre's words are removed so "science
+     fiction" isn't also Science), covers hot-linked from covers.openlibrary.org by cover id.
+   - reading.py: lookup, books (shelves, search, sorts), progress (want -> reading, started_on; at_the_end),
+     finishing a logged book logs the rest of its pages that day; pages_read = log + never-logged
+     finished books (their whole length on the finish day); summary (reading now, goal + on pace,
+     streak via videogames.streaks), stats, quotes, Goodreads CSV import (Exclusive Shelf -> status,
+     dnf-like shelf names -> dnf; re-import updates shelf / rating / date read / review only), then a
+     background cover look-up (COVERS state, 1 request/s). Activity: Read (per book per day), Started
+     reading, Finished / Stopped reading - so the calendar shows them.
+   - Web modules/reading: Dashboard (goal card, tiles, reading-now cards with a page box, recently
+     finished, up next), Books (shelf chips, search, sort, grid, Goodreads import fold), Stats (Reading
+     calendar = the video games UnlockCalendar, now exported with title / one / many props; charts),
+     Quotes; panels book (BookPanel) and addbook (search / Scan ISBN / type it in). BookIcon, QuoteIcon.
+   - Tests: 308 API (test_reading.py, fake Open Library), 61 browser steps (reading; Home counts:
+     10 quick actions, 6 hobby cards, tiles + READING).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"
