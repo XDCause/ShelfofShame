@@ -324,6 +324,7 @@ button.tag.as-button { border: 0; cursor: pointer; }
 .card .list, .fold-body .list, .drawer .list { background: var(--fill-2); }
 .parts { min-width: 2.2em; color: var(--muted); }
 .stat-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.stat-grid.four { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }   /* 4 across, 2 x 2 on a phone */
 .stat-grid > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .stat-grid span { font-size: 0.8rem; color: var(--muted); }
 .stat-grid strong { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }

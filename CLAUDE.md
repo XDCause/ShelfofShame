@@ -1036,6 +1036,12 @@ DBeaver, psql, and the one-off import script.
    a null day is ignored. Photos are removed in Edit (no ✕ on the plain view). Reload before closing the
    edit form, or the deleted photo is requested once (404 - caught by the e2e's browser errors).
    Tests: 309 API, 61 browser steps.
+3zo. **Spent on kits** (2026-10-14): /models/summary `all_kits` (every kit but Wanted: kits, value, unpriced,
+   finished, finished_value); Kits card's 4th cell (.stat-grid.four, 2 x 2 on phones). Prod: $56.85, 3 kits.
+   **BoardGameGeek** (checked 2026-10-14, not used yet): robots.txt allows game pages (Crawl-delay 5);
+   the XML API (xmlapi2) answers 401 without a token - since mid/late 2025 every app must register at
+   boardgamegeek.com/applications (approval can take a week+) and send Authorization: Bearer <token>.
+   Use that, never scrape pages; a BEFORE_GOING_PUBLIC row is needed if it's ever added.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

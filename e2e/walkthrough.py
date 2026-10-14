@@ -306,6 +306,8 @@ def models(page):
     go(page, "Models")
     expect(page.locator(".model-card")).to_have_count(MODELS)
     expect(page.locator(".stat-grid")).to_contain_text("Shelf of shame")
+    spent = json.load(urllib.request.urlopen(f"{BASE}/api/models/summary"))["all_kits"]["value"]   # every bought kit
+    expect(page.locator(".stat-grid")).to_contain_text(f"Spent on kits${spent:,.2f}")
     shot(page, "d09_models")
     page.locator(".model-card", has_text="Zero").click()
     d = drawer(page)

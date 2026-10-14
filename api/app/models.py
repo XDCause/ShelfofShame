@@ -266,17 +266,24 @@ def list_models():
 # Declared before /models/{model_id} so "summary" isn't mistaken for an id.
 @router.get("/models/summary")
 def stash_summary():
-    """The shelf of shame: how many kits you own but haven't finished, and what they cost;
-    plus counts per status and hours spent."""
+    """The shelf of shame: how many kits you own but haven't finished, and what they cost; every
+    kit you've bought (all_kits: finished, gone and the stash too - not Wanted, those aren't bought
+    yet), with what the finished ones cost; plus counts per status and hours spent."""
     with db() as conn:
         counts = {r["status"]: r["n"] for r in conn.execute(
             "SELECT status, count(*) AS n FROM models GROUP BY status").fetchall()}
         shame = conn.execute("SELECT count(*) AS kits, COALESCE(sum(price_paid), 0) AS value, "
                              "count(*) FILTER (WHERE price_paid IS NULL) AS unpriced "
                              "FROM models WHERE status = ANY(%s)", (list(UNBUILT),)).fetchone()
+        bought = conn.execute(
+            "SELECT count(*) AS kits, COALESCE(sum(price_paid), 0) AS value, "
+            "count(*) FILTER (WHERE price_paid IS NULL) AS unpriced, "
+            "count(*) FILTER (WHERE status = 'Finished') AS finished, "
+            "COALESCE(sum(price_paid) FILTER (WHERE status = 'Finished'), 0) AS finished_value "
+            "FROM models WHERE status <> 'Wanted'").fetchone()
         minutes = conn.execute("SELECT COALESCE(round(sum(extract(epoch FROM (COALESCE(ended_at, now()) - started_at)))"
                                " / 60), 0)::int AS m FROM model_sessions").fetchone()["m"]
-        return {"counts": {s: counts.get(s, 0) for s in MODEL_STATUSES}, "shelf_of_shame": shame,
+        return {"counts": {s: counts.get(s, 0) for s in MODEL_STATUSES}, "shelf_of_shame": shame, "all_kits": bought,
                 "total_minutes": minutes}
 
 

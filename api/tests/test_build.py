@@ -44,6 +44,7 @@ def test_shelf_of_shame_summary(client):
     s = client.get("/api/models/summary").json()
     assert s["counts"] == {"Wanted": 1, "In stash": 1, "In progress": 1, "On hold": 1, "Finished": 1, "Gone": 0}
     assert s["shelf_of_shame"] == {"kits": 3, "value": 80.5, "unpriced": 1}
+    assert s["all_kits"] == {"kits": 4, "value": 100.5, "unpriced": 1, "finished": 1, "finished_value": 20}   # + the finished one
     spending = client.get("/api/spending").json()
     assert spending["kits_spent"] == 100.5 and spending["kits_priced"] == 3   # wanted kits aren't spent
 
