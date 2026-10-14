@@ -1061,7 +1061,14 @@ def video_games(page):
     expect(page.locator(".add-game .alert")).to_contain_text("store link")
     page.locator(".add-game").get_by_role("button", name="Cancel").click()
     # A game's panel: how you compare with other players (when the community numbers are in).
+    # The search, filters and headings stay pinned while the list scrolls (on a PC).
+    page.mouse.wheel(0, 3000)
+    page.wait_for_timeout(400)
+    box = page.get_by_label("Search your games").bounding_box()
+    assert box and 0 <= box["y"] < 160, box
+    expect(page.locator(".game-head")).to_be_visible()
     shot(page, "d44_video_games_list", full=False)
+    page.mouse.wheel(0, -6000)
     page.get_by_label("Search your games").fill("Clair Obscur")
     row = page.locator(".game-row").first
     if row.count():

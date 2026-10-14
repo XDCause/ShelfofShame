@@ -1349,3 +1349,23 @@ body.writing-mode .journal-title { font-size: 2.2rem; }
 .compare-tile .stat-icon { width: 38px; height: 38px; border-radius: 11px; }
 .time-fill.median { background: var(--purple); }
 .time-fill.fastest { background: var(--teal); }
+
+/* The Games tab's pinned block: stays under the top bar (56px + the phone's notch) while the list
+   scrolls, on the page background so the rows slide under it. */
+.games-pinned {
+  position: sticky; top: calc(56px + env(safe-area-inset-top, 0px)); z-index: 20;
+  display: flex; flex-direction: column; gap: 10px; margin: -6px 0 0; padding: 6px 0 4px;
+  background: var(--bg); border-bottom: 1px solid var(--separator);
+}
+.games-pinned .game-head { padding-bottom: 2px; }
+/* On a PC the headings carry the icons, so the rows don't repeat them (or the key). */
+@media (min-width: 901px) {
+  .game-key { display: none; }
+  .game-row .game-stat svg { display: none; }
+  .game-rows { border-top-left-radius: 0; border-top-right-radius: 0; }
+}
+@media (max-width: 900px) {
+  .games-pinned .game-key { margin: 0; }
+}
+/* Phones: too tall to pin (it would cover half the screen), so it scrolls with the page. */
+@media (max-width: 700px) { .games-pinned { position: static; margin: 0; border-bottom: 0; } }

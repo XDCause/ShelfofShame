@@ -252,6 +252,8 @@ export function GamesView() {
   if (error) return <p className="alert error">{error}</p>
   return (
     <section className="page">
+      {/* Pinned under the top bar while the list scrolls: search, sort, filters and the headings. */}
+      <div className="games-pinned">
       <div className="toolbar">
         <input type="search" className="search" value={q} onChange={(e) => setQ(e.target.value)}
           placeholder="Search your games..." aria-label="Search your games" />
@@ -262,6 +264,13 @@ export function GamesView() {
           </select>
         </label>
         <button type="button" className="secondary" onClick={() => setAdding(!adding)}>+ Add a game</button>
+      </div>
+      <div className="chip-row scroll" role="group" aria-label="Show">
+        {SHOWS.map(([id, label]) => (
+          <button key={id} type="button" className="chip-filter" aria-pressed={show === id} onClick={() => setShow(id)}>{label}</button>
+        ))}
+      </div>
+      <GameHead sort={sort} setSort={setSort} />
       </div>
       {adding && (
         <form className="card add-game" onSubmit={addGame}>
@@ -276,13 +285,8 @@ export function GamesView() {
           {addError && <p className="alert error small">{addError}</p>}
         </form>
       )}
-      <div className="chip-row scroll" role="group" aria-label="Show">
-        {SHOWS.map(([id, label]) => (
-          <button key={id} type="button" className="chip-filter" aria-pressed={show === id} onClick={() => setShow(id)}>{label}</button>
-        ))}
-      </div>
       {!games ? <p className="muted loading">Loading...</p> : visible.length === 0 ? <p className="empty card">No games here.</p> : (
-        <GameTable games={visible} sort={sort} setSort={setSort} onOpen={(g) => openPanel('videogame', { id: g.app_id })} />
+        <GameTable games={visible} onOpen={(g) => openPanel('videogame', { id: g.app_id })} />
       )}
     </section>
   )
@@ -319,9 +323,9 @@ function Stat1({ kind, value }) {
   )
 }
 
-// The games as a table on a PC (click a heading to sort by it) and as cards on a phone: picture,
-// name, progress, then your time / median time to 100% / 100% rate, each with its icon.
-function GameTable({ games, sort, setSort, onOpen }) {
+// The column headings (pinned with the search and filters; click one to sort by it). On a phone
+// there are no columns, so they become a small key to the icons on each card.
+function GameHead({ sort, setSort }) {
   const heads = [['name', 'Game'], ['percent', 'Progress'], ['time', COLUMNS.time], ['quick', COLUMNS.median], ['rare', COLUMNS.rate]]
   return (
     <div className="game-table">
@@ -338,6 +342,15 @@ function GameTable({ games, sort, setSort, onOpen }) {
           </button>
         ))}
       </div>
+    </div>
+  )
+}
+
+// The games as table rows on a PC (the pinned headings say what each column is, so the rows show
+// just the numbers) and as cards on a phone (where each number keeps its icon).
+function GameTable({ games, onOpen }) {
+  return (
+    <div className="game-table">
       <ul className="game-rows">
         {games.map((g) => (
           <li key={g.app_id}>
