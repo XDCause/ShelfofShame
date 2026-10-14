@@ -56,3 +56,39 @@ def test_video_links(client):
     assert [v["title"] for v in client.get("/api/volleyball/videos").json()] == ["Float serve drill", "Final set"]
     game = client.get(f"/api/volleyball/games/{game['game_id']}").json()
     assert [v["title"] for v in game["video_list"]] == ["Final set"]
+
+
+def test_teams_and_what_a_new_game_starts_with(client):
+    empty = client.get("/api/volleyball/teams").json()
+    assert empty["teams"] == [] and empty["defaults"] == {"team_id": None, "venue": None, "kind": "Game"}
+    nets = client.post("/api/volleyball/teams", json={"name": "Net Gains", "location": "Sports hall"}).json()
+    sets = client.post("/api/volleyball/teams", json={"name": "Set Pieces", "location": "Beach courts",
+                                                      "is_default": True}).json()
+    assert client.post("/api/volleyball/teams", json={"name": "net gains"}).status_code == 409      # any case
+    r = client.get("/api/volleyball/teams").json()
+    assert [t["name"] for t in r["teams"]] == ["Set Pieces", "Net Gains"]                          # default first
+    assert r["defaults"] == {"team_id": sets["team_id"], "venue": "Beach courts", "kind": "Game"}
+
+    client.patch(f"/api/volleyball/teams/{nets['team_id']}", json={"is_default": True})            # takes it over
+    teams = {t["name"]: t for t in client.get("/api/volleyball/teams").json()["teams"]}
+    assert teams["Net Gains"]["is_default"] and not teams["Set Pieces"]["is_default"]
+
+    game = client.post("/api/volleyball/games", json={"kind": "Social", "team_id": sets["team_id"],
+                                                      "opponent": "Spikers", "venue": "Beach courts"}).json()
+    assert (game["team"], game["team_location"]) == ("Set Pieces", "Beach courts")
+    by_name = client.post("/api/volleyball/games", json={"team": "set pieces", "opponent": "Blockheads"}).json()
+    assert by_name["team_id"] == sets["team_id"]                                                  # found, not added
+    new = client.post("/api/volleyball/games", json={"team": "Mixed Bag"}).json()
+    assert new["team"] == "Mixed Bag"                                                              # a new team
+    assert client.post("/api/volleyball/games", json={"team_id": 9999}).status_code == 404
+
+    r = client.get("/api/volleyball/teams").json()
+    assert r["defaults"]["kind"] == "Game" and r["opponents"][:2] in (["Blockheads", "Spikers"], ["Spikers", "Blockheads"])
+    assert "Beach courts" in r["venues"] and "Sports hall" in r["venues"]
+    client.patch(f"/api/volleyball/teams/{nets['team_id']}", json={"retired": True})               # retired: not default
+    r = client.get("/api/volleyball/teams").json()
+    assert r["defaults"]["team_id"] == new["team_id"] and r["teams"][-1]["name"] == "Net Gains"   # latest game's team
+    assert client.delete(f"/api/volleyball/teams/{sets['team_id']}").status_code == 409            # has games
+    assert client.delete(f"/api/volleyball/teams/{nets['team_id']}").status_code == 204
+    csv = client.get("/api/export/volleyball.csv").text
+    assert "Set Pieces" in csv

@@ -1042,6 +1042,16 @@ DBeaver, psql, and the one-off import script.
    the XML API (xmlapi2) answers 401 without a token - since mid/late 2025 every app must register at
    boardgamegeek.com/applications (approval can take a week+) and send Authorization: Bearer <token>.
    Use that, never scrape pages; a BEFORE_GOING_PUBLIC row is needed if it's ever added.
+3zp. **Volleyball teams + defaults** (2026-10-14). 38_volleyball_teams.sql: volleyball_teams (name unique any case,
+   location, is_default - one at most, partial unique -, retired, notes); volleyball_games.team_id replaces the
+   typed `team` text (names became teams, then the column was dropped). GameIn/Patch take team_id or a team
+   name (found any case, else added). GET /volleyball/teams = {teams (games, last_played), defaults {team_id:
+   default else last game's team, venue: its location else last venue, kind: last kind}, opponents, venues};
+   POST / PATCH (default moves; retiring drops it) / DELETE (409 with games -> retire). Web: "Your teams" card
+   on Games (team chips -> vbteam TeamPanel; Delete becomes Retire when it has games); game form: team select,
+   Where follows the team unless you typed a new place, datalists vb-opponents / vb-venues, kind starts as
+   your last one; a calendar event's location is the venue when logging from it. FormPanel onField +
+   deleteLabel. CSV Team column from the join. Tests: 310 API, 61 browser steps.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

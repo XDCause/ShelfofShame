@@ -1,5 +1,5 @@
 import { BallIcon, ShoeIcon, VideoIcon } from '../../components/icons.jsx'
-import { GearPanel, VideoPanel, VolleyballGamePanel } from './VolleyballPanels.jsx'
+import { GearPanel, TeamPanel, VideoPanel, VolleyballGamePanel } from './VolleyballPanels.jsx'
 import { GamesView, GearView, VideosView, VolleyballTiles } from './VolleyballViews.jsx'
 
 // Volleyball: games and training (with results), your gear, and video links. Pages live at
@@ -12,7 +12,7 @@ export default {
   Icon: BallIcon,
   home: { Tiles: VolleyballTiles },
   actions: [{ label: 'Log volleyball', Icon: BallIcon, run: (app) => app.openPanel('volleyball', {}) }],
-  panels: { volleyball: VolleyballGamePanel, gear: GearPanel, video: VideoPanel },
+  panels: { volleyball: VolleyballGamePanel, gear: GearPanel, video: VideoPanel, vbteam: TeamPanel },
   pages: [
     { path: 'games', label: 'Games', Icon: BallIcon, render: () => <GamesView /> },
     { path: 'gear', label: 'Gear', Icon: ShoeIcon, render: () => <GearView /> },

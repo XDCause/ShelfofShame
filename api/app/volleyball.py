@@ -3,6 +3,9 @@
     games   volleyball_games: the day, kind (Game / Training / Social / Tournament), team,
             opponent, sets won and lost, venue, notes. A game logged from a calendar event keeps
             its event_id, so the calendar knows that day's result is in.
+    teams   volleyball_teams: the teams you play in and where they play; one can be the default.
+            /volleyball/teams also gives what a new game starts with (defaults) and the opponents
+            and venues used before (for suggestions), so nothing is typed twice.
     gear    gear (shared with future hobbies): shoes, knee pads, balls... with condition and photo
     videos  links to game footage or drills (YouTube, Google Drive...): only the link is stored
 
@@ -27,7 +30,8 @@ Condition = Literal[tuple(GEAR_CONDITIONS)]
 class GameIn(BaseModel):
     played_on: date | None = None   # default today
     kind: Kind = "Game"
-    team: str | None = None
+    team_id: int | None = None
+    team: str | None = None          # or a team's name: found (any case), or added as a new team
     opponent: str | None = None
     venue: str | None = None
     sets_won: int | None = Field(None, ge=0)
@@ -39,11 +43,27 @@ class GameIn(BaseModel):
 class GamePatch(BaseModel):
     played_on: date | None = None
     kind: Kind | None = None
+    team_id: int | None = None
     team: str | None = None
     opponent: str | None = None
     venue: str | None = None
     sets_won: int | None = Field(None, ge=0)
     sets_lost: int | None = Field(None, ge=0)
+    notes: str | None = None
+
+
+class TeamIn(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    location: str | None = Field(None, max_length=200)
+    is_default: bool = False
+    notes: str | None = None
+
+
+class TeamPatch(BaseModel):
+    name: str | None = Field(None, min_length=1, max_length=120)
+    location: str | None = Field(None, max_length=200)
+    is_default: bool | None = None
+    retired: bool | None = None
     notes: str | None = None
 
 
@@ -91,9 +111,15 @@ class VideoPatch(BaseModel):
 RESULT = """CASE WHEN v.sets_won IS NULL OR v.sets_lost IS NULL THEN NULL
                  WHEN v.sets_won > v.sets_lost THEN 'Won' WHEN v.sets_won < v.sets_lost THEN 'Lost' ELSE 'Drew' END"""
 GAME_SELECT = f"""
-SELECT v.*, {RESULT} AS result, e.title AS event_title,
+SELECT v.*, {RESULT} AS result, e.title AS event_title, t.name AS team, t.location AS team_location,
        (SELECT count(*) FROM volleyball_videos x WHERE x.game_id = v.game_id)::int AS videos
-FROM volleyball_games v LEFT JOIN calendar_events e USING (event_id)"""
+FROM volleyball_games v LEFT JOIN calendar_events e USING (event_id)
+LEFT JOIN volleyball_teams t ON t.team_id = v.team_id"""
+
+TEAM_SELECT = """
+SELECT t.*, count(v.game_id)::int AS games, max(v.played_on) AS last_played
+FROM volleyball_teams t LEFT JOIN volleyball_games v ON v.team_id = t.team_id
+GROUP BY t.team_id"""
 
 GEAR_SELECT = """
 SELECT g.gear_id, g.hobby, g.name, g.kind, g.brand, g.size, g.condition, g.purchase_date, g.price_paid,
@@ -119,6 +145,16 @@ def fetch_gear(conn, gear_id: int) -> dict:
 
 def fetch_video(conn, video_id: int) -> dict:
     return found(conn.execute(VIDEO_SELECT + " WHERE x.video_id = %s", (video_id,)).fetchone(), "Video")
+
+
+def game_team(conn, data: dict):
+    """A game's team: team_id (must exist) or a team name (found ignoring case, else added)."""
+    name = data.pop("team", None)
+    if data.get("team_id") is not None:
+        found(conn.execute("SELECT 1 FROM volleyball_teams WHERE team_id = %s", (data["team_id"],)).fetchone(), "Team")
+    elif name:
+        row = conn.execute("SELECT team_id FROM volleyball_teams WHERE lower(name) = lower(%s)", (name,)).fetchone()
+        data["team_id"] = row["team_id"] if row else insert_row(conn, "volleyball_teams", {"name": name}, "team_id")
 
 
 def check_url(url: str | None):
@@ -159,6 +195,7 @@ def add_game(body: GameIn):
     data = tidy_text(body.model_dump())
     data["played_on"] = data["played_on"] or date.today()
     with db() as conn:
+        game_team(conn, data)
         return fetch_game(conn, insert_row(conn, "volleyball_games", data, "game_id"))
 
 
@@ -176,6 +213,7 @@ def update_game(game_id: int, body: GamePatch):
             raise HTTPException(422, f"A game needs a {'day' if required == 'played_on' else 'kind'}.")
     with db() as conn:
         fetch_game(conn, game_id)
+        game_team(conn, data)
         update_row(conn, "volleyball_games", "game_id", game_id, data)
         return fetch_game(conn, game_id)
 
@@ -186,6 +224,88 @@ def delete_game(game_id: int):
     with db() as conn:
         found(conn.execute("DELETE FROM volleyball_games WHERE game_id = %s RETURNING game_id",
                            (game_id,)).fetchone(), "Volleyball game")
+    return Response(status_code=204)
+
+
+# ---------------------------------------------------------------------------
+# Teams, and what a new game starts with
+# ---------------------------------------------------------------------------
+def fetch_team(conn, team_id: int) -> dict:
+    return found(conn.execute(f"SELECT * FROM ({TEAM_SELECT}) t WHERE t.team_id = %s", (team_id,)).fetchone(), "Team")
+
+
+def _only_default(conn, team_id: int):
+    conn.execute("UPDATE volleyball_teams SET is_default = false WHERE is_default AND team_id <> %s", (team_id,))
+
+
+@router.get("/volleyball/teams")
+def list_teams():
+    """Your teams (current ones first, the default at the top), plus:
+        defaults   what a new game starts with: the default team - else the team of your latest
+                   game - with its location as the venue (else the latest venue), and the kind
+                   you logged last
+        opponents  teams you've played, most recent first (suggestions while typing)
+        venues     places you've played and your teams' locations"""
+    with db() as conn:
+        teams = conn.execute(f"SELECT * FROM ({TEAM_SELECT}) t "
+                             "ORDER BY t.retired, t.is_default DESC, t.last_played DESC NULLS LAST, lower(t.name)").fetchall()
+        last = conn.execute("SELECT v.kind, v.venue, v.team_id FROM volleyball_games v "
+                            "ORDER BY v.played_on DESC, v.game_id DESC LIMIT 1").fetchone()
+        opponents = [r["opponent"] for r in conn.execute(
+            "SELECT opponent FROM volleyball_games WHERE opponent IS NOT NULL "
+            "GROUP BY opponent ORDER BY max(played_on) DESC LIMIT 50").fetchall()]
+        venues = [r["venue"] for r in conn.execute(
+            "SELECT venue FROM (SELECT venue, played_on FROM volleyball_games UNION ALL "
+            "SELECT location, current_date FROM volleyball_teams WHERE NOT retired) x "
+            "WHERE venue IS NOT NULL GROUP BY venue ORDER BY max(played_on) DESC LIMIT 50").fetchall()]
+    current = [t for t in teams if not t["retired"]]
+    team = next((t for t in current if t["is_default"]), None) or \
+        next((t for t in current if last and t["team_id"] == last["team_id"]), None)
+    defaults = {"team_id": team and team["team_id"], "venue": (team and team["location"]) or (last and last["venue"]),
+                "kind": last["kind"] if last else "Game"}
+    return {"teams": teams, "defaults": defaults, "opponents": opponents, "venues": venues}
+
+
+@router.post("/volleyball/teams", status_code=201)
+def add_team(body: TeamIn):
+    data = tidy_text(body.model_dump())
+    with db() as conn:
+        if conn.execute("SELECT 1 FROM volleyball_teams WHERE lower(name) = lower(%s)", (data["name"],)).fetchone():
+            raise HTTPException(409, f"You already have a team called {data['name']}.")
+        if data["is_default"]:
+            _only_default(conn, 0)                   # before the insert: one default at most
+        return fetch_team(conn, insert_row(conn, "volleyball_teams", data, "team_id"))
+
+
+@router.patch("/volleyball/teams/{team_id}")
+def update_team(team_id: int, body: TeamPatch):
+    """Change a team. Making it the default takes that from any other; retiring it stops it being
+    the default (it stays on its old games)."""
+    data = tidy_text(body.model_dump(exclude_unset=True))
+    if "name" in data and not data["name"]:
+        raise HTTPException(422, "A team needs a name.")
+    with db() as conn:
+        fetch_team(conn, team_id)
+        if data.get("name") and conn.execute("SELECT 1 FROM volleyball_teams WHERE lower(name) = lower(%s) "
+                                             "AND team_id <> %s", (data["name"], team_id)).fetchone():
+            raise HTTPException(409, f"You already have a team called {data['name']}.")
+        if data.get("retired"):
+            data["is_default"] = False
+        if data.get("is_default"):
+            _only_default(conn, team_id)
+        update_row(conn, "volleyball_teams", "team_id", team_id, data)
+        return fetch_team(conn, team_id)
+
+
+@router.delete("/volleyball/teams/{team_id}", status_code=204)
+def delete_team(team_id: int):
+    """Only a team with no games (retire one that has some, so they keep its name)."""
+    with db() as conn:
+        team = fetch_team(conn, team_id)
+        if team["games"]:
+            raise HTTPException(409, f"{team['name']} has {team['games']} game{'s' if team['games'] != 1 else ''} "
+                                     "logged - retire it instead, so they keep its name.")
+        conn.execute("DELETE FROM volleyball_teams WHERE team_id = %s", (team_id,))
     return Response(status_code=204)
 
 

@@ -6,14 +6,21 @@ import { useApp } from '../../core/app-context.js'
 import JournalMentions from '../../core/journal/JournalMentions.jsx'
 import { useNewPage } from '../../core/journal/JournalList.jsx'
 
-const GAME_FIELDS = [
+// The game form: your team is picked from your registered teams; Against and Where suggest what
+// you've typed before (datalists vb-opponents / vb-venues).
+const gameFields = (teams) => [
   { name: 'played_on', label: 'Day', type: 'date', required: true },
-  { name: 'opponent', label: 'Against', placeholder: 'the other team' },
+  { name: 'team_id', label: 'Your team', type: 'select', options: teams.map((t) => [String(t.team_id), t.name]) },
+  { name: 'opponent', label: 'Against', placeholder: 'the other team', list: 'vb-opponents' },
+  { name: 'venue', label: 'Where', list: 'vb-venues' },
   { name: 'sets_won', label: 'Sets you won', type: 'number' },
   { name: 'sets_lost', label: 'Sets you lost', type: 'number' },
-  { name: 'team', label: 'Your team' },
-  { name: 'venue', label: 'Where' },
   { name: 'notes', label: 'Notes', type: 'textarea', placeholder: 'How it went, what to work on' },
+]
+const TEAM_FIELDS = [
+  { name: 'name', label: 'Team name', required: true, wide: true },
+  { name: 'location', label: 'Where they play', wide: true, list: 'vb-venues', placeholder: 'e.g. Somerville House Aquatic Centre' },
+  { name: 'notes', label: 'Notes', type: 'textarea', placeholder: 'Competition, night, captain...' },
 ]
 const GEAR_FIELDS = [
   { name: 'name', label: 'Name', required: true, wide: true, placeholder: 'e.g. Court shoes' },
@@ -36,9 +43,11 @@ export const gameTitle = (g) => (g.kind === 'Training' ? 'Training' : g.opponent
 export const youtubeId = (url) =>
   url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/))([\w-]{11})/)?.[1] ?? null
 
-// A form panel shared by the three: fields + Save, and Delete when editing.
-function FormPanel({ title, fields, record, defaults, before, children, onSave, onDelete, onClose, saveLabel }) {
-  const { form, set, payload } = useRecordForm(fields, record, defaults)
+// A form panel shared by them all: fields + Save, and Delete when editing. onField(name, value,
+// setForm) hears every change (the game form fills Where when the team changes).
+function FormPanel({ title, fields, record, defaults, before, children, onSave, onDelete, onClose, saveLabel, onField, deleteLabel }) {
+  const { form, set: setField, setForm, payload } = useRecordForm(fields, record, defaults)
+  const set = (name) => (e) => { setField(name)(e); onField?.(name, e.target.value, setForm) }
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -55,8 +64,8 @@ function FormPanel({ title, fields, record, defaults, before, children, onSave, 
   }
   const footer = confirmDelete ? (
     <span className="confirm">
-      Delete it?
-      <button type="button" className="danger" onClick={() => onDelete().catch((e) => setError(e.message))}>Delete</button>
+      {deleteLabel ?? 'Delete'} it?
+      <button type="button" className="danger" onClick={() => onDelete().catch((e) => setError(e.message))}>{deleteLabel ?? 'Delete'}</button>
       <button type="button" className="plain" onClick={() => setConfirmDelete(false)}>Cancel</button>
     </span>
   ) : (
@@ -64,7 +73,7 @@ function FormPanel({ title, fields, record, defaults, before, children, onSave, 
       <button key="save" type="submit" form="vb-form" className="primary" disabled={busy}>{saveLabel ?? 'Save'}</button>
       <button key="cancel" type="button" className="plain" onClick={onClose}>Cancel</button>
       {onDelete && <><span className="spacer" />
-        <button type="button" className="plain destructive" onClick={() => setConfirmDelete(true)}>Delete</button></>}
+        <button type="button" className="plain destructive" onClick={() => setConfirmDelete(true)}>{deleteLabel ?? 'Delete'}</button></>}
     </>
   )
   return (
@@ -77,16 +86,32 @@ function FormPanel({ title, fields, record, defaults, before, children, onSave, 
 }
 
 // A game or training: the result, notes, its videos. New ones can come from a calendar event
-// (eventId + day + title): the calendar then knows that day's result is in.
-export function VolleyballGamePanel({ id = null, eventId = null, day = null, onClose }) {
+// (eventId + day + its location as venue): the calendar then knows that day's result is in.
+// A new one starts filled in: your default team (else your last game's), its location, the kind
+// you logged last.
+export function VolleyballGamePanel({ id = null, eventId = null, day = null, venue = null, onClose }) {
   const { lookups, changed, showToast, openPanel } = useApp()
   const newPage = useNewPage()
   const [game, setGame] = useState(null)
   const [kind, setKind] = useState('Game')
+  const [teams, setTeams] = useState(null)
   useEffect(() => {
     if (id != null) api.getVolleyball(id).then((g) => { setGame(g); setKind(g.kind) }).catch((e) => showToast(e.message))
   }, [id, showToast])
-  if (id != null && !game) return <Drawer title="Volleyball" onClose={onClose}><p className="muted">Loading...</p></Drawer>
+  useEffect(() => {
+    api.volleyballTeams().then((t) => { setTeams(t); if (id == null) setKind(t.defaults.kind) }).catch((e) => showToast(e.message))
+  }, [id, showToast])
+  if ((id != null && !game) || !teams) return <Drawer title="Volleyball" onClose={onClose}><p className="muted">Loading...</p></Drawer>
+
+  // Current teams, plus this game's own team if it's since been retired.
+  const choices = teams.teams.filter((t) => !t.retired || t.team_id === game?.team_id)
+  const locationOf = (teamId) => teams.teams.find((t) => String(t.team_id) === String(teamId))?.location ?? ''
+  // A new team picked: Where follows it, unless you'd typed somewhere else.
+  const onField = (name, value, setForm) => {
+    if (name !== 'team_id') return
+    setForm((f) => (!f.venue || teams.venues.includes(f.venue) || f.venue === locationOf(f.team_id)
+      ? { ...f, venue: locationOf(value) || f.venue } : f))
+  }
 
   const save = async (data) => {
     const body = { ...data, kind }
@@ -102,8 +127,9 @@ export function VolleyballGamePanel({ id = null, eventId = null, day = null, onC
   }
 
   return (
-    <FormPanel title={game ? `Volleyball ${gameTitle(game)}` : 'Log volleyball'} fields={GAME_FIELDS} record={game}
-      defaults={{ played_on: day ?? today() }} onClose={onClose} onSave={save} saveLabel={game ? 'Save' : 'Log it'}
+    <FormPanel title={game ? `Volleyball ${gameTitle(game)}` : 'Log volleyball'} fields={gameFields(choices)} record={game}
+      defaults={{ played_on: day ?? today(), team_id: teams.defaults.team_id, venue: venue || teams.defaults.venue }}
+      onField={onField} onClose={onClose} onSave={save} saveLabel={game ? 'Save' : 'Log it'}
       onDelete={game && (async () => { await api.deleteVolleyball(game.game_id); changed(); onClose() })}
       before={game && (
         <section className="panel-section">
@@ -125,11 +151,18 @@ export function VolleyballGamePanel({ id = null, eventId = null, day = null, onC
         </section>
       )}>
       {() => (
-        <div className="segmented form-segmented" role="group" aria-label="Kind">
-          {lookups.volleyball_kinds.map((k) => (
-            <button key={k} type="button" aria-pressed={kind === k} onClick={() => setKind(k)}>{k}</button>
-          ))}
-        </div>
+        <>
+          <div className="segmented form-segmented" role="group" aria-label="Kind">
+            {lookups.volleyball_kinds.map((k) => (
+              <button key={k} type="button" aria-pressed={kind === k} onClick={() => setKind(k)}>{k}</button>
+            ))}
+          </div>
+          <datalist id="vb-opponents">{teams.opponents.map((o) => <option key={o} value={o} />)}</datalist>
+          <datalist id="vb-venues">{teams.venues.map((v) => <option key={v} value={v} />)}</datalist>
+          {choices.length === 0 && (
+            <p className="hint">Tip: add your team (Volleyball → Games → Teams) with where it plays, and new games start with both filled in.</p>
+          )}
+        </>
       )}
     </FormPanel>
   )
@@ -220,6 +253,60 @@ export function VideoPanel({ id = null, gameId = null, onClose }) {
       defaults={{ game_id: gameId ?? '' }} onClose={onClose} onSave={save} saveLabel={video ? 'Save' : 'Add video'}
       onDelete={video && (async () => { await api.deleteVideo(video.video_id); changed(); onClose() })}>
       {() => <datalist id="video-topics">{VIDEO_TOPICS.map((t) => <option key={t} value={t} />)}</datalist>}
+    </FormPanel>
+  )
+}
+
+// A team you play in: its name, where it plays, and whether new games start with it. A team with
+// games logged is retired rather than deleted, so those games keep its name.
+export function TeamPanel({ id = null, onClose }) {
+  const { changed, showToast } = useApp()
+  const [data, setData] = useState(null)
+  const [isDefault, setIsDefault] = useState(false)
+  const [retired, setRetired] = useState(false)
+  useEffect(() => {
+    api.volleyballTeams().then((d) => {
+      setData(d)
+      const team = d.teams.find((x) => x.team_id === id)
+      setIsDefault(team ? team.is_default : d.teams.every((x) => x.retired))   // your first team: the default
+      setRetired(team?.retired ?? false)
+    }).catch((e) => showToast(e.message))
+  }, [id, showToast])
+  if (!data) return <Drawer title="Team" onClose={onClose}><p className="muted">Loading...</p></Drawer>
+  const team = data.teams.find((x) => x.team_id === id) ?? null
+
+  const save = async (form) => {
+    const body = { ...form, is_default: isDefault && !retired, ...(team && { retired }) }
+    const saved = team ? await api.updateTeam(team.team_id, body) : await api.addTeam(body)
+    changed()
+    showToast(team ? `${saved.name} saved` : `Added ${saved.name}`)
+    onClose()
+  }
+  const remove = team && (team.games ? async () => {
+    await api.updateTeam(team.team_id, { retired: true })
+    changed()
+    showToast(`${team.name} retired`)
+    onClose()
+  } : async () => {
+    await api.deleteTeam(team.team_id)
+    changed()
+    onClose()
+  })
+  return (
+    <FormPanel title={team ? team.name : 'Add a team'} fields={TEAM_FIELDS} record={team} onClose={onClose} onSave={save}
+      saveLabel={team ? 'Save' : 'Add team'} onDelete={team && !team.retired ? remove : null}
+      deleteLabel={team?.games ? 'Retire' : 'Delete'}
+      before={team && <p className="muted small panel-section">{team.games ? `${team.games} game${team.games === 1 ? '' : 's'} logged` : 'No games yet'}
+        {team.last_played && ` · last played ${shortDate(team.last_played)}`}</p>}>
+      {() => (
+        <>
+          <label className="check-row"><input type="checkbox" checked={isDefault && !retired} disabled={retired}
+            onChange={(e) => setIsDefault(e.target.checked)} /> New games start with this team (and where it plays)</label>
+          {team?.retired && <label className="check-row"><input type="checkbox" checked={retired}
+            onChange={(e) => setRetired(e.target.checked)} /> Retired (not offered for new games)</label>}
+          <datalist id="vb-venues">{data.venues.map((v) => <option key={v} value={v} />)}</datalist>
+        </>
+      )}
     </FormPanel>
   )
 }

@@ -23,7 +23,7 @@ export default function EventPanel({ id = null, day = null, hobby = null, title 
   return <EventForm event={event} day={day} defaults={{ starts_on: day ?? today(), hobby: hobby ?? '', title, repeats: 'never' }}
     lookups={lookups} onClose={onClose}
     onSaved={(saved, verb) => { changed(); showToast(`${saved.title} ${verb}`); onClose() }}
-    onLog={() => openPanel('volleyball', { eventId: event.event_id, day })} />
+    onLog={() => openPanel('volleyball', { eventId: event.event_id, day, venue: event.location })} />
 }
 
 function EventForm({ event, day, defaults, lookups, onClose, onSaved, onLog }) {

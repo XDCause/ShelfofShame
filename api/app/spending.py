@@ -99,9 +99,9 @@ EXPORTS = {
                p.minutes AS "Minutes", p.notes AS "Notes"
         FROM board_game_plays p JOIN board_games g USING (game_id) ORDER BY p.played_on, p.play_id""",
     "volleyball": """
-        SELECT played_on AS "Day", kind AS "Kind", team AS "Team", opponent AS "Against",
-               sets_won AS "Sets won", sets_lost AS "Sets lost", venue AS "Where", notes AS "Notes"
-        FROM volleyball_games ORDER BY played_on, game_id""",
+        SELECT v.played_on AS "Day", v.kind AS "Kind", t.name AS "Team", v.opponent AS "Against",
+               v.sets_won AS "Sets won", v.sets_lost AS "Sets lost", v.venue AS "Where", v.notes AS "Notes"
+        FROM volleyball_games v LEFT JOIN volleyball_teams t USING (team_id) ORDER BY v.played_on, v.game_id""",
     "gear": """
         SELECT name AS "Gear", kind AS "Kind", brand AS "Brand", size AS "Size", condition AS "Condition",
                purchase_date AS "Bought", price_paid AS "Price paid", notes AS "Notes"

@@ -19,10 +19,14 @@ export function GamesView() {
   const { refreshKey, openPanel } = useApp()
   const { data } = useVolleyball()
   const [games, setGames] = useState(null)
+  const [teams, setTeams] = useState(null)
   const [error, setError] = useState('')
-  useEffect(() => { api.listVolleyball().then(setGames).catch((e) => setError(e.message)) }, [refreshKey])
+  useEffect(() => {
+    api.listVolleyball().then(setGames).catch((e) => setError(e.message))
+    api.volleyballTeams().then((t) => setTeams(t.teams)).catch((e) => setError(e.message))
+  }, [refreshKey])
   if (error) return <p className="alert error">{error}</p>
-  if (!games || !data) return <p className="muted loading">Loading...</p>
+  if (!games || !data || !teams) return <p className="muted loading">Loading...</p>
   const { summary, next } = data
 
   return (
@@ -43,6 +47,26 @@ export function GamesView() {
           </span>
         </button>
       )}
+      <section className="card teams-card" aria-label="Your teams">
+        <div className="section-head">
+          <h2 className="home-card-title">Your teams</h2>
+          <button type="button" className="plain small" onClick={() => openPanel('vbteam', {})}>+ Add team</button>
+        </div>
+        {teams.length === 0 ? (
+          <p className="muted small">Add the team you play in and where it plays - new games then start with both filled in.</p>
+        ) : (
+          <ul className="team-chips">
+            {teams.map((t) => (
+              <li key={t.team_id}>
+                <button type="button" className={t.retired ? 'team-chip retired' : 'team-chip'} onClick={() => openPanel('vbteam', { id: t.team_id })}>
+                  <strong>{t.name}</strong>{t.is_default && <span className="pill tint">Default</span>}{t.retired && <span className="pill">Retired</span>}
+                  <span className="muted small">{[t.location, `${t.games} game${t.games === 1 ? '' : 's'}`].filter(Boolean).join(' · ')}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
       <div className="toolbar">
         <p className="summary grow"><strong>{games.length}</strong> logged</p>
         <button type="button" className="secondary" onClick={() => openPanel('event', { id: null, hobby: 'volleyball', title: 'Volleyball' })}>Plan a game</button>
