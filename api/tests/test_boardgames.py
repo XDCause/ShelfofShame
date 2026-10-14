@@ -1,4 +1,6 @@
 """Board games: the collection, plays, photos, and how they reach the journal and activity."""
+import pytest
+
 from .test_journal import mention, paragraph, text
 
 
@@ -83,3 +85,57 @@ def test_pages_about_a_game(client):
         text("Taught "), mention("game", catan["game_id"], "Catan"))]})
     pages = client.get(f"/api/journal?mention=game:{catan['game_id']}").json()
     assert [p["title"] for p in pages] == ["Night in"]
+
+
+# Wikidata's answer for Catan, one row per combination of values (as SPARQL gives it): two
+# editions' player counts and years, a play time in hours, two designer properties.
+E = "http://www.wikidata.org/entity/"
+CATAN_ROWS = [
+    {"g": E + "Q17271", "name": "The Settlers of Catan", "ordinal": "1", "bgg": "13", "min": "3", "max": "4",
+     "time": "1.25", "unit": E + "Q25235", "date": "1995-01-01T00:00:00Z", "age": "10",
+     "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Catan%20box.jpg", "designer": "Klaus Teuber",
+     "publisher": "Kosmos", "description": "board game"},
+    {"g": E + "Q17271", "name": "The Settlers of Catan", "ordinal": "1", "bgg": "13", "min": "2", "max": "6",
+     "date": "1996-05-01T00:00:00Z", "designer": "Klaus Teuber", "publisher": "Mayfair Games"},
+    {"g": E + "Q28114052", "name": "Catan series", "ordinal": "0"},                      # nothing but a name
+]
+
+
+@pytest.fixture
+def wd(monkeypatch):
+    from app import wikidata
+    asked = []
+    monkeypatch.setattr(wikidata, "_query", lambda q: asked.append(q) or [r for r in CATAN_ROWS if "Q28114052" not in q or True])
+    monkeypatch.setattr(wikidata, "photo", lambda facts: (b"\xff\xd8catan", "image/jpeg"))
+    return asked
+
+
+def test_finding_a_game_on_wikidata(client, wd):
+    [catan] = client.get("/api/board-games/lookup?q=catan").json()          # the name-only series is left out
+    assert (catan["wikidata_id"], catan["name"], catan["year"], catan["min_players"], catan["max_players"]) ==         ("Q17271", "The Settlers of Catan", 1995, 2, 6)                    # widest players, earliest year
+    assert (catan["play_minutes"], catan["min_age"], catan["designer"], catan["bgg_id"]) == (75, 10, "Klaus Teuber", 13)
+    assert catan["publisher"] == "Kosmos, Mayfair Games" and catan["image_url"].endswith("Catan%20box.jpg?width=300")
+    assert catan["game_id"] is None
+    assert 'mwapi:search "catan"' in wd[0]
+    client.get('/api/board-games/lookup?q=say "hi"')                         # quotes can't break the query
+    assert 'mwapi:search "say \\"hi\\""' in wd[-1]
+
+
+def test_adding_a_game_from_wikidata_fills_blanks_and_fetches_the_photo(client, wd):
+    r = client.post("/api/board-games", json={"name": "Catan", "max_players": 4, "wikidata_id": "Q17271"})
+    assert r.status_code == 201, r.text
+    game = client.get(f"/api/board-games/{r.json()['game_id']}").json()
+    assert (game["name"], game["max_players"], game["min_players"]) == ("Catan", 4, 2)    # yours kept, blanks filled
+    assert (game["bgg_url"], game["bgg_id"], game["designer"], game["wikidata_id"]) ==         ("https://boardgamegeek.com/boardgame/13", 13, "Klaus Teuber", "Q17271")
+    assert game["has_photo"]                                                 # fetched after the reply
+    assert client.get("/api/board-games/lookup?q=catan").json()[0]["game_id"] == game["game_id"]
+
+
+def test_filling_in_a_game_you_have(client, wd):
+    game = client.post("/api/board-games", json={"name": "Settlers", "min_players": 5, "max_players": 5}).json()
+    url = f"/api/board-games/{game['game_id']}/wikidata"
+    filled = client.post(url, json={"wikidata_id": "Q17271"}).json()
+    assert (filled["min_players"], filled["max_players"], filled["year"]) == (5, 5, 1995)     # yours kept
+    replaced = client.post(url, json={"wikidata_id": "Q17271", "replace": True}).json()
+    assert (replaced["name"], replaced["min_players"], replaced["max_players"]) == ("The Settlers of Catan", 2, 6)
+    assert client.post(url, json={"wikidata_id": "catan"}).status_code == 422

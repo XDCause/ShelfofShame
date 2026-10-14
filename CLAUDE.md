@@ -1052,6 +1052,19 @@ DBeaver, psql, and the one-off import script.
    Where follows the team unless you typed a new place, datalists vb-opponents / vb-venues, kind starts as
    your last one; a calendar event's location is the venue when logging from it. FormPanel onField +
    deleteLabel. CSV Team column from the join. Tests: 310 API, 61 browser steps.
+3zq. **Board games from Wikidata** (2026-10-15; BGG needs a registered token, so Wikidata instead - CC0, no
+   account). 39_board_game_wikidata.sql: board_games.wikidata_id / bgg_id / designer / min_age.
+   wikidata.py: one SPARQL query - EntitySearch (mwapi) for the name, kept to items with a BGG id or an
+   instance of board / card / tabletop game; facts P2339 BGG id, P1872/P1873 players, P2047 duration (minute /
+   hour units), P577 date, P2899 age, P18 image, P50|P178|P287 designer, P123 publisher. Several editions =
+   several rows: widest players, earliest year. Name-only items (a "series") left out. game(qid) picks the
+   matching item. Photos: Commons Special:FilePath?width=600 through images.fetched_photo, in a BackgroundTask.
+   Routes: GET /board-games/lookup?q= (game_id if you have it), POST /board-games with wikidata_id (fills blanks
+   server-side - the browser never sends facts or a photo URL to trust), POST /board-games/{id}/wikidata
+   {wikidata_id, replace}. Web: WikidataFind above the add form ("Use" fills the form) and "Fill in from
+   Wikidata" in a game's panel; gameMeta shows age + designer. Live: Catan -> 3-4, 75 min, 10+, Klaus Teuber,
+   Kosmos, 1995, BGG 13, 180 KB photo. Root isn't findable by name (common word). conftest refuses
+   wikidata._query / photo. Tests: 313 API.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

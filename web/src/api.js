@@ -122,6 +122,9 @@ export const api = {
   boardGameSummary: () => request('/board-games/summary'),
   getBoardGame: (id) => request(`/board-games/${id}`),
   addBoardGame: (data) => request('/board-games', send('POST', data)),
+  // Wikidata: board games matching a name; fill in a game you have from one (blanks only unless replace)
+  boardGameLookup: (q) => request(`/board-games/lookup?q=${encodeURIComponent(q)}`),
+  boardGameFromWikidata: (id, wikidataId, replace = false) => request(`/board-games/${id}/wikidata`, send('POST', { wikidata_id: wikidataId, replace })),
   updateBoardGame: (id, data) => request(`/board-games/${id}`, send('PATCH', data)),
   deleteBoardGame: (id) => request(`/board-games/${id}`, send('DELETE')),
   listPlays: (limit = 200) => request(`/board-games/plays?limit=${limit}`),

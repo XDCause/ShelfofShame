@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { api, money, shortDate, today } from '../../api.js'
 import Drawer from '../../components/Drawer.jsx'
 import RecordFields, { RowPhoto, useRecordForm } from '../../components/RecordFields.jsx'
@@ -12,6 +12,8 @@ export const GAME_FIELDS = [
   { name: 'min_players', label: 'Fewest players', type: 'number', min: 1 },
   { name: 'max_players', label: 'Most players', type: 'number', min: 1 },
   { name: 'play_minutes', label: 'Play time (minutes)', type: 'number', min: 1 },
+  { name: 'min_age', label: 'Ages (from)', type: 'number', min: 1 },
+  { name: 'designer', label: 'Designer' },
   { name: 'rating', label: 'Your rating (1-10)', type: 'number', min: 1 },
   { name: 'purchase_date', label: 'Bought on', type: 'date' },
   { name: 'price_paid', label: 'Price paid', type: 'money' },
@@ -27,12 +29,70 @@ const PLAY_FIELDS = [
   { name: 'notes', label: 'Notes', type: 'textarea' },
 ]
 
-// "3-4 players · 90 min · Kosmos · 1995"
+// "3-4 players · 75 min · 10+ · Klaus Teuber · Kosmos · 1995"
 export const gameMeta = (g) => [
   g.min_players && (g.max_players && g.max_players !== g.min_players
     ? `${g.min_players}-${g.max_players} players` : `${g.min_players}+ players`),
-  g.play_minutes && `${g.play_minutes} min`, g.publisher, g.year,
+  g.play_minutes && `${g.play_minutes} min`, g.min_age && `${g.min_age}+`, g.designer, g.publisher, g.year,
 ].filter(Boolean).join(' · ')
+
+// Find a game on Wikidata (the open database behind Wikipedia - no account): type a name, pick
+// the right one. onPick(result) gets its facts (players, time, age, designer, publisher, year,
+// BGG id) and its Wikidata id; the API fetches its photo itself.
+function WikidataFind({ start = '', onPick, pickLabel = 'Use' }) {
+  const [q, setQ] = useState(start)
+  const [results, setResults] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const asked = useRef(0)
+  useEffect(() => {
+    if (q.trim().length < 2) { setResults(null); return undefined }
+    const t = setTimeout(async () => {
+      const n = ++asked.current
+      setBusy(true)
+      setError('')
+      try {
+        const r = await api.boardGameLookup(q.trim())
+        if (n === asked.current) setResults(r)
+      } catch (e) {
+        if (n === asked.current) setError(e.message)
+      } finally {
+        if (n === asked.current) setBusy(false)
+      }
+    }, 450)
+    return () => clearTimeout(t)
+  }, [q])
+  return (
+    <section className="panel-section wikidata-find">
+      <label className="field">Find it on Wikidata
+        <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Game name, e.g. Ticket to Ride"
+          aria-label="Find a board game on Wikidata" autoFocus={!start} /></label>
+      {busy && <p className="muted small">Looking on Wikidata...</p>}
+      {error && <p className="alert error small">{error}</p>}
+      {results && !busy && results.length === 0 && <p className="muted small">Nothing found. Try the full name, or fill it in below.</p>}
+      {results?.length > 0 && (
+        <ul className="list plain-list wikidata-results">
+          {results.map((r) => (
+            <li key={r.wikidata_id}>
+              <div className="row-button static">
+                {r.image_url ? <img className="thumb" src={r.image_url} alt="" loading="lazy" referrerPolicy="no-referrer" />
+                  : <span className="thumb thumb-empty" />}
+                <span className="grow">
+                  <span className="item-title">{r.name}</span>
+                  <span className="item-meta">{gameMeta(r) || r.description}</span>
+                </span>
+                {r.game_id ? <span className="pill">In your games</span>
+                  : <button type="button" className="primary small" onClick={() => onPick(r)}>{pickLabel}</button>}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="muted small">From Wikidata, the free database behind Wikipedia; photos from Wikimedia Commons. BGG's ratings and
+        ranks aren't there.</p>
+    </section>
+  )
+}
 
 // One board game: photo, status, plays (log one here), journal pages about it, details.
 // Also adds a new game (id = null).
@@ -44,6 +104,7 @@ export default function GamePanel({ id, onClose }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [error, setError] = useState('')
   const [note, setNote] = useState('')
+  const [finding, setFinding] = useState(false)
 
   const show = (g, msg) => {
     setGame(g)
@@ -94,9 +155,19 @@ export default function GamePanel({ id, onClose }) {
             {game.rating && <span className="pill low">★ {game.rating}/10</span>}
             {game.price_paid != null && <span className="chip">{money(game.price_paid)}</span>}
             {game.bgg_url && <a className="small" href={game.bgg_url} target="_blank" rel="noreferrer">BoardGameGeek ↗</a>}
+            {game.wikidata_id && <a className="small" href={`https://www.wikidata.org/wiki/${game.wikidata_id}`} target="_blank" rel="noreferrer">Wikidata ↗</a>}
+            {!game.wikidata_id && !finding && <button type="button" className="plain small" onClick={() => setFinding(true)}>Fill in from Wikidata</button>}
           </div>
         </div>
       </div>
+      {finding && (
+        <WikidataFind start={game.name} pickLabel="Fill in" onPick={(r) => run(async () => {
+          show(await api.boardGameFromWikidata(game.game_id, r.wikidata_id), 'Filled in from Wikidata ✓')
+          setFinding(false)
+          changed()
+          if (r.image_url && !game.has_photo) setTimeout(() => reload().catch(() => {}), 4000)   // the photo comes a moment later
+        })} />
+      )}
 
       <section className="panel-section">
         <div className="segmented" role="group" aria-label="Status">
@@ -143,8 +214,16 @@ export default function GamePanel({ id, onClose }) {
 }
 
 function GameForm({ game, onClose, onCancel, onSaved }) {
-  const { form, set, payload } = useRecordForm(GAME_FIELDS, game)
+  const { form, set, setForm, payload } = useRecordForm(GAME_FIELDS, game)
   const [status, setStatus] = useState(game?.status ?? 'Owned')
+  const [picked, setPicked] = useState(null)   // the Wikidata game the form was filled from
+  // Fill the form from a Wikidata game (your typing after this still wins when you save).
+  const pick = (r) => {
+    setPicked(r)
+    setForm((f) => ({ ...f, ...Object.fromEntries(['name', 'publisher', 'year', 'min_players', 'max_players', 'play_minutes',
+      'min_age', 'designer'].filter((k) => r[k] != null).map((k) => [k, String(r[k])])),
+    ...(r.bgg_id && { bgg_url: `https://boardgamegeek.com/boardgame/${r.bgg_id}` }) }))
+  }
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const { lookups } = useApp()
@@ -154,7 +233,7 @@ function GameForm({ game, onClose, onCancel, onSaved }) {
     setBusy(true)
     setError('')
     try {
-      const body = { ...payload(), status }
+      const body = { ...payload(), status, ...(!game && picked && { wikidata_id: picked.wikidata_id }) }
       onSaved(game ? await api.updateBoardGame(game.game_id, body) : await api.addBoardGame(body))
     } catch (err) {
       setError(err.message)
@@ -170,6 +249,10 @@ function GameForm({ game, onClose, onCancel, onSaved }) {
   return (
     <Drawer title={game ? `Edit ${game.name}` : 'Add a board game'} onClose={onClose} footer={footer}>
       {error && <p className="alert error" role="alert">{error}</p>}
+      {!game && (picked ? (
+        <p className="alert ok small">Filled in from Wikidata: {picked.name}{picked.image_url && ' (its photo is added once you save)'}.{' '}
+          <button type="button" className="plain small" onClick={() => setPicked(null)}>Pick another</button></p>
+      ) : <WikidataFind onPick={pick} />)}
       <form id="game-form" onSubmit={submit}>
         <div className="segmented form-segmented" role="group" aria-label="Status">
           {lookups.game_statuses.map((s) => (
