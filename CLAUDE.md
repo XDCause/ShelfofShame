@@ -746,6 +746,15 @@ DBeaver, psql, and the one-off import script.
      (header, bar, achievements All / Unlocked / Still to get, rarity pills: <=5% orange, <=20%
      purple; Store page and Steam achievements links; Hide). Home tiles: Games at 100%, Achievements.
    - Tests: 267 API, 59 browser steps (video_games: dashboard or the connect form, games list).
+   - Pictures: the fixed cdn .../steam/apps/<id>/header.jpg 404s for newer games (17 of 208), which
+     use per-game hashed paths. 27_videogame_pictures.sql vg_games.header_url (NULL = not looked up,
+     '' = store has none); steam.header_pictures() asks IStoreBrowseService/GetItems (official, key,
+     50 ids per call, include_assets) -> shared.akamai.steamstatic.com/store_item_assets/ +
+     asset_url_format with ${FILENAME} = assets.header (shared.cloudflare 301-redirects; akamai /
+     fastly answer 200). Looked up for games without one on every sync, all of them on a full
+     sync. with_pictures() falls back to the old address; GamePicture (steam.jsx) shows a gamepad
+     if an image fails. Activity uses header_url too. Result: 207/208 load (the last is a test
+     server app with no picture anywhere). 269 API tests.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

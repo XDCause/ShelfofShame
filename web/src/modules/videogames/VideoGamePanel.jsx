@@ -3,7 +3,7 @@ import { api, shortDate } from '../../api.js'
 import Drawer from '../../components/Drawer.jsx'
 import { useApp } from '../../core/app-context.js'
 import JournalMentions from '../../core/journal/JournalMentions.jsx'
-import { CompletionBar, playtime, rarity } from './steam.jsx'
+import { CompletionBar, GamePicture, playtime, rarity } from './steam.jsx'
 
 // One game: its picture, completion, every achievement (unlocked first; locked ones greyed, hidden
 // ones' descriptions kept secret), links to Steam, journal pages about it, and Hide.
@@ -39,7 +39,7 @@ export default function VideoGamePanel({ id, onClose }) {
 
   return (
     <Drawer title={game.name} onClose={onClose} footer={footer} wide>
-      <img className="game-header" src={game.header_url} alt="" referrerPolicy="no-referrer" />
+      <GamePicture game={game} className="game-header" />
       <section className="panel-section">
         <div className="section-head">
           <strong>{game.achievements_total ? `${game.achievements_done} of ${game.achievements_total} achievements · ${game.percent}%`

@@ -3,7 +3,9 @@ import { api, shortDate, timeAgo } from '../../api.js'
 import { GamepadIcon, TrophyIcon } from '../../components/icons.jsx'
 import { useApp } from '../../core/app-context.js'
 import Stat, { StatSkeleton } from '../../core/Stat.jsx'
-import { CompletionBar, playtime, rarity, SteamSetup, SyncBar, useSteamAccount, useSteamSummary } from './steam.jsx'
+import {
+  CompletionBar, GamePicture, playtime, rarity, SteamSetup, SyncBar, useSteamAccount, useSteamSummary,
+} from './steam.jsx'
 
 // The dashboard: the account and sync, headline tiles, what to finish next, what you've just
 // unlocked, your rarest achievements, your latest 100%s.
@@ -67,7 +69,7 @@ function GameRow({ game: g, detail }) {
   return (
     <li>
       <button type="button" className="row-button" onClick={() => openPanel('videogame', { id: g.app_id })}>
-        <img className="game-capsule" src={g.header_url} alt="" loading="lazy" referrerPolicy="no-referrer" />
+        <GamePicture game={g} className="game-capsule" />
         <span className="grow">
           <span className="item-title">{g.name}</span>
           <span className="item-meta">{g.achievements_done} of {g.achievements_total} · {g.percent}%{detail && ` · ${detail}`}</span>
@@ -107,7 +109,7 @@ function PerfectCard({ game: g }) {
   const { openPanel } = useApp()
   return (
     <button type="button" className="perfect-card" onClick={() => openPanel('videogame', { id: g.app_id })}>
-      <img src={g.header_url} alt="" loading="lazy" referrerPolicy="no-referrer" />
+      <GamePicture game={g} className="perfect-picture" />
       <span className="perfect-badge">100%</span>
       <span className="perfect-name">{g.name}</span>
       <span className="muted small">{shortDate(g.completed_at)}</span>
@@ -161,7 +163,7 @@ export function GamesView() {
           {visible.map((g) => (
             <li key={g.app_id}>
               <button type="button" className="row-button" onClick={() => openPanel('videogame', { id: g.app_id })}>
-                <img className="game-capsule" src={g.header_url} alt="" loading="lazy" referrerPolicy="no-referrer" />
+                <GamePicture game={g} className="game-capsule" />
                 <span className="grow">
                   <span className="item-title">{g.name}</span>
                   <span className="item-meta">

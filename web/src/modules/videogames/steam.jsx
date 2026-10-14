@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api, duration, timeAgo } from '../../api.js'
+import { GamepadIcon } from '../../components/icons.jsx'
 import { useApp } from '../../core/app-context.js'
 import { useShared } from '../../core/useShared.js'
 
@@ -14,6 +15,16 @@ export const rarity = (percent) => {
 }
 
 export const playtime = (minutes) => (minutes >= 600 ? `${Math.round(minutes / 60)} h` : duration(minutes))
+
+// A game's picture from Steam; if Steam has none (or it won't load), a gamepad in its place.
+export function GamePicture({ game, className }) {
+  const [failed, setFailed] = useState(false)
+  if (!game.header_url || failed) {
+    return <span className={`${className} game-picture-missing`} aria-hidden="true"><GamepadIcon size={22} /></span>
+  }
+  return <img className={className} src={game.header_url} alt="" loading="lazy" referrerPolicy="no-referrer"
+    onError={() => setFailed(true)} />
+}
 
 // A game's completion as a bar (green once it's 100%).
 export function CompletionBar({ game }) {

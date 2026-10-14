@@ -11,7 +11,9 @@ error messages.
     player_achievements(...)  which achievements you have, and when you unlocked them
     schema(app_id)            each achievement's name, description and icons
     global_percentages(...)   how many players have each achievement (its rarity)
+    header_pictures(app_ids)  each game's header picture address (store API, 50 games a call)
 """
+import json
 import os
 import re
 import time
@@ -19,6 +21,8 @@ import time
 import httpx
 
 API = "https://api.steampowered.com"
+# Store pictures live under per-game hashed paths these days; the store API says which.
+PICTURES = "https://shared.akamai.steamstatic.com/store_item_assets/"
 TIMEOUT = 20
 PAUSE = 0.15          # between calls during a sync: gentle on Steam
 HEADERS = {"User-Agent": "Off the Clock (personal hobby tracker)"}
@@ -115,6 +119,24 @@ def global_percentages(app_id: int) -> dict[str, float]:
     _, data = _get("ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2/", {"gameid": app_id}, with_key=False)
     rows = data.get("achievementpercentages", {}).get("achievements", []) or []
     return {r["name"]: float(r["percent"]) for r in rows if "name" in r and "percent" in r}
+
+
+def header_pictures(app_ids: list[int]) -> dict[int, str | None]:
+    """{app id: the game's header picture address, or None if the store has none (e.g. a game
+    removed from the store)}. Asks IStoreBrowseService/GetItems 50 games at a time."""
+    found = {}
+    for start in range(0, len(app_ids), 50):
+        batch = app_ids[start:start + 50]
+        request = {"ids": [{"appid": a} for a in batch], "context": {"language": "english", "country_code": "AU"},
+                   "data_request": {"include_assets": True}}
+        _, data = _get("IStoreBrowseService/GetItems/v1/", {"input_json": json.dumps(request)})
+        for item in data.get("response", {}).get("store_items", []) or []:
+            assets = item.get("assets") or {}
+            form, header = assets.get("asset_url_format"), assets.get("header")
+            if item.get("appid") and form and header:
+                found[item["appid"]] = PICTURES + form.replace("${FILENAME}", header)
+        pause()
+    return {a: found.get(a) for a in app_ids}
 
 
 def pause():

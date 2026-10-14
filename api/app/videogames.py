@@ -48,7 +48,9 @@ FROM vg_games g"""
 
 
 def with_pictures(game: dict) -> dict:
-    game["header_url"] = HEADER.format(app_id=game["app_id"])
+    """The game's pictures: its header from the store API (header_url), else the old fixed address
+    (older games still have one; the page shows a placeholder if that fails too)."""
+    game["header_url"] = game.get("header_url") or HEADER.format(app_id=game["app_id"])
     game["icon_url"] = ICON.format(app_id=game["app_id"], hash=game["icon_hash"]) if game.get("icon_hash") else None
     return game
 
@@ -124,6 +126,16 @@ def run_sync(full: bool = False):
                     {"appid": g["appid"], "name": g.get("name") or f"App {g['appid']}", "icon": g.get("img_icon_url") or None,
                      "play": g.get("playtime_forever", 0), "two": g.get("playtime_2weeks", 0),
                      "last": _ts(g.get("rtime_last_played"))})
+        # Pictures: games never looked up (every game on a full sync, as the art changes).
+        with db() as conn:
+            missing = [r["app_id"] for r in conn.execute(
+                "SELECT app_id FROM vg_games" + ("" if full else " WHERE header_url IS NULL")).fetchall()]
+        if missing:
+            SYNC.update(message=f"Finding pictures for {len(missing)} games...")
+            pictures = steam.header_pictures(missing)
+            with db() as conn:
+                for app_id, url in pictures.items():
+                    conn.execute("UPDATE vg_games SET header_url = %s WHERE app_id = %s", (url or "", app_id))
         now = datetime.now(timezone.utc)
         to_read = []
         for g in owned:

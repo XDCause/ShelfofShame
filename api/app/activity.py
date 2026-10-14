@@ -92,13 +92,13 @@ WITH feed AS (
   UNION ALL
     SELECT max(a.unlocked_at), 'videogame', a.app_id, 'Unlocked', g.name,
            CASE WHEN count(*) = 1 THEN min(a.name) ELSE count(*) || ' achievements' END, NULL, NULL,
-           'https://cdn.cloudflare.steamstatic.com/steam/apps/' || a.app_id || '/header.jpg'
+           COALESCE(NULLIF(g.header_url, ''), 'https://cdn.cloudflare.steamstatic.com/steam/apps/' || a.app_id || '/header.jpg')
     FROM vg_achievements a JOIN vg_games g USING (app_id)
     WHERE a.achieved AND a.unlocked_at IS NOT NULL AND NOT g.hidden
-    GROUP BY a.app_id, g.name, (a.unlocked_at AT TIME ZONE current_setting('TimeZone'))::date
+    GROUP BY a.app_id, g.name, g.header_url, (a.unlocked_at AT TIME ZONE current_setting('TimeZone'))::date
   UNION ALL
     SELECT completed_at, 'videogame', app_id, 'Perfected', name, '100%% · ' || achievements_total || ' achievements',
-           NULL, NULL, 'https://cdn.cloudflare.steamstatic.com/steam/apps/' || app_id || '/header.jpg'
+           NULL, NULL, COALESCE(NULLIF(header_url, ''), 'https://cdn.cloudflare.steamstatic.com/steam/apps/' || app_id || '/header.jpg')
     FROM vg_games WHERE completed_at IS NOT NULL AND NOT hidden
 )
 SELECT f.at, (f.at AT TIME ZONE current_setting('TimeZone'))::date AS day,

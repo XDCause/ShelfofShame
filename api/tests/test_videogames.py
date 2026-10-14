@@ -56,6 +56,9 @@ class FakeSteam:
         monkeypatch.setattr(steam, "player_achievements", log("player_achievements", mine))
         monkeypatch.setattr(steam, "schema", log("schema", lambda app_id: self.names.get(app_id, [])))
         monkeypatch.setattr(steam, "global_percentages", log("rarity", lambda app_id: self.rarity.get(app_id, {})))
+        # The store knows Hades' new-style picture; Celeste falls back to the old address; the demo has none.
+        pictures = {20: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/20/abc123/header.jpg"}
+        monkeypatch.setattr(steam, "header_pictures", log("pictures", lambda ids: {i: pictures.get(i) for i in ids}))
         return self
 
 
@@ -78,7 +81,7 @@ def test_setting_the_profile_syncs_every_game(client, fake):
     assert datetime.fromisoformat(games["Celeste"]["completed_at"]).timestamp() == T(10)
     assert (games["Hades"]["achievements_done"], games["Hades"]["achievements_total"], games["Hades"]["left_to_get"]) == (1, 3, 2)
     assert games["Free Demo"]["has_achievements"] is False and games["Free Demo"]["percent"] is None
-    assert games["Hades"]["header_url"].endswith("/apps/20/header.jpg")
+    assert games["Hades"]["header_url"].endswith("/apps/20/abc123/header.jpg")       # the store API's address
     assert games["Hades"]["icon_url"].endswith("/apps/20/def.jpg")
     assert client.get("/api/videogames/account").json()["last_sync_at"]
     assert client.put("/api/videogames/account", json={"profile": "nobody"}).status_code == 422
@@ -172,3 +175,32 @@ def test_the_real_client_reads_steams_answers(monkeypatch):
     monkeypatch.delenv("STEAM_API_KEY", raising=False)
     with pytest.raises(steam.SteamError, match="STEAM_API_KEY"):
         real_key()
+
+
+def test_pictures_are_looked_up_once_and_again_on_a_full_sync(client, fake):
+    setup(client)
+    looked_up = [c for c in fake.calls if c[0] == "pictures"]
+    assert len(looked_up) == 1 and sorted(looked_up[0][1]) == [10, 20, 30]          # every game, one batch
+    games = {g["name"]: g for g in client.get("/api/videogames?show=all").json()}
+    assert games["Celeste"]["header_url"].endswith("/apps/10/header.jpg")         # none in the store: the old address
+    fake.calls.clear()
+    client.post("/api/videogames/sync")
+    assert not [c for c in fake.calls if c[0] == "pictures"]                       # known already
+    client.post("/api/videogames/sync?full=true")
+    assert [sorted(c[1]) for c in fake.calls if c[0] == "pictures"] == [[10, 20, 30]]
+    feed = {f["title"]: f["photo_url"] for f in client.get("/api/activity?limit=50").json() if f["kind"] == "videogame"}
+    assert feed["Hades"].endswith("/abc123/header.jpg")
+
+
+def test_the_store_api_answer_becomes_picture_addresses(monkeypatch):
+    answer = {"response": {"store_items": [
+        {"appid": 3672720, "assets": {"asset_url_format": "steam/apps/3672720/${FILENAME}?t=1791782793",
+                                      "header": "298ca32c/header.jpg"}},
+        {"appid": 413150, "assets": {"asset_url_format": "steam/apps/413150/${FILENAME}?t=1", "header": "header.jpg"}},
+        {"appid": 99, "success": 2}]}}
+    monkeypatch.setattr(steam, "key", lambda: "fake-key")
+    monkeypatch.setattr(steam, "_get", lambda path, params, with_key=True: (200, answer))
+    got = steam.header_pictures([3672720, 413150, 99])
+    assert got[3672720] == ("https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3672720/"
+                            "298ca32c/header.jpg?t=1791782793")
+    assert got[413150].endswith("/steam/apps/413150/header.jpg?t=1") and got[99] is None
