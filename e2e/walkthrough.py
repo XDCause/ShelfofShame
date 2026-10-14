@@ -24,6 +24,7 @@ _supplies = json.load(urllib.request.urlopen(f"{BASE}/api/supplies"))
 TOTAL = len(_supplies)
 PAINTS = sum(s["category"] == "Paint" for s in _supplies)
 MODELS = len(json.load(urllib.request.urlopen(f"{BASE}/api/models")))
+CHESS = bool(json.load(urllib.request.urlopen(f"{BASE}/api/chess/account"))["username"])   # Home gets a rating tile
 MARK = f"e2e{int(time.time())}"   # a word only this run's journal page contains
 
 
@@ -83,7 +84,7 @@ def home(page):
     expect(stats.filter(has_text="Supplies")).to_contain_text(str(TOTAL))
     for tile in ("Shelf of shame", "Board games", "Volleyball", "Next game"):
         expect(stats.filter(has_text=tile)).to_be_visible()
-    expect(stats).to_have_count(10)
+    expect(stats).to_have_count(10 + CHESS)
     expect(page.locator(".home-card", has_text="Recent activity").locator(".pill").first).to_be_visible()
     expect(page.locator(".home-card", has_text="Coming up")).to_be_visible()
     expect(page.locator(".quick-action")).to_have_count(9)        # + Log a chess game
