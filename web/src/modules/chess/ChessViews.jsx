@@ -34,7 +34,7 @@ function GameRow({ game: g }) {
         <span className="chess-rating">
           {g.my_rating && <strong>{g.my_rating}</strong>}
           <RatingChange value={g.rating_change} />
-          {g.accuracy != null && <span className="muted small">{Number(g.accuracy)}%</span>}
+          {g.accuracy != null && <span className="muted small" title="Your accuracy (chess.com)">{Number(g.accuracy).toFixed(1)}%</span>}
         </span>
       </button>
     </li>

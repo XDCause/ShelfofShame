@@ -237,7 +237,7 @@ export function GearView() {
         <div className="model-grid">
           {gear.map((g) => (
             <button key={g.gear_id} type="button" className="model-card" onClick={() => openPanel('gear', { id: g.gear_id })}>
-              <span className="model-photo">
+              <span className="model-photo cover">
                 {g.photo_url ? <img src={g.photo_url} alt="" loading="lazy" />
                   : <span className="photo-missing big-icon"><ShoeIcon size={44} /></span>}
                 <span className={`status-badge pill ${GEAR_TONE[g.condition]}`}>{g.condition}</span>

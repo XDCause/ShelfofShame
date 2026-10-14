@@ -1700,3 +1700,50 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .pill.platform-ubisoft { color: #1d4ed8; background: rgb(37 99 235 / 0.14); }
 :root[data-theme='dark'] .pill.platform-steam { color: #c7d5e0; }
 :root[data-theme='dark'] .pill.platform-ubisoft { color: #93c5fd; }
+
+/* ---------- Review 2026-10-15: layout polish ---------- */
+/* Stat tiles share out the whole row (no empty columns at the end); inside a hobby's card on the
+   Hobbies page they stay tile-sized. */
+.home-stats { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.hobby-card .home-stats { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+@media (max-width: 700px) { .home-stats, .hobby-card .home-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Your own photos (board games, gear) fill the card; product shots keep their white frame. */
+.model-photo.cover { background: var(--fill); }
+.model-photo.cover img { object-fit: cover; padding: 0; }
+
+/* Journal: filters on the left, Day | Month and Sort on the right. */
+.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.filters-spacer { flex: 1; }
+
+/* Calendar: an icon per kind of thing that happened that day. */
+.day-dots { align-items: center; gap: 2px; }
+.day-icon { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 4px;
+  color: var(--tone, var(--muted)); background: var(--tone-bg, var(--fill)); }
+.day-more-kinds { font-size: 0.65rem; color: var(--muted); }
+
+/* Chess: which colour you played - a round piece, not a square (it looked like a checkbox). */
+.chess-colour { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--muted); }
+.chess-colour.white { background: #fff; }
+.chess-colour.black { background: #1f2937; border-color: #1f2937; }
+:root[data-theme='dark'] .chess-colour.black { border-color: var(--muted); }
+
+@media (max-width: 700px) {
+  /* The page title stays on one line (long ones are cut short) under the big phone heading size. */
+  .navbar h1 { font-size: 1.35rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Journal on a phone: search full width, the two buttons share the next row, filters scroll. */
+  .page > .toolbar:has(+ .filters) .search { flex: 1 1 100%; }
+  .page > .toolbar:has(+ .filters) button { flex: 1 1 0; }
+  .filters .mood-filter { order: 3; }
+  .filters .chip-filter { flex: none; }
+  .filters-spacer { display: none; }
+  /* Chess openings: the bar alone in the heading (the numbers were printing over each other). */
+  .opening .wdl-text { display: none; }
+  .opening .opening-name { flex: 1 1 auto; }
+  .opening .wdl { flex: 0 0 72px; }
+  /* Video games list: smaller toolbar buttons, so the three fit without wrapping onto two rows. */
+  .games-pinned .toolbar button { padding: 8px 12px; font-size: 0.9rem; }
+}
+/* "Nothing here yet" boxes: a dashed outline, so an empty list doesn't look like content. */
+.empty.card { background: transparent; border: 1.5px dashed var(--border); box-shadow: none; padding: 32px 24px; }
+.filters > .chip-row { flex: none; }      /* tags and moods sit side by side on the left */

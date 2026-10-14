@@ -10,7 +10,8 @@ import { moodOf } from '../journal/moods.js'
 
 // Colours: planned events by hobby, what happened by kind (dots) and verb (like Recent activity).
 const HOBBY_TONE = { models: 'purple', boardgames: 'teal', volleyball: 'low' }
-const KIND_TONE = { model: 'purple', supply: 'ok', page: 'teal', game: 'teal', volleyball: 'low', gear: 'ok', videogame: 'purple' }
+const KIND_TONE = { model: 'purple', supply: 'ok', page: 'teal', game: 'teal', volleyball: 'low', gear: 'ok', videogame: 'purple',
+  chess: 'tint', book: 'low' }
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const hobbyName = (id) => MODULES.find((m) => m.id === id)?.name
 
@@ -94,7 +95,12 @@ export default function CalendarPage() {
                 {day?.events.length > 2 && <span className="day-more">+{day.events.length - 2} more</span>}
                 {kinds.length > 0 && (
                   <span className="day-dots" aria-hidden="true">
-                    {kinds.slice(0, 4).map((k) => <span key={k} className={`dot ${KIND_TONE[k]}`} />)}
+                    {kinds.slice(0, 4).map((k) => {
+                      const Icon = KIND_ICON[k]
+                      return Icon ? <span key={k} className={`day-icon ${KIND_TONE[k] ?? ''}`}><Icon size={12} /></span>
+                        : <span key={k} className={`dot ${KIND_TONE[k] ?? ''}`} />
+                    })}
+                    {kinds.length > 4 && <span className="day-more-kinds">+{kinds.length - 4}</span>}
                   </span>
                 )}
               </button>

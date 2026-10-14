@@ -221,7 +221,8 @@ export function StatsView() {
         <section className="card home-card wide-card">
           <h2 className="home-card-title">Pages read per month</h2>
           <p className="muted small chart-sub">Your page updates, plus finished books you never updated (all their pages, the month you finished)</p>
-          <ColumnChart title="Month" rows={months} valueLabel="pages" tickEvery={3} />
+          {months.some((m) => m.value) ? <ColumnChart title="Month" rows={months} valueLabel="pages" tickEvery={3} />
+            : <p className="muted small">Nothing read yet - update your page in a book and it shows here.</p>}
         </section>
         <section className="card home-card">
           <h2 className="home-card-title">Books finished per year</h2>
@@ -231,7 +232,9 @@ export function StatsView() {
         </section>
         <section className="card home-card">
           <h2 className="home-card-title">Your ratings</h2>
-          <ColumnChart title="Stars" valueLabel="books" labelValues rows={st.ratings.map((r) => ({ label: '★'.repeat(r.stars), value: r.books }))} />
+          {st.ratings.some((r) => r.books) ? (
+            <ColumnChart title="Stars" valueLabel="books" labelValues rows={st.ratings.map((r) => ({ label: '★'.repeat(r.stars), value: r.books }))} />
+          ) : <p className="muted small">Rate a book you've finished and it shows here.</p>}
         </section>
         <section className="card home-card wide-card">
           <h2 className="home-card-title">Genres you finish</h2>

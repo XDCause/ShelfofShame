@@ -100,6 +100,7 @@ export default function JournalList() {
               onClick={() => setMood(mood === m.id ? '' : m.id)}>{m.face}</button>
           ))}
         </div>
+        <span className="filters-spacer" aria-hidden="true" />
         <div className="segmented" role="group" aria-label="Group by">
           {[['day', 'Day'], ['month', 'Month']].map(([g, label]) => (
             <button key={g} type="button" aria-pressed={grouping === g}

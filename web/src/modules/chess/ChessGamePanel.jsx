@@ -55,7 +55,7 @@ export default function ChessGamePanel({ id, onClose }) {
           {(game.my_rating || game.opp_rating) && (
             <><dt>Ratings</dt><dd>You {game.my_rating ?? '?'} <RatingChange value={game.rating_change} /> · {game.opp_name} {game.opp_rating ?? '?'}</dd></>
           )}
-          {game.accuracy != null && <><dt>Accuracy</dt><dd>You {Number(game.accuracy)}% · {game.opp_name} {Number(game.opp_accuracy)}%</dd></>}
+          {game.accuracy != null && <><dt>Accuracy</dt><dd>You {Number(game.accuracy).toFixed(1)}% · {game.opp_name} {Number(game.opp_accuracy).toFixed(1)}%</dd></>}
           {game.opening && <><dt>Opening</dt><dd>{game.opening}{game.eco && <span className="muted"> ({game.eco})</span>}</dd></>}
           {game.moves != null && <><dt>Length</dt><dd>{game.moves} moves</dd></>}
           {game.event && <><dt>Event</dt><dd>{game.event}</dd></>}

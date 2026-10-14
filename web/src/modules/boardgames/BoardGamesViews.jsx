@@ -51,7 +51,7 @@ export function GamesView() {
         <div className="model-grid">
           {visible.map((g) => (
             <button key={g.game_id} type="button" className="model-card" onClick={() => openPanel('boardgame', { id: g.game_id })}>
-              <span className="model-photo">
+              <span className="model-photo cover">
                 {g.photo_url ? <img src={g.photo_url} alt="" loading="lazy" />
                   : <span className="photo-missing big-icon"><DiceIcon size={44} /></span>}
                 <span className={`status-badge pill ${STATUS_TONE[g.status]}`}>{g.status}</span>

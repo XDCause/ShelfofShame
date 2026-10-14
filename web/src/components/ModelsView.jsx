@@ -53,9 +53,9 @@ export default function ModelsView({ lookups, refreshKey, onOpen }) {
       {shame && (
         <div className="stat-grid four card">
           <div><span>Shelf of shame</span><strong>{shame.kits} kit{shame.kits === 1 ? '' : 's'}</strong></div>
-          <div><span>Stash value</span><strong>{money(shame.value)}</strong>
+          <div><span>Stash value</span><strong>{shame.unpriced < shame.kits ? money(shame.value) : '—'}</strong>
             {shame.unpriced > 0 && <small className="muted">{shame.unpriced} without a price</small>}</div>
-          <div><span>Spent on kits</span><strong>{money(summary.all_kits.value)}</strong>
+          <div><span>Spent on kits</span><strong>{summary.all_kits.unpriced < summary.all_kits.kits ? money(summary.all_kits.value) : '—'}</strong>
             <small className="muted">
               {summary.all_kits.kits} kit{summary.all_kits.kits === 1 ? '' : 's'} bought
               {summary.all_kits.finished > 0 && `, ${money(summary.all_kits.finished_value)} on ${summary.all_kits.finished} finished`}

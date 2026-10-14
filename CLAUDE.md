@@ -1121,6 +1121,15 @@ DBeaver, psql, and the one-off import script.
    'no result' via the API; "Somerville House Aquatice Centre" -> "Aquatic" on team 1 (API) and 12 games (SQL).
    backup.ps1 now also copies videos (Copy-Media: robocopy exit codes 0-7 = OK) to backups\media and -CopyTo\media;
    videos deleted in the app stay in the backup. The Settings "Back up now" button is database-only.
+3zy. **UI review** (2026-10-15; user asked to take the app "up a notch"). Read-only Playwright tour of 23 pages (desktop
+   light + dark, phone) as contact sheets (scratchpad tour.py). Fixed: .home-stats auto-fit (tiles share the row; no
+   empty columns - Hobbies cards keep auto-fill); kit Stash value / Spent on kits show "—" when nothing is priced;
+   .model-photo.cover for board games + gear (own photos fill the card; product shots keep the white frame); no
+   "0 of 0 ticked" bar on an empty wishlist; journal filters (tags + moods left, Day|Month + Sort right; phones: search
+   full width, buttons share a row); calendar day dots -> KIND_ICON per kind in its tone (+chess, book tones); chess
+   colour marker round (squares looked like checkboxes), accuracy .toFixed(1); chess openings on phones: bar only
+   (record and "8 games · 43.8%" overlapped); reading stats: no empty charts; phone nav title one line with ellipsis;
+   video games phone toolbar buttons smaller; .empty.card dashed outline. 61 browser steps.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"
