@@ -294,10 +294,12 @@ function GamesView({ chosen, other, switcher }) {
   useEffect(() => {
     if (withSteam) api.listVideoGames(show).then(setSteamGames).catch((e) => setError(e.message))
   }, [show, refreshKey, withSteam])
-  const games = (withSteam && !steamGames) || !other ? null : [
+  const chosenKey = chosen.join(',')
+  // Rebuilt only when the games or the choice change (not on every keystroke in the search box).
+  const games = useMemo(() => ((withSteam && !steamGames) || !other ? null : [
     ...(withSteam ? steamGames.map((g) => ({ ...g, platform: 'steam' })) : []),
-    ...other.games.filter((g) => chosen.includes(g.platform) && OTHER_SHOWS[show](g)),
-  ]
+    ...other.games.filter((g) => chosenKey.split(',').includes(g.platform) && OTHER_SHOWS[show](g)),
+  ]), [withSteam, steamGames, other, chosenKey, show])
   const several = chosen.length > 1
   const visible = useMemo(() => (games ?? [])
     .filter((g) => !q.trim() || g.name.toLowerCase().includes(q.trim().toLowerCase()))
@@ -463,7 +465,7 @@ function DlcBadge({ game: g }) {
 }
 
 // "🔥 5-day streak" beside a heading: days in a row with an unlock (still alive until today ends).
-export function StreakPill({ streak }) {
+function StreakPill({ streak }) {
   if (!streak?.current) return null
   const what = `${streak.current} day${streak.current === 1 ? '' : 's'} in a row with an unlock${
     streak.unlocked_today ? '' : ' - unlock one today to keep it going'}. Longest: ${streak.longest} days.`

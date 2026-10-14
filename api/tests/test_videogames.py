@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from app import exophase, othergames, steam, steamhunters
+from app import exophase, steam, steamhunters
 from app.db import db
 
 ME = "76561198000000001"

@@ -1107,6 +1107,16 @@ DBeaver, psql, and the one-off import script.
    shared PlatformToggles / useCounting (same choice as Dashboard and Stats; ?platform=epic opens on just that one):
    Steam rows from /videogames?show=, Epic / Ubisoft from /videogames/other filtered by OTHER_SHOWS, one table; a
    platform pill per row when 2+ platforms are on; "+ Add a Steam game" / "+ Add a Ubisoft game" by what's shown.
+3zw. **Check-over 2** (2026-10-15). pyflakes clean (app + tests: unused timedelta in reading.py, othergames in
+   test_videogames.py removed); pip-audit clean; npm audit = the known build-time braces / micromatch / chokidar /
+   sass chain inside Excalidraw (no fix exists). ESLint: the 3 deliberate exhaustive-deps warnings only (removed a
+   stale disable in readingParts; the combined video games list is now useMemo'd - it was rebuilt + re-sorted on
+   every render). Dead code: .other-games / .other-head / .other-hours / .other-pic CSS (old Epic/Ubisoft view)
+   deleted; videoType, GAME_FIELDS, weightName, shelfName, StreakPill no longer exported (used in their own file
+   only). mention-*, platform-*, s-* classes ARE used (built from data). Security: gameology.photo refuses a redirect
+   off cdn.shopify.com; video files: generated names (CHECK), type list + first bytes, nosniff; documented in
+   BEFORE_GOING_PUBLIC. Speed: 42 read endpoints all < 50 ms (median 4.8 ms); entry bundle 553 KB / 161 KB gz
+   (was 135 KB gz: new hobbies), heavy editors still lazy. Tests: 315 API, 61 browser steps.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

@@ -10,7 +10,7 @@ import { useShared } from '../../core/useShared.js'
 // the Goodreads import.
 
 export const SHELVES = [['want', 'Want to read'], ['reading', 'Reading'], ['finished', 'Finished'], ['dnf', "Didn't finish"]]
-export const shelfName = (s) => Object.fromEntries(SHELVES)[s] ?? s
+const shelfName = (s) => Object.fromEntries(SHELVES)[s] ?? s
 const SHELF_TONE = { want: 'tint', reading: 'low', finished: 'ok', dnf: 'out' }
 
 export const useReadingSummary = () => {
@@ -146,7 +146,7 @@ export function AddBookPanel({ onClose, status: startStatus = 'want' }) {
     if (q.trim().length < 3) return undefined
     const t = setTimeout(() => search(q.trim()).catch(() => {}), 450)
     return () => clearTimeout(t)
-  }, [q])   // eslint-disable-line react-hooks/exhaustive-deps
+  }, [q])
 
   const scanned = async (barcode) => {
     setQ(barcode)

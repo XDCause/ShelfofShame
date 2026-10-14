@@ -5,7 +5,7 @@ import RecordFields, { RowPhoto, useRecordForm } from '../../components/RecordFi
 import { useApp } from '../../core/app-context.js'
 import JournalMentions from '../../core/journal/JournalMentions.jsx'
 
-export const GAME_FIELDS = [
+const GAME_FIELDS = [
   { name: 'name', label: 'Name', required: true, wide: true },
   { name: 'publisher', label: 'Publisher' },
   { name: 'year', label: 'Year', type: 'number', min: 1800 },
@@ -37,7 +37,7 @@ export const gameMeta = (g) => [
 ].filter(Boolean).join(' · ')
 
 // How heavy a game is (BGG's weight, 1-5): "Light" ... "Heavy".
-export const weightName = (w) => (w == null ? null : w < 1.8 ? 'Light' : w < 2.6 ? 'Medium-light' : w < 3.4 ? 'Medium'
+const weightName = (w) => (w == null ? null : w < 1.8 ? 'Light' : w < 2.6 ? 'Medium-light' : w < 3.4 ? 'Medium'
   : w < 4.2 ? 'Medium-heavy' : 'Heavy')
 
 // Find a game at Gameology (an Australian board game shop whose products carry BoardGameGeek's

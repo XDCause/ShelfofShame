@@ -150,4 +150,6 @@ def photo(game: dict) -> tuple[bytes | None, str | None]:
         r = httpx.get(url, headers={"User-Agent": HEADERS["User-Agent"]}, timeout=TIMEOUT, follow_redirects=True)
     except httpx.HTTPError:
         return None, None
+    if r.url.host != "cdn.shopify.com":            # a redirect somewhere else: not taken
+        return None, None
     return fetched_photo(r)

@@ -317,7 +317,7 @@ export const clock = (hms) => {
 
 // A video's type: what the phone says, else from its name (some phones leave .mov blank).
 const VIDEO_EXT = { mp4: 'video/mp4', m4v: 'video/x-m4v', mov: 'video/quicktime', webm: 'video/webm', mkv: 'video/x-matroska', '3gp': 'video/3gpp' }
-export const videoType = (file) => (file.type || VIDEO_EXT[file.name.split('.').pop().toLowerCase()] || 'video/mp4')
+const videoType = (file) => (file.type || VIDEO_EXT[file.name.split('.').pop().toLowerCase()] || 'video/mp4')
 
 // 262144000 -> "250 MB"
 export const fileSize = (bytes) => (bytes >= 1024 ** 3 ? `${(bytes / 1024 ** 3).toFixed(1)} GB`
