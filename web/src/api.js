@@ -153,6 +153,7 @@ export const api = {
   getVideoGame: (id) => request(`/videogames/${id}`),
   hideVideoGame: (id, hidden) => request(`/videogames/${id}`, send('PATCH', { hidden })),
   setVideoGameGoal: (percent) => request('/videogames/goal', send('PUT', { percent })),
+  videoGameStats: () => request('/videogames/stats'),
 
   // A photo kept on its own row (board games, gear): path = '/board-games/3' or '/gear/2'
   uploadRowPhoto: (path, blob) => request(`${path}/photo`, image('PUT', blob)),

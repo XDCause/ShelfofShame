@@ -764,6 +764,18 @@ DBeaver, psql, and the one-off import script.
      target, needed, reached, days_at_pace (needed / last-30-days unlocks). GoalCard first on the
      dashboard (bar with the goal marked, "N more to reach 50%", "about 2 years 3 months to go",
      change goal inline); Home tile "Profile completion". 271 API tests.
+   - Matching SteamHunters (user's figures: 133 started, 23 completed, 2,899 achievements, avg
+     38.669%): GetOwnedGames hides "unvetted" apps unless skip_unvetted_apps=0 (3 games: HoloCure -
+     Save the Fans!, two Travellin Cats). After: 131 / 22 / 2,897 / 38.2%. The last 2 games are
+     probably ones no longer owned (refunds / free weekends): the owned-games API can't list them.
+     Playtime already matched (149,987 min ~ 104 days).
+   - Stats page (/videogames/stats; GET /api/videogames/stats?months=24): unlocks per month
+     (generate_series, zeros kept), rarity bands (RARITY_BANDS), started games by completion
+     (COMPLETION_BANDS), most played (top 10). components/charts.jsx: ColumnChart / BarList in plain
+     HTML+CSS, one series in --tint (validated with the dataviz skill's validate_palette.js: passes
+     light #2563eb on #fff and dark #3b82f6 on #111a2c), <= 24px columns, 4px tops, 2px gaps,
+     hairline grid, hover/focus tooltip, values on caps only for few columns (else the highest),
+     "Show as a table" for every chart. 272 API tests, 59 browser steps.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

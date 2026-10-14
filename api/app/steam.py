@@ -83,8 +83,10 @@ def persona(steam_id: str) -> str | None:
 
 def owned_games(steam_id: str) -> list[dict]:
     """[{appid, name, img_icon_url, playtime_forever, playtime_2weeks, rtime_last_played}]"""
+    # skip_unvetted_apps=0: Steam leaves some small games out of the list unless asked (3 of the user's,
+    # e.g. HoloCure - Save the Fans!); SteamHunters counts them.
     _, data = _get("IPlayerService/GetOwnedGames/v1/",
-                   {"steamid": steam_id, "include_appinfo": 1, "include_played_free_games": 1})
+                   {"steamid": steam_id, "include_appinfo": 1, "include_played_free_games": 1, "skip_unvetted_apps": 0})
     res = data.get("response", {})
     if "games" not in res:
         if res.get("game_count") == 0:

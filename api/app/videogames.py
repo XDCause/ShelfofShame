@@ -8,6 +8,8 @@
               profile completion: achievements unlocked / every achievement in the games you've
               started (at least one unlocked; untouched games don't count), against your goal
               (settings key vg_goal_percent, 50 unless changed) and your pace
+    stats     for the charts: unlocks per month, how rare your achievements are, your started games
+              by completion, most played games
     games     every game with its completion; one game with its achievements
 
 Steam's pictures are linked from Steam's own servers (header and icon addresses below).
@@ -295,6 +297,44 @@ def summary():
                                "ORDER BY g.completed_at DESC LIMIT 6").fetchall()
     return {**totals, "closest": [with_pictures(g) for g in closest], "recent": recent, "rarest": rarest,
             "recent_perfect": [with_pictures(g) for g in perfect]}
+
+
+# Rarity bands (the % of all players who have an achievement) and completion bands for the charts.
+RARITY_BANDS = [(0, 1, "Under 1%"), (1, 5, "1–5%"), (5, 10, "5–10%"), (10, 20, "10–20%"), (20, 50, "20–50%"),
+                (50, 101, "50% or more")]
+COMPLETION_BANDS = [(0, 10, "Under 10%"), (10, 25, "10–24%"), (25, 50, "25–49%"), (50, 75, "50–74%"),
+                    (75, 100, "75–99%"), (100, 101, "100%")]
+
+
+@router.get("/videogames/stats")
+def stats(months: int = Query(24, ge=1, le=120)):
+    """The Stats page's charts, all from games you haven't hidden:
+        by_month    achievements unlocked each month, oldest first (months with none included)
+        rarity      your achievements by how many players have them
+        completion  your started games by how much of each you've done
+        most_played the ten games with the most playtime"""
+    with db() as conn:
+        by_month = conn.execute("""
+            SELECT to_char(m, 'YYYY-MM') AS month, COALESCE(n.count, 0)::int AS count
+            FROM generate_series(date_trunc('month', now()) - make_interval(months => %(months)s - 1),
+                                 date_trunc('month', now()), interval '1 month') m
+            LEFT JOIN (SELECT date_trunc('month', a.unlocked_at) AS m, count(*) AS count
+                       FROM vg_achievements a JOIN vg_games g USING (app_id)
+                       WHERE a.achieved AND NOT g.hidden GROUP BY 1) n USING (m)
+            ORDER BY m""", {"months": months}).fetchall()
+        percents = [float(r["global_percent"]) for r in conn.execute(
+            "SELECT a.global_percent FROM vg_achievements a JOIN vg_games g USING (app_id) "
+            "WHERE a.achieved AND NOT g.hidden AND a.global_percent IS NOT NULL").fetchall()]
+        games = [float(r["p"]) for r in conn.execute(
+            "SELECT 100.0 * achievements_done / achievements_total AS p FROM vg_games "
+            "WHERE NOT hidden AND achievements_done > 0").fetchall()]
+        most_played = [with_pictures(g) for g in conn.execute(
+            GAME_SELECT + " WHERE NOT g.hidden AND g.playtime_minutes > 0 ORDER BY g.playtime_minutes DESC LIMIT 10"
+        ).fetchall()]
+    band = lambda bands, values: [{"label": label, "count": sum(lo <= v < hi for v in values)}  # noqa: E731
+                                  for lo, hi, label in bands]
+    return {"by_month": by_month, "rarity": band(RARITY_BANDS, percents),
+            "completion": band(COMPLETION_BANDS, games), "most_played": most_played}
 
 
 def goal_progress(totals: dict, goal_percent: int) -> dict:

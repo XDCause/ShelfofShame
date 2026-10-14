@@ -163,12 +163,15 @@ def test_the_real_client_reads_steams_answers(monkeypatch):
         "ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2/":
             (200, {"achievementpercentages": {"achievements": [{"name": "A", "percent": "12.5"}]}}),
     }
+    asked = {}
     monkeypatch.setattr(steam, "key", lambda: "fake-key")
-    monkeypatch.setattr(steam, "_get", lambda path, params, with_key=True: answers[path])
+    monkeypatch.setattr(steam, "_get", lambda path, params, with_key=True: asked.setdefault(path, params) and answers[path])
     assert steam.resolve("https://steamcommunity.com/id/SomeGamer/games") == ME
     assert steam.resolve(ME) == ME
     with pytest.raises(steam.SteamError, match="Public"):
         steam.owned_games(ME)
+    # Small "unvetted" games are left out unless asked for (SteamHunters counts them).
+    assert asked["IPlayerService/GetOwnedGames/v1/"]["skip_unvetted_apps"] == 0
     with pytest.raises(steam.NoStats):
         steam.player_achievements(ME, 10)
     assert steam.global_percentages(10) == {"A": 12.5}
@@ -231,3 +234,15 @@ def test_how_long_the_goal_takes_at_your_pace():
     assert goal["days_at_pace"] == 975                                     # 3898 at 4 a day
     assert goal_progress({**totals, "unlocked_last_30_days": 0}, 50)["days_at_pace"] is None
     assert goal_progress({"achievements": 0, "started_achievements_total": 0, "unlocked_last_30_days": 0}, 50)["percent"] == 0.0
+
+
+def test_stats_for_the_charts(client, fake):
+    setup(client)
+    s = client.get("/api/videogames/stats?months=3").json()
+    assert len(s["by_month"]) == 3 and s["by_month"][-1]["month"] == datetime.now().strftime("%Y-%m")
+    rarity = {b["label"]: b["count"] for b in s["rarity"]}
+    assert rarity == {"Under 1%": 0, "1–5%": 1, "5–10%": 0, "10–20%": 0, "20–50%": 0, "50% or more": 2}
+    completion = {b["label"]: b["count"] for b in s["completion"]}
+    assert (completion["25–49%"], completion["100%"], completion["Under 10%"]) == (1, 1, 0)   # Hades 33%, Celeste
+    assert [g["name"] for g in s["most_played"]] == ["Hades", "Celeste", "Free Demo"]
+    assert client.get("/api/videogames/stats?months=0").status_code == 422

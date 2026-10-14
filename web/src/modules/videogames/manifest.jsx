@@ -1,4 +1,5 @@
-import { GamepadIcon, TrophyIcon } from '../../components/icons.jsx'
+import { GamepadIcon, GridIcon, TrophyIcon } from '../../components/icons.jsx'
+import StatsView from './StatsView.jsx'
 import VideoGamePanel from './VideoGamePanel.jsx'
 import { Dashboard, GamesView, VideoGamesTiles } from './VideoGamesViews.jsx'
 
@@ -14,5 +15,6 @@ export default {
   pages: [
     { path: 'dashboard', label: 'Dashboard', Icon: TrophyIcon, render: () => <Dashboard /> },
     { path: 'games', label: 'Games', Icon: GamepadIcon, render: () => <GamesView /> },
+    { path: 'stats', label: 'Stats', Icon: GridIcon, render: () => <StatsView /> },
   ],
 }

@@ -1054,6 +1054,14 @@ def video_games(page):
     page.locator(".section-tabs").get_by_role("link", name="Games").click()
     expect(page.get_by_label("Search your games")).to_be_visible()
     expect(page.locator(".game-list li").first.or_(page.locator(".empty", has_text="No games here"))).to_be_visible()
+    page.locator(".section-tabs").get_by_role("link", name="Stats").click()
+    expect(page.locator(".chart")).to_have_count(4)
+    slot = page.locator(".chart-slot").first
+    slot.hover()
+    expect(page.locator(".chart-tip")).to_be_visible()                       # hover tooltip
+    page.locator(".chart-table summary").first.click()
+    expect(page.locator(".chart-table table").first).to_be_visible()         # the table view
+    shot(page, "d42_video_game_stats")
 
 
 @step("Settings: price guide, default shop, backups, exports, catalogue")
@@ -1119,7 +1127,7 @@ def phone(page):
     expect(page.locator(".hobby-card")).to_have_count(4)
     fits("Hobbies")
     for hobby, tabs in (("Models", ("Kits", "Colours")), ("Board games", ("Games", "Plays")),
-                        ("Volleyball", ("Games", "Gear", "Videos")), ("Video games", ("Dashboard", "Games"))):
+                        ("Volleyball", ("Games", "Gear", "Videos")), ("Video games", ("Dashboard", "Games", "Stats"))):
         page.locator(".tabbar a", has_text="Hobbies").click()
         page.locator(".hobby-head", has_text=hobby).click()
         for tab in tabs:
