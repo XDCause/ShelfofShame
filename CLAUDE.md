@@ -1083,7 +1083,8 @@ DBeaver, psql, and the one-off import script.
    "BGG Weight" (only 1-5: 0.25 = not rated, 310.25 seen once), "BGG Category/Mechanism/Type"; vendor =
    publisher ("(Self-Published)" dropped); search price in dollars, .js in cents; photos only from
    cdn.shopify.com (?width=600). Ranked: title starts with the words > all words > rest, games before
-   expansions, ones with facts first. 41_board_game_shop.sql: weight, categories, mechanisms, shop_handle,
+   expansions, ones with facts first. Sold-out games: unavailable_products=show ("last" pushed them past the
+   10 results the store returns, so they never showed); a "Sold out" pill. 41_board_game_shop.sql: weight, categories, mechanisms, shop_handle,
    shop_url, shop_price; wikidata_id dropped. Routes: lookup, POST /board-games {shop_handle}, POST
    /board-games/{id}/shop. Web ShopFind; panel: weight pill ("Medium-light · 2.5/5"), category chips,
    mechanisms, "Gameology $69.95 ↗". No BGG rating / rank in the tags. robots.txt allows product pages;

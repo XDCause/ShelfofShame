@@ -82,7 +82,8 @@ function ShopFind({ start = '', onPick, pickLabel = 'Use' }) {
                 {r.image_url ? <img className="thumb" src={r.image_url} alt="" loading="lazy" referrerPolicy="no-referrer" />
                   : <span className="thumb thumb-empty" />}
                 <span className="grow">
-                  <span className="item-title">{r.title}{r.expansion && <span className="pill">Expansion</span>}</span>
+                  <span className="item-title">{r.title}{r.expansion && <span className="pill">Expansion</span>}
+                    {r.available === false && <span className="pill out">Sold out</span>}</span>
                   <span className="item-meta">{[gameMeta(r), r.weight && `weight ${r.weight}`, r.price != null && money(r.price)]
                     .filter(Boolean).join(' · ')}</span>
                 </span>

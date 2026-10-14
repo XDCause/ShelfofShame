@@ -121,7 +121,9 @@ def search(name: str, limit: int = 8) -> list[dict]:
     query = f'{name.replace(chr(34), "")} product_type:"Board Games"'
     data = _get("/search/suggest.json", {"q": query, "resources[type]": "product", "resources[limit]": 10,
                                           "resources[options][fields]": "title,product_type",
-                                          "resources[options][unavailable_products]": "last"}) or {}
+                                          # sold-out games in their place: "last" put them after the 10
+                                          # the store returns, so they never showed
+                                          "resources[options][unavailable_products]": "show"}) or {}
     products = data.get("resources", {}).get("results", {}).get("products", [])
     games = [facts(p) for p in products if any(t in (p.get("type") or "").lower() for t in GAME_TYPES)]
     words = _key(name).split()

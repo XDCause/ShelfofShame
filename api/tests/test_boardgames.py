@@ -98,6 +98,7 @@ CATAN = {"handle": "catan-6th-edition-base-game", "title": "CATAN 6th Edition Ba
 EXTENSION = {**CATAN, "handle": "catan-6th-edition-5-6-player-extension", "title": "CATAN 6th Edition 5-6 Player Extension",
              "tags": ["BGG Category: Expansion for Base-game", "BGG Min Players: 5", "BGG Max Players: 6", "BGG Weight: 0.25"]}
 SLEEVES = {**CATAN, "handle": "card-sleeves", "title": "Catan Card Sleeves", "type": "Accessories", "tags": []}
+RIVALS = {**CATAN, "handle": "rivals-for-catan", "title": "Rivals for Catan", "available": False}   # sold out
 
 
 @pytest.fixture
@@ -108,7 +109,7 @@ def shop(monkeypatch):
     def get(path, params=None):
         asked.append((path, params))
         if path == "/search/suggest.json":
-            return {"resources": {"results": {"products": [SLEEVES, EXTENSION, CATAN]}}}
+            return {"resources": {"results": {"products": [SLEEVES, EXTENSION, RIVALS, CATAN]}}}
         if path == f"/products/{CATAN['handle']}.js":
             return {**CATAN, "price": 6995, "featured_image": "//cdn.shopify.com/s/files/catan.jpg?v=1", "tags": CATAN["tags"]}
         return None
@@ -119,7 +120,8 @@ def shop(monkeypatch):
 
 def test_finding_a_game_at_gameology(client, shop):
     found = client.get("/api/board-games/lookup?q=catan").json()
-    assert [g["handle"] for g in found] == [CATAN["handle"], EXTENSION["handle"]]   # no sleeves; the game before its extension
+    assert [g["handle"] for g in found] == [CATAN["handle"], EXTENSION["handle"], RIVALS["handle"]]   # no sleeves; sold out too
+    assert found[2]["available"] is False
     catan = found[0]
     assert (catan["name"], catan["publisher"], catan["min_players"], catan["max_players"]) == ("Catan 6th Edition", "Catan Studios", 3, 4)
     assert (catan["play_minutes"], catan["min_play_minutes"], catan["min_age"], catan["weight"], catan["price"]) == (120, 60, 10, 2.5, 69.95)
@@ -127,6 +129,7 @@ def test_finding_a_game_at_gameology(client, shop):
     assert catan["image_url"] == "https://cdn.shopify.com/s/files/catan.jpg?v=1&width=200" and catan["game_id"] is None
     assert found[1]["weight"] is None and found[1]["expansion"]                  # 0.25 = not rated
     assert shop[0][1]["q"] == 'catan product_type:"Board Games"' and shop[0][1]["resources[options][fields]"] == "title,product_type"
+    assert shop[0][1]["resources[options][unavailable_products]"] == "show"
 
 
 def test_adding_a_game_from_gameology_fills_blanks_and_fetches_the_photo(client, shop):
