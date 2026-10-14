@@ -212,7 +212,8 @@ export const api = {
   deleteSession: (id) => request(`/model-sessions/${id}`, send('DELETE')),
   addLogEntry: (id, data) => request(`/models/${id}/log`, send('POST', data)),
   deleteLogEntry: (id) => request(`/model-log/${id}`, send('DELETE')),
-  addLogPhoto: (id, blob) => request(`/model-log/${id}/photo`, image('PUT', blob)),
+  addLogPhoto: (id, blob) => request(`/model-log/${id}/photos`, image('POST', blob)),
+  deleteLogPhoto: (photoId) => request(`/model-log-photos/${photoId}`, send('DELETE')),
 
   // Colours
   colourMatches: (brandId, productCode, name = '') =>
@@ -245,7 +246,7 @@ export const api = {
 // Plain links (downloads open straight from these).
 export const backupUrl = (name) => `/api/backups/${enc(name)}`
 export const exportUrl = (kind) => `/api/export/${kind}.csv`
-export const logPhotoUrl = (entry) => `/api/model-log/${entry.entry_id}/photo?v=${enc(entry.photo_updated ?? entry.created_at)}`
+export const logPhotoUrl = (photoId) => `/api/model-log-photos/${photoId}`   // a photo never changes: its id is enough
 
 // The photo's last-updated time goes in the URL, so a replaced photo gets a new URL and the
 // browser doesn't keep showing its cached copy of the old one.

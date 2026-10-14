@@ -1617,3 +1617,17 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .model-photo > .status-badge.teal { --badge: #0f766e; }
 .model-photo > .status-badge.s-gone { --badge: #52525b; }
 .photo-pick { display: inline-flex; flex-wrap: wrap; gap: 8px; }
+
+/* Build-log photos: a grid of squares (one photo shows bigger), each with a ✕; the photos picked
+   for a new entry show the same way under the form until it's added. */
+.log-photos { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+.log .log-photos li { position: relative; padding: 0; border: 0; }
+.log-photos li { position: relative; }
+.log-photos img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; margin: 0 !important;
+  max-height: none !important; border-radius: 10px; background: var(--fill); }
+.log-photos.one { grid-template-columns: minmax(0, 360px); }
+.log-photos.one img { aspect-ratio: auto; max-height: 320px !important; object-fit: contain; }
+.log-photos.picked { margin: 10px 0 0; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); }
+.photo-remove { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; padding: 0; border: 0;
+  border-radius: 999px; background: rgb(0 0 0 / 0.6); color: #fff; font-size: 0.75rem; line-height: 26px; cursor: pointer; }

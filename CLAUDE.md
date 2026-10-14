@@ -1020,6 +1020,13 @@ DBeaver, psql, and the one-off import script.
      Gallery; computers one button. Used by BuildLog, PhotoUpload, RowPhoto (RecordFields). Inputs carry
      data-source=camera|gallery (the e2e uses gallery). Journal images still use BlockNote's own picker.
    - Tests: 308 API, 61 browser steps (gundam: Built -> Complete skips 3; phone: Take photo / Gallery).
+   - **Several photos per build-log entry**: 37_log_photos.sql model_log_photos (photo_id, entry_id CASCADE,
+     photo, photo_type); the old model_log.photo / photo_type / photo_updated moved there and were
+     dropped (rehearsed on a copy of prod: 6 photos, identical bytes). Entries carry `photos` (ids);
+     POST /model-log/{id}/photos (one per request, 30 max -> 409), GET / DELETE /model-log-photos/{photo_id}
+     (never changes -> cached for good, URL = id). PhotoPick `multiple` (gallery picks several; camera one
+     per press, appended). BuildLog: thumbnails with ✕ before saving, a square grid per entry (one photo
+     shows bigger), ✕ per photo. Other photo spots stay single (one picture per item).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

@@ -111,42 +111,46 @@ def test_deleting_a_model_deletes_its_time_and_log(client):
 def test_build_log_with_photos(client):
     m = new_model(client)
     entry = client.post(f"/api/models/{m['model_id']}/log", json={"text": "  Primed the hull  "}).json()
-    assert (entry["text"], entry["entry_date"], entry["has_photo"]) == ("Primed the hull", str(date.today()), False)
+    assert (entry["text"], entry["entry_date"], entry["photos"]) == ("Primed the hull", str(date.today()), [])
     older = client.post(f"/api/models/{m['model_id']}/log", json={"text": "Opened the box",
                                                                    "entry_date": "2026-10-01"}).json()
-
-    photo = client.put(f"/api/model-log/{entry['entry_id']}/photo", content=b"\xff\xd8jpeg",
-                       headers={"content-type": "image/jpeg"})
-    assert photo.json()["has_photo"] is True
-    got = client.get(f"/api/model-log/{entry['entry_id']}/photo")
-    assert got.content == b"\xff\xd8jpeg" and got.headers["content-type"] == "image/jpeg"
-    assert client.get(f"/api/model-log/{older['entry_id']}/photo").status_code == 404
+    url = f"/api/model-log/{entry['entry_id']}/photos"
+    one = client.post(url, content=b"\xff\xd8one", headers={"content-type": "image/jpeg"})
+    assert one.status_code == 201 and len(one.json()["photos"]) == 1
+    two = client.post(url, content=b"\x89PNGtwo", headers={"content-type": "image/png"}).json()["photos"]
+    assert len(two) == 2 and two[0] < two[1]                                   # in the order added
+    got = client.get(f"/api/model-log-photos/{two[1]}")
+    assert got.content == b"\x89PNGtwo" and got.headers["content-type"] == "image/png"
+    assert "immutable" in got.headers["cache-control"]                         # a photo never changes
 
     log = client.get(f"/api/models/{m['model_id']}").json()["log"]
-    assert [e["text"] for e in log] == ["Primed the hull", "Opened the box"]   # newest first
+    assert [(e["text"], len(e["photos"])) for e in log] == [("Primed the hull", 2), ("Opened the box", 0)]   # newest first
+    assert client.delete(f"/api/model-log-photos/{two[0]}").status_code == 204
+    assert client.get(f"/api/model-log-photos/{two[0]}").status_code == 404
+    assert client.get(f"/api/models/{m['model_id']}").json()["log"][0]["photos"] == [two[1]]
 
     assert client.patch(f"/api/model-log/{older['entry_id']}", json={"text": "Opened it"}).json()["text"] == "Opened it"
     assert client.delete(f"/api/model-log/{older['entry_id']}").status_code == 204
     assert client.delete(f"/api/model-log/{older['entry_id']}").status_code == 404
-    assert client.get(f"/api/models/{m['model_id']}").json()["log_count"] == 1
+    assert client.delete(f"/api/model-log/{entry['entry_id']}").status_code == 204      # its photos go with it
+    assert client.get(f"/api/model-log-photos/{two[1]}").status_code == 404
 
 
 def test_log_photos_must_be_images(client):
     m = new_model(client)
     entry = client.post(f"/api/models/{m['model_id']}/log", json={"text": "x"}).json()
-    url = f"/api/model-log/{entry['entry_id']}/photo"
-    assert client.put(url, content=b"hello", headers={"content-type": "text/plain"}).status_code == 415
-    assert client.put(url, content=b"", headers={"content-type": "image/png"}).status_code == 422
-    assert client.put("/api/model-log/9999/photo", content=b"x", headers={"content-type": "image/png"}).status_code == 404
+    url = f"/api/model-log/{entry['entry_id']}/photos"
+    assert client.post(url, content=b"hello", headers={"content-type": "text/plain"}).status_code == 415
+    assert client.post(url, content=b"", headers={"content-type": "image/png"}).status_code == 422
+    assert client.post("/api/model-log/9999/photos", content=b"x", headers={"content-type": "image/png"}).status_code == 404
 
 
-def test_a_replaced_log_photo_gets_a_new_address(client):
-    """Photos are cached for a year, so replacing one must change photo_updated (its ?v=)."""
+def test_an_entry_holds_up_to_30_photos(client, monkeypatch):
+    from app import build
+    monkeypatch.setattr(build, "PHOTOS_PER_ENTRY", 2)
     model = client.post("/api/models", json={"name": "Zero"}).json()
     entry = client.post(f"/api/models/{model['model_id']}/log", json={"text": "Cockpit"}).json()
-    url = f"/api/model-log/{entry['entry_id']}/photo"
-    first = client.put(url, content=b"\xff\xd8one", headers={"content-type": "image/jpeg"}).json()["photo_updated"]
-    second = client.put(url, content=b"\xff\xd8two", headers={"content-type": "image/jpeg"}).json()["photo_updated"]
-    assert first and second and second != first
-    [listed] = client.get(f"/api/models/{model['model_id']}").json()["log"]
-    assert listed["photo_updated"] == second
+    url = f"/api/model-log/{entry['entry_id']}/photos"
+    for _ in range(2):
+        assert client.post(url, content=b"\xff\xd8x", headers={"content-type": "image/jpeg"}).status_code == 201
+    assert client.post(url, content=b"\xff\xd8x", headers={"content-type": "image/jpeg"}).status_code == 409

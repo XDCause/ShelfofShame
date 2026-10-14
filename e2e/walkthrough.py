@@ -540,12 +540,15 @@ def timer(page):
 def build_log(page):
     d = open_model(page, "Sherman")
     d.get_by_label("Build log note").fill("Hull assembled, ready for primer")
-    d.locator(".log-form input[data-source=gallery]").set_input_files(
-        {"name": "hull.png", "mimeType": "image/png", "buffer": PIXEL})
+    d.locator(".log-form input[data-source=gallery]").set_input_files([       # several at once
+        {"name": "hull.png", "mimeType": "image/png", "buffer": PIXEL},
+        {"name": "tracks.png", "mimeType": "image/png", "buffer": PIXEL}])
+    expect(d.locator(".log-photos.picked li")).to_have_count(2)
     d.get_by_role("button", name="Add to log").click()
-    entry = d.locator(".log li").first
+    entry = d.locator(".log > li").first
     expect(entry).to_contain_text("Hull assembled")
-    expect(entry.locator("img")).to_be_visible()
+    expect(entry.locator(".log-photos img")).to_have_count(2)
+    expect(entry.locator(".log-photos img").first).to_be_visible()
     shot(page, "d18_build_log", full=False)
     page.keyboard.press("Escape")
 

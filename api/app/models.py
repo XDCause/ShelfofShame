@@ -163,8 +163,9 @@ def fetch_model(conn, model_id):
         "round(extract(epoch FROM (COALESCE(ended_at, now()) - started_at)) / 60)::int AS minutes "
         "FROM model_sessions WHERE model_id = %s ORDER BY started_at DESC LIMIT 50", (model_id,)).fetchall()
     log = conn.execute(
-        "SELECT entry_id, entry_date, text, (photo IS NOT NULL) AS has_photo, created_at, photo_updated "
-        "FROM model_log WHERE model_id = %s ORDER BY entry_date DESC, entry_id DESC", (model_id,)).fetchall()
+        "SELECT l.entry_id, l.entry_date, l.text, l.created_at, "
+        "COALESCE((SELECT array_agg(p.photo_id ORDER BY p.photo_id) FROM model_log_photos p WHERE p.entry_id = l.entry_id), '{}') AS photos "
+        "FROM model_log l WHERE l.model_id = %s ORDER BY l.entry_date DESC, l.entry_id DESC", (model_id,)).fetchall()
     return {**model, "paints": paints_, "sessions": sessions, "log": log}
 
 

@@ -24,7 +24,7 @@ def clean_database():
     """Every test starts with the seeded lookup lists and nothing else."""
     with db() as conn:
         conn.execute("TRUNCATE stock_movements, wishlist, barcode_catalog, product_info, supplies, "
-                     "model_paints, models, catalog_products, model_sessions, model_log, colour_groups, "
+                     "model_paints, models, catalog_products, model_sessions, model_log, model_log_photos, colour_groups, "
                      "colour_group_members, mixes, mix_parts, price_guide, journal_pages, tags, page_tags, "
                      "journal_links, journal_images, journal_drawings, calendar_events, board_games, board_game_plays, gear, "
                      "volleyball_games, volleyball_videos, vg_achievements, vg_games, vg_other_games, "

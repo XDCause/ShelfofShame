@@ -97,13 +97,14 @@ def delete_session(session_id: int):
 # ---------------------------------------------------------------------------
 def log_entry(conn, entry_id):
     return found(conn.execute(
-        "SELECT entry_id, model_id, entry_date, text, (photo IS NOT NULL) AS has_photo, created_at, photo_updated "
-        "FROM model_log WHERE entry_id = %s", (entry_id,)).fetchone(), "Log entry")
+        "SELECT l.entry_id, l.model_id, l.entry_date, l.text, l.created_at, "
+        "COALESCE((SELECT array_agg(p.photo_id ORDER BY p.photo_id) FROM model_log_photos p WHERE p.entry_id = l.entry_id), '{}') AS photos "
+        "FROM model_log l WHERE l.entry_id = %s", (entry_id,)).fetchone(), "Log entry")
 
 
 @router.post("/models/{model_id}/log", status_code=201)
 def add_log_entry(model_id: int, body: LogIn):
-    """A dated note. Add a photo to it with PUT /api/model-log/{entry_id}/photo."""
+    """A dated note. Add photos to it with POST /api/model-log/{entry_id}/photos (one per request)."""
     with db() as conn:
         fetch_model(conn, model_id)
         entry_id = conn.execute(
@@ -128,20 +129,36 @@ def delete_log_entry(entry_id: int):
     return Response(status_code=204)
 
 
-@router.put("/model-log/{entry_id}/photo")
+PHOTOS_PER_ENTRY = 30
+
+
+@router.post("/model-log/{entry_id}/photos", status_code=201)
 async def add_log_photo(entry_id: int, request: Request):
+    """One more photo for a build-log entry (send several requests for several photos)."""
     image, image_type = await read_photo(request)
 
     def save():
         with db() as conn:
-            found(conn.execute("UPDATE model_log SET photo = %s, photo_type = %s, photo_updated = now() WHERE entry_id = %s "
-                               "RETURNING entry_id", (image, image_type, entry_id)).fetchone(), "Log entry")
+            entry = log_entry(conn, entry_id)
+            if len(entry["photos"]) >= PHOTOS_PER_ENTRY:
+                raise HTTPException(409, f"An entry can have up to {PHOTOS_PER_ENTRY} photos.")
+            conn.execute("INSERT INTO model_log_photos (entry_id, photo, photo_type) VALUES (%s, %s, %s)",
+                         (entry_id, image, image_type))
             return log_entry(conn, entry_id)
     return await run_in_threadpool(save)
 
 
-@router.get("/model-log/{entry_id}/photo")
-def log_photo(entry_id: int):
+# A photo never changes (it's only added or removed), so its address can be cached for good.
+@router.get("/model-log-photos/{photo_id}")
+def log_photo(photo_id: int):
     with db() as conn:
-        row = conn.execute("SELECT photo, photo_type FROM model_log WHERE entry_id = %s", (entry_id,)).fetchone()
+        row = conn.execute("SELECT photo, photo_type FROM model_log_photos WHERE photo_id = %s", (photo_id,)).fetchone()
     return photo_response(row and row["photo"], row and row["photo_type"])
+
+
+@router.delete("/model-log-photos/{photo_id}", status_code=204)
+def delete_log_photo(photo_id: int):
+    with db() as conn:
+        found(conn.execute("DELETE FROM model_log_photos WHERE photo_id = %s RETURNING photo_id", (photo_id,)).fetchone(),
+              "Photo")
+    return Response(status_code=204)
