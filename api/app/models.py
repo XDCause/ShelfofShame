@@ -370,15 +370,18 @@ def delete_paint(paint_id: int):
 
 
 @router.post("/models/{model_id}/wishlist")
-def wish_for_missing_paints(model_id: int):
-    """Put every paint this model still needs on the wishlist (parts of mixes too). Paints
-    without a brand + code can't be matched to a product, so they're reported rather than added."""
+def wish_for_missing_paints(model_id: int, paint_id: int | None = None):
+    """Put every paint this model still needs on the wishlist (parts of mixes too) - or only one
+    line of its checklist (?paint_id=, a model_paint_id). Paints without a brand + code can't be
+    matched to a product, so they're reported rather than added."""
     with db() as conn:
         model = fetch_model(conn, model_id)
+        if paint_id is not None and not any(p["model_paint_id"] == paint_id for p in model["paints"]):
+            raise HTTPException(404, "That paint isn't on this model's list.")
         paint_category = conn.execute("SELECT category_id FROM categories WHERE name = 'Paint'").fetchone()
         wanted = []
         for p in model["paints"]:
-            if p["have"]:
+            if p["have"] or (paint_id is not None and p["model_paint_id"] != paint_id):
                 continue
             if p["mix"]:
                 wanted += [{**part, "purpose": f"{p['purpose'] or 'mix'} ({p['paint_name']})"}

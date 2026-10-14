@@ -11,6 +11,7 @@ export default function BuildLog({ modelId, entries, reload, run }) {
   const [day, setDay] = useState(today())
   const [photos, setPhotos] = useState([])
   const [busy, setBusy] = useState(false)
+  const [editing, setEditing] = useState(null)   // the entry_id being changed
 
   const add = (e) => {
     e.preventDefault()
@@ -62,22 +63,22 @@ export default function BuildLog({ modelId, entries, reload, run }) {
           <li key={e.entry_id}>
             <div className="log-head">
               <time dateTime={e.entry_date}>{shortDate(e.entry_date)}</time>
-              <button type="button" className="icon-btn small" aria-label="Delete log entry"
-                onClick={() => run(async () => { await api.deleteLogEntry(e.entry_id); await reload() })}>✕</button>
+              {editing !== e.entry_id && (
+                <span className="log-actions">
+                  <button type="button" className="plain small" onClick={() => setEditing(e.entry_id)}
+                    aria-label={`Edit the entry from ${shortDate(e.entry_date)}`}>Edit</button>
+                  <button type="button" className="icon-btn small" aria-label="Delete log entry"
+                    onClick={() => run(async () => { await api.deleteLogEntry(e.entry_id); await reload() })}>✕</button>
+                </span>
+              )}
             </div>
-            {e.text && <p>{e.text}</p>}
-            {e.photos.length > 0 && (
-              <ul className={e.photos.length === 1 ? 'log-photos one' : 'log-photos'}>
-                {e.photos.map((id, i) => (
-                  <li key={id}>
-                    <a href={logPhotoUrl(id)} target="_blank" rel="noreferrer">
-                      <img src={logPhotoUrl(id)} alt={`${e.text ?? 'Build photo'} (${i + 1} of ${e.photos.length})`} loading="lazy" />
-                    </a>
-                    <button type="button" className="photo-remove" aria-label={`Remove photo ${i + 1}`}
-                      onClick={() => run(async () => { await api.deleteLogPhoto(id); await reload() })}>✕</button>
-                  </li>
-                ))}
-              </ul>
+            {editing === e.entry_id ? (
+              <EditEntry entry={e} run={run} reload={reload} onDone={() => setEditing(null)} />
+            ) : (
+              <>
+                {e.text && <p>{e.text}</p>}
+                <EntryPhotos entry={e} />
+              </>
             )}
           </li>
         ))}
@@ -95,4 +96,71 @@ function Preview({ file }) {
     return () => URL.revokeObjectURL(u)
   }, [file])
   return url ? <img src={url} alt={file.name} /> : null
+}
+
+// An entry's photos: one shows big, several as a grid of squares. With onRemove each gets a ✕.
+function EntryPhotos({ entry: e, onRemove }) {
+  if (!e.photos.length) return null
+  return (
+    <ul className={e.photos.length === 1 ? 'log-photos one' : 'log-photos'}>
+      {e.photos.map((id, i) => (
+        <li key={id}>
+          <a href={logPhotoUrl(id)} target="_blank" rel="noreferrer">
+            <img src={logPhotoUrl(id)} alt={`${e.text ?? 'Build photo'} (${i + 1} of ${e.photos.length})`} loading="lazy" />
+          </a>
+          {onRemove && <button type="button" className="photo-remove" aria-label={`Remove photo ${i + 1}`}
+            onClick={() => onRemove(id)}>✕</button>}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+// Changing an entry: its note and day, removing photos, adding more. Photos marked for removal
+// and new ones are only saved with Save; Cancel leaves the entry as it was.
+function EditEntry({ entry, run, reload, onDone }) {
+  const [text, setText] = useState(entry.text ?? '')
+  const [day, setDay] = useState(String(entry.entry_date).slice(0, 10))
+  const [removed, setRemoved] = useState([])
+  const [added, setAdded] = useState([])
+  const [busy, setBusy] = useState(false)
+  const save = (ev) => {
+    ev.preventDefault()
+    setBusy(true)
+    run(async () => {
+      try {
+        await api.updateLogEntry(entry.entry_id, { text, entry_date: day })
+        for (const id of removed) await api.deleteLogPhoto(id)
+        for (const file of added) await api.addLogPhoto(entry.entry_id, await shrink(file, 1600))
+        await reload('Build log entry saved ✓')   // reload first: closing before it would show a deleted photo
+        onDone()
+      } finally {
+        setBusy(false)
+      }
+    })
+  }
+  const kept = { ...entry, photos: entry.photos.filter((id) => !removed.includes(id)) }
+  return (
+    <form className="log-form log-edit" onSubmit={save}>
+      <textarea rows="3" value={text} onChange={(e) => setText(e.target.value)} autoFocus aria-label="Edit the note" />
+      <EntryPhotos entry={kept} onRemove={(id) => setRemoved([...removed, id])} />
+      {added.length > 0 && (
+        <ul className="log-photos picked" aria-label="Photos to add">
+          {added.map((f, i) => (
+            <li key={`${f.name}-${f.lastModified}-${i}`}>
+              <Preview file={f} />
+              <button type="button" className="photo-remove" aria-label={`Don't add ${f.name}`}
+                onClick={() => setAdded(added.filter((_, j) => j !== i))}>✕</button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="button-row">
+        <input type="date" value={day} onChange={(e) => setDay(e.target.value)} aria-label="Date" required />
+        <PhotoPick multiple onFile={(files) => setAdded([...added, ...files])} label="Add photos" />
+        <button type="submit" className="primary" disabled={busy}>{busy ? 'Saving...' : 'Save'}</button>
+        <button type="button" className="plain" onClick={onDone} disabled={busy}>Cancel</button>
+      </div>
+    </form>
+  )
 }

@@ -81,6 +81,22 @@ def test_missing_paints_go_onto_the_wishlist_once(client, ids, make_supply):
     assert again["added"] == []
 
 
+def test_one_missing_paint_onto_the_wishlist(client, ids, make_supply):
+    make_supply(product_code="T81776", name="Acrylic XF76 Grey Green", qty_on_hand=1)
+    model = make_model(client, ids)
+    m = client.post(f"/api/models/{model['model_id']}/paints", json={"text": ZERO_PAINTS}).json()
+    gun = next(p for p in m["paints"] if p["product_code"] == "T81510")
+    url = f"/api/models/{model['model_id']}/wishlist"
+    r = client.post(f"{url}?paint_id={gun['model_paint_id']}").json()
+    assert r["added"] == ["X-10 Gun Metal"] and r["skipped"] == []           # just that one
+    on = {p["product_code"]: p["on_wishlist"] for p in r["model"]["paints"] if p["product_code"]}
+    assert on["T81510"] and not on["T81771"]
+    assert client.post(f"{url}?paint_id={gun['model_paint_id']}").json()["added"] == []   # once only
+    owned = next(p for p in m["paints"] if p["product_code"] == "T81776")
+    assert client.post(f"{url}?paint_id={owned['model_paint_id']}").json()["added"] == []  # you have it
+    assert client.post(f"{url}?paint_id=99999").status_code == 404
+
+
 def test_models_list_status_and_delete(client, ids):
     a = make_model(client, ids, name="Finished one", status="Finished")
     b = make_model(client, ids, name="Being built", status="In progress")

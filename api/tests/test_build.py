@@ -130,6 +130,9 @@ def test_build_log_with_photos(client):
     assert client.get(f"/api/models/{m['model_id']}").json()["log"][0]["photos"] == [two[1]]
 
     assert client.patch(f"/api/model-log/{older['entry_id']}", json={"text": "Opened it"}).json()["text"] == "Opened it"
+    changed = client.patch(f"/api/model-log/{older['entry_id']}", json={"text": "   ", "entry_date": "2026-10-02"}).json()
+    assert (changed["text"], changed["entry_date"]) == (None, "2026-10-02")         # a blank note = none
+    assert client.patch(f"/api/model-log/{older['entry_id']}", json={"entry_date": None}).json()["entry_date"] == "2026-10-02"
     assert client.delete(f"/api/model-log/{older['entry_id']}").status_code == 204
     assert client.delete(f"/api/model-log/{older['entry_id']}").status_code == 404
     assert client.delete(f"/api/model-log/{entry['entry_id']}").status_code == 204      # its photos go with it

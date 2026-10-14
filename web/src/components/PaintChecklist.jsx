@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { api, imageUrl } from '../api.js'
 import KitPaintsPicker from './KitPaintsPicker.jsx'
 
@@ -21,8 +21,9 @@ export default function PaintChecklist({ model, onModel, run, flash, onOpenSuppl
     setPasting(false)
   })
 
-  const wishMissing = () => run(async () => {
-    const r = await api.wishMissingPaints(model.model_id)
+  // paint = one checklist line ("+ Wishlist" on its row), or none = every missing paint.
+  const wishMissing = (paint) => run(async () => {
+    const r = await api.wishMissingPaints(model.model_id, paint?.model_paint_id)
     onModel(r.model)
     flash(r.added.length ? `Added to wishlist: ${r.added.join(', ')}.` : 'Nothing new to add.')
     if (r.skipped.length) throw new Error(`Not added (no brand + code to buy by): ${r.skipped.join(', ')}.`)
@@ -44,9 +45,7 @@ export default function PaintChecklist({ model, onModel, run, flash, onOpenSuppl
     })
   }
 
-  const missing = model.paints.filter((p) => !p.have)
-  const buyable = missing.filter((p) => (p.mix ? p.mix.parts.some((x) => x.owned_qty <= 0 && x.product_code)
-    : p.brand_id && p.product_code && !p.on_wishlist))
+  const buyable = model.paints.filter(canWish)
   const isTamiyaKit = model.brand === 'Tamiya' && model.product_code
 
   return (
@@ -54,7 +53,7 @@ export default function PaintChecklist({ model, onModel, run, flash, onOpenSuppl
       <div className="section-head">
         <h4 className="section-title">Paints {model.paints_total > 0 && `· ${model.paints_have}/${model.paints_total}`}</h4>
         {buyable.length > 0 && (
-          <button type="button" className="chip-btn" onClick={wishMissing}>Add {buyable.length} missing to wishlist</button>
+          <button type="button" className="chip-btn" onClick={() => wishMissing()}>Add {buyable.length} missing to wishlist</button>
         )}
       </div>
       {model.paints_total > 0 && (
@@ -69,7 +68,7 @@ export default function PaintChecklist({ model, onModel, run, flash, onOpenSuppl
       <ul className="checklist">
         {model.paints.map((p) => (
           <PaintRow key={p.model_paint_id} paint={p} onOpenSupply={onOpenSupply}
-            onChange={(data) => change(p, data)}
+            onChange={(data) => change(p, data)} onWish={() => wishMissing(p)}
             onRemove={() => run(async () => onModel(await api.deleteModelPaint(p.model_paint_id)))} />
         ))}
       </ul>
@@ -112,7 +111,12 @@ export default function PaintChecklist({ model, onModel, run, flash, onOpenSuppl
   )
 }
 
-function PaintRow({ paint, onChange, onRemove, onOpenSupply }) {
+// A line you don't have that can go on the wishlist: a paint with a brand + code that isn't on it
+// yet, or a mix with a part you're missing.
+const canWish = (p) => !p.have && (p.mix ? p.mix.parts.some((x) => x.owned_qty <= 0 && x.product_code)
+  : Boolean(p.brand_id && p.product_code && !p.on_wishlist))
+
+function PaintRow({ paint, onChange, onRemove, onOpenSupply, onWish }) {
   const [purpose, setPurpose] = useState(paint.purpose ?? '')
   useEffect(() => setPurpose(paint.purpose ?? ''), [paint.purpose])
   const lowOrOut = paint.in_inventory && paint.stock_status !== 'OK'
@@ -138,6 +142,10 @@ function PaintRow({ paint, onChange, onRemove, onOpenSupply }) {
           {lowOrOut && <span className={`badge ${paint.stock_status.toLowerCase()}`}>{paint.condition ?? paint.stock_status}</span>}
           {!paint.have && paint.on_wishlist && <span className="tag">On wishlist</span>}
           {!paint.have && !paint.on_wishlist && paint.product_code && <span className="tag warn">Need to buy</span>}
+          {canWish(paint) && (
+            <button type="button" className="tag wish-btn" onClick={onWish}
+              aria-label={`Add ${paint.paint_name} to the wishlist`}>+ Wishlist</button>
+          )}
           {!paint.product_code && !paint.mix && <span className="tag" title="No brand + code, so it can't be matched to your inventory">Not linked</span>}
         </div>
         {paint.mix && (
@@ -156,13 +164,37 @@ function PaintRow({ paint, onChange, onRemove, onOpenSupply }) {
               {paint.alternative.name}</button> · {paint.alternative.how}
           </p>
         )}
-        {/* A textarea that grows with the text, so long descriptions wrap instead of being cut off. */}
-        <textarea className="purpose" value={purpose} placeholder="What it's for"
-          rows={Math.min(4, Math.max(1, Math.ceil(purpose.length / 42)))}
+        <FitTextarea className="purpose" value={purpose} placeholder="What it's for" aria-label={`What ${paint.paint_name} is for`}
           onChange={(e) => setPurpose(e.target.value)}
           onBlur={() => purpose.trim() !== (paint.purpose ?? '') && onChange({ purpose: purpose.trim() || null })} />
       </div>
       <button type="button" className="icon-btn small remove-paint" onClick={onRemove} aria-label={`Remove ${paint.paint_name}`}>✕</button>
     </li>
   )
+}
+
+// A textarea exactly as tall as its text (measured, not guessed from the length - a guess left a
+// blank line under short notes on a wide screen and cut long ones off on a phone), re-measured
+// when the text or the width changes.
+function FitTextarea(props) {
+  const box = useRef(null)
+  const fit = () => {
+    const el = box.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight + el.offsetHeight - el.clientHeight}px`
+  }
+  useLayoutEffect(fit, [props.value])
+  useEffect(() => {
+    let width = box.current.clientWidth
+    const watch = new ResizeObserver(() => {     // only a new width re-measures (not its own height)
+      if (box.current && box.current.clientWidth !== width) {
+        width = box.current.clientWidth
+        fit()
+      }
+    })
+    watch.observe(box.current)
+    return () => watch.disconnect()
+  }, [])
+  return <textarea ref={box} rows={1} {...props} />
 }

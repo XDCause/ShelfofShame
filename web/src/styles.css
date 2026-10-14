@@ -1631,3 +1631,11 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .log-photos.picked { margin: 10px 0 0; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); }
 .photo-remove { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; padding: 0; border: 0;
   border-radius: 999px; background: rgb(0 0 0 / 0.6); color: #fff; font-size: 0.75rem; line-height: 26px; cursor: pointer; }
+
+/* A paint's own "+ Wishlist" in a model's checklist: a tag you can press. */
+.tag.wish-btn { border: 0; cursor: pointer; color: var(--tint); background: var(--tint-soft); font-weight: 600; }
+.tag.wish-btn:hover { background: color-mix(in srgb, var(--tint) 22%, transparent); }
+
+/* A build-log entry's Edit and ✕, and the entry while it's being changed. */
+.log-actions { display: inline-flex; align-items: center; gap: 4px; }
+.log-edit { margin-top: 6px; }

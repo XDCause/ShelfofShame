@@ -323,8 +323,18 @@ def model_paste(page):
     d.get_by_role("button", name="Add paints").click()
     expect(d.locator(".checklist li")).to_have_count(3)
     shot(page, "d11_model_p40_pasted")
-    d.get_by_role("button", name=re.compile("missing to wishlist")).click()
+    # The "what it's for" boxes fit their text: nothing cut off, no blank line under a short note.
+    for box in d.locator(".checklist textarea.purpose").all():
+        spare, hidden = box.evaluate("e => [e.clientHeight - e.scrollHeight, e.scrollHeight - e.clientHeight]")
+        assert hidden <= 1 and spare <= 1, (box.input_value(), spare, hidden)
+    # One paint onto the wishlist from its own row, then the rest with the button at the top.
+    d.locator(".checklist .wish-btn").first.click()
     expect(d.locator(".save-flash")).to_contain_text("Added to wishlist")
+    expect(d.locator(".checklist li", has_text="On wishlist")).not_to_have_count(0)
+    rest = d.get_by_role("button", name=re.compile("missing to wishlist"))
+    if rest.count():
+        rest.click()
+        expect(d.locator(".save-flash")).to_contain_text(re.compile("Added to wishlist|Nothing new"))
     d.get_by_label("Have Old silver tin").check()
     expect(d).to_contain_text("2/3")
     page.keyboard.press("Escape")
@@ -549,6 +559,16 @@ def build_log(page):
     expect(entry).to_contain_text("Hull assembled")
     expect(entry.locator(".log-photos img")).to_have_count(2)
     expect(entry.locator(".log-photos img").first).to_be_visible()
+    # Edit it: a new note, one photo less, one more added.
+    entry.get_by_role("button", name=re.compile("^Edit the entry")).click()
+    entry.get_by_label("Edit the note").fill("Hull assembled and primed")
+    entry.get_by_role("button", name="Remove photo 1").click()
+    entry.locator("input[data-source=gallery]").set_input_files([
+        {"name": "primer.png", "mimeType": "image/png", "buffer": PIXEL}])
+    entry.get_by_role("button", name="Save").click()
+    entry = d.locator(".log > li").first
+    expect(entry).to_contain_text("Hull assembled and primed")
+    expect(entry.locator(".log-photos img")).to_have_count(2)
     shot(page, "d18_build_log", full=False)
     page.keyboard.press("Escape")
 

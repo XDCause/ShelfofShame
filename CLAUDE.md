@@ -1027,6 +1027,15 @@ DBeaver, psql, and the one-off import script.
      (never changes -> cached for good, URL = id). PhotoPick `multiple` (gallery picks several; camera one
      per press, appended). BuildLog: thumbnails with ✕ before saving, a square grid per entry (one photo
      shows bigger), ✕ per photo. Other photo spots stay single (one picture per item).
+3zn. **Checklist + build log** (2026-10-14). Each paint you don't have gets "+ Wishlist" on its row (canWish:
+   brand + code and not on the wishlist, or a mix missing a part): POST /models/{id}/wishlist?paint_id=
+   (one checklist line; 404 if not on the model). "What it's for" boxes are FitTextarea (measured
+   scrollHeight, re-measured on a width change) - the old rows = length / 42 guess left a blank line on
+   wide screens and cut notes off on phones (seen on the user's Triceratops on prod). Build log: Edit per
+   entry (note, day, remove photos, add photos; Save / Cancel); PATCH /model-log/{id} blanks -> NULL text,
+   a null day is ignored. Photos are removed in Edit (no ✕ on the plain view). Reload before closing the
+   edit form, or the deleted photo is requested once (404 - caught by the e2e's browser errors).
+   Tests: 309 API, 61 browser steps.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

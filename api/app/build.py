@@ -117,7 +117,12 @@ def add_log_entry(model_id: int, body: LogIn):
 def change_log_entry(entry_id: int, body: LogPatch):
     with db() as conn:
         log_entry(conn, entry_id)
-        update_row(conn, "model_log", "entry_id", entry_id, body.model_dump(exclude_unset=True))
+        data = body.model_dump(exclude_unset=True)
+        if "text" in data:
+            data["text"] = (data["text"] or "").strip() or None      # a blank note = no note
+        if "entry_date" in data and data["entry_date"] is None:
+            data.pop("entry_date")                                    # the day can't be blanked
+        update_row(conn, "model_log", "entry_id", entry_id, data)
         return log_entry(conn, entry_id)
 
 

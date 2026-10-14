@@ -112,7 +112,8 @@ export const api = {
   addModelPaints: (id, text, purpose) => request(`/models/${id}/paints`, send('POST', { text, purpose })),
   updateModelPaint: (id, data) => request(`/model-paints/${id}`, send('PATCH', data)),
   deleteModelPaint: (id) => request(`/model-paints/${id}`, send('DELETE')),
-  wishMissingPaints: (id) => request(`/models/${id}/wishlist`, send('POST')),
+  // All the missing paints, or one checklist line (paintId = its model_paint_id).
+  wishMissingPaints: (id, paintId) => request(`/models/${id}/wishlist${paintId ? `?paint_id=${paintId}` : ''}`, send('POST')),
   kitPaints: (id) => request(`/models/${id}/kit-paints`),
   addKitPaints: (id, paints) => request(`/models/${id}/kit-paints`, send('POST', { paints })),
 
@@ -211,6 +212,7 @@ export const api = {
   addSession: (id, data) => request(`/models/${id}/sessions`, send('POST', data)),
   deleteSession: (id) => request(`/model-sessions/${id}`, send('DELETE')),
   addLogEntry: (id, data) => request(`/models/${id}/log`, send('POST', data)),
+  updateLogEntry: (entryId, data) => request(`/model-log/${entryId}`, send('PATCH', data)),
   deleteLogEntry: (id) => request(`/model-log/${id}`, send('DELETE')),
   addLogPhoto: (id, blob) => request(`/model-log/${id}/photos`, image('POST', blob)),
   deleteLogPhoto: (photoId) => request(`/model-log-photos/${photoId}`, send('DELETE')),
