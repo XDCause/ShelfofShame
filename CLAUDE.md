@@ -1100,7 +1100,7 @@ DBeaver, psql, and the one-off import script.
    Web: PhotoPick takes accept / cameraLabel / galleryLabel (Record video / Choose video); VideoPanel uploads
    with XMLHttpRequest progress ("Uploading 45% · 120 MB of 260 MB"), deletes the new row if the upload fails,
    player in the panel, "Or add a link" still possible; cards show a frame (`#t=0.5`, preload metadata).
-   **The database backups don't include media/** - told the user. Live test: 300 MB via nginx in 4.4 s, Range 206.
+   Backups: backup.ps1 (nightly) robocopies new files media -> backups\media (/E /XC /XN /XO; never deletes) and to -CopyTo\media (3zx). Live test: 300 MB via nginx in 4.4 s, Range 206.
    e2e uploads a tiny fake mp4 and deletes it again (the data restore can't remove files).
    Tests: 315 API, 61 browser steps.
 3zv. (2026-10-15) Volleyball tabs: Games, Videos, Gear. Video games Games page: PlatformSwitch (one platform) replaced by the
@@ -1117,6 +1117,10 @@ DBeaver, psql, and the one-off import script.
    off cdn.shopify.com; video files: generated names (CHECK), type list + first bytes, nosniff; documented in
    BEFORE_GOING_PUBLIC. Speed: 42 read endpoints all < 50 ms (median 4.8 ms); entry bundle 553 KB / 161 KB gz
    (was 135 KB gz: new hobbies), heavy editors still lazy. Tests: 315 API, 61 browser steps.
+3zx. (2026-10-15) Prod data fixes (user's choice, after a backup, also in dev): game 10 (29 Sept "vs BYE 0-0") -> bye
+   'no result' via the API; "Somerville House Aquatice Centre" -> "Aquatic" on team 1 (API) and 12 games (SQL).
+   backup.ps1 now also copies videos (Copy-Media: robocopy exit codes 0-7 = OK) to backups\media and -CopyTo\media;
+   videos deleted in the app stay in the backup. The Settings "Back up now" button is database-only.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"
