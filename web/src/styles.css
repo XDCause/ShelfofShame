@@ -1747,3 +1747,40 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 /* "Nothing here yet" boxes: a dashed outline, so an empty list doesn't look like content. */
 .empty.card { background: transparent; border: 1.5px dashed var(--border); box-shadow: none; padding: 32px 24px; }
 .filters > .chip-row { flex: none; }      /* tags and moods sit side by side on the left */
+
+/* ---------- Home: each hobby's numbers in its own card ---------- */
+.glance { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.glance-card { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; min-width: 0; }
+.glance-card:not(:has(.glance-tiles > *)) { display: none; }      /* a hobby with nothing to show yet */
+.glance-head { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 0.85rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.04em; }
+.glance-head span { flex: 1; }
+.glance-head:hover { color: var(--tint); text-decoration: none; }
+.glance-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px 14px; }
+/* Inside a card the tiles are just the numbers: the card says which hobby. */
+.glance-tiles .home-stat { padding: 0; border: 0; background: none; box-shadow: none; min-height: 0; gap: 0; }
+.glance-tiles .home-stat:hover { background: none; }
+.glance-tiles .home-stat:hover strong { color: var(--tint); }
+.glance-tiles .stat-icon { display: none; }
+.glance-tiles .home-stat strong { font-size: 1.5rem; }
+.glance-tiles .home-stat.skeleton { min-height: 56px; border-radius: 10px; background: var(--fill); }
+@media (max-width: 700px) {
+  /* One row you swipe through, a card and a bit showing (so it's clear there's more). */
+  .glance { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 10px;
+    margin-inline: calc(-1 * var(--gutter)); padding: 2px var(--gutter) 8px; scrollbar-width: none; }
+  .glance::-webkit-scrollbar { display: none; }
+  .glance-card { flex: 0 0 78%; scroll-snap-align: start; }
+}
+
+/* ---------- Empty pages: an icon, what goes here, the button to add the first one ---------- */
+.empty-state { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center;
+  padding: 40px 24px; border: 1.5px dashed var(--border); border-radius: var(--radius); }
+.empty-state .empty-icon { display: grid; place-items: center; width: 60px; height: 60px; border-radius: 18px;
+  color: var(--tint); background: var(--tint-soft); margin-bottom: 4px; }
+.empty-state .empty-title { margin: 0; font-size: 1.1rem; }
+.empty-state p { margin: 0 0 6px; max-width: 46ch; }
+/* A computer: hobby cards wrap, and the last row's cards stretch to fill it (no half-empty row). */
+@media (min-width: 701px) {
+  .glance { display: flex; flex-wrap: wrap; }
+  .glance-card { flex: 1 1 250px; }
+}

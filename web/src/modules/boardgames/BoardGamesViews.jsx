@@ -5,6 +5,7 @@ import { useApp } from '../../core/app-context.js'
 import Stat, { StatSkeleton } from '../../core/Stat.jsx'
 import { useShared } from '../../core/useShared.js'
 import { gameMeta } from './GamePanel.jsx'
+import EmptyState from '../../core/EmptyState.jsx'
 
 const STATUS_TONE = { Owned: 'ok', Wanted: 'tint', Borrowed: 'purple', Gone: '' }
 const monthOf = (day) => new Date(`${day}T12:00:00`).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })
@@ -46,7 +47,8 @@ export function GamesView() {
         <button type="button" className="primary" onClick={() => openPanel('boardgame', { id: null })}>+ Add game</button>
       </div>
       {visible.length === 0 ? (
-        <p className="empty card">No games yet. Add the ones on your shelf, and the ones you'd like.</p>
+        <EmptyState Icon={DiceIcon} title="No board games yet" action="+ Add a game" onAction={() => openPanel('boardgame', { id: null })}>
+          Add the ones on your shelf, and the ones you'd like to own.</EmptyState>
       ) : (
         <div className="model-grid">
           {visible.map((g) => (
@@ -91,7 +93,10 @@ export function PlaysView() {
         <p className="summary grow"><strong>{plays.length}</strong> play{plays.length === 1 ? '' : 's'} logged</p>
         <button type="button" className="primary" onClick={() => openPanel('play')}>+ Log a play</button>
       </div>
-      {plays.length === 0 && <p className="empty card">No plays yet. Log one after your next games night.</p>}
+      {plays.length === 0 && (
+        <EmptyState Icon={DiceIcon} title="No plays yet" action="+ Log a play" onAction={() => openPanel('play')}>
+          Log one after your next games night: who played, who won, how long it took.</EmptyState>
+      )}
       {months.map((m) => (
         <div key={m.name}>
           <h3 className="section-title">{m.name}</h3>

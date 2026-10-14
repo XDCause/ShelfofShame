@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { api, duration, imageUrl, money } from '../api.js'
 import { buildProgress, StepBar } from '../modules/models/steps.jsx'
+import EmptyState from '../core/EmptyState.jsx'
+import { PlaneIcon } from '../components/icons.jsx'
 
 const UNBUILT = ['In stash', 'In progress', 'On hold']
 const FILTERS = [
@@ -88,7 +90,10 @@ export default function ModelsView({ lookups, refreshKey, onOpen }) {
       </div>
 
       {visible.length === 0 ? (
-        <p className="empty card">{models.length ? 'Nothing here.' : 'No models yet. Add a kit to plan its paints.'}</p>
+        models.length ? <p className="empty card">Nothing here.</p> : (
+          <EmptyState Icon={PlaneIcon} title="No kits yet" action="+ Add a kit" onAction={() => onOpen(null)}>
+            Add a kit to plan its paints, time the build and keep a build log.</EmptyState>
+        )
       ) : (
         <div className="model-grid">
           {visible.map((m) => <ModelCard key={m.model_id} model={m} stages={lookups?.stages} onOpen={() => onOpen(m.model_id)} />)}

@@ -4,6 +4,8 @@ import { api, imageUrl, money } from '../api.js'
 import Notice from './Notice.jsx'
 import OwnedBadge from './OwnedBadge.jsx'
 import WishForm from './WishForm.jsx'
+import EmptyState from '../core/EmptyState.jsx'
+import { CartIcon } from '../components/icons.jsx'
 
 const SHOP_KEY = 'hobby-inventory.lastShop'
 const readShop = () => {
@@ -145,13 +147,10 @@ export default function WishlistView({ lookups, settings, refreshKey, onChanged 
         />
       )}
 
-      {!loading && visible.length === 0 && (
-        <p className="empty card">
-          {items.length === 0
-            ? 'Your wishlist is empty. Add something you want to buy.'
-            : show === 'got' ? 'Nothing ticked yet.' : 'Everything is ticked off.'}
-        </p>
-      )}
+      {!loading && visible.length === 0 && (items.length === 0 ? (
+        <EmptyState Icon={CartIcon} title="Your wishlist is empty" action="+ Add" onAction={() => openForm(null)}>
+          Add what you want to buy - search Tamiya, scan a barcode, or type it in. Low supplies land here by themselves.</EmptyState>
+      ) : <p className="empty card">{show === 'got' ? 'Nothing ticked yet.' : 'Everything is ticked off.'}</p>)}
 
       <div className="wish-grid">
         {visible.map((w) => (

@@ -4,6 +4,8 @@ import { api, imageUrl, isoDay, shortDate } from '../../api.js'
 import { useApp } from '../app-context.js'
 import { MOODS, moodOf, pageFace } from './moods.js'
 import TodoList from './TodoList.jsx'
+import EmptyState from '../EmptyState.jsx'
+import { JournalIcon } from '../../components/icons.jsx'
 
 const dayOf = (day) => new Date(`${day}T12:00:00`)
 const monthOf = (day) => dayOf(day).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })
@@ -118,7 +120,10 @@ export default function JournalList() {
       {error && <p className="alert error">{error}</p>}
       {!q && !tag && !mood && <TodoList card />}
       {pages && pages.length === 0 && (
-        <p className="empty card">{q || tag || mood ? 'No pages match.' : 'No pages yet. Start one with "+ New page".'}</p>
+        q || tag || mood ? <p className="empty card">No pages match.</p> : (
+          <EmptyState Icon={JournalIcon} title="Your journal is empty" action="+ New page" onAction={() => newPage()}>
+            Write about a build, a game night or your day - @mention a kit or a game to link them.</EmptyState>
+        )
       )}
       {groups.map((g) => (
         <div key={g.name}>

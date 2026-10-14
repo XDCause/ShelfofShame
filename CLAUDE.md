@@ -1130,6 +1130,13 @@ DBeaver, psql, and the one-off import script.
    colour marker round (squares looked like checkboxes), accuracy .toFixed(1); chess openings on phones: bar only
    (record and "8 games · 43.8%" overlapped); reading stats: no empty charts; phone nav title one line with ellipsis;
    video games phone toolbar buttons smaller; .empty.card dashed outline. 61 browser steps.
+3zz. **Bigger UI changes** (2026-10-15). Home: the flat tile grid became `Glance` (core/Home.jsx GLANCE = Supplies + each
+   module with home.Tiles): one card per hobby (uppercase name + icon + chevron link to its first page), the tiles
+   inside shown as plain numbers (.glance-tiles hides .stat-icon / border); cards with nothing rendered are hidden
+   (:has); a computer: flex-wrap, last row stretches; phones: one horizontal scroll-snap row (78% cards) so Home is
+   short. core/EmptyState.jsx (icon, title, text, action) for first-time empties: board games + plays, volleyball
+   games / gear / videos, kits, wishlist, journal, books, quotes (filter "no match" messages stay plain). e2e: an empty
+   page has two add buttons (toolbar + empty state) -> `.first` for + Add gear / + Add video / + Add a book.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

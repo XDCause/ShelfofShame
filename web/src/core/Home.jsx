@@ -1,6 +1,6 @@
-import { useNavigate } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { api, timeAgo } from '../api.js'
-import { BoxIcon, CalendarIcon, CartIcon, JournalIcon, PenIcon } from '../components/icons.jsx'
+import { BoxIcon, CalendarIcon, CartIcon, ChevronIcon, JournalIcon, PenIcon } from '../components/icons.jsx'
 import { MODULES } from '../modules/index.js'
 import { KIND_ICON, KIND_NAME, VERB_TONE } from './activityKinds.js'
 import { useApp } from './app-context.js'
@@ -50,10 +50,7 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="home-stats">
-        <SuppliesTiles />
-        {MODULES.filter((m) => m.home?.Tiles).map((m) => <m.home.Tiles key={m.id} />)}
-      </div>
+      <Glance />
 
       <div className="home-grid">
         <div className="home-column">
@@ -126,6 +123,29 @@ function QuickActions({ newPage }) {
           </button>
         ))}
       </div>
+    </section>
+  )
+}
+
+// Each hobby's numbers in its own small card (name, icon, a link to it): a grid on a computer, a row
+// you swipe through on a phone - so Home stays short. A hobby with nothing to show (not set up yet)
+// leaves its card out.
+const GLANCE = [
+  { id: 'supplies', name: 'Supplies', Icon: BoxIcon, to: '/supplies', Tiles: SuppliesTiles },
+  ...MODULES.filter((m) => m.home?.Tiles).map((m) => ({ id: m.id, name: m.name, Icon: m.Icon, to: `/${m.id}/${m.pages[0].path}`, Tiles: m.home.Tiles })),
+]
+
+function Glance() {
+  return (
+    <section className="glance" aria-label="Your hobbies at a glance">
+      {GLANCE.map((g) => (
+        <div key={g.id} className="glance-card card">
+          <Link to={g.to} className="glance-head">
+            <g.Icon size={18} /><span>{g.name}</span><ChevronIcon size={14} />
+          </Link>
+          <div className="glance-tiles"><g.Tiles /></div>
+        </div>
+      ))}
     </section>
   )
 }

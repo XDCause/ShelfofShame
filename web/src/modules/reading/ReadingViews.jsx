@@ -6,6 +6,7 @@ import Fold from '../../components/Fold.jsx'
 import { BookIcon, QuoteIcon, TrophyIcon } from '../../components/icons.jsx'
 import { useApp } from '../../core/app-context.js'
 import Stat, { StatSkeleton } from '../../core/Stat.jsx'
+import EmptyState from '../../core/EmptyState.jsx'
 import { UnlockCalendar } from '../videogames/StatsView.jsx'
 import {
   BookCover, GoalCard, GoodreadsImport, Progress, ProgressForm, SHELVES, ShelfPill, Stars, useReadingSummary,
@@ -165,7 +166,10 @@ export function BooksView() {
         ))}
       </div>
       {!data ? <p className="muted loading">Loading...</p> : data.books.length === 0 ? (
-        <p className="empty card">{q ? 'No books match that.' : all ? 'Nothing on this shelf yet.' : 'No books yet - add one, or import from Goodreads below.'}</p>
+        q || all ? <p className="empty card">{q ? 'No books match that.' : 'Nothing on this shelf yet.'}</p> : (
+          <EmptyState Icon={BookIcon} title="No books yet" action="+ Add a book" onAction={() => openPanel('addbook', {})}>
+            Search by title, scan the ISBN, or import everything from Goodreads below.</EmptyState>
+        )
       ) : (
         <ul className="book-grid">
           {data.books.map((b) => (
@@ -272,7 +276,9 @@ export function QuotesView() {
           placeholder="Search quotes, titles, authors..." aria-label="Search quotes" />
       </div>
       {!quotes ? <p className="muted loading">Loading...</p> : quotes.length === 0 ? (
-        <p className="empty card">{q ? 'No quotes match that.' : 'No quotes yet. Open a book and press "+ Save a quote".'}</p>
+        q ? <p className="empty card">No quotes match that.</p> : (
+          <EmptyState Icon={QuoteIcon} title="No quotes yet">Open a book and press "+ Save a quote" to keep a line you loved.</EmptyState>
+        )
       ) : (
         <ul className="quote-wall">
           {quotes.map((x) => (

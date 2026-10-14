@@ -5,6 +5,7 @@ import { useApp } from '../../core/app-context.js'
 import Stat, { StatSkeleton } from '../../core/Stat.jsx'
 import { useShared } from '../../core/useShared.js'
 import { gameTitle, resultTone, score, youtubeId } from './VolleyballPanels.jsx'
+import EmptyState from '../../core/EmptyState.jsx'
 
 const GEAR_TONE = { New: 'ok', Good: 'ok', Worn: 'low', 'Needs replacing': 'out', Retired: '' }
 
@@ -74,7 +75,8 @@ export function GamesView() {
         <button type="button" className="primary" onClick={() => openPanel('volleyball', {})}>+ Log a game</button>
       </div>
       {games.length === 0 ? (
-        <p className="empty card">No games yet. Put your comp night on the calendar (Plan a game, repeating weekly), then log each result.</p>
+        <EmptyState Icon={BallIcon} title="No games logged yet" action="+ Log a game" onAction={() => openPanel('volleyball', {})}>
+          Put your comp night on the calendar (Plan a game, repeating weekly), then log each result.</EmptyState>
       ) : (
         <div className="vb-layout">
           <div className="vb-seasons">
@@ -233,7 +235,10 @@ export function GearView() {
           {gear.some((g) => g.condition === 'Needs replacing') && <span className="muted"> · {gear.filter((g) => g.condition === 'Needs replacing').length} to replace</span>}</p>
         <button type="button" className="primary" onClick={() => openPanel('gear', {})}>+ Add gear</button>
       </div>
-      {gear.length === 0 ? <p className="empty card">No gear yet. Shoes, knee pads, your own ball...</p> : (
+      {gear.length === 0 ? (
+        <EmptyState Icon={ShoeIcon} title="No gear yet" action="+ Add gear" onAction={() => openPanel('gear', {})}>
+          Shoes, knee pads, your own ball - with photos, and when they need replacing.</EmptyState>
+      ) : (
         <div className="model-grid">
           {gear.map((g) => (
             <button key={g.gear_id} type="button" className="model-card" onClick={() => openPanel('gear', { id: g.gear_id })}>
@@ -283,7 +288,10 @@ export function VideosView() {
         </div>
         <button type="button" className="primary" onClick={() => openPanel('video', {})}>+ Add video</button>
       </div>
-      {visible.length === 0 ? <p className="empty card">No videos yet. Upload game footage or drills you want to learn from.</p> : (
+      {visible.length === 0 ? (
+        <EmptyState Icon={VideoIcon} title="No videos yet" action="+ Add video" onAction={() => openPanel('video', {})}>
+          Record or upload game footage, or drills you want to learn from.</EmptyState>
+      ) : (
         <ul className="video-grid">
           {visible.map((v) => {
             const yt = v.url && youtubeId(v.url)
