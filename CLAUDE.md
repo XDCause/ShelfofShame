@@ -886,9 +886,38 @@ DBeaver, psql, and the one-off import script.
    - GOTCHA: plain `dev.ps1` does NOT run migrate.ps1 (only -Refresh does) - run .\migrate.ps1 after
      adding a db/init file, or the API fails with UndefinedColumn (a dev sync did).
    - Tests: 288 API, 59 browser steps (stats: recap arrows, 53 calendar weeks; Quick wins card).
-   - Next idea in progress: Ubisoft + Epic via the user's Exophase profile (api.exophase.com/public/
-     player/<playerid>/games?page=&environment=uplay|epic: title, earned/total, percent, playtime,
-     lastplayed, tile image). Profile name and player ids belong in the app's settings, not here.
+3zh. **Epic + Ubisoft, faster full sync** (2026-10-14).
+   - Ubisoft research: Ubisoft has NO public API; Exophase only sees Ubisoft Connect *challenges* (its
+     "achievements" URL for a Ubisoft game 302s to /challenges/; 9 of the user's 13 Ubisoft games are
+     0/0 there; Siege 0/34 challenges vs the user's real 45/48 achievements + ~850 h). The Ubisoft
+     launcher's local cache (checked with the user's permission, token-like values hidden) holds only
+     the store catalogue, settings and its own code - progress is fetched live via their private
+     GraphQL and never stored. Logging in to Ubisoft's private API with the user's password: rejected.
+     => Ubisoft achievements are TYPED IN; names / pictures / playtime come from Exophase.
+     Exophase per-player earned list: api.exophase.com/public/player/<pid>/game/<master_id>/earned
+     (used once for a one-off Excel dump of Ubisoft challenges in the user's Downloads; not in the app).
+   - 32_videogame_platforms.sql: vg_sync.exo_profile / exo_players {"epic": pid, "uplay": pid} /
+     exo_synced_at / exo_error; vg_other_games (platform epic|ubisoft, source_id = Exophase master id
+     or NULL = added by hand, exo_done/total/minutes, my_done/total/minutes typed in, hidden).
+     othergames.py: SELECT works out done/total (Ubisoft = my_*, Epic = my_* else exo_*), playtime
+     (my else exo), challenges_* for Ubisoft; routes GET/PUT /videogames/other/account (account field
+     `linked`, not `platforms` - it's merged with the games reply), GET/POST /videogames/other,
+     PATCH/DELETE /videogames/other/{id} (Exophase games can only be hidden). Router included BEFORE
+     videogames (else /videogames/{app_id} swallows /videogames/other). sync_other() runs on the
+     Exophase side of every sync. The user's profile lives in the DB only (public repo).
+   - Web OtherPlatforms.jsx: GamesPage = PlatformSwitch (Steam / Epic / Ubisoft, only platforms you
+     have) + Steam GamesView or OtherGamesView (?platform=epic|ubisoft); OtherGamePanel ('othergame'
+     panel; Ubisoft form: achievements you have / in the game / hours); OtherPlatformsCard on the
+     dashboard (or the Exophase connect form). Steam numbers stay Steam-only.
+   - Faster full sync: Steam games 4 at a time (ThreadPoolExecutor, STEAM_AT_ONCE); then
+     sync_others(): SteamHunters and Exophase side by side (different sites); each site's _get is
+     _spaced() (one request at a time, PAUSE apart, across threads); DB writes of the two sides take
+     turns (_writes lock - without it the two transactions DEADLOCKED on the same game, caught by
+     tests); progress counted with step() under the lock. A full sync skips SteamHunters numbers
+     < 1 day old (FRESH) and DLC lists < 30 days old (DLC_EVERY). The DLC side does games known to
+     have DLC first, then waits for SteamHunters (Event) before games it hadn't judged - otherwise a
+     first sync would ask Exophase about every started game.
+   - Tests: 293 API.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

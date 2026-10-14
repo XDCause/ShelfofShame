@@ -1420,3 +1420,22 @@ body.writing-mode .journal-title { font-size: 2.2rem; }
 .heatmap-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
 .heatmap-key { display: inline-flex; align-items: center; gap: 3px; }
 .heatmap-key .heatmap-day { margin: 0 1px; }
+
+/* Epic and Ubisoft games (OtherPlatforms.jsx). */
+.platform-switch { max-width: 360px; }
+.other-games .row-button { display: flex; align-items: center; gap: 12px; }
+.other-games .grow { display: flex; flex-direction: column; min-width: 0; }
+.other-pic { flex: none; width: 48px; height: 48px; border-radius: 8px; object-fit: cover; background: var(--fill); }
+.other-pic.game-picture-missing { display: inline-flex; align-items: center; justify-content: center; color: var(--muted); }
+.other-hours { text-align: right; white-space: nowrap; }
+.other-head { display: flex; gap: 14px; align-items: center; }
+.other-head .other-pic { width: 72px; height: 72px; }
+.other-head > span { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+.other-head .pill { align-self: flex-start; }
+.other-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 10px 0; }
+.other-form .other-fields { grid-template-columns: 2fr repeat(3, minmax(0, 1fr)); }
+.other-fields label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: var(--muted); }
+.other-fields input { color: var(--text); }
+@media (max-width: 700px) {
+  .other-fields, .other-form .other-fields { grid-template-columns: minmax(0, 1fr); }
+}

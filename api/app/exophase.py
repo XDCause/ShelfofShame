@@ -21,6 +21,7 @@ database and read again only when a game's achievements change or on a full sync
 API terms - personal use only (see BEFORE_GOING_PUBLIC.md).
 """
 import re
+import threading
 import time
 import unicodedata
 
@@ -39,8 +40,10 @@ class Unavailable(Exception):
 
 
 def _get(url: str, params: dict | None = None):
-    """One request; if it times out, one more try 5 s later."""
+    """One request (spaced: never two at once, at least PAUSE apart - the sync reads this site from
+    two threads at times); if it times out, one more try 5 s later."""
     for attempt in (1, 2):
+        _spaced()
         try:
             return httpx.get(url, params=params, headers=HEADERS, timeout=TIMEOUT, follow_redirects=True)
         except httpx.TimeoutException:
@@ -54,6 +57,19 @@ def _get(url: str, params: dict | None = None):
 
 def pause():
     time.sleep(PAUSE)
+
+
+_turn = threading.Lock()
+_last = [0.0]
+
+
+def _spaced():
+    """Wait until PAUSE has passed since this site was last asked (any thread)."""
+    with _turn:
+        wait = _last[0] + PAUSE - time.monotonic()
+        if wait > 0:
+            time.sleep(wait)
+        _last[0] = time.monotonic()
 
 
 def key(text: str) -> str:
@@ -144,3 +160,71 @@ def dlc_of(app_id: int, name: str, total: int | None, dlcs: list[str]) -> tuple[
         if r.status_code not in (200, 404):
             raise Unavailable(f"Exophase didn't answer (HTTP {r.status_code}).")
     return "", {}
+
+
+# ---------------------------------------------------------------------------------------------
+# A player's games on other platforms (Epic, Ubisoft), from their Exophase profile
+# ---------------------------------------------------------------------------------------------
+PROFILE = "https://www.exophase.com/user/{name}/"
+PLAYER_GAMES = "https://api.exophase.com/public/player/{player}/games"
+PLATFORMS = {"epic": "epic", "uplay": "ubisoft"}   # Exophase's name -> ours
+
+
+def profile_name(text: str) -> str | None:
+    """"SomeName" or "https://www.exophase.com/user/SomeName/" -> "SomeName"."""
+    text = text.strip()
+    m = re.search(r"exophase\.com/user/([^/?#\s]+)", text)
+    name = m.group(1) if m else text
+    return name if re.fullmatch(r"[A-Za-z0-9_.\-]{2,40}", name) else None
+
+
+def profile_players(name: str) -> dict[str, int]:
+    """The player id for each platform linked on an Exophase profile, e.g. {"epic": 123456, "uplay": 654321}
+    (only the platforms we use). {} if there's no such profile."""
+    r = _get(PROFILE.format(name=name))
+    if r.status_code == 404:
+        return {}
+    if r.status_code != 200:
+        raise Unavailable(f"Exophase didn't answer (HTTP {r.status_code}).")
+    found = {}
+    for tag in re.findall(r"<li\b[^>]*\bdata-environment=\"[^\"]+\"[^>]*>", r.text):
+        env = re.search(r'data-environment="([^"]+)"', tag).group(1)
+        player = re.search(r'data-playerid="(\d+)"', tag)
+        if env in PLATFORMS and player:
+            found[env] = int(player.group(1))
+    return found
+
+
+def player_games(player: int, environment: str) -> list[dict]:
+    """Every game on one platform of a player's profile (all pages): Exophase's id, name, picture,
+    page, achievements (Ubisoft: challenges) earned / total, playtime, last played, completed."""
+    games = []
+    for page in range(1, 21):
+        if page > 1:
+            pause()
+        r = _get(PLAYER_GAMES.format(player=player), {"page": page, "environment": environment})
+        if r.status_code != 200 or "json" not in r.headers.get("content-type", ""):
+            raise Unavailable(f"Exophase didn't answer (HTTP {r.status_code}).")
+        batch = r.json().get("games") or []
+        for g in batch:
+            meta, units = g.get("meta") or {}, g.get("playtimeUnits") or {}
+            minutes = (units.get("hours") or 0) * 60 + (units.get("minutes") or 0)
+            games.append({
+                "source_id": str(meta.get("master_id") or g.get("master_id")),
+                "name": tidy_title(meta.get("title") or "Untitled"),
+                "picture_url": g.get("resource_tile") or g.get("resource_standard"),
+                "page_url": (meta.get("endpoint_awards") or "").split("#")[0] or None,
+                "exo_done": g.get("earned_awards") or 0,
+                "exo_total": g.get("total_awards") or 0,
+                "exo_minutes": minutes or None,
+                "last_played": g.get("lastplayed_utc") or None,
+                "exo_completed_at": g.get("completion_date_utc") or None,
+            })
+        if not batch:
+            break
+    return games
+
+
+def tidy_title(title: str) -> str:
+    """Exophase's titles as they read: curly quotes straightened ("Clancy’s" -> "Clancy's")."""
+    return title.replace("’", "'").replace("‘", "'").strip()

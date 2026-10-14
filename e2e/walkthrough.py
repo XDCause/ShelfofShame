@@ -1052,6 +1052,7 @@ def video_games(page):
         expect(page.locator(".goal-marker")).to_contain_text("Goal")
     if page.locator(".goal-card").count():
         expect(page.locator(".home-card-title", has_text="Quick wins")).to_be_visible()
+        expect(page.locator(".home-card-title", has_text="Epic and Ubisoft")).to_be_visible()
     shot(page, "d41_video_games", full=False)
     page.locator(".section-tabs").get_by_role("link", name="Games").click()
     expect(page.get_by_label("Search your games")).to_be_visible()
@@ -1098,6 +1099,20 @@ def video_games(page):
         shot(page, "d45_video_game_dlc", full=False)
         page.keyboard.press("Escape")
     page.get_by_label("Search your games").fill("")
+    # Epic / Ubisoft (when an Exophase profile is connected): switch to Ubisoft, type in a game's numbers.
+    if page.locator(".platform-switch").count():
+        page.locator(".platform-switch").get_by_role("button", name="Ubisoft").click()
+        page.locator(".other-games li").first.click()
+        d = drawer(page)
+        d.get_by_label("Achievements you have").fill("3")
+        d.get_by_label("Achievements in the game").fill("10")
+        d.get_by_role("button", name="Save").click()
+        expect(d).to_contain_text("Saved")
+        expect(d).to_contain_text("3 of 10")
+        shot(page, "d47_ubisoft_game", full=False)
+        page.keyboard.press("Escape")
+        page.locator(".platform-switch").get_by_role("button", name="Steam").click()
+        expect(page.get_by_label("Search your games")).to_be_visible()
     page.locator(".section-tabs").get_by_role("link", name="Stats").click()
     # This month's recap (back a month and forward again), then the unlock calendar.
     recap = page.locator(".recap")

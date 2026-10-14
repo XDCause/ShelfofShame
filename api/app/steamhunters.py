@@ -12,6 +12,7 @@ used gently: only the user's started games, one request a second, saved in the d
 again only during a sync (games played since, a weekly refresh, or everything on a full sync).
 Personal use only - see BEFORE_GOING_PUBLIC.md.
 """
+import threading
 import time
 
 import httpx
@@ -27,8 +28,10 @@ class Unavailable(Exception):
 
 
 def _get(url: str):
-    """One request; if it times out (they're sometimes slow for a moment), one more try 5 s later."""
+    """One request (spaced: never two at once, at least PAUSE apart - the sync reads this site from
+    two threads at times); if it times out (they're sometimes slow for a moment), one more try 5 s later."""
     for attempt in (1, 2):
+        _spaced()
         try:
             return httpx.get(url, headers=HEADERS, timeout=TIMEOUT)
         except httpx.TimeoutException:
@@ -84,3 +87,16 @@ def dlc_names(app_id: int) -> list[str]:
 
 def pause():
     time.sleep(PAUSE)
+
+
+_turn = threading.Lock()
+_last = [0.0]
+
+
+def _spaced():
+    """Wait until PAUSE has passed since this site was last asked (any thread)."""
+    with _turn:
+        wait = _last[0] + PAUSE - time.monotonic()
+        if wait > 0:
+            time.sleep(wait)
+        _last[0] = time.monotonic()

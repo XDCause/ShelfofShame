@@ -21,12 +21,13 @@ Steam's pictures are linked from Steam's own servers (header and icon addresses 
 import logging
 import math
 import threading
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 
-from . import exophase, steam, steamhunters
+from . import exophase, othergames, steam, steamhunters
 from .db import db, found
 from .settings import get_setting
 
@@ -37,11 +38,17 @@ HEADER = "https://cdn.cloudflare.steamstatic.com/steam/apps/{app_id}/header.jpg"
 ICON = "https://media.steampowered.com/steamcommunity/public/images/apps/{app_id}/{hash}.jpg"
 RARITY_EVERY = timedelta(days=7)     # rarity changes slowly: re-read it weekly at most
 COMMUNITY_EVERY = timedelta(days=7)  # SteamHunters' numbers: the same
+FRESH = timedelta(days=1)            # a full sync skips SteamHunters numbers newer than this...
+DLC_EVERY = timedelta(days=30)       # ...and DLC lists newer than this (they change with the achievements)
+STEAM_AT_ONCE = 4                    # Steam games read side by side (official API, your own key)
 DAILY = timedelta(hours=20)          # the automatic sync's spacing
 
 # How the background sync is going (one at a time).
 SYNC = {"running": False, "done": 0, "total": 0, "message": None, "error": None, "finished_at": None}
 _lock = threading.Lock()
+# SteamHunters and Exophase are read side by side, but both write to a game's rows: their (quick)
+# database writes take turns, or the two transactions can deadlock on the same game.
+_writes = threading.Lock()
 
 
 class ProfileIn(BaseModel):
@@ -193,18 +200,20 @@ def run_sync(full: bool = False):
                 rarity_due = full or not r["rarity_synced_at"] or now - r["rarity_synced_at"] > RARITY_EVERY
                 to_read.append((r["app_id"], r["name"], rarity_due))
         SYNC.update(total=len(to_read), done=0)
-        for app_id, name, rarity_due in to_read:
-            SYNC.update(message=f"Reading {name}...")
+
+        def read(game):
+            app_id, name, rarity_due = game
             with db() as conn:
                 sync_game(conn, steam_id, app_id, rarity_due)
-            SYNC["done"] += 1
+            step(f"Reading {name}...")
             steam.pause()
+        with ThreadPoolExecutor(STEAM_AT_ONCE) as pool:
+            list(pool.map(read, to_read))     # list(): a Steam error in any of them stops the sync
         with db() as conn:
             conn.execute("UPDATE vg_sync SET last_sync_at = now(), last_error = NULL"
                          + (", last_full_at = now()" if full or not account["last_full_at"] else "") + " WHERE id = 1")
-        community = sync_community(full, {app_id for app_id, _, _ in to_read})
-        dlc = sync_dlc(full)
-        SYNC.update(message=f"Done: {len(owned)} games, {len(to_read)} read from Steam{community}{dlc}")
+        notes = sync_others(full, {app_id for app_id, _, _ in to_read})
+        SYNC.update(message=f"Done: {len(owned)} games, {len(to_read)} read from Steam{notes}")
     except steam.SteamError as e:
         SYNC.update(error=str(e), message=None)
         with db() as conn:
@@ -216,22 +225,51 @@ def run_sync(full: bool = False):
         SYNC.update(running=False, finished_at=datetime.now(timezone.utc).isoformat())
 
 
-def sync_community(full: bool, read_now: set[int]) -> str:
-    """How other players did, from SteamHunters, for started games: ones just read from Steam, ones a
-    week old or never read, or all of them on a full sync. One a second. If SteamHunters can't be
-    reached the Steam sync still counts; this part tries again next time. Returns a note for the
-    sync's message."""
-    cutoff = datetime.now(timezone.utc) - COMMUNITY_EVERY
+def step(message: str):
+    """One more thing done (the sync's parts run side by side, so count under the lock)."""
+    with _lock:
+        SYNC["done"] += 1
+        SYNC["message"] = message
+
+
+def sync_others(full: bool, read_now: set[int]) -> str:
+    """After Steam: SteamHunters' numbers and Exophase's DLC lists (then the Epic / Ubisoft games)
+    side by side - different sites, each still asked one request at a time. Returns the notes."""
+    community, dlc = community_due(full, read_now), dlc_due(full)
+    SYNC.update(total=len(community) + len(dlc), done=0)
+    sh_done = threading.Event()      # the DLC side waits for this before games SteamHunters hadn't judged
+
+    def sh_side():
+        try:
+            return sync_community(community)
+        finally:
+            sh_done.set()
+    with ThreadPoolExecutor(2) as pool:
+        sh = pool.submit(sh_side)
+        exo = pool.submit(lambda: sync_dlc(dlc, sh_done) + othergames.sync_other())
+        return sh.result() + exo.result()
+
+
+def community_due(full: bool, read_now: set[int]) -> list[tuple[int, str]]:
+    """Started games whose SteamHunters numbers are due: just read from Steam, a week old or never
+    read - or, on a full sync, all but those read in the last day."""
+    now = datetime.now(timezone.utc)
     with db() as conn:
-        due = [(r["app_id"], r["name"]) for r in conn.execute(
-            "SELECT app_id, name, sh_synced_at FROM vg_games WHERE achievements_done > 0 AND NOT hidden "
-            "ORDER BY last_played DESC NULLS LAST").fetchall()
-            if full or r["app_id"] in read_now or not r["sh_synced_at"] or r["sh_synced_at"] < cutoff]
+        rows = conn.execute("SELECT app_id, name, sh_synced_at FROM vg_games WHERE achievements_done > 0 AND NOT hidden "
+                            "ORDER BY last_played DESC NULLS LAST").fetchall()
+    if full:                    # a full sync re-reads every game from Steam: freshness decides here
+        return [(r["app_id"], r["name"]) for r in rows if not r["sh_synced_at"] or now - r["sh_synced_at"] > FRESH]
+    return [(r["app_id"], r["name"]) for r in rows
+            if not r["sh_synced_at"] or r["app_id"] in read_now or now - r["sh_synced_at"] > COMMUNITY_EVERY]
+
+
+def sync_community(due: list[tuple[int, str]]) -> str:
+    """How other players did, from SteamHunters, for the games due. One a second. If SteamHunters
+    can't be reached the Steam sync still counts; this part tries again next time. Returns a note
+    for the sync's message."""
     if not due:
         return ""
-    SYNC.update(total=len(due), done=0)
-    for app_id, name in due:
-        SYNC.update(message=f"How others did: {name}...")
+    for left, (app_id, name) in zip(range(len(due), 0, -1), due):
         try:
             fields = steamhunters.game(app_id) or {}
             gone = set()
@@ -240,8 +278,8 @@ def sync_community(full: bool, read_now: set[int]) -> str:
                 gone = steamhunters.unobtainable(app_id)
         except steamhunters.Unavailable as e:
             log.warning("SteamHunters: %s", e)
-            return f" (SteamHunters didn't answer, so {len(due) - SYNC['done']} games' community numbers wait for the next sync)"
-        with db() as conn:
+            return f" (SteamHunters didn't answer, so {left} games' community numbers wait for the next sync)"
+        with _writes, db() as conn:
             conn.execute("UPDATE vg_games SET sh_median_minutes = %s, sh_fastest_minutes = %s, sh_players_perfected = %s, "
                          "sh_players_started = %s, sh_points = %s, sh_has_dlc = %s, sh_unobtainable = %s, "
                          "sh_synced_at = now() WHERE app_id = %s",
@@ -253,40 +291,60 @@ def sync_community(full: bool, read_now: set[int]) -> str:
                                    {"gone": list(gone), "id": app_id}).rowcount
             if changed:
                 recount(conn, app_id)
-        SYNC["done"] += 1
+        step(f"How others did: {name}...")
         steamhunters.pause()
     return f", community numbers for {len(due)}"
 
 
-def sync_dlc(full: bool) -> str:
-    """Which achievements come with a DLC, from Exophase, for started games with DLC (SteamHunters
-    says so, or doesn't know): ones never read or whose achievements changed, or all on a full sync.
-    Achievements Exophase doesn't list stay with the main game. Returns a note for the sync's message."""
+def dlc_due(full: bool) -> list[dict]:
+    """Started games with DLC (SteamHunters says so, or doesn't know) whose DLC list is due: never
+    read or the achievements changed since - or, on a full sync, also ones over 30 days old."""
     with db() as conn:
-        due = conn.execute(
-            "SELECT app_id, name, achievements_total FROM vg_games WHERE achievements_done > 0 AND NOT hidden "
-            "AND sh_has_dlc IS NOT false" + ("" if full else " AND exo_synced_at IS NULL")
-            + " ORDER BY last_played DESC NULLS LAST").fetchall()
+        return conn.execute(
+            "SELECT app_id, name, achievements_total, sh_has_dlc FROM vg_games WHERE achievements_done > 0 AND NOT hidden "
+            "AND sh_has_dlc IS NOT false AND (exo_synced_at IS NULL"
+            + (" OR exo_synced_at < now() - %s" if full else "") + ") ORDER BY last_played DESC NULLS LAST",
+            (DLC_EVERY,) if full else ()).fetchall()
+
+
+def sync_dlc(due: list[dict], sh_done: threading.Event | None = None) -> str:
+    """Which achievements come with a DLC, from Exophase, for the games due. Achievements Exophase
+    doesn't list stay with the main game. Games SteamHunters hadn't judged yet (sh_has_dlc unknown)
+    go last: once SteamHunters' side is done (sh_done), ones it says have no DLC are skipped - so a
+    first sync doesn't ask Exophase about every game. Returns a note for the sync's message."""
     if not due:
         return ""
-    SYNC.update(total=len(due), done=0)
-    for g in due:
-        SYNC.update(message=f"Which achievements are DLC: {g['name']}...")
+    def still_due(g):
+        """A game SteamHunters hadn't judged: wait for its side to finish, then ask again."""
+        if g["sh_has_dlc"] is not None:
+            return True
+        if sh_done is not None:
+            sh_done.wait()
+        with db() as conn:
+            return conn.execute("SELECT sh_has_dlc FROM vg_games WHERE app_id = %s",
+                                (g["app_id"],)).fetchone()["sh_has_dlc"] is not False
+
+    read = 0
+    for g in sorted(due, key=lambda g: g["sh_has_dlc"] is None):    # known DLC games first
+        if not still_due(g):
+            step(f"Which achievements are DLC: {g['name']}...")
+            continue
+        read += 1
         try:
             dlcs = steamhunters.dlc_names(g["app_id"])     # real DLC, not free updates
             steamhunters.pause()
             url, groups = exophase.dlc_of(g["app_id"], g["name"], g["achievements_total"], dlcs)
         except (exophase.Unavailable, steamhunters.Unavailable) as e:
             log.warning("DLC lists: %s", e)
-            return f" ({e} {len(due) - SYNC['done']} games' DLC lists wait for the next sync)"
-        with db() as conn:
+            return f" ({e} Some games' DLC lists wait for the next sync)"
+        with _writes, db() as conn:
             for a in conn.execute("SELECT api_name, name FROM vg_achievements WHERE app_id = %s", (g["app_id"],)).fetchall():
                 conn.execute("UPDATE vg_achievements SET dlc = %s WHERE app_id = %s AND api_name = %s",
                              (groups.get(exophase.key(a["name"])), g["app_id"], a["api_name"]))
             conn.execute("UPDATE vg_games SET exo_url = %s, exo_synced_at = now() WHERE app_id = %s", (url, g["app_id"]))
-        SYNC["done"] += 1
+        step(f"Which achievements are DLC: {g['name']}...")
         exophase.pause()
-    return f", DLC lists for {len(due)}"
+    return f", DLC lists for {read}" if read else ""
 
 
 def start_sync(background: BackgroundTasks | None, full: bool) -> bool:

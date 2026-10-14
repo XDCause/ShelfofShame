@@ -3,6 +3,7 @@ import { api, shortDate, timeAgo } from '../../api.js'
 import { BellCurveIcon, ClockIcon, GamepadIcon, PuzzleIcon, TrophyIcon } from '../../components/icons.jsx'
 import { useApp } from '../../core/app-context.js'
 import Stat, { Change, StatSkeleton } from '../../core/Stat.jsx'
+import { OtherGamesView, OtherPlatformsCard, PlatformSwitch, useOtherGames } from './OtherPlatforms.jsx'
 import {
   CompletionBar, GamePicture, playtime, rarity, SteamSetup, SyncBar, SyncButton, useSteamAccount, useSteamSummary,
 } from './steam.jsx'
@@ -63,6 +64,7 @@ export function Dashboard() {
               <h2 className="home-card-title">Rarest you have</h2>
               <AchievementList items={s.rarest} />
             </section>
+            <OtherPlatformsCard />
             <section className="card home-card">
               <h2 className="home-card-title">Latest 100%</h2>
               {s.recent_perfect.length === 0 ? <p className="muted small">Your first 100% will show here.</p> : (
@@ -226,7 +228,16 @@ const SORTS = {
 // Every game: which to show, a search, a sort, and a row each with its completion. "+ Add a game"
 // tracks one Steam's owned-games list leaves out (a free game like Counter-Strike 2, or one you no
 // longer own) by its store link or app id.
-export function GamesView() {
+// The Games page: Steam (below) or, when you have them, your Epic / Ubisoft games (OtherPlatforms.jsx).
+// ?platform=epic opens on that platform.
+export function GamesPage() {
+  const { data } = useOtherGames()
+  const [platform, setPlatform] = useState(() => new URLSearchParams(window.location.search).get('platform') ?? 'steam')
+  const switcher = <PlatformSwitch platform={platform} setPlatform={setPlatform} platforms={data?.platforms ?? []} />
+  return platform === 'steam' ? <GamesView switcher={switcher} /> : <OtherGamesView platform={platform} data={data} switcher={switcher} />
+}
+
+function GamesView({ switcher }) {
   const { refreshKey, openPanel, changed, showToast } = useApp()
   const [adding, setAdding] = useState(false)
   const [link, setLink] = useState('')
@@ -266,6 +277,7 @@ export function GamesView() {
   if (error) return <p className="alert error">{error}</p>
   return (
     <section className="page">
+      {switcher}
       {/* Pinned under the top bar while the list scrolls: search, sort, filters and the headings. */}
       <div className="games-pinned">
       <div className="toolbar">

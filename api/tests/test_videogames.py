@@ -3,7 +3,8 @@ from datetime import datetime, timezone
 
 import pytest
 
-from app import exophase, steam, steamhunters
+from app import exophase, othergames, steam, steamhunters
+from app.db import db
 
 ME = "76561198000000001"
 T = lambda d: int(datetime(2026, 10, d, 20, 0, tzinfo=timezone.utc).timestamp())  # noqa: E731
@@ -328,7 +329,11 @@ def test_how_other_players_did_from_steamhunters(client, fake):
     client.post("/api/videogames/sync")
     assert not [c for c in fake.calls if c[0] == "community"]               # ...nothing played since: none asked
     client.post("/api/videogames/sync?full=true")
-    assert sorted(c[1] for c in fake.calls if c[0] == "community") == [10, 20]
+    assert not [c for c in fake.calls if c[0] == "community"]               # a full sync skips ones read today...
+    with db() as conn:
+        conn.execute("UPDATE vg_games SET sh_synced_at = now() - interval '2 days'")
+    client.post("/api/videogames/sync?full=true")
+    assert sorted(c[1] for c in fake.calls if c[0] == "community") == [10, 20]   # ...but not older ones
 
 
 def test_steamhunters_being_down_doesnt_spoil_the_sync(client, fake, monkeypatch):
@@ -382,7 +387,11 @@ def test_which_achievements_come_with_a_dlc(client, fake):
     assert [c[1] for c in fake.calls if c[0] == "dlc"] == [20]           # ...looked up again
     fake.calls.clear()
     client.post("/api/videogames/sync?full=true")
-    assert [c[1] for c in fake.calls if c[0] == "dlc"] == [20]
+    assert not [c for c in fake.calls if c[0] == "dlc"]                  # a full sync skips recent DLC lists...
+    with db() as conn:
+        conn.execute("UPDATE vg_games SET exo_synced_at = now() - interval '31 days'")
+    client.post("/api/videogames/sync?full=true")
+    assert [c[1] for c in fake.calls if c[0] == "dlc"] == [20]           # ...but not month-old ones
 
 
 def test_exophase_being_down_doesnt_spoil_the_sync(client, fake, monkeypatch):
@@ -391,7 +400,7 @@ def test_exophase_being_down_doesnt_spoil_the_sync(client, fake, monkeypatch):
     monkeypatch.setattr(exophase, "dlc_of", down)
     setup(client)
     account = client.get("/api/videogames/account").json()
-    assert account["last_error"] is None and "Exophase didn't answer (HTTP 503). 1 games' DLC lists wait" in account["sync"]["message"]
+    assert account["last_error"] is None and "Exophase didn't answer (HTTP 503). Some games' DLC lists wait" in account["sync"]["message"]
     assert client.get("/api/videogames/20").json()["exo_synced_at"] is None    # tried again next time
 
 
@@ -538,3 +547,93 @@ def test_a_month_recap_and_the_unlock_calendar(client, fake):
     assert client.get("/api/videogames/recap?month=Oct").status_code == 422
     stats = client.get("/api/videogames/stats").json()
     assert set(stats["streak"]) == {"current", "longest", "longest_end", "unlocked_today"} and "days" in stats
+
+
+
+# ---- other platforms: Epic and Ubisoft from an Exophase profile ----------------------------------
+EPIC = [{"source_id": "1", "name": "Supraland", "picture_url": "https://m.exophase.com/epic/s.png", "page_url": "https://x/s",
+         "exo_done": 18, "exo_total": 98, "exo_minutes": None, "last_played": T(5), "exo_completed_at": None},
+        {"source_id": "2", "name": "Tiny Game", "picture_url": None, "page_url": None,
+         "exo_done": 5, "exo_total": 5, "exo_minutes": 90, "last_played": T(6), "exo_completed_at": T(6)}]
+UBISOFT = [{"source_id": "9", "name": "Rainbow Six Siege X", "picture_url": None, "page_url": None,
+            "exo_done": 0, "exo_total": 34, "exo_minutes": None, "last_played": T(7), "exo_completed_at": None}]
+
+
+@pytest.fixture
+def exo(monkeypatch):
+    asked = []
+    monkeypatch.setattr(othergames.exophase, "profile_players",
+                        lambda name: {"epic": 11, "uplay": 22} if name == "SomeGamer" else {})
+    monkeypatch.setattr(othergames.exophase, "player_games",
+                        lambda player, env: asked.append(env) or (EPIC if env == "epic" else UBISOFT))
+    return asked
+
+
+def test_epic_and_ubisoft_from_an_exophase_profile(client, exo):
+    r = client.put("/api/videogames/other/account", json={"profile": "https://www.exophase.com/user/SomeGamer/"})
+    assert r.status_code == 200, r.text
+    assert r.json()["profile"] == "SomeGamer" and sorted(exo) == ["epic", "uplay"]
+    assert sorted(r.json()["linked"]) == ["epic", "ubisoft"]
+    games = {g["name"]: g for g in r.json()["games"]}
+    assert (games["Supraland"]["done"], games["Supraland"]["total"]) == (18, 98)         # Epic: Exophase's numbers
+    assert games["Tiny Game"]["completed_at"] and games["Tiny Game"]["playtime_minutes"] == 90
+    siege = games["Rainbow Six Siege X"]                                                # Ubisoft: challenges aren't
+    assert (siege["done"], siege["total"], siege["challenges_total"]) == (None, None, 34)  # achievements
+    platforms = {p["platform"]: p for p in r.json()["platforms"]}
+    assert (platforms["epic"]["done"], platforms["epic"]["total"], platforms["epic"]["perfect"]) == (23, 103, 1)
+    assert platforms["ubisoft"]["to_fill_in"] == 1
+    assert client.put("/api/videogames/other/account", json={"profile": "nobody"}).status_code == 422
+    assert client.put("/api/videogames/other/account", json={"profile": "bad name!"}).status_code == 422
+
+
+def test_typing_in_ubisoft_achievements(client, exo):
+    client.put("/api/videogames/other/account", json={"profile": "SomeGamer"})
+    siege = next(g for g in client.get("/api/videogames/other").json()["games"] if g["platform"] == "ubisoft")
+    r = client.patch(f"/api/videogames/other/{siege['game_id']}", json={"done": 45, "total": 48, "hours": 850})
+    assert (r.json()["done"], r.json()["total"], float(r.json()["percent"]), r.json()["playtime_minutes"]) == (45, 48, 93.8, 51000)
+    assert client.patch(f"/api/videogames/other/{siege['game_id']}", json={"done": 49}).status_code == 422
+    assert client.patch(f"/api/videogames/other/{siege['game_id']}", json={"name": "X"}).status_code == 409
+    client.put("/api/videogames/other/account", json={"profile": "SomeGamer"})        # a sync keeps what you typed
+    again = client.get("/api/videogames/other").json()
+    assert next(g for g in again["games"] if g["game_id"] == siege["game_id"])["done"] == 45
+    assert client.delete(f"/api/videogames/other/{siege['game_id']}").status_code == 409   # hide it instead
+    hidden = client.patch(f"/api/videogames/other/{siege['game_id']}", json={"hidden": True}).json()
+    assert hidden["hidden"] is True and hidden["done"] == 45
+
+
+def test_a_ubisoft_game_added_by_hand(client):
+    r = client.post("/api/videogames/other", json={"name": "Trackmania", "done": 3, "total": 10, "hours": 2.5})
+    assert r.status_code == 201 and (r.json()["platform"], r.json()["playtime_minutes"]) == ("ubisoft", 150)
+    assert client.post("/api/videogames/other", json={"name": "Bad", "done": 11, "total": 10}).status_code == 422
+    assert client.patch(f"/api/videogames/other/{r.json()['game_id']}", json={"name": "Trackmania Turbo"}).json()["name"] \
+        == "Trackmania Turbo"
+    assert client.delete(f"/api/videogames/other/{r.json()['game_id']}").status_code == 204
+
+
+def test_the_steam_sync_also_reads_the_other_platforms(client, fake, exo):
+    client.put("/api/videogames/other/account", json={"profile": "SomeGamer"})
+    exo.clear()
+    setup(client)
+    assert sorted(exo) == ["epic", "uplay"]
+    assert "Epic" in client.get("/api/videogames/account").json()["sync"]["message"]
+
+
+def test_the_exophase_profile_and_game_readers(monkeypatch):
+    import httpx
+    assert exophase.profile_name("https://www.exophase.com/user/Some_Gamer/") == "Some_Gamer"
+    assert exophase.profile_name("not a name!") is None
+    page = ('<li data-endpoint="/steam/user/x/" data-environment="steam" data-playerid="1" class="steam">'
+            '<li data-endpoint="/uplay/user/x/" data-environment="uplay" data-playerid="22" class="uplay">'
+            '<li data-endpoint="/epic/user/y/" data-environment="epic" data-playerid="11" class="epic">')
+    monkeypatch.setattr(exophase, "_get", lambda url, params=None: httpx.Response(200, text=page))
+    assert exophase.profile_players("x") == {"uplay": 22, "epic": 11}                  # not Steam (ours already)
+    one = {"master_id": 5, "earned_awards": 26, "total_awards": 57, "lastplayed_utc": T(1), "completion_date_utc": 0,
+           "resource_tile": "https://m.exophase.com/t.png", "playtimeUnits": {"hours": 2, "minutes": 5},
+           "meta": {"master_id": 5, "title": "Tom Clancy\u2019s Game", "endpoint_awards": "https://x/g/#11"}}
+    pages = {1: [one], 2: []}
+    monkeypatch.setattr(exophase, "_get", lambda url, params=None: httpx.Response(200, json={"success": True,
+                                                                                         "games": pages[params["page"]]}))
+    games = exophase.player_games(11, "epic")
+    assert games == [{"source_id": "5", "name": "Tom Clancy's Game", "picture_url": "https://m.exophase.com/t.png",
+                      "page_url": "https://x/g/", "exo_done": 26, "exo_total": 57, "exo_minutes": 125,
+                      "last_played": T(1), "exo_completed_at": None}]

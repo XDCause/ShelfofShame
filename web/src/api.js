@@ -156,6 +156,12 @@ export const api = {
   videoGameStats: () => request('/videogames/stats'),
   videoGameRecap: (month) => request(`/videogames/recap${month ? `?month=${month}` : ''}`),
   addExtraVideoGame: (game) => request('/videogames/extra', send('POST', { game })),
+  otherGames: () => request('/videogames/other'),
+  otherAccount: () => request('/videogames/other/account'),
+  setOtherAccount: (profile) => request('/videogames/other/account', send('PUT', { profile })),
+  addOtherGame: (game) => request('/videogames/other', send('POST', game)),
+  updateOtherGame: (id, data) => request(`/videogames/other/${id}`, send('PATCH', data)),
+  deleteOtherGame: (id) => request(`/videogames/other/${id}`, send('DELETE')),
   removeExtraVideoGame: (id) => request(`/videogames/extra/${id}`, send('DELETE')),
 
   // A photo kept on its own row (board games, gear): path = '/board-games/3' or '/gear/2'
