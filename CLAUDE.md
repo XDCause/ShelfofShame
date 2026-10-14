@@ -1103,6 +1103,10 @@ DBeaver, psql, and the one-off import script.
    **The database backups don't include media/** - told the user. Live test: 300 MB via nginx in 4.4 s, Range 206.
    e2e uploads a tiny fake mp4 and deletes it again (the data restore can't remove files).
    Tests: 315 API, 61 browser steps.
+3zv. (2026-10-15) Volleyball tabs: Games, Videos, Gear. Video games Games page: PlatformSwitch (one platform) replaced by the
+   shared PlatformToggles / useCounting (same choice as Dashboard and Stats; ?platform=epic opens on just that one):
+   Steam rows from /videogames?show=, Epic / Ubisoft from /videogames/other filtered by OTHER_SHOWS, one table; a
+   platform pill per row when 2+ platforms are on; "+ Add a Steam game" / "+ Add a Ubisoft game" by what's shown.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

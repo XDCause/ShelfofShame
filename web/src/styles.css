@@ -1421,7 +1421,6 @@ body.writing-mode .journal-title { font-size: 2.2rem; }
 .heatmap-key .heatmap-day { margin: 0 1px; }
 
 /* Epic and Ubisoft games (OtherPlatforms.jsx). */
-.platform-switch { max-width: 360px; }
 .platform-toggles { margin: 0 0 12px; }
 .platform-toggles .chip-filter:disabled { opacity: 1; cursor: default; }
 .other-games .row-button { display: flex; align-items: center; gap: 12px; }
@@ -1703,3 +1702,10 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .video-player { display: block; width: 100%; max-height: 60vh; border-radius: 12px; background: #000; }
 .video-pick { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
 .upload-progress { width: 100%; display: flex; flex-direction: column; gap: 6px; }
+
+/* Which platform a game is on (the Games list, when more than one platform is shown). */
+.pill.platform-steam { color: #1b2838; background: rgb(102 192 244 / 0.25); }
+.pill.platform-epic { color: var(--text); background: var(--fill); }
+.pill.platform-ubisoft { color: #1d4ed8; background: rgb(37 99 235 / 0.14); }
+:root[data-theme='dark'] .pill.platform-steam { color: #c7d5e0; }
+:root[data-theme='dark'] .pill.platform-ubisoft { color: #93c5fd; }

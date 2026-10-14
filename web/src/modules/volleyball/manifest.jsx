@@ -15,7 +15,7 @@ export default {
   panels: { volleyball: VolleyballGamePanel, gear: GearPanel, video: VideoPanel, vbteam: TeamPanel },
   pages: [
     { path: 'games', label: 'Games', Icon: BallIcon, render: () => <GamesView /> },
-    { path: 'gear', label: 'Gear', Icon: ShoeIcon, render: () => <GearView /> },
     { path: 'videos', label: 'Videos', Icon: VideoIcon, render: () => <VideosView /> },
+    { path: 'gear', label: 'Gear', Icon: ShoeIcon, render: () => <GearView /> },
   ],
 }

@@ -21,7 +21,7 @@ export function useCounting() {
   return [value, setCounting]
 }
 
-// "Counting: Steam Epic Ubisoft" toggles above the dashboard and stats (only platforms you have
+// "Counting: Steam Epic Ubisoft" toggles above the dashboard, stats and games (only platforms you have
 // games on; at least one stays on). Steam alone matches SteamHunters' numbers.
 export function PlatformToggles({ available }) {
   const [chosen, setChosen] = useCounting()
@@ -57,19 +57,6 @@ export function useOtherGames() {
     api.otherAccount().then(setAccount).catch(() => {})
   }, [refreshKey])
   return { data, account }
-}
-
-// Steam | Epic | Ubisoft above the Games page (only the platforms you have games on).
-export function PlatformSwitch({ platform, setPlatform, platforms }) {
-  const have = new Set(['steam', ...platforms.map((p) => p.platform)])
-  if (have.size < 2) return null
-  return (
-    <div className="segmented platform-switch" role="group" aria-label="Platform">
-      {PLATFORMS.filter(([id]) => have.has(id)).map(([id, label]) => (
-        <button key={id} type="button" aria-pressed={platform === id} onClick={() => setPlatform(id)}>{label}</button>
-      ))}
-    </div>
-  )
 }
 
 // A Ubisoft game Exophase doesn't list: its Steam version is looked for straight away (its list).

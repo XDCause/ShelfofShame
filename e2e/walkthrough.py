@@ -1143,7 +1143,7 @@ def video_games(page):
     expect(page.get_by_label("Search your games")).to_be_visible()
     expect(page.locator(".game-rows li").first.or_(page.locator(".empty", has_text="No games here"))).to_be_visible()
     # + Add a game: a link that isn't a Steam game is refused before anything asks Steam.
-    page.get_by_role("button", name="+ Add a game").click()
+    page.get_by_role("button", name=re.compile(r"^\+ Add a (Steam )?game$")).click()   # "Steam" when others show too
     page.get_by_label("Steam store link or app id").fill("not a game")
     page.locator(".add-game").get_by_role("button", name="Add", exact=True).click()
     expect(page.locator(".add-game .alert")).to_contain_text("store link")
@@ -1186,9 +1186,12 @@ def video_games(page):
     page.get_by_label("Search your games").fill("")
     # Epic / Ubisoft (when an Exophase profile is connected): the same table; a Ubisoft game's panel
     # lists its achievements (from its Steam version) to tick off.
-    if page.locator(".platform-switch").count():
-        page.locator(".platform-switch").get_by_role("button", name="Ubisoft").click()
-        expect(page.locator(".game-head")).to_be_visible()
+    toggles = page.get_by_role("group", name="Platforms to count")
+    if toggles.count():
+        expect(page.locator(".game-rows .pill.platform-steam").first).to_be_visible()   # all together, each row says where
+        toggles.get_by_role("button", name="Steam").click()
+        toggles.get_by_role("button", name="Epic").click()                              # Ubisoft only
+        expect(page.locator(".game-rows .pill.platform-steam")).to_have_count(0)
         page.locator(".game-rows li").first.click()
         d = drawer(page)
         expect(d.locator(".section-head")).to_contain_text("Ubisoft")
@@ -1198,11 +1201,13 @@ def video_games(page):
             expect(d.locator(".section-head strong")).not_to_have_text(before)
         shot(page, "d47_ubisoft_game", full=False)
         page.keyboard.press("Escape")
-        page.locator(".platform-switch").get_by_role("button", name="Epic").click()
+        toggles.get_by_role("button", name="Epic").click()
+        toggles.get_by_role("button", name="Ubisoft").click()                           # Epic only
         expect(page.locator(".game-rows li").first).to_be_visible()
         shot(page, "d48_epic_games", full=False)
-        page.locator(".platform-switch").get_by_role("button", name="Steam").click()
-        expect(page.get_by_label("Search your games")).to_be_visible()
+        toggles.get_by_role("button", name="Steam").click()
+        toggles.get_by_role("button", name="Ubisoft").click()                           # all three again
+        expect(toggles.get_by_role("button", name="Steam")).to_have_attribute("aria-pressed", "true")
     page.locator(".section-tabs").get_by_role("link", name="Stats").click()
     # This month's recap (back a month and forward again), then the unlock calendar.
     recap = page.locator(".recap")
