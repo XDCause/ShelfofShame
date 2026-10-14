@@ -5,8 +5,9 @@
               full=true. Runs in the background; GET /videogames/sync shows how it's going.
               A sync also runs by itself once a day while the app is up (start_daily_sync).
     dashboard summary tiles, closest to 100%, recent unlocks, rarest achievements you have, and
-              profile completion: every achievement unlocked / every achievement in your games,
-              against your goal (settings key vg_goal_percent, 50 unless changed) and your pace
+              profile completion: achievements unlocked / every achievement in the games you've
+              started (at least one unlocked; untouched games don't count), against your goal
+              (settings key vg_goal_percent, 50 unless changed) and your pace
     games     every game with its completion; one game with its achievements
 
 Steam's pictures are linked from Steam's own servers (header and icon addresses below).
@@ -265,6 +266,8 @@ def summary():
                    count(*) FILTER (WHERE achievements_done > 0 AND completed_at IS NULL)::int AS started,
                    COALESCE(sum(achievements_done), 0)::int AS achievements,
                    COALESCE(sum(achievements_total), 0)::int AS achievements_total,
+                   COALESCE(sum(achievements_total) FILTER (WHERE achievements_done > 0), 0)::int
+                       AS started_achievements_total,
                    round(avg(100.0 * achievements_done / achievements_total) FILTER (WHERE achievements_done > 0), 1)
                        AS average_percent,
                    COALESCE(sum(playtime_minutes), 0)::int AS playtime_minutes
@@ -295,9 +298,11 @@ def summary():
 
 
 def goal_progress(totals: dict, goal_percent: int) -> dict:
-    """Profile completion against the goal: every achievement you have / every achievement in your
-    (not hidden) games, how many more reach the goal, and how long that takes at your last-30-days pace."""
-    done, total = totals["achievements"], totals["achievements_total"]
+    """Profile completion against the goal: every achievement you have / every achievement in the
+    (not hidden) games you've started - a game counts once you've unlocked one of its achievements -
+    how many more reach the goal, and how long that takes at your last-30-days pace. (Starting a new
+    game adds its achievements to the total, so the % can drop when you do.)"""
+    done, total = totals["achievements"], totals["started_achievements_total"]
     target = math.ceil(total * goal_percent / 100)
     needed = max(0, target - done)
     per_day = totals["unlocked_last_30_days"] / 30

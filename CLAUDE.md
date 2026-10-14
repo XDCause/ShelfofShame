@@ -755,9 +755,11 @@ DBeaver, psql, and the one-off import script.
      sync. with_pictures() falls back to the old address; GamePicture (steam.jsx) shows a gamepad
      if an image fails. Activity uses header_url too. Result: 207/208 load (the last is a test
      server app with no picture anywhere). 269 API tests.
-   - **Profile completion** (user: "the aim is to get to 50% of all achievements completed for all the
-     games owned"): every achievement unlocked / every achievement in your (not hidden) games - NOT the
-     average per-game % (that's the "37.4% average" tile). summary.goal = goal_progress(): percent,
+   - **Profile completion** (user's goal: 50%). CHANGED by the user the same day: only **started games**
+     count (at least one achievement unlocked): achievements unlocked / every achievement in those
+     (not hidden) games = summary.started_achievements_total - NOT the average per-game % (that's the
+     "average" tile). Starting a new game adds its achievements, so the % can drop. First version
+     counted every owned game (20.4%); started-only gave 31.8% (2,683 of 8,440 in 128 games). summary.goal = goal_progress(): percent,
      goal_percent (settings key vg_goal_percent, default 50; PUT /api/videogames/goal {percent 1-100}),
      target, needed, reached, days_at_pace (needed / last-30-days unlocks). GoalCard first on the
      dashboard (bar with the goal marked, "N more to reach 50%", "about 2 years 3 months to go",

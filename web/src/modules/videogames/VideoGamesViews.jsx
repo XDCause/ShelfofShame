@@ -76,8 +76,9 @@ function roughly(days) {
   return `about ${years} years${rest ? ` ${rest} month${rest === 1 ? '' : 's'}` : ''}`
 }
 
-// Profile completion: every achievement you've unlocked out of every achievement in your games,
-// with the goal marked on the bar, how many more it takes, and how long at your recent pace.
+// Profile completion: achievements unlocked out of every achievement in the games you've started
+// (at least one unlocked), with the goal marked on the bar, how many more it takes, and how long at
+// your recent pace.
 function GoalCard({ summary: s }) {
   const { changed } = useApp()
   const g = s.goal
@@ -101,7 +102,7 @@ function GoalCard({ summary: s }) {
         <span>
           <span className="goal-label">Profile completion</span>
           <strong className="goal-percent">{g.percent}%</strong>
-          <span className="muted small">of every achievement in your {s.with_achievements} games</span>
+          <span className="muted small">of the achievements in the {s.perfect + s.started} games you've started</span>
         </span>
         {editing ? (
           <form className="goal-edit" onSubmit={save}>
@@ -124,7 +125,7 @@ function GoalCard({ summary: s }) {
       <p className="goal-detail">
         {g.reached ? <strong className="ok-text">Goal reached! 🎉 </strong>
           : <><strong>{g.needed.toLocaleString()}</strong> more achievements to reach {g.goal_percent}% · </>}
-        {s.achievements.toLocaleString()} of {s.achievements_total.toLocaleString()} unlocked
+        {s.achievements.toLocaleString()} of {s.started_achievements_total.toLocaleString()} unlocked
       </p>
       {!g.reached && (
         <p className="muted small">
