@@ -6,7 +6,12 @@ import pytest
 
 from app import chesscom
 
-NOW = datetime.now(timezone.utc)
+# "Now" for the fake games: they're 2 h, 1 h and 30 min before it and must all fall on the same day in
+# Brisbane (the database's time zone - activity groups a day's games). Before 3 am there, use 11 pm
+# the night before instead (this test failed once at 1 am).
+_BRISBANE = timezone(timedelta(hours=10))
+_local = datetime.now(_BRISBANE)
+NOW = (_local if _local.hour >= 3 else (_local - timedelta(days=1)).replace(hour=23, minute=0)).astimezone(timezone.utc)
 THIS_MONTH = NOW.strftime("%Y-%m")
 PGN = """[Event "Live Chess"]
 [ECO "B90"]
@@ -118,7 +123,7 @@ def test_openings_as_white_and_black(client, fake):
 
 
 def test_over_the_board_games(client, fake):
-    r = client.post("/api/chess/games", json={"played_on": NOW.date().isoformat(), "colour": "black", "opp_name": "  Club Champ ",
+    r = client.post("/api/chess/games", json={"played_on": NOW.astimezone(_BRISBANE).date().isoformat(), "colour": "black", "opp_name": "  Club Champ ",
                                               "result": "draw", "event": "Club night", "opening": "French Defense Winawer"})
     assert r.status_code == 201, r.text
     g = r.json()
