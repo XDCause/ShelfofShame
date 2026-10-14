@@ -859,6 +859,13 @@ DBeaver, psql, and the one-off import script.
    watcher inside Excalidraw, build time only). ESLint: the same 3 deliberate warnings.
    Async routes (photo uploads, Tamiya / Hasegawa / Bandai lookups, scan) do short blocking DB calls
    on the event loop - fine for one user; would matter with many.
+3zf. **7-day changes** (user liked SteamHunters' "+7 since last week"). summary.week = week_change():
+   achievements / perfect / in_progress / percent (average) / total_percent, now minus 7 days ago -
+   worked out from unlock dates (done_then = unlocked before now() - 7 days), so no snapshot table.
+   core/Stat.jsx `change` prop + Change component (.delta pill: green up, amber down, grey 0; the
+   old `.change` class belongs to stock history). Dashboard tiles + GoalCard (average and total) and
+   the Home tiles. First dev numbers: +59 achievements, +3 at 100%, -2 in progress, +0.8% average.
+   284 API tests.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

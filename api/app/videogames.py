@@ -375,6 +375,13 @@ def summary():
             "SELECT achievements_done, achievements_total FROM vg_games WHERE NOT hidden AND achievements_done > 0").fetchall()]
         totals["goal"] = goal_progress(started, totals["unlocked_last_30_days"],
                                        int(get_setting(conn, GOAL_KEY) or GOAL_DEFAULT))
+        # A week ago: each started game's achievements unlocked before then (Steam dates every unlock).
+        totals["week"] = week_change(conn.execute("""
+            SELECT g.achievements_done AS done, g.achievements_total AS total,
+                   count(*) FILTER (WHERE a.achieved AND (a.unlocked_at IS NULL
+                                    OR a.unlocked_at < now() - interval '7 days'))::int AS done_then
+            FROM vg_games g JOIN vg_achievements a USING (app_id)
+            WHERE NOT g.hidden AND g.achievements_done > 0 GROUP BY g.app_id""").fetchall())
         closest = conn.execute(GAME_SELECT + """ WHERE NOT g.hidden AND g.achievements_done > 0 AND g.completed_at IS NULL
             ORDER BY 1.0 * g.achievements_done / g.achievements_total DESC, g.achievements_total - g.achievements_done
             LIMIT 6""").fetchall()
@@ -467,6 +474,23 @@ def goal_progress(games: list[tuple[int, int]], unlocked_last_30_days: int, goal
         "plan": plan,
         "days_at_pace": math.ceil(plan["achievements"] / per_day) if plan and per_day else None,
     }
+
+
+def week_change(games: list[dict]) -> dict:
+    """What changed in the last 7 days, from each started game's achievements now (done) and a week
+    ago (done_then), out of its total: achievements gained, games at 100%, games in progress, and
+    the average and total completion (the same sums as goal_progress, a week ago and now)."""
+    def state(pairs):
+        pairs = [(d, t) for d, t in pairs if d > 0 and t > 0]
+        done, total = sum(d for d, _ in pairs), sum(t for _, t in pairs)
+        return {"achievements": done,
+                "perfect": sum(1 for d, t in pairs if d >= t),
+                "in_progress": sum(1 for d, t in pairs if d < t),
+                "percent": sum(100 * d / t for d, t in pairs) / len(pairs) if pairs else 0.0,
+                "total_percent": 100 * done / total if total else 0.0}
+    now = state([(g["done"], g["total"]) for g in games])
+    then = state([(g["done_then"], g["total"]) for g in games])
+    return {k: round(now[k] - then[k], 1) if "percent" in k else now[k] - then[k] for k in now}
 
 
 @router.put("/videogames/goal")

@@ -98,6 +98,19 @@ def test_setting_the_profile_syncs_every_game(client, fake):
     assert client.put("/api/videogames/account", json={"profile": "nobody"}).status_code == 422
 
 
+def test_what_changed_this_week():
+    from app.videogames import week_change
+    games = [{"done": 10, "total": 10, "done_then": 8},     # 100% this week
+             {"done": 5, "total": 20, "done_then": 5},      # nothing this week
+             {"done": 3, "total": 30, "done_then": 0}]      # started this week (pulls the average down)
+    week = week_change(games)
+    assert (week["achievements"], week["perfect"], week["in_progress"]) == (5, 1, 0)   # one in, one out
+    # average then: (80 + 25) / 2 = 52.5; now: (100 + 25 + 10) / 3 = 45.0
+    assert week["percent"] == -7.5
+    # total then: 13 / 30 = 43.3%; now: 18 / 60 = 30.0%
+    assert week["total_percent"] == -13.3
+
+
 def test_one_game_with_its_achievements(client, fake):
     setup(client)
     hades = client.get("/api/videogames/20").json()
@@ -357,6 +370,8 @@ def test_which_achievements_come_with_a_dlc(client, fake):
     assert (games["Hades"]["dlc_count"], games["Hades"]["dlc_achievements"], games["Hades"]["dlc_done"]) == (1, 1, 0)
     assert games["Celeste"]["dlc_count"] == 0                             # the list's DLC badge
     assert "exo_url" not in games["Hades"] and "synced_at" not in games["Hades"]     # the list leaves out bookkeeping
+    assert set(client.get("/api/videogames/summary").json()["week"]) == {
+        "achievements", "perfect", "in_progress", "percent", "total_percent"}
     fake.calls.clear()
     client.post("/api/videogames/sync")
     assert not [c for c in fake.calls if c[0] == "dlc"]                  # read already

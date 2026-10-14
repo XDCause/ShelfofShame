@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { api, shortDate, timeAgo } from '../../api.js'
 import { BellCurveIcon, ClockIcon, GamepadIcon, PuzzleIcon, TrophyIcon } from '../../components/icons.jsx'
 import { useApp } from '../../core/app-context.js'
-import Stat, { StatSkeleton } from '../../core/Stat.jsx'
+import Stat, { Change, StatSkeleton } from '../../core/Stat.jsx'
 import {
   CompletionBar, GamePicture, playtime, rarity, SteamSetup, SyncBar, SyncButton, useSteamAccount, useSteamSummary,
 } from './steam.jsx'
@@ -26,11 +26,12 @@ export function Dashboard() {
           <GoalCard summary={s} />
           <div className="home-stats">
             <Stat to="/videogames/games?show=perfect" Icon={TrophyIcon} tone="ok" value={s.perfect} label="Games at 100%"
-              sub={`of ${s.with_achievements} games`} />
+              sub={`of ${s.with_achievements} games`} change={<Change value={s.week.perfect} />} />
             <Stat to="/videogames/games?show=started" Icon={GamepadIcon} tone="tint" value={s.started} label="In progress"
-              sub={s.average_percent != null ? `${s.average_percent}% average` : 'started, not finished'} />
+              sub={s.average_percent != null ? `${s.average_percent}% average` : 'started, not finished'}
+              change={<Change value={s.week.in_progress} />} />
             <Stat to="/videogames/games" Icon={TrophyIcon} tone="purple" value={s.achievements.toLocaleString()}
-              label="Achievements" sub={`${s.unlocked_this_month} this month`} />
+              label="Achievements" sub={`${s.unlocked_this_month} this month`} change={<Change value={s.week.achievements} />} />
             <Stat to="/videogames/games" Icon={GamepadIcon} tone="teal" value={playtime(s.playtime_minutes)}
               label="Played" sub={`${s.games} games`} />
           </div>
@@ -101,7 +102,7 @@ function GoalCard({ summary: s }) {
       <div className="goal-head">
         <span>
           <span className="goal-label">Profile completion</span>
-          <strong className="goal-percent">{g.percent}%</strong>
+          <strong className="goal-percent">{g.percent}%<Change value={s.week.percent} unit="%" /></strong>
           <span className="muted small">average completion of the {s.perfect + s.started} games you've started</span>
         </span>
         {editing ? (
@@ -130,7 +131,8 @@ function GoalCard({ summary: s }) {
       </p>
       <p className="muted small">
         Total: {g.achievements.toLocaleString()} of {g.achievements_total.toLocaleString()} achievements in those games
-        ({g.total_percent}%). The average counts every game the same; the total weighs big games more.
+        ({g.total_percent}%<Change value={s.week.total_percent} unit="%" />). The average counts every game the same; the
+        total weighs big games more. The small +/− numbers are the change in the last 7 days.
       </p>
       {!g.reached && g.plan && (
         <p className="muted small">
@@ -300,8 +302,9 @@ export function VideoGamesTiles() {
   return (
     <>
       <Stat to="/videogames/dashboard" Icon={TrophyIcon} tone="ok" value={s.perfect} label="Games at 100%"
-        sub={s.closest[0] ? `next: ${s.closest[0].name}` : 'Steam'} />
+        sub={s.closest[0] ? `next: ${s.closest[0].name}` : 'Steam'} change={s.week && <Change value={s.week.perfect} />} />
       <Stat to="/videogames/dashboard" Icon={GamepadIcon} tone="purple" value={`${s.goal.percent}%`}
+        change={s.week && <Change value={s.week.percent} unit="%" />}
         label="Profile completion" sub={s.goal.reached ? `goal ${s.goal.goal_percent}% reached` : `goal ${s.goal.goal_percent}% · ${s.goal.points_to_go} points to go`} />
     </>
   )
