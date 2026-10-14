@@ -148,13 +148,15 @@ export const api = {
   steamAccount: () => request('/videogames/account'),
   setSteamProfile: (profile) => request('/videogames/account', send('PUT', { profile })),
   syncSteam: (full = false) => request(`/videogames/sync${full ? '?full=true' : ''}`, send('POST')),
-  videoGameSummary: () => request('/videogames/summary'),
+  // platforms: a list like ['steam', 'epic'] to count only those; leave it out for all of them.
+  videoGameSummary: (platforms) => request(`/videogames/summary${platforms ? `?platforms=${platforms.join(',')}` : ''}`),
   listVideoGames: (show = 'all') => request(`/videogames?show=${show}`),
   getVideoGame: (id) => request(`/videogames/${id}`),
   hideVideoGame: (id, hidden) => request(`/videogames/${id}`, send('PATCH', { hidden })),
   setVideoGameGoal: (percent) => request('/videogames/goal', send('PUT', { percent })),
-  videoGameStats: () => request('/videogames/stats'),
-  videoGameRecap: (month) => request(`/videogames/recap${month ? `?month=${month}` : ''}`),
+  videoGameStats: (platforms) => request(`/videogames/stats${platforms ? `?platforms=${platforms.join(',')}` : ''}`),
+  videoGameRecap: (month, platforms) => request(`/videogames/recap?${new URLSearchParams({
+    ...(month && { month }), ...(platforms && { platforms: platforms.join(',') }) })}`),
   addExtraVideoGame: (game) => request('/videogames/extra', send('POST', { game })),
   otherGames: () => request('/videogames/other'),
 

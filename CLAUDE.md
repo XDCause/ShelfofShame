@@ -973,6 +973,15 @@ DBeaver, psql, and the one-off import script.
    - **LESSON (data loss in dev):** run_e2e.ps1 restores dev's data from the backup taken at its START,
      so anything the user does in dev WHILE it runs is lost (the user connected chess.com mid-run and
      it was wiped). Tell the user before every e2e run in dev.
+3zk. **Dashboard counts every platform** (2026-10-14; user: the dashboard only showed Steam). summary /
+   stats / recap take ?platforms=steam,epic,ubisoft (default all; 422 for none). videogames.ALL_GAMES /
+   ALL_ACHIEVEMENTS = UNION of Steam and othergames.SELECT / vg_other_achievements (app_id as text;
+   steam_ids() turns Steam's back into ints); games_where() runs GAME_SELECT and othergames.SELECT with
+   the same WHERE and merges. summary.available = platforms you have games on. Web: PlatformToggles
+   ("Counting  Steam Epic Ubisoft", the last one can't be turned off; "matches SteamHunters" when Steam
+   alone) on Dashboard and Stats, shared via useCounting() (module store; a reload = all again). Home
+   tiles count all. Ubisoft ticks have no date: they count in totals, never as "this week" or the calendar.
+   Tests: 301 API, 60 browser steps.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

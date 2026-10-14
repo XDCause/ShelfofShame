@@ -13,7 +13,8 @@ shown the same way - every achievement, a picture, SteamHunters' numbers.
     games     shaped like Steam games (app_id = "epic-12"), so the Games table and the game panel
               show them the same way
 
-Profile completion, the goal, streaks and the 7-day changes stay Steam-only (they match SteamHunters).
+The dashboard, stats and recap count all three platforms together by default (?platforms= picks
+some; Steam alone matches SteamHunters' numbers) - videogames.ALL_GAMES / ALL_ACHIEVEMENTS.
 """
 import logging
 from datetime import datetime, timedelta, timezone

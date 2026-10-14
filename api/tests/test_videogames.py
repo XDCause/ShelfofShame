@@ -656,6 +656,32 @@ def test_the_steam_sync_also_reads_the_other_platforms(client, fake, exo):
     assert "Epic" in client.get("/api/videogames/account").json()["sync"]["message"]
 
 
+def test_the_dashboard_counts_every_platform_unless_told_otherwise(client, fake, exo):
+    setup(client)
+    connect(client)
+    s = client.get("/api/videogames/summary").json()                  # Steam 3 games + Epic 2 + Ubisoft 1
+    assert (s["games"], s["perfect"], s["started"], s["achievements"], s["achievements_total"]) == (6, 2, 2, 9, 15)
+    assert s["platforms"] == s["available"] == ["steam", "epic", "ubisoft"]
+    assert [g["name"] for g in s["closest"]] == ["Supraland", "Hades"]     # 1 of 2, then 1 of 3
+    explorer = next(a for a in s["recent"] if a["name"] == "Explorer")      # an Epic unlock, opens the Epic game
+    assert explorer["app_id"].startswith("epic-") and explorer["game"] == "Supraland"
+    assert all(type(a["app_id"]) is int for a in s["recent"] if a["platform"] == "steam")
+    steam_only = client.get("/api/videogames/summary?platforms=steam").json()   # = the Steam-only numbers
+    assert (steam_only["games"], steam_only["perfect"], steam_only["achievements"], steam_only["achievements_total"]) == (3, 1, 3, 5)
+    assert "Explorer" not in [a["name"] for a in steam_only["recent"]]
+    epic = client.get("/api/videogames/summary?platforms=epic").json()
+    assert (epic["games"], epic["perfect"], epic["achievements"], epic["week"]["achievements"]) == (2, 1, 6, 0)
+    siege = next(g for g in client.get("/api/videogames/other").json()["games"] if g["platform"] == "ubisoft")
+    client.put(f"/api/videogames/other/{siege['game_id']}/achievements", json={"achieved": True})
+    two = client.get("/api/videogames/summary?platforms=epic,ubisoft").json()
+    assert (two["games"], two["perfect"], two["achievements"]) == (3, 2, 9)
+    assert {g["name"] for g in two["recent_perfect"]} == {"Tiny Game", "Rainbow Six Siege X"}
+    stats = client.get("/api/videogames/stats?platforms=epic").json()
+    assert sum(m["count"] for m in stats["by_month"]) <= 1 and [g["name"] for g in stats["most_played"]] == ["Tiny Game"]
+    assert client.get("/api/videogames/recap?platforms=steam,epic").status_code == 200
+    assert client.get("/api/videogames/summary?platforms=xbox").status_code == 422
+
+
 def test_finding_a_game_on_steam_by_name(monkeypatch):
     import httpx
     monkeypatch.undo()                                                        # the real find_app

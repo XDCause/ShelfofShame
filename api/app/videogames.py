@@ -424,11 +424,77 @@ def sync(background: BackgroundTasks, full: bool = False):
     return {"sync": SYNC}
 
 
+PLATFORMS = ("steam", "epic", "ubisoft")
+PLATFORMS_QUERY = Query(None, max_length=40, description="steam,epic,ubisoft - which to count (default all)")
+
+
+def platforms_from(text: str | None) -> list[str]:
+    """?platforms=steam,epic -> ["steam", "epic"]; none given = all three."""
+    if not text:
+        return list(PLATFORMS)
+    asked = {p.strip().lower() for p in text.split(",")}
+    chosen = [p for p in PLATFORMS if p in asked]
+    if not chosen:
+        raise HTTPException(422, "Pick at least one platform: steam, epic or ubisoft.")
+    return chosen
+
+
+# Every game and every achievement - Steam's, Epic's and Ubisoft's - in one shape, for the
+# dashboard, the stats and the recap (each query filters platform = ANY(%(platforms)s)). app_id is
+# text here ("730", "epic-12"); steam_ids() turns Steam's back into numbers.
+ALL_GAMES = f"""(
+    SELECT 'steam' AS platform, app_id::text AS app_id, name, hidden, has_achievements, achievements_done,
+           achievements_total, completed_at, playtime_minutes FROM vg_games
+    UNION ALL
+    SELECT platform, app_id, name, hidden, has_achievements, achievements_done, achievements_total,
+           completed_at, playtime_minutes FROM ({othergames.SELECT}) o)"""
+ALL_ACHIEVEMENTS = """(
+    SELECT 'steam' AS platform, a.app_id::text AS app_id, g.name AS game, g.hidden AS game_hidden, a.api_name,
+           a.name, a.description, a.icon, a.global_percent, a.achieved, a.unlocked_at
+    FROM vg_achievements a JOIN vg_games g USING (app_id)
+    UNION ALL
+    SELECT o.platform, o.platform || '-' || o.game_id, o.name, o.hidden, a.api_name, a.name, a.description,
+           a.icon, a.global_percent, a.achieved, a.unlocked_at
+    FROM vg_other_achievements a JOIN vg_other_games o USING (game_id))"""
+# Your unlocks on the chosen platforms, in games you haven't hidden.
+UNLOCKS = f"FROM {ALL_ACHIEVEMENTS} a WHERE a.platform = ANY(%(platforms)s) AND NOT a.game_hidden AND a.achieved"
+
+
+def steam_ids(rows: list[dict]) -> list[dict]:
+    for r in rows:
+        if r.get("platform") == "steam":
+            r["app_id"] = int(r["app_id"])
+    return rows
+
+
+def games_where(conn, platforms: list[str], where: str, sort, limit: int | None = None, params: dict | None = None):
+    """Whole game rows (as the Games list has them) on the chosen platforms that match `where` (in
+    the columns both shapes share: hidden, achievements_done, completed_at...), sorted by `sort`."""
+    params = {**(params or {}), "others": [p for p in platforms if p != "steam"]}
+    rows = []
+    if "steam" in platforms:
+        rows += [with_pictures({**g, "platform": "steam"})
+                 for g in conn.execute(f"SELECT * FROM ({GAME_SELECT}) x WHERE {where}", params).fetchall()]
+    if params["others"]:
+        rows += conn.execute(f"SELECT * FROM ({othergames.SELECT}) x WHERE x.platform = ANY(%(others)s) AND {where}",
+                             params).fetchall()
+    rows.sort(key=sort)
+    return rows[:limit] if limit else rows
+
+
+def _ratio(g):
+    return g["achievements_done"] / g["achievements_total"]
+
+
 @router.get("/videogames/summary")
-def summary():
-    """For the dashboard and Home: totals, the games closest to 100%, recent unlocks, the rarest you have."""
+def summary(platforms: str | None = PLATFORMS_QUERY):
+    """For the dashboard and Home: totals, the games closest to 100%, recent unlocks, the rarest you
+    have - from Steam, Epic and Ubisoft together, or only the platforms in ?platforms=. Steam alone
+    matches SteamHunters' numbers. `available` = the platforms you have games on."""
+    chosen = platforms_from(platforms)
+    p = {"platforms": chosen}
     with db() as conn:
-        totals = conn.execute("""
+        totals = conn.execute(f"""
             SELECT count(*)::int AS games,
                    count(*) FILTER (WHERE has_achievements)::int AS with_achievements,
                    count(*) FILTER (WHERE completed_at IS NOT NULL)::int AS perfect,
@@ -440,46 +506,44 @@ def summary():
                    round(avg(100.0 * achievements_done / achievements_total) FILTER (WHERE achievements_done > 0), 1)
                        AS average_percent,
                    COALESCE(sum(playtime_minutes), 0)::int AS playtime_minutes
-            FROM vg_games WHERE NOT hidden""").fetchone()
+            FROM {ALL_GAMES} g WHERE platform = ANY(%(platforms)s) AND NOT hidden""", p).fetchone()
         totals["unlocked_this_month"] = conn.execute(
-            "SELECT count(*)::int AS n FROM vg_achievements a JOIN vg_games g USING (app_id) WHERE NOT g.hidden "
-            "AND a.achieved AND a.unlocked_at >= date_trunc('month', now())").fetchone()["n"]
+            f"SELECT count(*)::int AS n {UNLOCKS} AND a.unlocked_at >= date_trunc('month', now())", p).fetchone()["n"]
         totals["unlocked_last_30_days"] = conn.execute(
-            "SELECT count(*)::int AS n FROM vg_achievements a JOIN vg_games g USING (app_id) WHERE NOT g.hidden "
-            "AND a.achieved AND a.unlocked_at >= now() - interval '30 days'").fetchone()["n"]
+            f"SELECT count(*)::int AS n {UNLOCKS} AND a.unlocked_at >= now() - interval '30 days'", p).fetchone()["n"]
         started = [(r["achievements_done"], r["achievements_total"]) for r in conn.execute(
-            "SELECT achievements_done, achievements_total FROM vg_games WHERE NOT hidden AND achievements_done > 0").fetchall()]
+            f"SELECT achievements_done, achievements_total FROM {ALL_GAMES} g "
+            "WHERE platform = ANY(%(platforms)s) AND NOT hidden AND achievements_done > 0", p).fetchall()]
         totals["goal"] = goal_progress(started, totals["unlocked_last_30_days"],
                                        int(get_setting(conn, GOAL_KEY) or GOAL_DEFAULT))
-        # A week ago: each started game's achievements unlocked before then (Steam dates every unlock).
-        totals["week"] = week_change(conn.execute("""
+        # A week ago: each started game's achievements less those unlocked in the last 7 days
+        # (Steam and Epic date every unlock; Ubisoft ticks have no date, so they never show as new).
+        totals["week"] = week_change(conn.execute(f"""
             SELECT g.achievements_done AS done, g.achievements_total AS total,
-                   count(*) FILTER (WHERE a.achieved AND (a.unlocked_at IS NULL
-                                    OR a.unlocked_at < now() - interval '7 days'))::int AS done_then
-            FROM vg_games g JOIN vg_achievements a USING (app_id)
-            WHERE NOT g.hidden AND g.achievements_done > 0 GROUP BY g.app_id""").fetchall())
-        closest = conn.execute(GAME_SELECT + """ WHERE NOT g.hidden AND g.achievements_done > 0 AND g.completed_at IS NULL
-            ORDER BY 1.0 * g.achievements_done / g.achievements_total DESC, g.achievements_total - g.achievements_done
-            LIMIT 6""").fetchall()
-        recent = conn.execute("""
-            SELECT a.app_id, g.name AS game, a.api_name, a.name, a.description, a.icon, a.global_percent, a.unlocked_at
-            FROM vg_achievements a JOIN vg_games g USING (app_id)
-            WHERE a.achieved AND NOT g.hidden ORDER BY a.unlocked_at DESC NULLS LAST LIMIT 8""").fetchall()
-        rarest = conn.execute("""
-            SELECT a.app_id, g.name AS game, a.api_name, a.name, a.description, a.icon, a.global_percent, a.unlocked_at
-            FROM vg_achievements a JOIN vg_games g USING (app_id)
-            WHERE a.achieved AND NOT g.hidden AND a.global_percent IS NOT NULL
-            ORDER BY a.global_percent, a.unlocked_at LIMIT 8""").fetchall()
-        perfect = conn.execute(GAME_SELECT + " WHERE NOT g.hidden AND g.completed_at IS NOT NULL "
-                               "ORDER BY g.completed_at DESC LIMIT 6").fetchall()
-        quick = conn.execute(GAME_SELECT + " WHERE NOT g.hidden AND g.achievements_done > 0 AND g.completed_at IS NULL "
-                             "AND g.sh_median_minutes > 0").fetchall()
+                   g.achievements_done - count(a.app_id) FILTER (WHERE a.achieved
+                       AND a.unlocked_at >= now() - interval '7 days')::int AS done_then
+            FROM {ALL_GAMES} g LEFT JOIN {ALL_ACHIEVEMENTS} a ON a.platform = g.platform AND a.app_id = g.app_id
+            WHERE g.platform = ANY(%(platforms)s) AND NOT g.hidden AND g.achievements_done > 0
+            GROUP BY g.platform, g.app_id, g.achievements_done, g.achievements_total""", p).fetchall())
+        started_where = "NOT hidden AND achievements_done > 0 AND completed_at IS NULL"
+        closest = games_where(conn, chosen, started_where,
+                              lambda g: (-_ratio(g), g["achievements_total"] - g["achievements_done"]), 6)
+        quick = games_where(conn, chosen, started_where + " AND sh_median_minutes > 0", lambda g: 0)
+        perfect = games_where(conn, chosen, "NOT hidden AND completed_at IS NOT NULL",
+                              lambda g: -g["completed_at"].timestamp(), 6)
+        achievement = f"SELECT a.platform, a.app_id, a.game, a.api_name, a.name, a.description, a.icon, " \
+                      f"a.global_percent, a.unlocked_at {UNLOCKS}"
+        recent = steam_ids(conn.execute(achievement + " ORDER BY a.unlocked_at DESC NULLS LAST LIMIT 8", p).fetchall())
+        rarest = steam_ids(conn.execute(achievement + " AND a.global_percent IS NOT NULL "
+                                        "ORDER BY a.global_percent, a.unlocked_at LIMIT 8", p).fetchall())
         totals["streak"] = streaks([r["day"] for r in conn.execute(
-            "SELECT DISTINCT a.unlocked_at::date AS day FROM vg_achievements a JOIN vg_games g USING (app_id) "
-            "WHERE a.achieved AND NOT g.hidden AND a.unlocked_at IS NOT NULL").fetchall()],
+            f"SELECT DISTINCT a.unlocked_at::date AS day {UNLOCKS} AND a.unlocked_at IS NOT NULL", p).fetchall()],
             conn.execute("SELECT now()::date AS d").fetchone()["d"])
-    return {**totals, "closest": [with_pictures(g) for g in closest], "recent": recent, "rarest": rarest,
-            "recent_perfect": [with_pictures(g) for g in perfect], "quick_wins": quick_wins(quick)}
+        others = [r["platform"] for r in conn.execute(
+            "SELECT DISTINCT platform FROM vg_other_games WHERE NOT hidden").fetchall()]
+    return {**totals, "platforms": chosen, "available": [x for x in PLATFORMS if x == "steam" or x in others],
+            "closest": closest, "recent": recent, "rarest": rarest, "recent_perfect": perfect,
+            "quick_wins": quick_wins(quick)}
 
 
 def quick_wins(games: list[dict], limit: int = 6) -> list[dict]:
@@ -488,7 +552,7 @@ def quick_wins(games: list[dict], limit: int = 6) -> list[dict]:
     for g in games:
         g["minutes_left"] = math.ceil(g["sh_median_minutes"] * g["left_to_get"] / g["achievements_total"])
     games.sort(key=lambda g: (g["minutes_left"], -float(g["perfect_rate"] or 0)))
-    return [with_pictures(g) for g in games[:limit]]
+    return games[:limit]
 
 
 def streaks(days: list[date], today: date) -> dict:
@@ -513,34 +577,32 @@ COMPLETION_BANDS = [(0, 10, "Under 10%"), (10, 25, "10–24%"), (25, 50, "25–4
 
 
 @router.get("/videogames/stats")
-def stats(months: int = Query(24, ge=1, le=120)):
-    """The Stats page's charts, all from games you haven't hidden:
+def stats(months: int = Query(24, ge=1, le=120), platforms: str | None = PLATFORMS_QUERY):
+    """The Stats page's charts, from games you haven't hidden on the chosen platforms (default all):
         by_month    achievements unlocked each month, oldest first (months with none included)
         rarity      your achievements by how many players have them
         completion  your started games by how much of each you've done
         most_played the ten games with the most playtime"""
+    chosen = platforms_from(platforms)
+    p = {"platforms": chosen, "months": months}
     with db() as conn:
-        by_month = conn.execute("""
+        by_month = conn.execute(f"""
             SELECT to_char(m, 'YYYY-MM') AS month, COALESCE(n.count, 0)::int AS count
             FROM generate_series(date_trunc('month', now()) - make_interval(months => %(months)s - 1),
                                  date_trunc('month', now()), interval '1 month') m
-            LEFT JOIN (SELECT date_trunc('month', a.unlocked_at) AS m, count(*) AS count
-                       FROM vg_achievements a JOIN vg_games g USING (app_id)
-                       WHERE a.achieved AND NOT g.hidden GROUP BY 1) n USING (m)
-            ORDER BY m""", {"months": months}).fetchall()
+            LEFT JOIN (SELECT date_trunc('month', a.unlocked_at) AS m, count(*) AS count {UNLOCKS} GROUP BY 1) n USING (m)
+            ORDER BY m""", p).fetchall()
         percents = [float(r["global_percent"]) for r in conn.execute(
-            "SELECT a.global_percent FROM vg_achievements a JOIN vg_games g USING (app_id) "
-            "WHERE a.achieved AND NOT g.hidden AND a.global_percent IS NOT NULL").fetchall()]
+            f"SELECT a.global_percent {UNLOCKS} AND a.global_percent IS NOT NULL", p).fetchall()]
         games = [float(r["p"]) for r in conn.execute(
-            "SELECT 100.0 * achievements_done / achievements_total AS p FROM vg_games "
-            "WHERE NOT hidden AND achievements_done > 0").fetchall()]
-        most_played = [with_pictures(g) for g in conn.execute(
-            GAME_SELECT + " WHERE NOT g.hidden AND g.playtime_minutes > 0 ORDER BY g.playtime_minutes DESC LIMIT 10"
-        ).fetchall()]
+            f"SELECT 100.0 * achievements_done / achievements_total AS p FROM {ALL_GAMES} g "
+            "WHERE platform = ANY(%(platforms)s) AND NOT hidden AND achievements_done > 0", p).fetchall()]
+        most_played = games_where(conn, chosen, "NOT hidden AND playtime_minutes > 0",
+                                  lambda g: -g["playtime_minutes"], 10)
         today = conn.execute("SELECT now()::date AS d").fetchone()["d"]
-        days = conn.execute("""
-            SELECT a.unlocked_at::date AS day, count(*)::int AS count FROM vg_achievements a JOIN vg_games g USING (app_id)
-            WHERE a.achieved AND NOT g.hidden AND a.unlocked_at IS NOT NULL GROUP BY 1 ORDER BY 1""").fetchall()
+        days = conn.execute(f"""
+            SELECT a.unlocked_at::date AS day, count(*)::int AS count {UNLOCKS} AND a.unlocked_at IS NOT NULL
+            GROUP BY 1 ORDER BY 1""", p).fetchall()
     band = lambda bands, values: [{"label": label, "count": sum(lo <= v < hi for v in values)}  # noqa: E731
                                   for lo, hi, label in bands]
     year_ago = today - timedelta(days=370)
@@ -551,39 +613,38 @@ def stats(months: int = Query(24, ge=1, le=120)):
 
 
 @router.get("/videogames/recap")
-def recap(month: str | None = Query(None, pattern=r"^\d{4}-\d{2}$")):
-    """One month (YYYY-MM, default this one) of achievement hunting: how many you unlocked (and the
-    month before, to compare - only up to the same point while this month is still going), in how many games, the games you 100%'d, your rarest unlocks, your
+def recap(month: str | None = Query(None, pattern=r"^\d{4}-\d{2}$"), platforms: str | None = PLATFORMS_QUERY):
+    """One month (YYYY-MM, default this one) of achievement hunting on the chosen platforms (default
+    all): how many you unlocked (and the month before, to compare - only up to the same point while
+    this month is still going), in how many games, the games you 100%'d, your rarest unlocks, your
     best day and the games you unlocked the most in. `first` is the earliest month with an unlock."""
+    chosen = platforms_from(platforms)
     with db() as conn:
         start = conn.execute("SELECT date_trunc('month', COALESCE(to_date(%s, 'YYYY-MM'), now()))::date AS s",
                              (month,)).fetchone()["s"]
-        span = {"start": start, "end": (start.replace(day=28) + timedelta(days=4)).replace(day=1)}
+        span = {"start": start, "end": (start.replace(day=28) + timedelta(days=4)).replace(day=1), "platforms": chosen}
         span["before"] = (start - timedelta(days=1)).replace(day=1)
-        unlocked = """FROM vg_achievements a JOIN vg_games g USING (app_id)
-            WHERE a.achieved AND NOT g.hidden AND a.unlocked_at >= %(start)s AND a.unlocked_at < %(end)s"""
+        unlocked = f"{UNLOCKS} AND a.unlocked_at >= %(start)s AND a.unlocked_at < %(end)s"
         counts = conn.execute(f"SELECT count(*)::int AS achievements, count(DISTINCT a.app_id)::int AS games {unlocked}",
                               span).fetchone()
         # The month before - up to the same point when this month isn't over yet (1-14 Sept for 1-14 Oct).
         counts["previous"] = conn.execute(
-            "SELECT count(*)::int AS n FROM vg_achievements a JOIN vg_games g USING (app_id) WHERE a.achieved "
-            "AND NOT g.hidden AND a.unlocked_at >= %(before)s AND a.unlocked_at < %(start)s "
+            f"SELECT count(*)::int AS n {UNLOCKS} AND a.unlocked_at >= %(before)s AND a.unlocked_at < %(start)s "
             "AND a.unlocked_at < %(before)s::timestamptz + (now() - %(start)s::timestamptz)", span).fetchone()["n"]
         best_day = conn.execute(f"SELECT a.unlocked_at::date AS day, count(*)::int AS count {unlocked} "
                                 "GROUP BY 1 ORDER BY 2 DESC, 1 LIMIT 1", span).fetchone()
-        rarest = conn.execute(f"""SELECT a.app_id, g.name AS game, a.api_name, a.name, a.description, a.icon,
-                                         a.global_percent, a.unlocked_at {unlocked} AND a.global_percent IS NOT NULL
-                                  ORDER BY a.global_percent, a.unlocked_at LIMIT 3""", span).fetchall()
-        top = conn.execute(f"""SELECT a.app_id, g.name, count(*)::int AS count {unlocked}
-                               GROUP BY a.app_id, g.name ORDER BY 3 DESC, 2 LIMIT 5""", span).fetchall()
-        perfect = conn.execute(GAME_SELECT + " WHERE NOT g.hidden AND g.completed_at >= %(start)s "
-                               "AND g.completed_at < %(end)s ORDER BY g.completed_at", span).fetchall()
-        first = conn.execute("SELECT to_char(min(a.unlocked_at), 'YYYY-MM') AS m FROM vg_achievements a "
-                             "JOIN vg_games g USING (app_id) WHERE a.achieved AND NOT g.hidden").fetchone()["m"]
+        rarest = steam_ids(conn.execute(f"""
+            SELECT a.platform, a.app_id, a.game, a.api_name, a.name, a.description, a.icon, a.global_percent,
+                   a.unlocked_at {unlocked} AND a.global_percent IS NOT NULL
+            ORDER BY a.global_percent, a.unlocked_at LIMIT 3""", span).fetchall())
+        top = steam_ids(conn.execute(f"""SELECT a.platform, a.app_id, a.game AS name, count(*)::int AS count {unlocked}
+                                         GROUP BY 1, 2, 3 ORDER BY 4 DESC, 3 LIMIT 5""", span).fetchall())
+        perfect = games_where(conn, chosen, "NOT hidden AND completed_at >= %(start)s AND completed_at < %(end)s",
+                              lambda g: g["completed_at"], params=span)
+        first = conn.execute(f"SELECT to_char(min(a.unlocked_at), 'YYYY-MM') AS m {UNLOCKS}", span).fetchone()["m"]
         this_month = conn.execute("SELECT to_char(now(), 'YYYY-MM') AS m").fetchone()["m"]   # Brisbane, not UTC
     return {"month": start.strftime("%Y-%m"), "first": first, "this_month": this_month,
-            **counts, "best_day": best_day, "rarest": rarest, "top_games": top,
-            "perfect": [with_pictures(g) for g in perfect]}
+            **counts, "best_day": best_day, "rarest": rarest, "top_games": top, "perfect": perfect}
 
 
 def goal_progress(games: list[tuple[int, int]], unlocked_last_30_days: int, goal_percent: int) -> dict:
@@ -647,7 +708,7 @@ def set_goal(body: GoalIn):
     with db() as conn:
         conn.execute("INSERT INTO settings (key, value) VALUES (%s, %s) "
                      "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", (GOAL_KEY, str(body.percent)))
-    return summary()
+    return summary(None)
 
 
 # Sync bookkeeping the Games list never shows (the game's own page still has it all).

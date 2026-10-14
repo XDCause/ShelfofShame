@@ -1054,6 +1054,21 @@ def video_games(page):
     if page.locator(".goal-card").count():
         expect(page.locator(".home-card-title", has_text="Quick wins")).to_be_visible()
         expect(page.locator(".home-card-title", has_text="Epic and Ubisoft")).to_be_visible()
+    # Epic / Ubisoft games: the dashboard counts every platform; Steam alone matches SteamHunters.
+    toggles = page.get_by_role("group", name="Platforms to count")
+    if page.locator(".goal-card").count() and toggles.count():
+        everything = page.locator(".goal-percent").inner_text()
+        for p in ("Epic", "Ubisoft"):
+            if toggles.get_by_role("button", name=p).count():
+                toggles.get_by_role("button", name=p).click()
+        expect(toggles).to_contain_text("matches SteamHunters")
+        expect(toggles.get_by_role("button", name="Steam")).to_be_disabled()      # the last one stays on
+        page.wait_for_timeout(500)
+        print(f"    profile completion: all {everything}, Steam only {page.locator('.goal-percent').inner_text()}")
+        for p in ("Epic", "Ubisoft"):
+            if toggles.get_by_role("button", name=p).count():
+                toggles.get_by_role("button", name=p).click()
+        expect(toggles).not_to_contain_text("matches SteamHunters")
     shot(page, "d41_video_games", full=False)
     page.locator(".section-tabs").get_by_role("link", name="Games").click()
     expect(page.get_by_label("Search your games")).to_be_visible()

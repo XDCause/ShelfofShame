@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { Link } from 'react-router'
 import { api, timeAgo } from '../../api.js'
 import { useApp } from '../../core/app-context.js'
@@ -6,10 +6,46 @@ import { playtime } from './steam.jsx'
 
 // Epic and Ubisoft games, from the user's Exophase profile (api/app/othergames.py). They use the
 // Steam Games table and game panel (shaped like Steam games, ids like "ubisoft-12"); this file has
-// the platform switch, the add-a-Ubisoft-game form and the dashboard card. Kept apart from Steam:
-// profile completion, the goal, streaks and the 7-day changes stay Steam-only.
+// the platform switches (one for the Games page, toggles for the dashboard and stats), the
+// add-a-Ubisoft-game form and the dashboard card.
 
 export const PLATFORMS = [['steam', 'Steam'], ['epic', 'Epic'], ['ubisoft', 'Ubisoft']]
+
+// Which platforms the dashboard and stats count: null = all of them (the default). Kept while you
+// move between pages; a reload goes back to all.
+let counting = null
+const listeners = new Set()
+const setCounting = (next) => { counting = next; listeners.forEach((l) => l()) }
+export function useCounting() {
+  const value = useSyncExternalStore((l) => { listeners.add(l); return () => listeners.delete(l) }, () => counting)
+  return [value, setCounting]
+}
+
+// "Counting: Steam Epic Ubisoft" toggles above the dashboard and stats (only platforms you have
+// games on; at least one stays on). Steam alone matches SteamHunters' numbers.
+export function PlatformToggles({ available }) {
+  const [chosen, setChosen] = useCounting()
+  if (!available || available.length < 2) return null
+  const on = new Set(chosen ?? available)
+  const flip = (id) => {
+    const next = new Set(on)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    if (next.size === 0) return
+    setChosen(available.every((p) => next.has(p)) ? null : available.filter((p) => next.has(p)))
+  }
+  return (
+    <div className="chip-row platform-toggles" role="group" aria-label="Platforms to count">
+      <span className="muted small">Counting</span>
+      {PLATFORMS.filter(([id]) => available.includes(id)).map(([id, label]) => (
+        <button key={id} type="button" className="chip-filter" aria-pressed={on.has(id)} onClick={() => flip(id)}
+          disabled={on.has(id) && on.size === 1} title={on.has(id) && on.size === 1 ? 'At least one platform stays on' : undefined}>
+          {label}</button>
+      ))}
+      {chosen?.length === 1 && chosen[0] === 'steam' && <span className="muted small">· matches SteamHunters</span>}
+    </div>
+  )
+}
 
 // Everything about the other platforms, reloaded whenever something changes.
 export function useOtherGames() {

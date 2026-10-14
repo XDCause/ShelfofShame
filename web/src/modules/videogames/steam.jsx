@@ -58,9 +58,10 @@ export function useSteamAccount() {
   return { account, setAccount, error }
 }
 
-export function useSteamSummary() {
+// The dashboard / Home numbers: every platform, or only `platforms` (a list) when given.
+export function useSteamSummary(platforms = null) {
   const { refreshKey } = useApp()
-  return useShared(`videogames-summary-${refreshKey}`, api.videoGameSummary)
+  return useShared(`videogames-summary-${platforms ?? 'all'}-${refreshKey}`, () => api.videoGameSummary(platforms))
 }
 
 // "Synced 5 min ago · Sync now", or the sync's progress, or what went wrong.

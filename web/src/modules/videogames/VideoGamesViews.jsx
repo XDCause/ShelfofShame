@@ -3,16 +3,18 @@ import { api, shortDate, timeAgo } from '../../api.js'
 import { BellCurveIcon, ClockIcon, GamepadIcon, PuzzleIcon, TrophyIcon } from '../../components/icons.jsx'
 import { useApp } from '../../core/app-context.js'
 import Stat, { Change, StatSkeleton } from '../../core/Stat.jsx'
-import { AddUbisoftGame, OtherPlatformsCard, PlatformSwitch, useOtherGames } from './OtherPlatforms.jsx'
+import { AddUbisoftGame, OtherPlatformsCard, PlatformSwitch, PlatformToggles, useCounting, useOtherGames } from './OtherPlatforms.jsx'
 import {
   CompletionBar, GamePicture, playtime, rarity, SteamSetup, SyncBar, SyncButton, useSteamAccount, useSteamSummary,
 } from './steam.jsx'
 
 // The dashboard: the account and sync, profile completion against your goal, headline tiles,
-// what to finish next, what you've just unlocked, your rarest achievements, your latest 100%s.
+// what to finish next, what you've just unlocked, your rarest achievements, your latest 100%s -
+// Steam, Epic and Ubisoft together, unless some are toggled off.
 export function Dashboard() {
   const { account, setAccount, error } = useSteamAccount()
-  const { data: s } = useSteamSummary()
+  const [counting] = useCounting()
+  const { data: s } = useSteamSummary(counting)
   if (error) return <p className="alert error">{error}</p>
   if (!account) return <p className="muted loading">Loading...</p>
   if (!account.steam_id) return <section className="page"><SteamSetup account={account} setAccount={setAccount} /></section>
@@ -20,6 +22,7 @@ export function Dashboard() {
   return (
     <section className="page videogames">
       <SyncBar account={account} setAccount={setAccount} />
+      <PlatformToggles available={s?.available} />
       {!s ? <p className="muted loading">Loading...</p> : s.games === 0 ? (
         <p className="empty card">{account.sync.running ? 'Reading your games from Steam...' : 'No games yet. Sync now to read them from Steam.'}</p>
       ) : (
@@ -344,7 +347,7 @@ export function VideoGamesTiles() {
   return (
     <>
       <Stat to="/videogames/dashboard" Icon={TrophyIcon} tone="ok" value={s.perfect} label="Games at 100%"
-        sub={s.closest[0] ? `next: ${s.closest[0].name}` : 'Steam'} change={s.week && <Change value={s.week.perfect} />} />
+        sub={s.closest[0] ? `next: ${s.closest[0].name}` : 'all platforms'} change={s.week && <Change value={s.week.perfect} />} />
       <Stat to="/videogames/dashboard" Icon={GamepadIcon} tone="purple" value={`${s.goal.percent}%`}
         change={s.week && <Change value={s.week.percent} unit="%" />}
         label="Profile completion" sub={s.goal.reached ? `goal ${s.goal.goal_percent}% reached` : `goal ${s.goal.goal_percent}% · ${s.goal.points_to_go} points to go`} />

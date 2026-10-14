@@ -1423,6 +1423,8 @@ body.writing-mode .journal-title { font-size: 2.2rem; }
 
 /* Epic and Ubisoft games (OtherPlatforms.jsx). */
 .platform-switch { max-width: 360px; }
+.platform-toggles { margin: 0 0 12px; }
+.platform-toggles .chip-filter:disabled { opacity: 1; cursor: default; }
 .other-games .row-button { display: flex; align-items: center; gap: 12px; }
 .other-games .grow { display: flex; flex-direction: column; min-width: 0; }
 .other-pic { flex: none; width: 48px; height: 48px; border-radius: 8px; object-fit: cover; background: var(--fill); }

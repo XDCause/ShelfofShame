@@ -3,7 +3,8 @@ import { api } from '../../api.js'
 import { BarList, ColumnChart } from '../../components/charts.jsx'
 import { useApp } from '../../core/app-context.js'
 import { Change } from '../../core/Stat.jsx'
-import { playtime } from './steam.jsx'
+import { playtime, useSteamSummary } from './steam.jsx'
+import { PlatformToggles, useCounting } from './OtherPlatforms.jsx'
 import { AchievementList, PerfectCard } from './VideoGamesViews.jsx'
 
 const monthName = (ym, long = false) => new Date(`${ym}-15T12:00:00`)
@@ -14,9 +15,11 @@ const monthName = (ym, long = false) => new Date(`${ym}-15T12:00:00`)
 // how far you are through the games you've started, and where the hours went.
 export default function StatsView() {
   const { refreshKey, openPanel } = useApp()
+  const [counting] = useCounting()
+  const { data: all } = useSteamSummary()          // shared with the dashboard: which platforms you have
   const [stats, setStats] = useState(null)
   const [error, setError] = useState('')
-  useEffect(() => { api.videoGameStats().then(setStats).catch((e) => setError(e.message)) }, [refreshKey])
+  useEffect(() => { api.videoGameStats(counting).then(setStats).catch((e) => setError(e.message)) }, [refreshKey, counting])
   if (error) return <p className="alert error">{error}</p>
   if (!stats) return <p className="muted loading">Loading...</p>
 
@@ -24,8 +27,9 @@ export default function StatsView() {
   const total = stats.by_month.reduce((s, m) => s + m.count, 0)
   return (
     <section className="page stats">
+      <PlatformToggles available={all?.available} />
       <div className="home-grid">
-        <Recap />
+        <Recap counting={counting} />
         <UnlockCalendar days={stats.days} today={stats.today} streak={stats.streak} />
         <section className="card home-card wide-card">
           <h2 className="home-card-title">Achievements unlocked per month</h2>
@@ -64,12 +68,12 @@ const longDay = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString('en-AU',
 
 // One month at a time: how many achievements (and the change from the month before), in how many
 // games, the games you 100%'d, your best day, your rarest unlocks and where they came from.
-function Recap() {
+function Recap({ counting }) {
   const { refreshKey, openPanel } = useApp()
   const [month, setMonth] = useState(null)
   const [r, setR] = useState(null)
   const [error, setError] = useState('')
-  useEffect(() => { api.videoGameRecap(month).then(setR).catch((e) => setError(e.message)) }, [month, refreshKey])
+  useEffect(() => { api.videoGameRecap(month, counting).then(setR).catch((e) => setError(e.message)) }, [month, refreshKey, counting])
   if (error) return <section className="card home-card wide-card"><p className="alert error">{error}</p></section>
   if (!r) return <section className="card home-card wide-card"><p className="muted loading">Loading...</p></section>
   return (
