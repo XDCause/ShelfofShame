@@ -17,6 +17,7 @@ const gameFields = (teams) => [
   { name: 'sets_lost', label: 'Sets you lost', type: 'number' },
   { name: 'notes', label: 'Notes', type: 'textarea', placeholder: 'How it went, what to work on' },
 ]
+const BYE_HIDES = ['opponent', 'sets_won', 'sets_lost']   // a bye has no opponent or sets
 const TEAM_FIELDS = [
   { name: 'name', label: 'Team name', required: true, wide: true },
   { name: 'location', label: 'Where they play', wide: true, list: 'vb-venues', placeholder: 'e.g. Somerville House Aquatic Centre' },
@@ -34,10 +35,12 @@ const GEAR_FIELDS = [
 const GEAR_KINDS = ['Shoes', 'Knee pads', 'Ball', 'Clothing', 'Bag', 'Ankle brace', 'Water bottle']
 const VIDEO_TOPICS = ['Highlights', 'Full game', 'Serving', 'Passing', 'Setting', 'Attacking', 'Blocking', 'Defence']
 
-// "Won 3-1", "Lost 0-3", or nothing before the result's in.
-export const score = (g) => (g.sets_won == null || g.sets_lost == null ? '' : `${g.result} ${g.sets_won}–${g.sets_lost}`)
+// "Won 3-1", "Lost 0-3", "Bye – win", or nothing before the result's in.
+export const score = (g) => (g.bye ? BYES[g.bye]
+  : g.sets_won == null || g.sets_lost == null ? '' : `${g.result} ${g.sets_won}–${g.sets_lost}`)
+const BYES = { win: 'Bye – win', 'no result': 'Bye – no result' }
 export const resultTone = (r) => ({ Won: 'ok', Lost: 'out', Drew: 'low' }[r] ?? 'tint')
-export const gameTitle = (g) => (g.kind === 'Training' ? 'Training' : g.opponent ? `vs ${g.opponent}` : g.kind)
+export const gameTitle = (g) => (g.bye ? 'Bye' : g.kind === 'Training' ? 'Training' : g.opponent ? `vs ${g.opponent}` : g.kind)
 
 // The video's YouTube id, for its thumbnail (other links get an icon).
 export const youtubeId = (url) =>
@@ -94,9 +97,10 @@ export function VolleyballGamePanel({ id = null, eventId = null, day = null, ven
   const newPage = useNewPage()
   const [game, setGame] = useState(null)
   const [kind, setKind] = useState('Game')
+  const [bye, setBye] = useState(null)        // null = played; 'win' / 'no result' = a bye
   const [teams, setTeams] = useState(null)
   useEffect(() => {
-    if (id != null) api.getVolleyball(id).then((g) => { setGame(g); setKind(g.kind) }).catch((e) => showToast(e.message))
+    if (id != null) api.getVolleyball(id).then((g) => { setGame(g); setKind(g.kind); setBye(g.bye) }).catch((e) => showToast(e.message))
   }, [id, showToast])
   useEffect(() => {
     api.volleyballTeams().then((t) => { setTeams(t); if (id == null) setKind(t.defaults.kind) }).catch((e) => showToast(e.message))
@@ -114,7 +118,7 @@ export function VolleyballGamePanel({ id = null, eventId = null, day = null, ven
   }
 
   const save = async (data) => {
-    const body = { ...data, kind }
+    const body = { ...data, kind, bye: kind === 'Training' ? null : bye }
     const saved = game ? await api.updateVolleyball(game.game_id, body)
       : await api.addVolleyball({ ...body, event_id: eventId })
     changed()
@@ -127,7 +131,7 @@ export function VolleyballGamePanel({ id = null, eventId = null, day = null, ven
   }
 
   return (
-    <FormPanel title={game ? `Volleyball ${gameTitle(game)}` : 'Log volleyball'} fields={gameFields(choices)} record={game}
+    <FormPanel title={game ? `Volleyball ${gameTitle(game)}` : 'Log volleyball'} fields={gameFields(choices).filter((f) => !(bye && kind !== 'Training' && BYE_HIDES.includes(f.name)))} record={game}
       defaults={{ played_on: day ?? today(), team_id: teams.defaults.team_id, venue: venue || teams.defaults.venue }}
       onField={onField} onClose={onClose} onSave={save} saveLabel={game ? 'Save' : 'Log it'}
       onDelete={game && (async () => { await api.deleteVolleyball(game.game_id); changed(); onClose() })}
@@ -157,6 +161,15 @@ export function VolleyballGamePanel({ id = null, eventId = null, day = null, ven
               <button key={k} type="button" aria-pressed={kind === k} onClick={() => setKind(k)}>{k}</button>
             ))}
           </div>
+          {kind !== 'Training' && (
+            <div className="segmented form-segmented bye-picker" role="group" aria-label="Played or a bye">
+              {[[null, 'Played'], ['win', 'Bye – win'], ['no result', 'Bye – no result']].map(([b, label]) => (
+                <button key={label} type="button" aria-pressed={bye === b} onClick={() => setBye(b)}>{label}</button>
+              ))}
+            </div>
+          )}
+          {bye && kind !== 'Training' && <p className="hint">{bye === 'win'
+            ? 'No game this round, counted as a win (as the ladder does).' : 'No game this round, and no result.'}</p>}
           <datalist id="vb-opponents">{teams.opponents.map((o) => <option key={o} value={o} />)}</datalist>
           <datalist id="vb-venues">{teams.venues.map((v) => <option key={v} value={v} />)}</datalist>
           {choices.length === 0 && (

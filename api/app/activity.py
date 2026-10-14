@@ -77,11 +77,13 @@ WITH feed AS (
     FROM board_game_plays p JOIN board_games g USING (game_id)
   UNION ALL
     SELECT {_on_day('v.played_on', 'v.created_at')}, 'volleyball', v.game_id,
-           CASE WHEN v.kind = 'Training' THEN 'Trained' ELSE 'Played' END,
-           CASE WHEN v.kind = 'Training' THEN 'Volleyball training'
+           CASE WHEN v.bye IS NOT NULL THEN 'Had' WHEN v.kind = 'Training' THEN 'Trained' ELSE 'Played' END,
+           CASE WHEN v.bye IS NOT NULL THEN 'Volleyball bye'
+                WHEN v.kind = 'Training' THEN 'Volleyball training'
                 WHEN NULLIF(v.opponent, '') IS NOT NULL THEN 'Volleyball vs ' || v.opponent
                 ELSE 'Volleyball ' || lower(v.kind) END,
            concat_ws(' · ',
+               CASE v.bye WHEN 'win' THEN 'Counted as a win' WHEN 'no result' THEN 'No result' END,
                CASE WHEN v.sets_won > v.sets_lost THEN 'Won ' WHEN v.sets_won < v.sets_lost THEN 'Lost '
                     WHEN v.sets_won IS NOT NULL THEN 'Drew ' END || v.sets_won || '–' || v.sets_lost,
                NULLIF(v.venue, '')),

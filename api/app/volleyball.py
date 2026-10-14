@@ -1,7 +1,8 @@
 """Volleyball (a hobby module): games and training, your gear, and videos.
 
     games   volleyball_games: the day, kind (Game / Training / Social / Tournament), team,
-            opponent, sets won and lost, venue, notes. A game logged from a calendar event keeps
+            opponent, sets won and lost, venue, notes - or a bye (bye = win / no result: no opponent,
+            no sets; a bye win counts as a win). A game logged from a calendar event keeps
             its event_id, so the calendar knows that day's result is in.
     teams   volleyball_teams: the teams you play in and where they play; one can be the default.
             /volleyball/teams also gives what a new game starts with (defaults) and the opponents
@@ -25,6 +26,7 @@ router = APIRouter(prefix="/api", tags=["volleyball"])
 
 Kind = Literal[tuple(VOLLEYBALL_KINDS)]
 Condition = Literal[tuple(GEAR_CONDITIONS)]
+Bye = Literal["win", "no result"]
 
 
 class GameIn(BaseModel):
@@ -38,6 +40,7 @@ class GameIn(BaseModel):
     sets_lost: int | None = Field(None, ge=0)
     notes: str | None = None
     event_id: int | None = None
+    bye: Bye | None = None
 
 
 class GamePatch(BaseModel):
@@ -50,6 +53,7 @@ class GamePatch(BaseModel):
     sets_won: int | None = Field(None, ge=0)
     sets_lost: int | None = Field(None, ge=0)
     notes: str | None = None
+    bye: Bye | None = None
 
 
 class TeamIn(BaseModel):
@@ -108,7 +112,8 @@ class VideoPatch(BaseModel):
 
 
 # Won / Lost / Drew from the sets, when both are known.
-RESULT = """CASE WHEN v.sets_won IS NULL OR v.sets_lost IS NULL THEN NULL
+RESULT = """CASE WHEN v.bye = 'win' THEN 'Won' WHEN v.bye IS NOT NULL THEN NULL
+                 WHEN v.sets_won IS NULL OR v.sets_lost IS NULL THEN NULL
                  WHEN v.sets_won > v.sets_lost THEN 'Won' WHEN v.sets_won < v.sets_lost THEN 'Lost' ELSE 'Drew' END"""
 GAME_SELECT = f"""
 SELECT v.*, {RESULT} AS result, e.title AS event_title, t.name AS team, t.location AS team_location,
@@ -157,6 +162,12 @@ def game_team(conn, data: dict):
         data["team_id"] = row["team_id"] if row else insert_row(conn, "volleyball_teams", {"name": name}, "team_id")
 
 
+def no_sets_on_a_bye(data: dict):
+    """A bye has no opponent and no sets (they're cleared when a game becomes one)."""
+    if data.get("bye"):
+        data.update(opponent=None, sets_won=None, sets_lost=None)
+
+
 def check_url(url: str | None):
     if url is not None and not url.lower().startswith(("http://", "https://")):
         raise HTTPException(422, "A video link must start with http:// or https://.")
@@ -180,7 +191,8 @@ def summary():
             SELECT count(*) FILTER (WHERE v.kind <> 'Training')::int AS games,
                    count(*) FILTER (WHERE v.kind = 'Training')::int AS trainings,
                    count(*) FILTER (WHERE {RESULT} = 'Won')::int AS won,
-                   count(*) FILTER (WHERE {RESULT} = 'Lost')::int AS lost
+                   count(*) FILTER (WHERE {RESULT} = 'Lost')::int AS lost,
+                   count(*) FILTER (WHERE v.bye = 'win')::int AS bye_wins
             FROM volleyball_games v WHERE v.played_on >= date_trunc('year', current_date)""").fetchone()
         row["last"] = conn.execute(GAME_SELECT + " WHERE v.kind <> 'Training' ORDER BY v.played_on DESC, v.game_id DESC "
                                    "LIMIT 1").fetchone()
@@ -194,6 +206,7 @@ def add_game(body: GameIn):
     """Log a game or training (event_id = the calendar event it was on, if any)."""
     data = tidy_text(body.model_dump())
     data["played_on"] = data["played_on"] or date.today()
+    no_sets_on_a_bye(data)
     with db() as conn:
         game_team(conn, data)
         return fetch_game(conn, insert_row(conn, "volleyball_games", data, "game_id"))
@@ -214,6 +227,7 @@ def update_game(game_id: int, body: GamePatch):
     with db() as conn:
         fetch_game(conn, game_id)
         game_team(conn, data)
+        no_sets_on_a_bye(data)
         update_row(conn, "volleyball_games", "game_id", game_id, data)
         return fetch_game(conn, game_id)
 

@@ -92,3 +92,19 @@ def test_teams_and_what_a_new_game_starts_with(client):
     assert client.delete(f"/api/volleyball/teams/{nets['team_id']}").status_code == 204
     csv = client.get("/api/export/volleyball.csv").text
     assert "Set Pieces" in csv
+
+
+def test_byes(client):
+    win = client.post("/api/volleyball/games", json={"bye": "win", "opponent": "Nobody", "sets_won": 3}).json()
+    assert (win["bye"], win["result"], win["opponent"], win["sets_won"]) == ("win", "Won", None, None)   # no sets on a bye
+    none_ = client.post("/api/volleyball/games", json={"bye": "no result", "kind": "Tournament"}).json()
+    assert (none_["bye"], none_["result"]) == ("no result", None)
+    client.post("/api/volleyball/games", json={"opponent": "Spikers", "sets_won": 1, "sets_lost": 3})
+    s = client.get("/api/volleyball/summary").json()
+    assert (s["games"], s["won"], s["lost"], s["bye_wins"]) == (3, 1, 1, 1)
+    assert client.post("/api/volleyball/games", json={"bye": "maybe"}).status_code == 422
+    back = client.patch(f"/api/volleyball/games/{win['game_id']}", json={"bye": None, "opponent": "Spikers",
+                                                                         "sets_won": 3, "sets_lost": 0}).json()
+    assert (back["bye"], back["result"]) == (None, "Won")                   # played after all
+    feed = {(f["verb"], f["title"], f["detail"]) for f in client.get("/api/activity").json() if f["kind"] == "volleyball"}
+    assert ("Had", "Volleyball bye", "No result") in feed

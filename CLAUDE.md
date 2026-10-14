@@ -1065,6 +1065,11 @@ DBeaver, psql, and the one-off import script.
    Wikidata" in a game's panel; gameMeta shows age + designer. Live: Catan -> 3-4, 75 min, 10+, Klaus Teuber,
    Kosmos, 1995, BGG 13, 180 KB photo. Root isn't findable by name (common word). conftest refuses
    wikidata._query / photo. Tests: 313 API.
+3zr. **Volleyball byes** (2026-10-15). 40_volleyball_bye.sql volleyball_games.bye ('win' | 'no result'); a bye clears
+   opponent + sets (no_sets_on_a_bye); RESULT: bye win = 'Won' (ladders count it), no result = NULL; summary
+   bye_wins ("incl. 1 bye" on the record). Activity: verb "Had", title "Volleyball bye", detail "Counted as a
+   win" / "No result". Form: "Played | Bye – win | Bye – no result" (not for Training) hides Against + sets;
+   score() / gameTitle() show "Bye – win" / "Bye". Tests: 314 API, 61 browser steps.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

@@ -33,7 +33,8 @@ export function GamesView() {
     <section className="page">
       <div className="stat-grid card">
         <div><span>Games this year</span><strong>{summary.games}</strong></div>
-        <div><span>Won – lost</span><strong>{summary.won}–{summary.lost}</strong></div>
+        <div><span>Won – lost</span><strong>{summary.won}–{summary.lost}</strong>
+          {summary.bye_wins > 0 && <small className="muted">incl. {summary.bye_wins} bye{summary.bye_wins === 1 ? '' : 's'}</small>}</div>
         <div><span>Training</span><strong>{summary.trainings}</strong></div>
       </div>
       {next.length > 0 && (
