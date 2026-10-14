@@ -934,12 +934,22 @@ def volleyball(page):
     go(page, "Videos")
     page.get_by_role("button", name="+ Add video").click()
     d = drawer(page)
+    d.locator(".video-pick input[data-source=gallery]").set_input_files(        # an uploaded video, not a link
+        {"name": "serve.mp4", "mimeType": "video/mp4", "buffer": b"\x00\x00\x00\x18ftypmp42" + b"\x00" * 512})
+    expect(d.locator(".video-pick")).to_contain_text("serve.mp4")
     d.get_by_label("Title").fill(f"Float serve {MARK}")
-    d.get_by_label("Link").fill("https://youtu.be/dQw4w9WgXcQ")
     d.get_by_label("Topic").fill("Serving")
     d.get_by_role("button", name="Add video").click()
-    expect(page.locator(".video-card", has_text=MARK).locator("img")).to_have_attribute("src", re.compile("img.youtube.com"))
+    card = page.locator(".video-card", has_text=MARK)
+    expect(card.locator("video")).to_have_attribute("src", re.compile(r"/api/volleyball/videos/\d+/file"))
     shot(page, "d32_videos", full=False)
+    card.get_by_role("button", name=f"Float serve {MARK}", exact=True).click()   # its panel has the player
+    d = drawer(page)
+    expect(d.locator("video.video-player")).to_be_visible()
+    # Delete it: its file goes too (the data restore after the run can't take files off the disk).
+    d.get_by_role("button", name="Delete").click()
+    d.locator(".confirm").get_by_role("button", name="Delete").click()
+    expect(page.locator(".video-card", has_text=MARK)).to_have_count(0)
 
 
 @step("Board games: add a game, log a play, the journal offers 'Log a play'")

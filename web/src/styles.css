@@ -1694,3 +1694,12 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
   .vb-season-head { padding: 12px 14px; }
   .vb-season-head .form-dots { flex-basis: 100%; }     /* its own line under the team's details */
 }
+
+/* Volleyball videos: uploaded ones play in the app; the card shows a frame of the video. */
+.video-thumb { position: relative; padding: 0; border: 0; width: 100%; cursor: pointer; }
+.video-thumb video { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+.play-mark { position: absolute; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 999px;
+  background: rgb(0 0 0 / 0.55); color: #fff; font-size: 1.3rem; padding-left: 4px; }
+.video-player { display: block; width: 100%; max-height: 60vh; border-radius: 12px; background: #000; }
+.video-pick { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.upload-progress { width: 100%; display: flex; flex-direction: column; gap: 6px; }

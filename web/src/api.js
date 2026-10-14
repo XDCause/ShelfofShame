@@ -148,6 +148,22 @@ export const api = {
   updateGear: (id, data) => request(`/gear/${id}`, send('PATCH', data)),
   deleteGear: (id) => request(`/gear/${id}`, send('DELETE')),
   listVideos: () => request('/volleyball/videos'),
+  // A video file, sent as it is (XMLHttpRequest, so the upload can report its progress: onProgress(0-1)).
+  uploadVideo: (id, file, onProgress) => new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('PUT', `/api/volleyball/videos/${id}/file`)
+    xhr.setRequestHeader('Content-Type', videoType(file))
+    xhr.setRequestHeader('X-File-Name', encodeURIComponent(file.name))
+    xhr.upload.onprogress = (e) => e.lengthComputable && onProgress?.(e.loaded / e.total)
+    xhr.onload = () => {
+      let body = null
+      try { body = JSON.parse(xhr.responseText) } catch { /* not JSON */ }
+      if (xhr.status >= 200 && xhr.status < 300) resolve(body)
+      else reject(new Error(errorMessage(body) || (xhr.status === 413 ? 'That video is too big (4 GB at most).' : `Upload failed (${xhr.status})`)))
+    }
+    xhr.onerror = () => reject(new Error('The upload stopped - check the connection and try again.'))
+    xhr.send(file)
+  }),
   addVideo: (data) => request('/volleyball/videos', send('POST', data)),
   updateVideo: (id, data) => request(`/volleyball/videos/${id}`, send('PATCH', data)),
   deleteVideo: (id) => request(`/volleyball/videos/${id}`, send('DELETE')),
@@ -298,3 +314,11 @@ export const clock = (hms) => {
   const [h, m] = hms.split(':').map(Number)
   return `${h % 12 || 12}${m ? `:${String(m).padStart(2, '0')}` : ''}${h < 12 ? 'am' : 'pm'}`
 }
+
+// A video's type: what the phone says, else from its name (some phones leave .mov blank).
+const VIDEO_EXT = { mp4: 'video/mp4', m4v: 'video/x-m4v', mov: 'video/quicktime', webm: 'video/webm', mkv: 'video/x-matroska', '3gp': 'video/3gpp' }
+export const videoType = (file) => (file.type || VIDEO_EXT[file.name.split('.').pop().toLowerCase()] || 'video/mp4')
+
+// 262144000 -> "250 MB"
+export const fileSize = (bytes) => (bytes >= 1024 ** 3 ? `${(bytes / 1024 ** 3).toFixed(1)} GB`
+  : bytes >= 1024 ** 2 ? `${Math.round(bytes / 1024 ** 2)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`)

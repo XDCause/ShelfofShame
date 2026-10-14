@@ -283,18 +283,29 @@ export function VideosView() {
         </div>
         <button type="button" className="primary" onClick={() => openPanel('video', {})}>+ Add video</button>
       </div>
-      {visible.length === 0 ? <p className="empty card">No videos yet. Add links to game footage or drills you want to learn.</p> : (
+      {visible.length === 0 ? <p className="empty card">No videos yet. Upload game footage or drills you want to learn from.</p> : (
         <ul className="video-grid">
           {visible.map((v) => {
-            const yt = youtubeId(v.url)
+            const yt = v.url && youtubeId(v.url)
+            const open = () => openPanel('video', { id: v.video_id })
             return (
               <li key={v.video_id} className={v.watched ? 'video-card watched' : 'video-card'}>
-                <a href={v.url} target="_blank" rel="noreferrer" className="video-thumb">
-                  {yt ? <img src={`https://img.youtube.com/vi/${yt}/mqdefault.jpg`} alt="" loading="lazy" referrerPolicy="no-referrer" />
-                    : <span className="photo-missing big-icon"><VideoIcon size={40} /></span>}
-                </a>
+                {v.file_url ? (
+                  <button type="button" className="video-thumb" onClick={open} aria-label={`Play ${v.title}`}>
+                    {/* a frame half a second in, as the picture (only the start of the file is fetched) */}
+                    <video src={`${v.file_url}#t=0.5`} preload="metadata" muted playsInline />
+                    <span className="play-mark" aria-hidden="true">▶</span>
+                  </button>
+                ) : (
+                  <a href={v.url ?? undefined} target="_blank" rel="noreferrer" className="video-thumb">
+                    {yt ? <img src={`https://img.youtube.com/vi/${yt}/mqdefault.jpg`} alt="" loading="lazy" referrerPolicy="no-referrer" />
+                      : <span className="photo-missing big-icon"><VideoIcon size={40} /></span>}
+                  </a>
+                )}
                 <div className="video-body">
-                  <a href={v.url} target="_blank" rel="noreferrer" className="item-title">{v.title} ↗</a>
+                  {v.file_url ? <button type="button" className="link-title item-title" onClick={open}>{v.title}</button>
+                    : v.url ? <a href={v.url} target="_blank" rel="noreferrer" className="item-title">{v.title} ↗</a>
+                      : <span className="item-title">{v.title} <span className="muted small">(upload didn't finish)</span></span>}
                   <span className="item-meta">{[v.topic, v.game_day && `${shortDate(v.game_day)}${v.game_opponent ? ` vs ${v.game_opponent}` : ''}`].filter(Boolean).join(' · ')}</span>
                   <span className="button-row">
                     <label className="tick-label"><input type="checkbox" checked={v.watched} onChange={() => watched(v)} /> Watched</label>

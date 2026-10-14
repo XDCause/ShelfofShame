@@ -8,7 +8,9 @@ import { useRef } from 'react'
 // pick several; the camera takes one each time, so press it again for more).
 const touch = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches
 
-export default function PhotoPick({ onFile, label = 'Add photo', className = 'secondary', disabled = false, multiple = false }) {
+// For videos: accept="video/*" with cameraLabel "Record video" and galleryLabel "Choose video".
+export default function PhotoPick({ onFile, label = 'Add photo', className = 'secondary', disabled = false, multiple = false,
+  accept = 'image/*', cameraLabel = 'Take photo', galleryLabel = 'Gallery' }) {
   const camera = useRef(null)
   const gallery = useRef(null)
   const pick = (e) => {
@@ -18,12 +20,12 @@ export default function PhotoPick({ onFile, label = 'Add photo', className = 'se
   }
   return (
     <>
-      <input ref={camera} type="file" accept="image/*" capture="environment" onChange={pick} hidden data-source="camera" />
-      <input ref={gallery} type="file" accept="image/*" onChange={pick} hidden data-source="gallery" multiple={multiple} />
+      <input ref={camera} type="file" accept={accept} capture="environment" onChange={pick} hidden data-source="camera" />
+      <input ref={gallery} type="file" accept={accept} onChange={pick} hidden data-source="gallery" multiple={multiple} />
       {touch ? (
         <span className="photo-pick" role="group" aria-label={label}>
-          <button type="button" className={className} onClick={() => camera.current.click()} disabled={disabled}>Take photo</button>
-          <button type="button" className={className} onClick={() => gallery.current.click()} disabled={disabled}>Gallery</button>
+          <button type="button" className={className} onClick={() => camera.current.click()} disabled={disabled}>{cameraLabel}</button>
+          <button type="button" className={className} onClick={() => gallery.current.click()} disabled={disabled}>{galleryLabel}</button>
         </span>
       ) : (
         <button type="button" className={className} onClick={() => gallery.current.click()} disabled={disabled}>{label}</button>

@@ -108,3 +108,31 @@ def test_byes(client):
     assert (back["bye"], back["result"]) == (None, "Won")                   # played after all
     feed = {(f["verb"], f["title"], f["detail"]) for f in client.get("/api/activity").json() if f["kind"] == "volleyball"}
     assert ("Had", "Volleyball bye", "No result") in feed
+
+
+MP4 = b"\x00\x00\x00\x18ftypmp42" + b"\x00" * 64          # the start of an MP4 file
+
+
+def test_uploading_a_video(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("MEDIA_DIR", str(tmp_path))
+    video = client.post("/api/volleyball/videos", json={"title": "Serving drill"}).json()
+    assert (video["url"], video["file_url"]) == (None, None)                 # the file comes next
+    url = f"/api/volleyball/videos/{video['video_id']}/file"
+    r = client.put(url, content=MP4, headers={"content-type": "video/mp4", "x-file-name": "IMG%200042.MP4"})
+    assert r.status_code == 200, r.text
+    up = r.json()
+    assert (up["file_type"], up["file_size"], up["original_name"]) == ("video/mp4", len(MP4), "IMG 0042.MP4")
+    assert up["file_url"].startswith(url) and (tmp_path / "videos" / up["file_name"]).read_bytes() == MP4
+    got = client.get(up["file_url"])
+    assert got.content == MP4 and got.headers["content-type"] == "video/mp4"
+    part = client.get(url, headers={"Range": "bytes=4-7"})                  # skipping around the video
+    assert part.status_code == 206 and part.content == b"ftyp"
+
+    first = up["file_name"]
+    again = client.put(url, content=MP4 + b"more", headers={"content-type": "video/quicktime"}).json()
+    assert again["file_name"].endswith(".mov") and not (tmp_path / "videos" / first).exists()   # the old one goes
+    assert client.put(url, content=b"not a video", headers={"content-type": "video/mp4"}).status_code == 422
+    assert client.put(url, content=MP4, headers={"content-type": "image/png"}).status_code == 415
+    assert list((tmp_path / "videos").glob("*.part")) == []                 # nothing half-written left
+    assert client.delete(f"/api/volleyball/videos/{video['video_id']}").status_code == 204
+    assert list((tmp_path / "videos").iterdir()) == []                      # the file goes with it

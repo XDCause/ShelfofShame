@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
-import { api, money, shortDate, today } from '../../api.js'
+import { api, fileSize, money, shortDate, today } from '../../api.js'
 import Drawer from '../../components/Drawer.jsx'
+import PhotoPick from '../../components/PhotoPick.jsx'
 import RecordFields, { RowPhoto, useRecordForm } from '../../components/RecordFields.jsx'
 import { useApp } from '../../core/app-context.js'
 import JournalMentions from '../../core/journal/JournalMentions.jsx'
@@ -240,31 +241,80 @@ export function VideoPanel({ id = null, gameId = null, onClose }) {
   const { changed, showToast } = useApp()
   const [video, setVideo] = useState(null)
   const [games, setGames] = useState([])
+  const [file, setFile] = useState(null)          // a video picked to upload (new, or to replace the one there)
+  const [asLink, setAsLink] = useState(false)     // add a link instead (YouTube...)
+  const [progress, setProgress] = useState(null)  // 0-1 while uploading
   useEffect(() => {
     api.listVolleyball().then(setGames).catch(() => {})
-    if (id != null) api.listVideos().then((vs) => setVideo(vs.find((v) => v.video_id === id))).catch((e) => showToast(e.message))
+    if (id != null) {
+      api.listVideos().then((vs) => { const v = vs.find((x) => x.video_id === id); setVideo(v); setAsLink(Boolean(v?.url)) })
+        .catch((e) => showToast(e.message))
+    }
   }, [id, showToast])
   if (id != null && !video) return <Drawer title="Video" onClose={onClose}><p className="muted">Loading...</p></Drawer>
 
   const fields = [
-    { name: 'title', label: 'Title', required: true, wide: true, placeholder: 'e.g. Float serve drill' },
-    { name: 'url', label: 'Link', type: 'url', required: true, wide: true, placeholder: 'https://youtu.be/...' },
+    { name: 'title', label: 'Title', wide: true, placeholder: file ? file.name.replace(/\.[^.]+$/, '') : 'e.g. Float serve drill' },
+    ...(asLink ? [{ name: 'url', label: 'Link', type: 'url', required: true, wide: true, placeholder: 'https://youtu.be/...' }] : []),
     { name: 'topic', label: 'Topic', list: 'video-topics' },
     { name: 'game_id', label: 'From the game', type: 'select',
       options: games.filter((g) => g.kind !== 'Training').map((g) => [String(g.game_id), `${shortDate(g.played_on)} ${gameTitle(g)}`]) },
     { name: 'notes', label: 'Notes', type: 'textarea' },
   ]
   const save = async (data) => {
-    if (video) await api.updateVideo(video.video_id, data)
-    else await api.addVideo(data)
+    if (!video && !asLink && !file) throw new Error('Choose a video to upload first.')
+    const body = { ...data, title: data.title || file?.name.replace(/\.[^.]+$/, '') || 'Video' }
+    const saved = video ? await api.updateVideo(video.video_id, body) : await api.addVideo(body)
+    if (file) {
+      setProgress(0)
+      try {
+        await api.uploadVideo(saved.video_id, file, setProgress)
+      } catch (e) {
+        setProgress(null)
+        if (!video) await api.deleteVideo(saved.video_id).catch(() => {})   // don't leave an empty video behind
+        throw e
+      }
+    }
     changed()
-    showToast(video ? 'Saved' : `Added ${data.title}`)
+    showToast(video ? 'Saved' : `Added ${body.title}`)
     onClose()
   }
+  const picker = (
+    <section className="panel-section video-pick">
+      {!asLink && (
+        <>
+          <PhotoPick accept="video/*" label={video?.file_url ? 'Replace the video' : 'Choose a video'} cameraLabel="Record video"
+            galleryLabel="Choose video" onFile={setFile} disabled={progress != null} />
+          {file && <p className="small">{file.name} · {fileSize(file.size)}</p>}
+        </>
+      )}
+      {progress != null && (
+        <p className="small upload-progress" role="status">
+          Uploading {Math.round(progress * 100)}% · {fileSize(progress * file.size)} of {fileSize(file.size)}
+          <span className="fill-bar tint"><span style={{ width: `${progress * 100}%` }} /></span>
+        </p>
+      )}
+      {!video && progress == null && (
+        <button type="button" className="plain small" onClick={() => { setAsLink(!asLink); setFile(null) }}>
+          {asLink ? 'Upload a video instead' : 'Or add a link (YouTube...)'}</button>
+      )}
+    </section>
+  )
   return (
     <FormPanel title={video ? video.title : 'Add a video'} fields={fields} record={video}
-      defaults={{ game_id: gameId ?? '' }} onClose={onClose} onSave={save} saveLabel={video ? 'Save' : 'Add video'}
-      onDelete={video && (async () => { await api.deleteVideo(video.video_id); changed(); onClose() })}>
+      defaults={{ game_id: gameId ?? '' }} onClose={onClose} onSave={save}
+      saveLabel={progress != null ? 'Uploading...' : video ? 'Save' : 'Add video'}
+      onDelete={video && (async () => { await api.deleteVideo(video.video_id); changed(); onClose() })}
+      before={<>
+        {video?.file_url && (
+          <section className="panel-section">
+            <video className="video-player" src={video.file_url} controls playsInline preload="metadata" />
+            <p className="muted small">{[video.original_name, video.file_size && fileSize(video.file_size)].filter(Boolean).join(' · ')}</p>
+          </section>
+        )}
+        {video?.url && !video.file_url && <p className="panel-section"><a href={video.url} target="_blank" rel="noreferrer">Open the link ↗</a></p>}
+        {picker}
+      </>}>
       {() => <datalist id="video-topics">{VIDEO_TOPICS.map((t) => <option key={t} value={t} />)}</datalist>}
     </FormPanel>
   )

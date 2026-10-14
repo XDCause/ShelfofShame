@@ -23,3 +23,6 @@ dist/
 
 # Copied from node_modules at build time (web/scripts/copy-excalidraw-fonts.js)
 web/public/fonts/
+
+# Uploaded videos (your own files)
+media/

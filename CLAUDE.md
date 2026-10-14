@@ -1088,6 +1088,20 @@ DBeaver, psql, and the one-off import script.
    /board-games/{id}/shop. Web ShopFind; panel: weight pill ("Medium-light · 2.5/5"), category chips,
    mechanisms, "Gameology $69.95 ↗". No BGG rating / rank in the tags. robots.txt allows product pages;
    agents.md asks for Web Bot Auth for server traffic - noted in BEFORE_GOING_PUBLIC.
+3zu. **Volleyball videos are uploads** (2026-10-15; user: "should be upload videos not links"). Files on disk, NOT in
+   Postgres: docker-compose api volume `./media:/media` (MEDIA_DIR; each copy has its own; media/ git-ignored).
+   42_volleyball_video_files.sql: url nullable; file_name ("<id>-<hex>.<ext>", CHECK), file_type, file_size,
+   original_name. PUT /volleyball/videos/{id}/file streams the body to a .part file, checks the type
+   (mp4/mov/webm/mkv/3gp/m4v) and the first bytes ("ftyp" at 4, or EBML), 4 GB max, renames into place,
+   removes a replaced file; GET .../file = FileResponse (Starlette 1.8 answers Range -> seeking works);
+   DELETE removes the file. VIDEO_SELECT file_url = '...file?v=<file_name>' (new name per upload, cached
+   immutable). nginx: `location ~ ^/api/volleyball/videos/[0-9]+/file$` 4g, proxy_request_buffering off, 900 s.
+   Web: PhotoPick takes accept / cameraLabel / galleryLabel (Record video / Choose video); VideoPanel uploads
+   with XMLHttpRequest progress ("Uploading 45% · 120 MB of 260 MB"), deletes the new row if the upload fails,
+   player in the panel, "Or add a link" still possible; cards show a frame (`#t=0.5`, preload metadata).
+   **The database backups don't include media/** - told the user. Live test: 300 MB via nginx in 4.4 s, Range 206.
+   e2e uploads a tiny fake mp4 and deletes it again (the data restore can't remove files).
+   Tests: 315 API, 61 browser steps.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

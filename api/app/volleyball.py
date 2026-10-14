@@ -8,15 +8,21 @@
             /volleyball/teams also gives what a new game starts with (defaults) and the opponents
             and venues used before (for suggestions), so nothing is typed twice.
     gear    gear (shared with future hobbies): shoes, knee pads, balls... with condition and photo
-    videos  links to game footage or drills (YouTube, Google Drive...): only the link is stored
+    videos  game footage or drills: uploaded (kept as files in MEDIA_DIR/videos, played back here
+            with seeking) - older ones can be links (YouTube, Google Drive...)
 
 Games show on the calendar and in Recent activity (activity.py).
 """
+import os
+import secrets
 from datetime import date
 from decimal import Decimal
+from pathlib import Path
 from typing import Literal
+from urllib.parse import unquote
 
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from .db import GEAR_CONDITIONS, VOLLEYBALL_KINDS, db, found, insert_row, tidy_text, update_row
@@ -95,7 +101,7 @@ class GearPatch(BaseModel):
 
 class VideoIn(BaseModel):
     title: str = Field(min_length=1)
-    url: str = Field(min_length=1)
+    url: str | None = None          # a link; or none, and the file is uploaded next (PUT .../file)
     topic: str | None = None
     game_id: int | None = None
     notes: str | None = None
@@ -134,7 +140,9 @@ SELECT g.gear_id, g.hobby, g.name, g.kind, g.brand, g.size, g.condition, g.purch
 FROM gear g"""
 
 VIDEO_SELECT = """
-SELECT x.*, v.played_on AS game_day, v.opponent AS game_opponent
+SELECT x.*, v.played_on AS game_day, v.opponent AS game_opponent,
+       CASE WHEN x.file_name IS NOT NULL THEN '/api/volleyball/videos/' || x.video_id || '/file?v=' || x.file_name END
+           AS file_url
 FROM volleyball_videos x LEFT JOIN volleyball_games v USING (game_id)"""
 
 
@@ -381,7 +389,7 @@ def list_videos():
 
 @router.post("/volleyball/videos", status_code=201)
 def add_video(body: VideoIn):
-    data = tidy_text(body.model_dump(), required=("title", "url"))
+    data = tidy_text(body.model_dump(), required=("title",))
     check_url(data["url"])
     with db() as conn:
         return fetch_video(conn, insert_row(conn, "volleyball_videos", data, "video_id"))
@@ -389,7 +397,7 @@ def add_video(body: VideoIn):
 
 @router.patch("/volleyball/videos/{video_id}")
 def update_video(video_id: int, body: VideoPatch):
-    data = tidy_text(body.model_dump(exclude_unset=True), required=("title", "url"))
+    data = tidy_text(body.model_dump(exclude_unset=True), required=("title",))
     check_url(data.get("url"))
     if data.get("watched", False) is None:
         raise HTTPException(422, "Watched must be true or false.")
@@ -402,6 +410,79 @@ def update_video(video_id: int, body: VideoPatch):
 @router.delete("/volleyball/videos/{video_id}", status_code=204)
 def delete_video(video_id: int):
     with db() as conn:
-        found(conn.execute("DELETE FROM volleyball_videos WHERE video_id = %s RETURNING video_id",
-                           (video_id,)).fetchone(), "Video")
+        row = found(conn.execute("DELETE FROM volleyball_videos WHERE video_id = %s RETURNING file_name",
+                                 (video_id,)).fetchone(), "Video")
+    remove_file(row["file_name"])
     return Response(status_code=204)
+
+
+# ---------------------------------------------------------------------------
+# Video files (on disk: too big for the database)
+# ---------------------------------------------------------------------------
+MAX_VIDEO_BYTES = 4 * 1024 ** 3
+VIDEO_TYPES = {"video/mp4": "mp4", "video/quicktime": "mov", "video/webm": "webm", "video/x-matroska": "mkv",
+               "video/3gpp": "3gp", "video/x-m4v": "m4v"}
+
+
+def video_dir() -> Path:
+    path = Path(os.environ.get("MEDIA_DIR", "/media")) / "videos"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def remove_file(name: str | None):
+    if name:
+        (video_dir() / name).unlink(missing_ok=True)
+
+
+def looks_like_video(head: bytes) -> bool:
+    """MP4 / MOV / 3GP / M4V have "ftyp" at byte 4; WebM / MKV start with the EBML mark."""
+    return head[4:8] == b"ftyp" or head[:4] == b"\x1a\x45\xdf\xa3"
+
+
+@router.put("/volleyball/videos/{video_id}/file")
+async def upload_video(video_id: int, request: Request):
+    """The video itself, as the request body (Content-Type video/mp4, video/quicktime...; up to
+    4 GB). Written to disk as it arrives, then put in place; replacing a file removes the old one.
+    X-File-Name (optional) is what it was called on your phone."""
+    kind = request.headers.get("content-type", "").split(";")[0].strip().lower()
+    if kind not in VIDEO_TYPES:
+        raise HTTPException(415, "That isn't a video this app can keep (MP4, MOV, WebM or MKV).")
+    with db() as conn:
+        old = fetch_video(conn, video_id)
+    name = f"{video_id}-{secrets.token_hex(6)}.{VIDEO_TYPES[kind]}"
+    part = video_dir() / (name + ".part")
+    size, head = 0, b""
+    try:
+        with open(part, "wb") as f:
+            async for chunk in request.stream():
+                if len(head) < 16:
+                    head += chunk[:16]
+                size += len(chunk)
+                if size > MAX_VIDEO_BYTES:
+                    raise HTTPException(413, "Videos can be up to 4 GB.")
+                f.write(chunk)
+        if size == 0 or not looks_like_video(head):
+            raise HTTPException(422, "That file doesn't look like a video.")
+        part.rename(video_dir() / name)
+    finally:
+        part.unlink(missing_ok=True)
+    original = unquote(request.headers.get("x-file-name", ""))[:200] or None
+    with db() as conn:
+        conn.execute("UPDATE volleyball_videos SET file_name = %s, file_type = %s, file_size = %s, original_name = %s "
+                     "WHERE video_id = %s", (name, kind, size, original, video_id))
+        video = fetch_video(conn, video_id)
+    remove_file(old["file_name"])
+    return video
+
+
+@router.get("/volleyball/videos/{video_id}/file")
+def video_file(video_id: int):
+    """Plays the video (the browser asks for parts of it as you skip around - Range requests)."""
+    with db() as conn:
+        video = fetch_video(conn, video_id)
+    path = video_dir() / (video["file_name"] or "")
+    if not video["file_name"] or not path.is_file():
+        raise HTTPException(404, "No video file.")
+    return FileResponse(path, media_type=video["file_type"], headers={
+        "Cache-Control": "private, max-age=31536000, immutable", "X-Content-Type-Options": "nosniff"})
