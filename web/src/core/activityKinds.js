@@ -1,4 +1,4 @@
-import { BallIcon, BoxIcon, DiceIcon, GamepadIcon, JournalIcon, PlaneIcon, ShoeIcon } from '../components/icons.jsx'
+import { BallIcon, BoxIcon, ChessIcon, DiceIcon, GamepadIcon, JournalIcon, PlaneIcon, ShoeIcon } from '../components/icons.jsx'
 
 // How the activity feed (api/app/activity.py) looks wherever it's shown (Home, the calendar):
 // a colour per verb ("Finished" green, "Used" purple...), and an icon and a name per kind.
@@ -8,7 +8,9 @@ export const VERB_TONE = {
 }
 export const KIND_ICON = {
   page: JournalIcon, model: PlaneIcon, supply: BoxIcon, game: DiceIcon, volleyball: BallIcon, gear: ShoeIcon, videogame: GamepadIcon,
+  chess: ChessIcon,
 }
 export const KIND_NAME = {
   model: 'Kit', supply: 'Supply', page: 'Journal', game: 'Board game', volleyball: 'Volleyball', gear: 'Gear', videogame: 'Video game',
+  chess: 'Chess',
 }

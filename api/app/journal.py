@@ -132,6 +132,7 @@ CASE l.target_kind
     WHEN 'game'   THEN (SELECT name FROM board_games WHERE game_id = l.target_id)
     WHEN 'gear'   THEN (SELECT name FROM gear WHERE gear_id = l.target_id)
     WHEN 'videogame' THEN (SELECT name FROM vg_games WHERE app_id = l.target_id)
+    WHEN 'chess' THEN (SELECT 'Chess vs ' || opp_name FROM chess_games WHERE game_id = l.target_id)
 END"""
 
 
@@ -250,7 +251,12 @@ def mentionable(q: str = ""):
              WHERE name ILIKE %(q)s OR kind ILIKE %(q)s ORDER BY name LIMIT 8)
             UNION ALL
             (SELECT 'videogame', app_id, name, 'Video game' FROM vg_games
-             WHERE name ILIKE %(q)s AND NOT hidden ORDER BY last_played DESC NULLS LAST LIMIT 8)""", {"q": like}).fetchall()
+             WHERE name ILIKE %(q)s AND NOT hidden ORDER BY last_played DESC NULLS LAST LIMIT 8)
+            UNION ALL
+            (SELECT 'chess', game_id, 'Chess vs ' || opp_name || ' (' || to_char(played_at, 'DD Mon YYYY') || ')',
+                    CASE WHEN source = 'otb' THEN 'Chess, over the board' ELSE 'Chess game' END FROM chess_games
+             WHERE opp_name ILIKE %(q)s OR event ILIKE %(q)s OR opening ILIKE %(q)s
+             ORDER BY played_at DESC LIMIT 8)""", {"q": like}).fetchall()
     return rows
 
 

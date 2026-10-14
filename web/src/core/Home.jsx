@@ -114,7 +114,7 @@ function QuickActions({ newPage }) {
     { label: 'Add event', Icon: CalendarIcon, run: () => app.openPanel('event', {}) },
     { label: 'Add supply', Icon: BoxIcon, run: () => app.openAdd(null) },
     { label: 'Wishlist', Icon: CartIcon, run: () => navigate('/wishlist?add=1') },
-    ...MODULES.flatMap((m) => (m.actions ?? []).map((a) => ({ ...a, run: () => a.run(app) }))),
+    ...MODULES.flatMap((m) => (m.actions ?? []).map((a) => ({ ...a, run: () => a.run({ ...app, navigate }) }))),
   ]
   return (
     <section className="card home-card" aria-labelledby="home-actions">

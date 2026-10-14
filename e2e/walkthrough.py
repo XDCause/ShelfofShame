@@ -86,7 +86,7 @@ def home(page):
     expect(stats).to_have_count(10)
     expect(page.locator(".home-card", has_text="Recent activity").locator(".pill").first).to_be_visible()
     expect(page.locator(".home-card", has_text="Coming up")).to_be_visible()
-    expect(page.locator(".quick-action")).to_have_count(8)
+    expect(page.locator(".quick-action")).to_have_count(9)        # + Log a chess game
     shot(page, "d00_home", full=False)
     stats.filter(has_text="To buy").click()
     expect(page).to_have_url(BASE + "/wishlist")
@@ -1141,6 +1141,33 @@ def video_games(page):
     shot(page, "d42_video_game_stats")
 
 
+@step("Chess: the dashboard (or connecting chess.com), an over-the-board game replayed on the board, openings")
+def chess(page):
+    go(page, "Chess")
+    expect(page.locator(".sync-bar, .steam-setup").first).to_be_visible()     # connected, or the connect form
+    page.locator(".section-tabs").get_by_role("link", name="Games").click()
+    page.get_by_role("button", name="+ Log an over-the-board game").click()
+    page.get_by_label("Opponent").fill(f"Rival-{MARK}")
+    page.get_by_label("Result").select_option("win")
+    page.get_by_label("Opening").fill("Ruy Lopez Opening Morphy Defense")
+    page.get_by_label("Moves (PGN, optional - to replay it here)").fill("1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6")
+    page.get_by_role("button", name="Add game").click()
+    d = drawer(page)
+    expect(d).to_contain_text(f"vs Rival-{MARK}")
+    expect(d.locator(".chess-board .sq")).to_have_count(64)
+    expect(d.locator(".chess-ply")).to_contain_text("4... Nf6")                # opens at the end
+    d.get_by_role("button", name="Start").click()
+    d.get_by_role("button", name="Forward one move").click()
+    expect(d.locator(".chess-ply")).to_contain_text("1. e4")
+    expect(d.locator(".chess-board .pc")).to_have_count(32)
+    shot(page, "d49_chess_game", full=False)
+    page.keyboard.press("Escape")
+    expect(page.locator(".chess-games")).to_contain_text(f"Rival-{MARK}")
+    page.locator(".section-tabs").get_by_role("link", name="Openings").click()
+    expect(page.locator(".opening", has_text="Ruy Lopez Opening")).to_be_visible()
+    shot(page, "d50_chess_openings", full=False)
+
+
 @step("Settings: price guide, default shop, backups, exports, catalogue")
 def settings_more(page):
     page.get_by_role("button", name="Settings").click()
@@ -1201,7 +1228,7 @@ def phone(page):
         page.locator(".tabbar a", has_text=tab).click()
         fits(tab)
     page.locator(".tabbar a", has_text="Hobbies").click()
-    expect(page.locator(".hobby-card")).to_have_count(4)
+    expect(page.locator(".hobby-card")).to_have_count(5)          # models, board games, volleyball, video games, chess
     fits("Hobbies")
     for hobby, tabs in (("Models", ("Kits", "Colours")), ("Board games", ("Games", "Plays")),
                         ("Volleyball", ("Games", "Gear", "Videos")), ("Video games", ("Dashboard", "Games", "Stats"))):
@@ -1232,7 +1259,7 @@ with sync_playwright() as p:
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
                matches, used_on, gundam, bandai_lookup, warhammer, journal_write, journal_links, journal_from_model,
                journal_suggestion, journal_todo, global_search, journal_wishlist, appearance,
-               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, settings_more, no_panel):
+               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, settings_more, no_panel):
         fn(desk)
     ctx = browser.new_context(**p.devices["iPhone 13"], timezone_id=zone)
     mob = ctx.new_page()

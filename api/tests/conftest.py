@@ -27,8 +27,10 @@ def clean_database():
                      "model_paints, models, catalog_products, model_sessions, model_log, colour_groups, "
                      "colour_group_members, mixes, mix_parts, price_guide, journal_pages, tags, page_tags, "
                      "journal_links, journal_images, journal_drawings, calendar_events, board_games, board_game_plays, gear, "
-                     "volleyball_games, volleyball_videos, vg_achievements, vg_games, vg_other_games "
-                     "RESTART IDENTITY CASCADE")
+                     "volleyball_games, volleyball_videos, vg_achievements, vg_games, vg_other_games, "
+                     "chess_games, chess_archives RESTART IDENTITY CASCADE")
+        conn.execute("UPDATE chess_account SET username = NULL, profile = NULL, stats = NULL, last_sync_at = NULL, "
+                     "last_error = NULL")
         conn.execute("UPDATE vg_sync SET profile = NULL, steam_id = NULL, persona_name = NULL, last_sync_at = NULL, "
                      "last_full_at = NULL, last_error = NULL, exo_profile = NULL, exo_players = NULL, "
                      "exo_synced_at = NULL, exo_error = NULL")
@@ -46,7 +48,7 @@ def clean_database():
 @pytest.fixture(autouse=True)
 def no_real_steam(monkeypatch):
     """Tests never call Steam (and never use the real key): a test that forgets to fake it fails."""
-    from app import exophase, steam, steamhunters, videogames
+    from app import chess, chesscom, exophase, steam, steamhunters, videogames
 
     def refuse(*_a, **_k):
         raise AssertionError("A test tried to call the real Steam API")
@@ -56,6 +58,9 @@ def no_real_steam(monkeypatch):
     monkeypatch.setattr(steamhunters, "pause", lambda: None)
     monkeypatch.setattr(exophase, "_get", refuse)
     monkeypatch.setattr(steam, "find_app", refuse)            # Steam's store search (not via steam._get)
+    monkeypatch.setattr(chesscom, "_get", refuse)
+    monkeypatch.setattr(chesscom, "pause", lambda: None)
+    chess.SYNC.update(running=False, done=0, total=0, message=None, error=None, finished_at=None)
     monkeypatch.setattr(exophase, "pause", lambda: None)
     videogames.SYNC.update(running=False, done=0, total=0, message=None, error=None, finished_at=None)
 

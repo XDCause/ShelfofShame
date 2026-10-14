@@ -83,6 +83,11 @@ export const GamepadIcon = (p) => (
 export const BellCurveIcon = (p) => (
   <Icon {...p}><path d="M2.5 19.5h19" /><path d="M3 17.5c3.5 0 4.5-1.5 6-6S11 5.5 12 5.5s1.5 1.5 3 6 2.5 6 6 6" /></Icon>
 )
+// A knight: chess.
+export const ChessIcon = (p) => (
+  <Icon {...p}><path d="M6.5 20.5h11" /><path d="M8 20.5c0-3.2 1.2-5.2 3.4-7.1-2.1.2-3.6-.4-4.4-1.8 1.4-2.4 3.3-5 5.6-6.6 3.2.6 5.4 3.6 5.4 7.6 0 3.2-.9 5.6-.9 7.9" />
+    <path d="M12.3 8.6h.01" /></Icon>
+)
 // A puzzle piece: an add-on (DLC).
 export const PuzzleIcon = (p) => (
   <Icon {...p}><path d="M4.5 8.5h4a2.2 2.2 0 1 1 4.4 0h4.6v4.6a2.2 2.2 0 1 1 0 4.4v3h-13z" /></Icon>

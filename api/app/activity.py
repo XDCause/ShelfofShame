@@ -9,6 +9,8 @@
     volleyball  a game or training                   (volleyball_games)
     gear        bought                               (gear's purchase date)
     video games achievements unlocked (one entry per game per day), and games 100%'d (vg_*)
+    chess       online games: one entry per time control per day ("Blitz chess: 12 games · 7-4-1");
+                over the board: each game                    (chess_games)
 
 Each item: {at, day, kind, ref, verb, title, detail, photo_url}; the photo (if any) is the
 product's, the game's or the gear's. Newest first. Part of the core: Home shows the latest, and
@@ -100,6 +102,20 @@ WITH feed AS (
     SELECT completed_at, 'videogame', app_id, 'Perfected', name, '100%% · ' || achievements_total || ' achievements',
            NULL, NULL, COALESCE(NULLIF(header_url, ''), 'https://cdn.cloudflare.steamstatic.com/steam/apps/' || app_id || '/header.jpg')
     FROM vg_games WHERE completed_at IS NOT NULL AND NOT hidden
+  UNION ALL
+    SELECT max(c.played_at), 'chess', (array_agg(c.game_id ORDER BY c.played_at DESC))[1], 'Played',
+           initcap(c.time_class) || ' chess',
+           count(*) || CASE WHEN count(*) = 1 THEN ' game · ' ELSE ' games · ' END
+               || count(*) FILTER (WHERE c.result = 'win') || '–' || count(*) FILTER (WHERE c.result = 'loss')
+               || '–' || count(*) FILTER (WHERE c.result = 'draw'),
+           NULL, NULL, NULL
+    FROM chess_games c WHERE c.source = 'chesscom'
+    GROUP BY c.time_class, (c.played_at AT TIME ZONE current_setting('TimeZone'))::date
+  UNION ALL
+    SELECT c.played_at, 'chess', c.game_id, 'Played', 'Chess vs ' || c.opp_name,
+           concat_ws(' · ', CASE c.result WHEN 'win' THEN 'Won' WHEN 'loss' THEN 'Lost' ELSE 'Drew' END,
+                     NULLIF(c.event, '')), NULL, NULL, NULL
+    FROM chess_games c WHERE c.source = 'otb'
 )
 SELECT f.at, (f.at AT TIME ZONE current_setting('TimeZone'))::date AS day,
        f.kind, f.ref, f.verb, f.title, NULLIF(f.detail, '') AS detail,

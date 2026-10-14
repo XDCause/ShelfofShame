@@ -944,6 +944,35 @@ DBeaver, psql, and the one-off import script.
      LESSON: grep styles.css for a class name before using it (.change, .tick both clashed).
    - Epic playtime: no source (Exophase blank for Epic; Epic has no public API; Heroic / Legendary use
      the user's Epic login) -> the panel's "Hours played" box shows for Epic and Ubisoft.
+3zj. **Chess** (2026-10-14). User chose all four: ratings dashboard, games + board replay, openings,
+   over-the-board games. chess.com's official public API (no login, just the username).
+   - 34_chess.sql: chess_account (one row: username, profile, stats JSONB, last_sync_at/error),
+     chess_archives (month, games, complete = month over when read), chess_games (source chesscom |
+     otb, uuid UNIQUE, played_at, time_class bullet/blitz/rapid/daily/classical, colour, my/opp rating,
+     result win/loss/draw from your side + how, eco/opening/opening_family, pgn, moves, accuracy).
+     journal_links kinds + 'chess'.
+   - chesscom.py: profile / stats / archives / month; game_row() (your side; DRAWS set; opening name
+     from chess.com's ECOUrl slug, moves dropped; family_of = up to Opening/Defense/Gambit/Game/...);
+     username_from (lower case, 3-25 chars). Requests one at a time (PAUSE 0.5).
+   - chess.py: background sync (SYNC dict, polled) - profile + stats, then months not complete (all on
+     full); daily loop started in main.py's lifespan (always; waits for a username). summary (classes
+     from stats with week_change = rating now - last rated game before 7 days ago; puzzles; week W/L/D;
+     recent), ratings (last rating per day per class), games (filters, rating_change via lag()),
+     openings (families + variations: games, W/D/L, score = (W + D/2) / games), OTB add / patch /
+     delete (online games: notes only).
+   - Activity: one row per day per time control for online games ("Blitz chess: 12 games · 7-4-1"),
+     each OTB game; so they show on the calendar. Journal: mention kind 'chess', mentionable search.
+   - Web modules/chess: manifest (Dashboard / Games / Openings; panel chessgame; Home tile; quick
+     action "Log a chess game" - Home now passes `navigate` to module actions), ChessViews.jsx,
+     chessParts.jsx (ResultPill, RatingChange, timeControl, OtbForm, useChessAccount, ChessSetup,
+     ChessSyncBar), ChessGamePanel.jsx, Board.jsx (chess.js 1.4.0 dynamic import; own CSS board,
+     unicode pieces sized with cqw; flipped for Black; arrows / buttons / move list). charts.jsx
+     LineChart (fitted axis, crosshair tooltip, table view). ChessIcon (a knight).
+   - Tests: 300 API (test_chess.py, fake chess.com), 60 browser steps (chess: OTB game with PGN,
+     replay, openings). e2e counts: 9 quick actions, 5 hobby cards.
+   - **LESSON (data loss in dev):** run_e2e.ps1 restores dev's data from the backup taken at its START,
+     so anything the user does in dev WHILE it runs is lost (the user connected chess.com mid-run and
+     it was wiped). Tell the user before every e2e run in dev.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

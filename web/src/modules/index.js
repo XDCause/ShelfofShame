@@ -10,11 +10,12 @@
 // Supplies, the wishlist, the journal and the calendar are the core, shared by every hobby.
 // Adding a hobby = adding a folder here and one line below. See docs/ROADMAP.md.
 import boardgames from './boardgames/manifest.jsx'
+import chess from './chess/manifest.jsx'
 import models from './models/manifest.jsx'
 import videogames from './videogames/manifest.jsx'
 import volleyball from './volleyball/manifest.jsx'
 
-export const MODULES = [models, boardgames, volleyball, videogames]
+export const MODULES = [models, boardgames, volleyball, videogames, chess]
 
 // Every module's panels in one map, for App to open by type.
 export const MODULE_PANELS = Object.assign({}, ...MODULES.map((m) => m.panels ?? {}))
