@@ -3,7 +3,7 @@ import { api, shortDate, timeAgo } from '../../api.js'
 import { BellCurveIcon, ClockIcon, GamepadIcon, PuzzleIcon, TrophyIcon } from '../../components/icons.jsx'
 import { useApp } from '../../core/app-context.js'
 import Stat, { Change, StatSkeleton } from '../../core/Stat.jsx'
-import { OtherGamesView, OtherPlatformsCard, PlatformSwitch, useOtherGames } from './OtherPlatforms.jsx'
+import { AddUbisoftGame, OtherPlatformsCard, PlatformSwitch, useOtherGames } from './OtherPlatforms.jsx'
 import {
   CompletionBar, GamePicture, playtime, rarity, SteamSetup, SyncBar, SyncButton, useSteamAccount, useSteamSummary,
 } from './steam.jsx'
@@ -228,16 +228,26 @@ const SORTS = {
 // Every game: which to show, a search, a sort, and a row each with its completion. "+ Add a game"
 // tracks one Steam's owned-games list leaves out (a free game like Counter-Strike 2, or one you no
 // longer own) by its store link or app id.
-// The Games page: Steam (below) or, when you have them, your Epic / Ubisoft games (OtherPlatforms.jsx).
-// ?platform=epic opens on that platform.
+// The Games page: Steam, Epic or Ubisoft (the switch shows when you have more than Steam), all in
+// the same table with the same filters and sorts. ?platform=epic opens on that platform.
 export function GamesPage() {
   const { data } = useOtherGames()
   const [platform, setPlatform] = useState(() => new URLSearchParams(window.location.search).get('platform') ?? 'steam')
   const switcher = <PlatformSwitch platform={platform} setPlatform={setPlatform} platforms={data?.platforms ?? []} />
-  return platform === 'steam' ? <GamesView switcher={switcher} /> : <OtherGamesView platform={platform} data={data} switcher={switcher} />
+  return <GamesView key={platform} platform={platform} other={data} switcher={switcher} />
 }
 
-function GamesView({ switcher }) {
+// The show-chips for Epic / Ubisoft games (Steam's are worked out by the API).
+const OTHER_SHOWS = {
+  all: (g) => !g.hidden,
+  perfect: (g) => !g.hidden && g.completed_at,
+  started: (g) => !g.hidden && g.achievements_done > 0 && !g.completed_at,
+  untouched: (g) => !g.hidden && g.achievements_total > 0 && !g.achievements_done,
+  no_achievements: (g) => !g.hidden && !g.achievements_total,
+  hidden: (g) => g.hidden,
+}
+
+function GamesView({ platform, other, switcher }) {
   const { refreshKey, openPanel, changed, showToast } = useApp()
   const [adding, setAdding] = useState(false)
   const [link, setLink] = useState('')
@@ -267,9 +277,13 @@ function GamesView({ switcher }) {
   const [show, setShow] = useState(() => new URLSearchParams(window.location.search).get('show') ?? 'all')
   const [sort, setSort] = useState('played')
   const [q, setQ] = useState('')
-  const [games, setGames] = useState(null)
+  const [steamGames, setSteamGames] = useState(null)
   const [error, setError] = useState('')
-  useEffect(() => { api.listVideoGames(show).then(setGames).catch((e) => setError(e.message)) }, [show, refreshKey])
+  useEffect(() => {
+    if (platform === 'steam') api.listVideoGames(show).then(setSteamGames).catch((e) => setError(e.message))
+  }, [show, refreshKey, platform])
+  const games = platform === 'steam' ? steamGames
+    : other && other.games.filter((g) => g.platform === platform && OTHER_SHOWS[show](g))
   const visible = useMemo(() => (games ?? [])
     .filter((g) => !q.trim() || g.name.toLowerCase().includes(q.trim().toLowerCase()))
     .sort(SORTS[sort][1]), [games, q, sort])
@@ -290,7 +304,10 @@ function GamesView({ switcher }) {
           </select>
         </label>
         <SyncButton />
-        <button type="button" className="secondary" onClick={() => setAdding(!adding)}>+ Add a game</button>
+        {platform !== 'epic' && (
+          <button type="button" className="secondary" onClick={() => setAdding(!adding)}>
+            {platform === 'ubisoft' ? '+ Add a Ubisoft game' : '+ Add a game'}</button>
+        )}
       </div>
       <div className="chip-row scroll" role="group" aria-label="Show">
         {SHOWS.map(([id, label]) => (
@@ -299,7 +316,8 @@ function GamesView({ switcher }) {
       </div>
       <GameHead sort={sort} setSort={setSort} />
       </div>
-      {adding && (
+      {adding && platform === 'ubisoft' && <AddUbisoftGame onDone={() => setAdding(false)} />}
+      {adding && platform === 'steam' && (
         <form className="card add-game" onSubmit={addGame}>
           <p className="small muted">For a game with achievements that isn't in your Steam library list, like a free
             game (Counter-Strike 2) or one you no longer own. Paste its Steam store link or app id.</p>

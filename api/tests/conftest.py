@@ -55,6 +55,7 @@ def no_real_steam(monkeypatch):
     monkeypatch.setattr(steamhunters, "_get", refuse)
     monkeypatch.setattr(steamhunters, "pause", lambda: None)
     monkeypatch.setattr(exophase, "_get", refuse)
+    monkeypatch.setattr(steam, "find_app", refuse)            # Steam's store search (not via steam._get)
     monkeypatch.setattr(exophase, "pause", lambda: None)
     videogames.SYNC.update(running=False, done=0, total=0, message=None, error=None, finished_at=None)
 

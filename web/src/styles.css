@@ -1439,3 +1439,12 @@ body.writing-mode .journal-title { font-size: 2.2rem; }
 @media (max-width: 700px) {
   .other-fields, .other-form .other-fields { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* The game panel for Ubisoft games: tick off achievements, hours played. */
+.achievement-tools { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.ach-tick { flex: none; width: 28px; height: 28px; min-height: 0; padding: 0; border-radius: 50%; border: 2px solid var(--separator);
+  background: transparent; color: #fff; font-weight: 700; line-height: 1; cursor: pointer; }
+.ach-tick.on { background: var(--ok); border-color: var(--ok); }
+.ach-tick:focus-visible { outline: 2px solid var(--tint); outline-offset: 2px; }
+.hours-played { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 6px 0 0; }
+.hours-played input { width: 90px; color: var(--text); }

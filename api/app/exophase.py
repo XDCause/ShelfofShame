@@ -228,3 +228,32 @@ def player_games(player: int, environment: str) -> list[dict]:
 def tidy_title(title: str) -> str:
     """Exophase's titles as they read: curly quotes straightened ("Clancy’s" -> "Clancy's")."""
     return title.replace("’", "'").replace("‘", "'").strip()
+
+
+def game_awards(page_url: str) -> list[dict]:
+    """Every achievement on an Exophase game page: Exophase's id, name, description, icon, and the
+    share of Exophase's players who have it (in page order)."""
+    r = _get(page_url)
+    if r.status_code != 200:
+        raise Unavailable(f"Exophase didn't answer (HTTP {r.status_code}).")
+    soup = BeautifulSoup(r.text, "html.parser")
+    awards = []
+    for li in soup.select("li.award"):
+        title = li.select_one(".award-title")
+        desc = li.select_one(".award-description")
+        img = li.select_one("img.award-image")
+        average = li.get("data-average")
+        awards.append({"id": li.get("id"), "name": title.get_text(" ", strip=True) if title else "?",
+                       "description": desc.get_text(" ", strip=True) if desc else None,
+                       "icon": img.get("src") if img else None,
+                       "average": float(average) if average else None})
+    return [a for a in awards if a["id"]]
+
+
+def earned(player: int, master_id: str) -> dict[str, int]:
+    """{Exophase award id: unix time earned} for one player's game."""
+    r = _get(f"https://api.exophase.com/public/player/{player}/game/{master_id}/earned",
+             {"last": int(time.time() * 1000)})
+    if r.status_code != 200 or "json" not in r.headers.get("content-type", ""):
+        raise Unavailable(f"Exophase didn't answer (HTTP {r.status_code}).")
+    return {str(e["awardid"]): e.get("timestamp") for e in r.json().get("list") or []}

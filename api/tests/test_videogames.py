@@ -551,71 +551,123 @@ def test_a_month_recap_and_the_unlock_calendar(client, fake):
 
 
 # ---- other platforms: Epic and Ubisoft from an Exophase profile ----------------------------------
-EPIC = [{"source_id": "1", "name": "Supraland", "picture_url": "https://m.exophase.com/epic/s.png", "page_url": "https://x/s",
-         "exo_done": 18, "exo_total": 98, "exo_minutes": None, "last_played": T(5), "exo_completed_at": None},
+EPIC = [{"source_id": "1", "name": "Supraland", "picture_url": "https://m.exophase.com/epic/s.png",
+         "page_url": "https://x/supraland-epic/achievements/", "exo_done": 1, "exo_total": 2, "exo_minutes": None,
+         "last_played": T(5), "exo_completed_at": None},
         {"source_id": "2", "name": "Tiny Game", "picture_url": None, "page_url": None,
          "exo_done": 5, "exo_total": 5, "exo_minutes": 90, "last_played": T(6), "exo_completed_at": T(6)}]
 UBISOFT = [{"source_id": "9", "name": "Rainbow Six Siege X", "picture_url": None, "page_url": None,
             "exo_done": 0, "exo_total": 34, "exo_minutes": None, "last_played": T(7), "exo_completed_at": None}]
+SIEGE = [{"name": "ACH_1", "displayName": "Old School", "description": "Win", "icon": "i/1.jpg", "icongray": "g/1.jpg"},
+         {"name": "ACH_2", "displayName": "Full Roster", "description": "All", "icon": "i/2.jpg"},
+         {"name": "ACH_3", "displayName": "Secret", "hidden": 1, "icon": "i/3.jpg"}]
 
 
 @pytest.fixture
 def exo(monkeypatch):
+    """A fake Exophase profile (Epic + Ubisoft) and Steam versions: Supraland 813630, Siege 359550."""
     asked = []
-    monkeypatch.setattr(othergames.exophase, "profile_players",
-                        lambda name: {"epic": 11, "uplay": 22} if name == "SomeGamer" else {})
-    monkeypatch.setattr(othergames.exophase, "player_games",
-                        lambda player, env: asked.append(env) or (EPIC if env == "epic" else UBISOFT))
+    monkeypatch.setattr(exophase, "profile_players", lambda name: {"epic": 11, "uplay": 22} if name == "SomeGamer" else {})
+    monkeypatch.setattr(exophase, "player_games", lambda player, env: asked.append(env) or (EPIC if env == "epic" else UBISOFT))
+    monkeypatch.setattr(exophase, "game_awards", lambda url: asked.append("awards") or [
+        {"id": "501", "name": "Explorer", "description": "Look", "icon": "https://m/1.png", "average": 40.0},
+        {"id": "502", "name": "Master", "description": "All", "icon": "https://m/2.png", "average": 2.5}])
+    monkeypatch.setattr(exophase, "earned", lambda player, master: {"501": T(4)})
+    apps = {"Supraland": 813630, "Rainbow Six Siege X": 359550}
+    monkeypatch.setattr(steam, "find_app", lambda name: asked.append("find") or ((apps[name], name) if name in apps else None))
+    monkeypatch.setattr(steam, "header_pictures", lambda ids: {i: f"https://steam/{i}/header.jpg" for i in ids})
+    monkeypatch.setattr(steam, "schema", lambda app_id: asked.append("schema") or (SIEGE if app_id == 359550 else []))
+    monkeypatch.setattr(steam, "global_percentages", lambda app_id: {"ACH_1": 60.0, "ACH_2": 3.0, "ACH_3": 0.5})
+    monkeypatch.setattr(steamhunters, "game", lambda app_id: {"sh_median_minutes": 600, "sh_players_perfected": 10,
+                                                              "sh_players_started": 100})
     return asked
 
 
-def test_epic_and_ubisoft_from_an_exophase_profile(client, exo):
+def connect(client):
     r = client.put("/api/videogames/other/account", json={"profile": "https://www.exophase.com/user/SomeGamer/"})
     assert r.status_code == 200, r.text
-    assert r.json()["profile"] == "SomeGamer" and sorted(exo) == ["epic", "uplay"]
-    assert sorted(r.json()["linked"]) == ["epic", "ubisoft"]
-    games = {g["name"]: g for g in r.json()["games"]}
-    assert (games["Supraland"]["done"], games["Supraland"]["total"]) == (18, 98)         # Epic: Exophase's numbers
-    assert games["Tiny Game"]["completed_at"] and games["Tiny Game"]["playtime_minutes"] == 90
-    siege = games["Rainbow Six Siege X"]                                                # Ubisoft: challenges aren't
-    assert (siege["done"], siege["total"], siege["challenges_total"]) == (None, None, 34)  # achievements
-    platforms = {p["platform"]: p for p in r.json()["platforms"]}
-    assert (platforms["epic"]["done"], platforms["epic"]["total"], platforms["epic"]["perfect"]) == (23, 103, 1)
-    assert platforms["ubisoft"]["to_fill_in"] == 1
+    return r.json()
+
+
+def test_epic_and_ubisoft_from_an_exophase_profile(client, exo):
+    r = connect(client)
+    assert r["profile"] == "SomeGamer" and sorted(r["linked"]) == ["epic", "ubisoft"]
+    games = {g["name"]: g for g in r["games"]}
+    supra = games["Supraland"]                                     # Epic: the list from Exophase, earned + when
+    assert (supra["app_id"], supra["achievements_done"], supra["achievements_total"]) == (f"epic-{supra['game_id']}", 1, 2)
+    assert supra["header_url"] == "https://steam/813630/header.jpg" and float(supra["perfect_rate"]) == 10.0
+    assert games["Tiny Game"]["completed_at"] and games["Tiny Game"]["playtime_minutes"] == 90   # no page: Exophase's counts
+    siege = games["Rainbow Six Siege X"]                           # Ubisoft: Steam's list, nothing ticked yet
+    assert (siege["achievements_done"], siege["achievements_total"], siege["challenges_total"]) == (0, 3, 34)
+    platforms = {p["platform"]: p for p in r["platforms"]}
+    assert (platforms["epic"]["done"], platforms["epic"]["total"], platforms["epic"]["perfect"]) == (6, 7, 1)
+    one = client.get(f"/api/videogames/other/{supra['game_id']}").json()
+    assert [(a["name"], a["achieved"], bool(a["unlocked_at"])) for a in one["achievements"]] == [
+        ("Explorer", True, True), ("Master", False, False)]
     assert client.put("/api/videogames/other/account", json={"profile": "nobody"}).status_code == 422
     assert client.put("/api/videogames/other/account", json={"profile": "bad name!"}).status_code == 422
 
 
-def test_typing_in_ubisoft_achievements(client, exo):
-    client.put("/api/videogames/other/account", json={"profile": "SomeGamer"})
+def test_ticking_off_ubisoft_achievements(client, exo):
+    connect(client)
     siege = next(g for g in client.get("/api/videogames/other").json()["games"] if g["platform"] == "ubisoft")
-    r = client.patch(f"/api/videogames/other/{siege['game_id']}", json={"done": 45, "total": 48, "hours": 850})
-    assert (r.json()["done"], r.json()["total"], float(r.json()["percent"]), r.json()["playtime_minutes"]) == (45, 48, 93.8, 51000)
-    assert client.patch(f"/api/videogames/other/{siege['game_id']}", json={"done": 49}).status_code == 422
-    assert client.patch(f"/api/videogames/other/{siege['game_id']}", json={"name": "X"}).status_code == 409
-    client.put("/api/videogames/other/account", json={"profile": "SomeGamer"})        # a sync keeps what you typed
-    again = client.get("/api/videogames/other").json()
-    assert next(g for g in again["games"] if g["game_id"] == siege["game_id"])["done"] == 45
-    assert client.delete(f"/api/videogames/other/{siege['game_id']}").status_code == 409   # hide it instead
-    hidden = client.patch(f"/api/videogames/other/{siege['game_id']}", json={"hidden": True}).json()
-    assert hidden["hidden"] is True and hidden["done"] == 45
+    url = f"/api/videogames/other/{siege['game_id']}"
+    r = client.put(f"{url}/achievements", json={"achieved": True}).json()           # tick all...
+    assert (r["achievements_done"], r["percent"], bool(r["completed_at"])) == (3, 100, True)
+    r = client.put(f"{url}/achievements/ACH_3", json={"achieved": False}).json()    # ...then untick one
+    assert (r["achievements_done"], r["achievements_total"]) == (2, 3)
+    assert client.put(f"{url}/achievements/NOPE", json={"achieved": True}).status_code == 404
+    exo.clear()
+    client.put("/api/videogames/other/account", json={"profile": "SomeGamer"})        # a sync keeps the ticks
+    assert "schema" not in exo and "find" not in exo                                   # (list fresh, Steam known)
+    assert client.get(url).json()["achievements_done"] == 2
+    r = client.patch(url, json={"hours": 850}).json()
+    assert r["playtime_minutes"] == 51000
+    epic = next(g for g in client.get("/api/videogames/other").json()["games"] if g["platform"] == "epic")
+    assert client.put(f"/api/videogames/other/{epic['game_id']}/achievements", json={"achieved": True}).status_code == 409
 
 
-def test_a_ubisoft_game_added_by_hand(client):
+def test_setting_a_games_steam_version(client, exo):
+    connect(client)
+    siege = next(g for g in client.get("/api/videogames/other").json()["games"] if g["platform"] == "ubisoft")
+    url = f"/api/videogames/other/{siege['game_id']}/steam"
+    r = client.put(url, json={"link": None}).json()                                 # not the right game: none
+    assert (r["steam_app_id"], r["achievements_total"], r["achievements"]) == (None, None, [])
+    r = client.put(url, json={"link": "https://store.steampowered.com/app/359550/Rainbow_Six_Siege/"}).json()
+    assert (r["steam_app_id"], r["achievements_total"]) == (359550, 3)
+    assert client.put(url, json={"link": "not a link"}).status_code == 422
+
+
+def test_a_ubisoft_game_added_by_hand(client, exo):
     r = client.post("/api/videogames/other", json={"name": "Trackmania", "done": 3, "total": 10, "hours": 2.5})
     assert r.status_code == 201 and (r.json()["platform"], r.json()["playtime_minutes"]) == ("ubisoft", 150)
+    assert (r.json()["achievements_done"], r.json()["achievements_total"]) == (3, 10)   # no Steam version: typed in
     assert client.post("/api/videogames/other", json={"name": "Bad", "done": 11, "total": 10}).status_code == 422
-    assert client.patch(f"/api/videogames/other/{r.json()['game_id']}", json={"name": "Trackmania Turbo"}).json()["name"] \
-        == "Trackmania Turbo"
-    assert client.delete(f"/api/videogames/other/{r.json()['game_id']}").status_code == 204
+    game_id = r.json()["game_id"]
+    assert client.patch(f"/api/videogames/other/{game_id}", json={"name": "Trackmania Turbo"}).json()["name"] == "Trackmania Turbo"
+    assert client.delete(f"/api/videogames/other/{game_id}").status_code == 204
 
 
 def test_the_steam_sync_also_reads_the_other_platforms(client, fake, exo):
-    client.put("/api/videogames/other/account", json={"profile": "SomeGamer"})
+    connect(client)
     exo.clear()
     setup(client)
-    assert sorted(exo) == ["epic", "uplay"]
+    assert "epic" in exo and "uplay" in exo and "awards" not in exo          # lists fresh: not read again
     assert "Epic" in client.get("/api/videogames/account").json()["sync"]["message"]
+
+
+def test_finding_a_game_on_steam_by_name(monkeypatch):
+    import httpx
+    monkeypatch.undo()                                                        # the real find_app
+    results = {"Rainbow Six Siege X": [], "Rainbow Six Siege": [
+        {"type": "app", "id": 4893510, "name": "1,200 Welcome Pack - Rainbow Six Siege"},
+        {"type": "app", "id": 359550, "name": "Tom Clancy's Rainbow Six\u00ae Siege"}]}
+    monkeypatch.setattr(steam.httpx, "get", lambda url, params, **_k: httpx.Response(200, json={"items": results.get(params["term"], [])}))
+    monkeypatch.setattr(steam, "pause", lambda: None)
+    assert steam.find_app("Rainbow Six Siege X") == (359550, "Tom Clancy's Rainbow Six\u00ae Siege")   # dropped the X
+    assert steam.find_app("Assassin's Creed Unity") is None
+    results["Supraland"] = [{"type": "app", "id": 1093730, "name": "Supraland Crash"}, {"type": "app", "id": 813630, "name": "Supraland"}]
+    assert steam.find_app("Supraland") == (813630, "Supraland")                 # a one-word name
 
 
 def test_the_exophase_profile_and_game_readers(monkeypatch):

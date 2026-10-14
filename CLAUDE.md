@@ -918,6 +918,32 @@ DBeaver, psql, and the one-off import script.
      have DLC first, then waits for SteamHunters (Event) before games it hadn't judged - otherwise a
      first sync would ask Exophase about every started game.
    - Tests: 293 API.
+3zi. **Epic / Ubisoft look like Steam: full achievement lists** (2026-10-14). User: list every Ubisoft
+   achievement ("should be the same as Steam") and make Epic / Ubisoft look the same as Steam.
+   - 33_videogame_other_achievements.sql: vg_other_games.steam_app_id / steam_checked_at / header_url /
+     list_synced_at / list_done / sh_* ; vg_other_achievements (game_id, api_name, name, description,
+     icon, icon_gray, hidden, global_percent, achieved, unlocked_at, sort_order).
+   - Steam version by name: steam.find_app (Steam store search JSON; exact match ignoring case,
+     punctuation, TM/(R), "Tom Clancy's"; drops up to 2 words from the end - "Rainbow Six Siege X" ->
+     359550, 48 achievements = the user's 48). 18 of 20 matched; Rocket League isn't sold on Steam.
+     Fix a match in the panel ("Not the right game?": store link / "Not on Steam").
+   - Lists: Epic = exophase.game_awards(page) + exophase.earned(player, master_id) (dates; rarity =
+     Exophase players), re-read when the earned count changes (list_done); Ubisoft = Steam schema +
+     global % of the Steam version, ticked by the user (PUT .../achievements/{api_name}, PUT
+     .../achievements = tick all), weekly refresh keeps ticks (save_list keep_ticks). done/total come
+     from the list when there is one, else Epic's Exophase counts / Ubisoft's typed numbers.
+   - API shape = Steam game's (app_id "epic-12" / "ubisoft-12", achievements_done/total, percent,
+     header_url = the Steam version's picture, sh_* / perfect_rate from SteamHunters for the Steam
+     version, rarest_percent), so the SAME GameTable / GamesView (platform switch; OTHER_SHOWS filters
+     client-side) and VideoGamePanel (id string -> other game: tick buttons, Tick all, hours, Steam
+     version box, Exophase link; no journal mentions yet) are used. OtherGamesView / OtherGamePanel gone.
+   - conftest refuses steam.find_app (it uses httpx directly, not steam._get). Tests: 295 API.
+   - Bugs found in dev: find_app's word-dropping range made NO search for one-word names
+     (Supraland) - now whole name first, then drop up to 2 words but keep >= 2. The tick buttons got
+     the paint checklist's `.tick` (position: absolute, under the icon) - renamed `.ach-tick`.
+     LESSON: grep styles.css for a class name before using it (.change, .tick both clashed).
+   - Epic playtime: no source (Exophase blank for Epic; Epic has no public API; Heroic / Legendary use
+     the user's Epic login) -> the panel's "Hours played" box shows for Epic and Ubisoft.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

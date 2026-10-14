@@ -1099,18 +1099,23 @@ def video_games(page):
         shot(page, "d45_video_game_dlc", full=False)
         page.keyboard.press("Escape")
     page.get_by_label("Search your games").fill("")
-    # Epic / Ubisoft (when an Exophase profile is connected): switch to Ubisoft, type in a game's numbers.
+    # Epic / Ubisoft (when an Exophase profile is connected): the same table; a Ubisoft game's panel
+    # lists its achievements (from its Steam version) to tick off.
     if page.locator(".platform-switch").count():
         page.locator(".platform-switch").get_by_role("button", name="Ubisoft").click()
-        page.locator(".other-games li").first.click()
+        expect(page.locator(".game-head")).to_be_visible()
+        page.locator(".game-rows li").first.click()
         d = drawer(page)
-        d.get_by_label("Achievements you have").fill("3")
-        d.get_by_label("Achievements in the game").fill("10")
-        d.get_by_role("button", name="Save").click()
-        expect(d).to_contain_text("Saved")
-        expect(d).to_contain_text("3 of 10")
+        expect(d.locator(".section-head")).to_contain_text("Ubisoft")
+        if d.locator(".ach-tick").count():
+            before = d.locator(".section-head strong").inner_text()
+            d.locator(".ach-tick").first.click()
+            expect(d.locator(".section-head strong")).not_to_have_text(before)
         shot(page, "d47_ubisoft_game", full=False)
         page.keyboard.press("Escape")
+        page.locator(".platform-switch").get_by_role("button", name="Epic").click()
+        expect(page.locator(".game-rows li").first).to_be_visible()
+        shot(page, "d48_epic_games", full=False)
         page.locator(".platform-switch").get_by_role("button", name="Steam").click()
         expect(page.get_by_label("Search your games")).to_be_visible()
     page.locator(".section-tabs").get_by_role("link", name="Stats").click()

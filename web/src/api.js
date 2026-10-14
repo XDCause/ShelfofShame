@@ -161,6 +161,11 @@ export const api = {
   setOtherAccount: (profile) => request('/videogames/other/account', send('PUT', { profile })),
   addOtherGame: (game) => request('/videogames/other', send('POST', game)),
   updateOtherGame: (id, data) => request(`/videogames/other/${id}`, send('PATCH', data)),
+  getOtherGame: (id) => request(`/videogames/other/${id}`),
+  tickOtherAchievement: (id, apiName, achieved) => request(`/videogames/other/${id}/achievements/${encodeURIComponent(apiName)}`,
+    send('PUT', { achieved })),
+  tickAllOther: (id, achieved) => request(`/videogames/other/${id}/achievements`, send('PUT', { achieved })),
+  setOtherSteam: (id, link) => request(`/videogames/other/${id}/steam`, send('PUT', { link })),
   deleteOtherGame: (id) => request(`/videogames/other/${id}`, send('DELETE')),
   removeExtraVideoGame: (id) => request(`/videogames/extra/${id}`, send('DELETE')),
 

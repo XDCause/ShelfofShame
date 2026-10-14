@@ -163,3 +163,37 @@ def header_pictures(app_ids: list[int]) -> dict[int, str | None]:
 
 def pause():
     time.sleep(PAUSE)
+
+
+# ---------------------------------------------------------------------------------------------
+# Finding a game on Steam by name (for Epic / Ubisoft games: their Steam version's achievement
+# list, picture and SteamHunters' numbers). Steam's store search - the JSON its own site uses, no key.
+# ---------------------------------------------------------------------------------------------
+STORE_SEARCH = "https://store.steampowered.com/api/storesearch/"
+
+
+def _name_key(name: str) -> str:
+    """"Tom Clancy's Rainbow Six® Siege" == "Rainbow Six Siege"; "Assassins Creed" == "Assassin's Creed"."""
+    name = re.sub(r"[™®©]", "", name)
+    name = re.sub(r"^tom clancy.?s\s+", "", name.strip(), flags=re.I)
+    return re.sub(r"[^0-9a-z]+", "", name.casefold())
+
+
+def find_app(name: str) -> tuple[int, str] | None:
+    """(app id, Steam's name) of the game called `name` on Steam, or None. Tries the whole name, then
+    with words dropped from the end ("Rainbow Six Siege X" -> "Rainbow Six Siege"); only an exact
+    match (ignoring case, punctuation, ™ / ® and "Tom Clancy's") counts."""
+    words = name.split()
+    shortest = max(len(words) - 2, min(len(words), 2))     # drop up to 2 words, never below 2 ("Supraland" = 1)
+    for n in range(len(words), shortest - 1, -1):
+        term = " ".join(words[:n])
+        try:
+            r = httpx.get(STORE_SEARCH, params={"term": term, "l": "english", "cc": "AU"}, headers=HEADERS, timeout=TIMEOUT)
+            items = (r.json().get("items") or []) if r.status_code == 200 else []
+        except (httpx.HTTPError, ValueError):
+            raise SteamError("Couldn't reach Steam's store search.") from None
+        for item in items:
+            if item.get("type") == "app" and _name_key(item.get("name", "")) == _name_key(term):
+                return int(item["id"]), item["name"]
+        pause()
+    return None
