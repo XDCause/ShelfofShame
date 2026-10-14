@@ -21,7 +21,7 @@ Steam's pictures are linked from Steam's own servers (header and icon addresses 
 import logging
 import math
 import threading
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Response
 from pydantic import BaseModel, Field
@@ -66,16 +66,17 @@ GOAL_KEY, GOAL_DEFAULT = "vg_goal_percent", 50
 # perfect_rate: the % of SteamHunters' players who started the game and 100%'d it. rarest_percent:
 # Steam's cross-check - its rarest achievement's global %, the most players that can have 100%'d it.
 # dlc_count / dlc_achievements: DLCs with achievements (from Exophase) and how many those add.
-# dlc_done: how many of those you have.
+# dlc_done: how many of those you have. unobtainable_count: ones that can't be earned any more.
 GAME_SELECT = """
 SELECT g.*, CASE WHEN g.achievements_total > 0
                  THEN round(100.0 * g.achievements_done / g.achievements_total, 1) END AS percent,
        g.achievements_total - g.achievements_done AS left_to_get,
        round(100.0 * g.sh_players_perfected / NULLIF(g.sh_players_started, 0), 1) AS perfect_rate,
-       a.rarest_percent, a.dlc_count, a.dlc_achievements, a.dlc_done
+       a.rarest_percent, a.dlc_count, a.dlc_achievements, a.dlc_done, a.unobtainable_count
 FROM vg_games g
 LEFT JOIN LATERAL (SELECT min(global_percent) AS rarest_percent, count(DISTINCT dlc)::int AS dlc_count,
-                          count(dlc)::int AS dlc_achievements, count(dlc) FILTER (WHERE achieved)::int AS dlc_done
+                          count(dlc)::int AS dlc_achievements, count(dlc) FILTER (WHERE achieved)::int AS dlc_done,
+                          count(*) FILTER (WHERE unobtainable AND NOT achieved)::int AS unobtainable_count
                    FROM vg_achievements WHERE app_id = g.app_id) a ON true"""
 
 
@@ -127,11 +128,19 @@ def sync_game(conn, steam_id: str, app_id: int, rarity_due: bool):
                          (round(percent, 3), app_id, api_name))
         conn.execute("UPDATE vg_games SET rarity_synced_at = now() WHERE app_id = %s", (app_id,))
         steam.pause()
+    recount(conn, app_id)
+    conn.execute("UPDATE vg_games SET synced_at = now() WHERE app_id = %s", (app_id,))
+
+
+def recount(conn, app_id: int):
+    """A game's totals from its achievements. Unobtainable ones you don't have aren't counted, so a
+    game can be 100% without them (one you got before it became unobtainable still counts)."""
     conn.execute("""
-        UPDATE vg_games g SET has_achievements = s.total > 0, achievements_total = s.total, achievements_done = s.done,
-               completed_at = CASE WHEN s.total > 0 AND s.done = s.total THEN s.last END, synced_at = now()
-        FROM (SELECT count(*)::int AS total, count(*) FILTER (WHERE achieved)::int AS done,
-                     max(unlocked_at) AS last FROM vg_achievements WHERE app_id = %s) s
+        UPDATE vg_games g SET has_achievements = s.every > 0, achievements_total = s.total, achievements_done = s.done,
+               completed_at = CASE WHEN s.total > 0 AND s.done >= s.total THEN s.last END
+        FROM (SELECT count(*)::int AS every, count(*) FILTER (WHERE achieved OR NOT unobtainable)::int AS total,
+                     count(*) FILTER (WHERE achieved)::int AS done, max(unlocked_at) AS last
+              FROM vg_achievements WHERE app_id = %s) s
         WHERE g.app_id = %s""", (app_id, app_id))
 
 
@@ -224,17 +233,26 @@ def sync_community(full: bool, read_now: set[int]) -> str:
     for app_id, name in due:
         SYNC.update(message=f"How others did: {name}...")
         try:
-            numbers = steamhunters.game(app_id)
+            fields = steamhunters.game(app_id) or {}
+            gone = set()
+            if fields.get("sh_unobtainable"):             # which ones (only asked when there are some)
+                steamhunters.pause()
+                gone = steamhunters.unobtainable(app_id)
         except steamhunters.Unavailable as e:
             log.warning("SteamHunters: %s", e)
             return f" (SteamHunters didn't answer, so {len(due) - SYNC['done']} games' community numbers wait for the next sync)"
         with db() as conn:
-            fields = numbers or {}
             conn.execute("UPDATE vg_games SET sh_median_minutes = %s, sh_fastest_minutes = %s, sh_players_perfected = %s, "
-                         "sh_players_started = %s, sh_points = %s, sh_has_dlc = %s, sh_synced_at = now() WHERE app_id = %s",
+                         "sh_players_started = %s, sh_points = %s, sh_has_dlc = %s, sh_unobtainable = %s, "
+                         "sh_synced_at = now() WHERE app_id = %s",
                          (fields.get("sh_median_minutes"), fields.get("sh_fastest_minutes"),
                           fields.get("sh_players_perfected"), fields.get("sh_players_started"), fields.get("sh_points"),
-                          fields.get("sh_has_dlc"), app_id))
+                          fields.get("sh_has_dlc"), fields.get("sh_unobtainable"), app_id))
+            changed = conn.execute("UPDATE vg_achievements SET unobtainable = (api_name = ANY(%(gone)s)) "
+                                   "WHERE app_id = %(id)s AND unobtainable <> (api_name = ANY(%(gone)s))",
+                                   {"gone": list(gone), "id": app_id}).rowcount
+            if changed:
+                recount(conn, app_id)
         SYNC["done"] += 1
         steamhunters.pause()
     return f", community numbers for {len(due)}"
@@ -396,8 +414,37 @@ def summary():
             ORDER BY a.global_percent, a.unlocked_at LIMIT 8""").fetchall()
         perfect = conn.execute(GAME_SELECT + " WHERE NOT g.hidden AND g.completed_at IS NOT NULL "
                                "ORDER BY g.completed_at DESC LIMIT 6").fetchall()
+        quick = conn.execute(GAME_SELECT + " WHERE NOT g.hidden AND g.achievements_done > 0 AND g.completed_at IS NULL "
+                             "AND g.sh_median_minutes > 0").fetchall()
+        totals["streak"] = streaks([r["day"] for r in conn.execute(
+            "SELECT DISTINCT a.unlocked_at::date AS day FROM vg_achievements a JOIN vg_games g USING (app_id) "
+            "WHERE a.achieved AND NOT g.hidden AND a.unlocked_at IS NOT NULL").fetchall()],
+            conn.execute("SELECT now()::date AS d").fetchone()["d"])
     return {**totals, "closest": [with_pictures(g) for g in closest], "recent": recent, "rarest": rarest,
-            "recent_perfect": [with_pictures(g) for g in perfect]}
+            "recent_perfect": [with_pictures(g) for g in perfect], "quick_wins": quick_wins(quick)}
+
+
+def quick_wins(games: list[dict], limit: int = 6) -> list[dict]:
+    """Started games ranked by the time left to 100%: SteamHunters' median time to 100% times the
+    share of achievements you have left (a rough guide - the last ones are often the slow ones)."""
+    for g in games:
+        g["minutes_left"] = math.ceil(g["sh_median_minutes"] * g["left_to_get"] / g["achievements_total"])
+    games.sort(key=lambda g: (g["minutes_left"], -float(g["perfect_rate"] or 0)))
+    return [with_pictures(g) for g in games[:limit]]
+
+
+def streaks(days: list[date], today: date) -> dict:
+    """Days in a row with at least one unlock: the current run (still alive if the last unlock was
+    yesterday - today isn't over) and the longest ever, with the day it ended."""
+    days = sorted(set(days))
+    longest, longest_end, run = 0, None, 0
+    for i, d in enumerate(days):
+        run = run + 1 if i and d - days[i - 1] == timedelta(days=1) else 1
+        if run > longest:
+            longest, longest_end = run, d
+    current = run if days and today - days[-1] <= timedelta(days=1) else 0
+    return {"current": current, "longest": longest, "longest_end": longest_end,
+            "unlocked_today": bool(days) and days[-1] == today}
 
 
 # Rarity bands (the % of all players who have an achievement) and completion bands for the charts.
@@ -432,10 +479,53 @@ def stats(months: int = Query(24, ge=1, le=120)):
         most_played = [with_pictures(g) for g in conn.execute(
             GAME_SELECT + " WHERE NOT g.hidden AND g.playtime_minutes > 0 ORDER BY g.playtime_minutes DESC LIMIT 10"
         ).fetchall()]
+        today = conn.execute("SELECT now()::date AS d").fetchone()["d"]
+        days = conn.execute("""
+            SELECT a.unlocked_at::date AS day, count(*)::int AS count FROM vg_achievements a JOIN vg_games g USING (app_id)
+            WHERE a.achieved AND NOT g.hidden AND a.unlocked_at IS NOT NULL GROUP BY 1 ORDER BY 1""").fetchall()
     band = lambda bands, values: [{"label": label, "count": sum(lo <= v < hi for v in values)}  # noqa: E731
                                   for lo, hi, label in bands]
+    year_ago = today - timedelta(days=370)
     return {"by_month": by_month, "rarity": band(RARITY_BANDS, percents),
-            "completion": band(COMPLETION_BANDS, games), "most_played": most_played}
+            "completion": band(COMPLETION_BANDS, games), "most_played": most_played,
+            "today": today, "days": [d for d in days if d["day"] >= year_ago],
+            "streak": streaks([d["day"] for d in days], today)}
+
+
+@router.get("/videogames/recap")
+def recap(month: str | None = Query(None, pattern=r"^\d{4}-\d{2}$")):
+    """One month (YYYY-MM, default this one) of achievement hunting: how many you unlocked (and the
+    month before, to compare - only up to the same point while this month is still going), in how many games, the games you 100%'d, your rarest unlocks, your
+    best day and the games you unlocked the most in. `first` is the earliest month with an unlock."""
+    with db() as conn:
+        start = conn.execute("SELECT date_trunc('month', COALESCE(to_date(%s, 'YYYY-MM'), now()))::date AS s",
+                             (month,)).fetchone()["s"]
+        span = {"start": start, "end": (start.replace(day=28) + timedelta(days=4)).replace(day=1)}
+        span["before"] = (start - timedelta(days=1)).replace(day=1)
+        unlocked = """FROM vg_achievements a JOIN vg_games g USING (app_id)
+            WHERE a.achieved AND NOT g.hidden AND a.unlocked_at >= %(start)s AND a.unlocked_at < %(end)s"""
+        counts = conn.execute(f"SELECT count(*)::int AS achievements, count(DISTINCT a.app_id)::int AS games {unlocked}",
+                              span).fetchone()
+        # The month before - up to the same point when this month isn't over yet (1-14 Sept for 1-14 Oct).
+        counts["previous"] = conn.execute(
+            "SELECT count(*)::int AS n FROM vg_achievements a JOIN vg_games g USING (app_id) WHERE a.achieved "
+            "AND NOT g.hidden AND a.unlocked_at >= %(before)s AND a.unlocked_at < %(start)s "
+            "AND a.unlocked_at < %(before)s::timestamptz + (now() - %(start)s::timestamptz)", span).fetchone()["n"]
+        best_day = conn.execute(f"SELECT a.unlocked_at::date AS day, count(*)::int AS count {unlocked} "
+                                "GROUP BY 1 ORDER BY 2 DESC, 1 LIMIT 1", span).fetchone()
+        rarest = conn.execute(f"""SELECT a.app_id, g.name AS game, a.api_name, a.name, a.description, a.icon,
+                                         a.global_percent, a.unlocked_at {unlocked} AND a.global_percent IS NOT NULL
+                                  ORDER BY a.global_percent, a.unlocked_at LIMIT 3""", span).fetchall()
+        top = conn.execute(f"""SELECT a.app_id, g.name, count(*)::int AS count {unlocked}
+                               GROUP BY a.app_id, g.name ORDER BY 3 DESC, 2 LIMIT 5""", span).fetchall()
+        perfect = conn.execute(GAME_SELECT + " WHERE NOT g.hidden AND g.completed_at >= %(start)s "
+                               "AND g.completed_at < %(end)s ORDER BY g.completed_at", span).fetchall()
+        first = conn.execute("SELECT to_char(min(a.unlocked_at), 'YYYY-MM') AS m FROM vg_achievements a "
+                             "JOIN vg_games g USING (app_id) WHERE a.achieved AND NOT g.hidden").fetchone()["m"]
+        this_month = conn.execute("SELECT to_char(now(), 'YYYY-MM') AS m").fetchone()["m"]   # Brisbane, not UTC
+    return {"month": start.strftime("%Y-%m"), "first": first, "this_month": this_month,
+            **counts, "best_day": best_day, "rarest": rarest, "top_games": top,
+            "perfect": [with_pictures(g) for g in perfect]}
 
 
 def goal_progress(games: list[tuple[int, int]], unlocked_last_30_days: int, goal_percent: int) -> dict:
@@ -568,7 +658,8 @@ def get_game(app_id: int):
     with db() as conn:
         game = with_pictures(found(conn.execute(GAME_SELECT + " WHERE g.app_id = %s", (app_id,)).fetchone(), "Game"))
         game["achievements"] = conn.execute("""
-            SELECT api_name, name, description, icon, icon_gray, hidden, global_percent, achieved, unlocked_at, dlc
+            SELECT api_name, name, description, icon, icon_gray, hidden, global_percent, achieved, unlocked_at, dlc,
+                   unobtainable
             FROM vg_achievements WHERE app_id = %s
             ORDER BY achieved DESC, unlocked_at DESC NULLS LAST, global_percent DESC NULLS LAST, name""",
             (app_id,)).fetchall()

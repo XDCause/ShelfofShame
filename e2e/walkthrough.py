@@ -1050,6 +1050,8 @@ def video_games(page):
     if page.locator(".goal-card").count():
         expect(page.locator(".goal-card")).to_contain_text("Profile completion")
         expect(page.locator(".goal-marker")).to_contain_text("Goal")
+    if page.locator(".goal-card").count():
+        expect(page.locator(".home-card-title", has_text="Quick wins")).to_be_visible()
     shot(page, "d41_video_games", full=False)
     page.locator(".section-tabs").get_by_role("link", name="Games").click()
     expect(page.get_by_label("Search your games")).to_be_visible()
@@ -1097,7 +1099,20 @@ def video_games(page):
         page.keyboard.press("Escape")
     page.get_by_label("Search your games").fill("")
     page.locator(".section-tabs").get_by_role("link", name="Stats").click()
-    expect(page.locator(".chart")).to_have_count(4)
+    # This month's recap (back a month and forward again), then the unlock calendar.
+    recap = page.locator(".recap")
+    expect(recap.locator(".home-card-title")).to_be_visible()
+    this_month = recap.locator(".home-card-title").inner_text()
+    if recap.get_by_role("button", name="Month before").is_enabled():
+        recap.get_by_role("button", name="Month before").click()
+        expect(recap.locator(".home-card-title")).not_to_have_text(this_month)
+        recap.get_by_role("button", name="Month after").click()
+        expect(recap.locator(".home-card-title")).to_have_text(this_month)
+    expect(page.locator(".heatmap-week")).to_have_count(53)
+    page.locator(".heatmap-grid .heatmap-day").last.hover()
+    expect(page.locator(".heatmap-foot")).to_contain_text("on ")
+    shot(page, "d46_video_game_recap", full=False)
+    expect(page.locator(".home-card:not(.recap) > .chart")).to_have_count(4)
     slot = page.locator(".chart-slot").first
     slot.hover()
     expect(page.locator(".chart-tip")).to_be_visible()                       # hover tooltip

@@ -489,3 +489,52 @@ def test_a_slow_answer_is_tried_once_more(monkeypatch):
         monkeypatch.setattr(fresh.httpx, "get", always_slow)
         with pytest.raises(fresh.Unavailable, match="timed out twice"):
             fresh._get("https://example.test/b")
+
+
+def test_streaks_of_days_with_an_unlock():
+    from datetime import date
+    from app.videogames import streaks
+    d = lambda day: date(2026, 10, day)  # noqa: E731
+    days = [d(1), d(2), d(3), d(3), d(7), d(8), d(12), d(13)]
+    assert streaks(days, d(13)) == {"current": 2, "longest": 3, "longest_end": d(3), "unlocked_today": True}
+    assert streaks(days, d(14))["current"] == 2          # today isn't over: yesterday keeps it alive
+    assert streaks(days, d(15))["current"] == 0
+    assert streaks([], d(15)) == {"current": 0, "longest": 0, "longest_end": None, "unlocked_today": False}
+
+
+def test_quick_wins_are_the_least_time_left():
+    from app.videogames import quick_wins
+    game = lambda app_id, median, left, total, rate: {  # noqa: E731
+        "app_id": app_id, "sh_median_minutes": median, "left_to_get": left, "achievements_total": total,
+        "perfect_rate": rate, "header_url": "", "icon_hash": None}
+    ranked = quick_wins([game(1, 6000, 30, 60, 10), game(2, 600, 1, 10, 50), game(3, 60, 59, 60, 5)])
+    assert [(g["app_id"], g["minutes_left"]) for g in ranked] == [(3, 59), (2, 60), (1, 3000)]
+
+
+def test_unobtainable_achievements_dont_count(client, fake, monkeypatch):
+    """Hades' Godlike can't be earned any more: Hades is then 1 of 2; unlocking Secret makes it 100%."""
+    monkeypatch.setattr(steamhunters, "game", lambda app_id: {"sh_unobtainable": 1} if app_id == 20 else None)
+    asked = []
+    monkeypatch.setattr(steamhunters, "unobtainable", lambda app_id: asked.append(app_id) or {"Z"})
+    setup(client)
+    assert asked == [20]                                     # only games SteamHunters says have some
+    hades = client.get("/api/videogames/20").json()
+    assert (hades["achievements_done"], hades["achievements_total"], hades["unobtainable_count"]) == (1, 2, 1)
+    assert [a["name"] for a in hades["achievements"] if a["unobtainable"]] == ["Godlike"]
+    fake.mine[20][1].update(achieved=1, unlocktime=T(13))    # Secret
+    fake.games[1]["rtime_last_played"] = T(13)
+    client.post("/api/videogames/sync")
+    hades = client.get("/api/videogames/20").json()
+    assert hades["percent"] == 100 and hades["completed_at"]
+
+
+def test_a_month_recap_and_the_unlock_calendar(client, fake):
+    setup(client)
+    r = client.get("/api/videogames/recap?month=2026-10").json()
+    assert (r["month"], r["first"], r["achievements"], r["games"], r["previous"]) == ("2026-10", "2026-10", 3, 2, 0)
+    assert [g["name"] for g in r["perfect"]] == ["Celeste"]
+    assert r["rarest"][0]["name"] == "Summit" and r["top_games"][0]["name"] == "Celeste"
+    assert client.get("/api/videogames/recap?month=2026-09").json()["achievements"] == 0
+    assert client.get("/api/videogames/recap?month=Oct").status_code == 422
+    stats = client.get("/api/videogames/stats").json()
+    assert set(stats["streak"]) == {"current", "longest", "longest_end", "unlocked_today"} and "days" in stats

@@ -1386,3 +1386,37 @@ body.writing-mode .journal-title { font-size: 2.2rem; }
 .delta.down { color: var(--low); background: var(--low-bg); }
 .delta.none { color: var(--muted); background: var(--fill); }
 .goal-percent .delta { font-size: 0.8rem; }
+
+/* Streak pill beside a heading. */
+.streak-pill { margin-left: 8px; font-size: 0.75rem; vertical-align: middle; }
+
+/* A month's recap on the Stats page. */
+.recap-head { display: flex; align-items: center; gap: 8px; }
+.recap-head .home-card-title { margin: 0; min-width: 9em; text-align: center; }
+.recap-head button { min-width: 36px; font-size: 1.3rem; line-height: 1; }
+.recap-numbers { display: flex; flex-wrap: wrap; gap: 8px 28px; margin: 12px 0 16px; }
+.recap-numbers > span { display: flex; flex-direction: column; color: var(--muted); font-size: 0.85rem; }
+.recap-numbers strong { color: var(--text); font-size: 1.6rem; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.recap-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.recap .section-title { margin: 0 0 8px; }
+.recap .perfect-grid { margin-top: 4px; }
+@media (max-width: 700px) { .recap-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* The unlock calendar: one square a day, weeks across. One blue, darker with more unlocks (in dark
+   mode, brighter); steps checked for neighbouring contrast (dataviz validator, deltaE >= 15). */
+:root { --heat-0: var(--fill); --heat-1: #bfd2fb; --heat-2: #7ea3f3; --heat-3: #3d6fe6; --heat-4: #1e3a9e; }
+:root[data-theme='dark'] { --heat-1: #1f3c75; --heat-2: #2f62bd; --heat-3: #5b95f2; --heat-4: #a9cbfc; }
+.heatmap-scroll { overflow-x: auto; padding-bottom: 4px; }
+.heatmap { display: inline-flex; flex-direction: column; gap: 4px; }
+.heatmap-months, .heatmap-grid { display: flex; gap: 3px; }
+.heatmap-months span { width: 11px; font-size: 0.65rem; color: var(--muted); white-space: nowrap; overflow: visible; }
+.heatmap-week { display: flex; flex-direction: column; gap: 3px; }
+.heatmap-day { display: block; width: 11px; height: 11px; border-radius: 2px; background: var(--heat-0); }
+.heatmap-day.l1 { background: var(--heat-1); }
+.heatmap-day.l2 { background: var(--heat-2); }
+.heatmap-day.l3 { background: var(--heat-3); }
+.heatmap-day.l4 { background: var(--heat-4); }
+.heatmap-grid .heatmap-day:hover { outline: 2px solid var(--text); outline-offset: 1px; }
+.heatmap-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+.heatmap-key { display: inline-flex; align-items: center; gap: 3px; }
+.heatmap-key .heatmap-day { margin: 0 1px; }

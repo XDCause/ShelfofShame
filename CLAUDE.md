@@ -866,6 +866,29 @@ DBeaver, psql, and the one-off import script.
    old `.change` class belongs to stock history). Dashboard tiles + GoalCard (average and total) and
    the Home tiles. First dev numbers: +59 achievements, +3 at 100%, -2 in progress, +0.8% average.
    284 API tests.
+3zg. **Calendar, unobtainable, quick wins, recap** (2026-10-14; user picked 4 of 7 ideas from a review
+   against SteamHunters / completionist.me / Exophase / TSA / Playnite / HLTB / Backloggd. Not picked:
+   hunting list, play status, guides link; rejected: points, session history, friends, HLTB).
+   - 31_videogame_unobtainable.sql: vg_games.sh_unobtainable (SteamHunters' unobtainableAchievementCount),
+     vg_achievements.unobtainable. sync_community asks /api/apps/<id>/achievements (obtainability 3 =
+     unobtainable, keyed by Steam apiName) ONLY when the count > 0. videogames.recount() (shared with
+     sync_game): achievements_total leaves out unobtainable ones you don't have, so 100% without them.
+     Panel: "N can't be earned any more" + Unobtainable pill; DLC group totals exclude them.
+     Example found: Hitman Absolution 8; the user's CoD Infinite Warfare 1.
+   - summary.quick_wins: started, SteamHunters median known; minutes_left = median x left / total
+     (rough), fewest first. summary.streak / stats.streak = streaks(days, today): current (alive till
+     today ends), longest + end day. Dashboard: Quick wins card, StreakPill on Recently unlocked.
+   - Stats page: Recap (GET /api/videogames/recap?month=YYYY-MM: achievements, games, previous - same
+     days of the month before while the month is running -, best_day, rarest 3, top_games 5, perfect,
+     first, this_month; month arrows) + UnlockCalendar (53 weeks x 7, Monday first, levels = own
+     quartiles, --heat-1..4 ramps checked with the dataviz validator: adjacent dE >= 14.5; hover shows
+     the count, "Show as a table"). Dates use the DB's Brisbane timezone (SHOW timezone).
+   - GOTCHA: plain `dev.ps1` does NOT run migrate.ps1 (only -Refresh does) - run .\migrate.ps1 after
+     adding a db/init file, or the API fails with UndefinedColumn (a dev sync did).
+   - Tests: 288 API, 59 browser steps (stats: recap arrows, 53 calendar weeks; Quick wins card).
+   - Next idea in progress: Ubisoft + Epic via the user's Exophase profile (api.exophase.com/public/
+     player/<playerid>/games?page=&environment=uplay|epic: title, earned/total, percent, playtime,
+     lastplayed, tile image). Profile name and player ids belong in the app's settings, not here.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

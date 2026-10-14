@@ -44,8 +44,20 @@ export function Dashboard() {
               )}
             </section>
             <section className="card home-card">
-              <h2 className="home-card-title">Recently unlocked</h2>
+              <h2 className="home-card-title">Recently unlocked<StreakPill streak={s.streak} /></h2>
               <AchievementList items={s.recent} when />
+            </section>
+            <section className="card home-card">
+              <h2 className="home-card-title">Quick wins</h2>
+              <p className="muted small chart-sub">Started games with the least time left to 100% (from SteamHunters' median)</p>
+              {s.quick_wins.length === 0 ? <p className="muted small">Nothing yet - Sync now reads how long others took.</p> : (
+                <ul className="list plain-list">
+                  {s.quick_wins.map((g) => (
+                    <GameRow key={g.app_id} game={g} detail={`about ${playtime(g.minutes_left)} left${
+                      g.perfect_rate != null ? ` · ${Number(g.perfect_rate)}% of players 100% it` : ''}`} />
+                  ))}
+                </ul>
+              )}
             </section>
             <section className="card home-card">
               <h2 className="home-card-title">Rarest you have</h2>
@@ -162,7 +174,7 @@ function GameRow({ game: g, detail }) {
   )
 }
 
-function AchievementList({ items, when = false }) {
+export function AchievementList({ items, when = false }) {
   const { openPanel } = useApp()
   if (!items.length) return <p className="muted small">Nothing yet.</p>
   return (
@@ -187,7 +199,7 @@ function AchievementList({ items, when = false }) {
   )
 }
 
-function PerfectCard({ game: g }) {
+export function PerfectCard({ game: g }) {
   const { openPanel } = useApp()
   return (
     <button type="button" className="perfect-card" onClick={() => openPanel('videogame', { id: g.app_id })}>
@@ -396,4 +408,12 @@ function GameTable({ games, onOpen }) {
 function DlcBadge({ game: g }) {
   const what = `${g.dlc_count} DLC${g.dlc_count === 1 ? '' : 's'} with achievements: ${g.dlc_done} of ${g.dlc_achievements}`
   return <span className="pill purple dlc-badge" title={what} aria-label={what}><PuzzleIcon size={12} /> DLC</span>
+}
+
+// "🔥 5-day streak" beside a heading: days in a row with an unlock (still alive until today ends).
+export function StreakPill({ streak }) {
+  if (!streak?.current) return null
+  const what = `${streak.current} day${streak.current === 1 ? '' : 's'} in a row with an unlock${
+    streak.unlocked_today ? '' : ' - unlock one today to keep it going'}. Longest: ${streak.longest} days.`
+  return <span className="pill low streak-pill" title={what} aria-label={what}>🔥 {streak.current}-day streak</span>
 }

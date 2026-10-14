@@ -58,10 +58,14 @@ export default function VideoGamePanel({ id, onClose }) {
           {game.completed_at && <span className="pill ok">100% · {shortDate(game.completed_at)}</span>}
         </div>
         <CompletionBar game={game} />
+        {game.unobtainable_count > 0 && (
+          <p className="small muted">{game.unobtainable_count} achievement{game.unobtainable_count === 1 ? " can't" : "s can't"} be
+            earned any more (SteamHunters), so {game.unobtainable_count === 1 ? "it isn't" : "they aren't"} counted.</p>
+        )}
         {groups.length > 1 && (
           <p className="small dlc-split">
             {groups.map((g) => (
-              <span key={g.name}><strong>{g.dlc ? g.name : 'Main game'}</strong> {g.done} of {g.items.length}{g.done === g.items.length && ' ✓'}</span>
+              <span key={g.name}><strong>{g.dlc ? g.name : 'Main game'}</strong> {g.done} of {g.total}{g.done >= g.total && ' ✓'}</span>
             ))}
           </p>
         )}
@@ -83,11 +87,11 @@ export default function VideoGamePanel({ id, onClose }) {
             <div className="dlc-groups">
               {groups.map((g) => {
                 const items = g.items.filter(shows)
-                const percent = Math.round((100 * g.done) / g.items.length)
+                const percent = g.total ? Math.round((100 * g.done) / g.total) : 100
                 return (
                   <Fold key={g.name} open={!g.dlc} className="dlc-group"
                     title={<>{g.dlc ? g.name : 'Main game'}{g.dlc && <span className="pill purple">DLC</span>}</>}
-                    detail={<>{g.done} of {g.items.length}
+                    detail={<>{g.done} of {g.total}
                       <span className={percent === 100 ? 'fill-bar ok' : 'fill-bar tint'} aria-hidden="true"><span style={{ width: `${percent}%` }} /></span></>}>
                     {items.length ? <AchievementList items={items} /> : <p className="muted small">None here.</p>}
                   </Fold>
@@ -108,10 +112,11 @@ function dlcGroups(achievements) {
   const groups = new Map()
   for (const a of achievements) {
     const name = a.dlc ?? ''
-    if (!groups.has(name)) groups.set(name, { name: name || 'main', dlc: a.dlc, items: [], done: 0 })
+    if (!groups.has(name)) groups.set(name, { name: name || 'main', dlc: a.dlc, items: [], done: 0, total: 0 })
     const g = groups.get(name)
     g.items.push(a)
     if (a.achieved) g.done += 1
+    if (a.achieved || !a.unobtainable) g.total += 1      // unobtainable ones you don't have don't count
   }
   return [...groups.values()].sort((x, y) => (x.dlc == null ? -1 : y.dlc == null ? 1 : x.name.localeCompare(y.name)))
 }
@@ -130,8 +135,10 @@ function AchievementList({ items }) {
             <span className="grow">
               <span className="item-title">{a.name}</span>
               <span className="item-meta">{secret ? 'Hidden achievement' : a.description ?? ''}</span>
+              {a.unobtainable && !a.achieved && <span className="item-meta">Can't be earned any more - not counted</span>}
               {a.achieved && a.unlocked_at && <span className="item-meta">Unlocked {shortDate(a.unlocked_at)}</span>}
             </span>
+            {a.unobtainable && <span className="pill" title="SteamHunters lists it as unobtainable">Unobtainable</span>}
             {r && <span className={`pill ${r.tone}`} title={r.label ? `${r.label}: ${r.text} of players have it` : `${r.text} of players have it`}>{r.text}</span>}
           </li>
         )

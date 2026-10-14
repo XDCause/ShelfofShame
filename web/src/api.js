@@ -154,6 +154,7 @@ export const api = {
   hideVideoGame: (id, hidden) => request(`/videogames/${id}`, send('PATCH', { hidden })),
   setVideoGameGoal: (percent) => request('/videogames/goal', send('PUT', { percent })),
   videoGameStats: () => request('/videogames/stats'),
+  videoGameRecap: (month) => request(`/videogames/recap${month ? `?month=${month}` : ''}`),
   addExtraVideoGame: (game) => request('/videogames/extra', send('POST', { game })),
   removeExtraVideoGame: (id) => request(`/videogames/extra/${id}`, send('DELETE')),
 
