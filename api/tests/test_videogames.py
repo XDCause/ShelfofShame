@@ -210,30 +210,35 @@ def test_the_store_api_answer_becomes_picture_addresses(monkeypatch):
 
 
 def test_profile_completion_against_the_goal(client, fake):
-    """Only started games count: 3 of 5 = 60% (a game with none unlocked isn't counted); goal 50%."""
+    """Started games only: Celeste 2/2 (100%) and Hades 1/3 (33.3%) -> average 66.7%, total 3/5 = 60%.
+    A game with none unlocked isn't counted."""
     fake.games.append({"appid": 40, "name": "Untouched", "playtime_forever": 0, "rtime_last_played": 0})
     fake.mine[40] = [{"apiname": "Q", "achieved": 0, "unlocktime": 0}, {"apiname": "R", "achieved": 0, "unlocktime": 0}]
     setup(client)
-    assert client.get("/api/videogames/summary").json()["achievements_total"] == 7       # all games: 7...
     goal = client.get("/api/videogames/summary").json()["goal"]
-    assert (goal["percent"], goal["goal_percent"], goal["target"], goal["needed"], goal["reached"]) == (60.0, 50, 3, 0, True)
+    assert (goal["percent"], goal["total_percent"], goal["achievements"], goal["achievements_total"]) == (66.7, 60.0, 3, 5)
+    assert (goal["goal_percent"], goal["reached"], goal["points_to_go"]) == (50, True, 0)
     goal = client.put("/api/videogames/goal", json={"percent": 100}).json()["goal"]
-    assert (goal["goal_percent"], goal["target"], goal["needed"], goal["reached"]) == (100, 5, 2, False)
+    assert (goal["reached"], goal["points_to_go"], goal["plan"]) == (False, 33.3, {"games": 1, "achievements": 2})
     assert client.put("/api/videogames/goal", json={"percent": 0}).status_code == 422
     assert client.put("/api/videogames/goal", json={"percent": 101}).status_code == 422
     client.patch("/api/videogames/20", json={"hidden": True})            # hidden games don't count
     goal = client.get("/api/videogames/summary").json()["goal"]
-    assert (goal["percent"], goal["needed"]) == (100.0, 0)
+    assert (goal["percent"], goal["reached"]) == (100.0, True)
 
 
-def test_how_long_the_goal_takes_at_your_pace():
+def test_the_quickest_route_to_the_goal():
     from app.videogames import goal_progress
-    totals = {"achievements": 2683, "started_achievements_total": 13161, "unlocked_last_30_days": 120}
-    goal = goal_progress(totals, 50)
-    assert (goal["percent"], goal["target"], goal["needed"]) == (20.4, 6581, 3898)
-    assert goal["days_at_pace"] == 975                                     # 3898 at 4 a day
-    assert goal_progress({**totals, "unlocked_last_30_days": 0}, 50)["days_at_pace"] is None
-    assert goal_progress({"achievements": 0, "started_achievements_total": 0, "unlocked_last_30_days": 0}, 50)["percent"] == 0.0
+    # Three started games: 1/2 (50%), 9/10 (90%), 1/100 (1%) average 47%; the total is 11/112.
+    games = [(1, 2), (9, 10), (1, 100)]
+    goal = goal_progress(games, 30, 50)
+    assert (goal["percent"], goal["total_percent"], goal["points_to_go"]) == (47.0, 9.8, 3.0)
+    # Finish the game with 1 left (90% -> 100%): +3.3 points -> 50.3%. One game, one achievement.
+    assert goal["plan"] == {"games": 1, "achievements": 1}
+    assert goal["days_at_pace"] == 1                                       # a day's pace (1 a day)
+    goal = goal_progress(games, 0, 90)                                     # all three 100%: 100% average
+    assert goal["plan"] == {"games": 3, "achievements": 101} and goal["days_at_pace"] is None
+    assert goal_progress([], 0, 50)["percent"] == 0.0 and goal_progress([], 0, 50)["plan"] is None
 
 
 def test_stats_for_the_charts(client, fake):

@@ -776,6 +776,13 @@ DBeaver, psql, and the one-off import script.
      light #2563eb on #fff and dark #3b82f6 on #111a2c), <= 24px columns, 4px tops, 2px gaps,
      hairline grid, hover/focus tooltip, values on caps only for few columns (else the highest),
      "Show as a table" for every chart. 272 API tests, 59 browser steps.
+   - Profile completion now shows BOTH (user's choice): the big number = AVERAGE completion of
+     started games (SteamHunters' "avg completion"; the goal tracks it), the TOTAL (achievements /
+     achievements in those games) on a line underneath with why they differ (a 2/2 game counts as
+     much as a 20/641 one in the average). goal_progress(games, unlocked_last_30_days, goal):
+     points_to_go, plan = quickest route (100% the started games with fewest achievements left
+     until the average reaches the goal: games + achievements), days_at_pace from those
+     achievements. Live: 38.2% avg, 33.2% total, 11.8 points, 31 games / 445 achievements.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

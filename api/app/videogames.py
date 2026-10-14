@@ -5,9 +5,9 @@
               full=true. Runs in the background; GET /videogames/sync shows how it's going.
               A sync also runs by itself once a day while the app is up (start_daily_sync).
     dashboard summary tiles, closest to 100%, recent unlocks, rarest achievements you have, and
-              profile completion: achievements unlocked / every achievement in the games you've
-              started (at least one unlocked; untouched games don't count), against your goal
-              (settings key vg_goal_percent, 50 unless changed) and your pace
+              profile completion: the average completion of the games you've started (at least one
+              achievement; untouched games don't count) against your goal (settings key
+              vg_goal_percent, 50 unless changed), the total alongside, the quickest route and your pace
     stats     for the charts: unlocks per month, how rare your achievements are, your started games
               by completion, most played games
     games     every game with its completion; one game with its achievements
@@ -280,7 +280,10 @@ def summary():
         totals["unlocked_last_30_days"] = conn.execute(
             "SELECT count(*)::int AS n FROM vg_achievements a JOIN vg_games g USING (app_id) WHERE NOT g.hidden "
             "AND a.achieved AND a.unlocked_at >= now() - interval '30 days'").fetchone()["n"]
-        totals["goal"] = goal_progress(totals, int(get_setting(conn, GOAL_KEY) or GOAL_DEFAULT))
+        started = [(r["achievements_done"], r["achievements_total"]) for r in conn.execute(
+            "SELECT achievements_done, achievements_total FROM vg_games WHERE NOT hidden AND achievements_done > 0").fetchall()]
+        totals["goal"] = goal_progress(started, totals["unlocked_last_30_days"],
+                                       int(get_setting(conn, GOAL_KEY) or GOAL_DEFAULT))
         closest = conn.execute(GAME_SELECT + """ WHERE NOT g.hidden AND g.achievements_done > 0 AND g.completed_at IS NULL
             ORDER BY 1.0 * g.achievements_done / g.achievements_total DESC, g.achievements_total - g.achievements_done
             LIMIT 6""").fetchall()
@@ -337,22 +340,41 @@ def stats(months: int = Query(24, ge=1, le=120)):
             "completion": band(COMPLETION_BANDS, games), "most_played": most_played}
 
 
-def goal_progress(totals: dict, goal_percent: int) -> dict:
-    """Profile completion against the goal: every achievement you have / every achievement in the
-    (not hidden) games you've started - a game counts once you've unlocked one of its achievements -
-    how many more reach the goal, and how long that takes at your last-30-days pace. (Starting a new
-    game adds its achievements to the total, so the % can drop when you do.)"""
-    done, total = totals["achievements"], totals["started_achievements_total"]
-    target = math.ceil(total * goal_percent / 100)
-    needed = max(0, target - done)
-    per_day = totals["unlocked_last_30_days"] / 30
+def goal_progress(games: list[tuple[int, int]], unlocked_last_30_days: int, goal_percent: int) -> dict:
+    """Profile completion against the goal, from the started games' (done, total) achievements:
+        percent        average completion: each game's %, averaged (SteamHunters' "avg completion";
+                       a 2-achievement game counts as much as a 600-achievement one) - the goal's number
+        total_percent  every achievement you have / every achievement in those games
+        points_to_go   goal - average
+        plan           the quickest way there: 100% your nearest-to-done games, fewest achievements
+                       left first, until the average reaches the goal -> games and achievements needed
+        days_at_pace   those achievements at your last-30-days pace
+    Starting a new game adds a low % to the average, so it can dip when you do."""
+    count = len(games)
+    percents = [100 * d / t for d, t in games]
+    average = sum(percents) / count if count else 0.0
+    done, total = sum(d for d, _ in games), sum(t for _, t in games)
+    reached = count > 0 and average >= goal_percent
+    plan = None
+    if count and not reached:
+        gained, achievements = 0.0, 0
+        for finished, (d, t) in enumerate(sorted((g for g in games if g[0] < g[1]), key=lambda g: g[1] - g[0]), 1):
+            gained += (100 - 100 * d / t) / count
+            achievements += t - d
+            if average + gained >= goal_percent:
+                plan = {"games": finished, "achievements": achievements}
+                break
+    per_day = unlocked_last_30_days / 30
     return {
-        "percent": round(100 * done / total, 1) if total else 0.0,
+        "percent": round(average, 1),
+        "total_percent": round(100 * done / total, 1) if total else 0.0,
+        "achievements": done,
+        "achievements_total": total,
         "goal_percent": goal_percent,
-        "target": target,
-        "needed": needed,
-        "reached": total > 0 and needed == 0,
-        "days_at_pace": math.ceil(needed / per_day) if needed and per_day else None,
+        "points_to_go": round(max(0.0, goal_percent - average), 1),
+        "reached": reached,
+        "plan": plan,
+        "days_at_pace": math.ceil(plan["achievements"] / per_day) if plan and per_day else None,
     }
 
 

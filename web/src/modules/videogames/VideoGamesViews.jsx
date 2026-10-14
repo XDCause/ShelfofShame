@@ -76,9 +76,9 @@ function roughly(days) {
   return `about ${years} years${rest ? ` ${rest} month${rest === 1 ? '' : 's'}` : ''}`
 }
 
-// Profile completion: achievements unlocked out of every achievement in the games you've started
-// (at least one unlocked), with the goal marked on the bar, how many more it takes, and how long at
-// your recent pace.
+// Profile completion: the average completion of the games you've started (what SteamHunters calls
+// "avg completion", and what the goal tracks), the total underneath, the goal marked on the bar,
+// the quickest route there and how long at your recent pace.
 function GoalCard({ summary: s }) {
   const { changed } = useApp()
   const g = s.goal
@@ -102,7 +102,7 @@ function GoalCard({ summary: s }) {
         <span>
           <span className="goal-label">Profile completion</span>
           <strong className="goal-percent">{g.percent}%</strong>
-          <span className="muted small">of the achievements in the {s.perfect + s.started} games you've started</span>
+          <span className="muted small">average completion of the {s.perfect + s.started} games you've started</span>
         </span>
         {editing ? (
           <form className="goal-edit" onSubmit={save}>
@@ -117,17 +117,22 @@ function GoalCard({ summary: s }) {
           </button>
         )}
       </div>
-      <div className="goal-bar" role="img"
-        aria-label={`${g.percent}% done, goal ${g.goal_percent}%`}>
+      <div className="goal-bar" role="img" aria-label={`${g.percent}% average, goal ${g.goal_percent}%`}>
         <span className="goal-fill" style={{ width: `${Math.min(100, g.percent)}%` }} />
         <span className="goal-marker" style={{ left: `${g.goal_percent}%` }}><span>Goal {g.goal_percent}%</span></span>
       </div>
       <p className="goal-detail">
-        {g.reached ? <strong className="ok-text">Goal reached! 🎉 </strong>
-          : <><strong>{g.needed.toLocaleString()}</strong> more achievements to reach {g.goal_percent}% · </>}
-        {s.achievements.toLocaleString()} of {s.started_achievements_total.toLocaleString()} unlocked
+        {g.reached ? <strong className="ok-text">Goal reached! 🎉</strong> : (
+          <><strong>{g.points_to_go} points</strong> to go
+            {g.plan && <> · quickest route: 100% your {g.plan.games} nearest-to-done game{g.plan.games === 1 ? '' : 's'}
+              {' '}({g.plan.achievements.toLocaleString()} achievements)</>}</>
+        )}
       </p>
-      {!g.reached && (
+      <p className="muted small">
+        Total: {g.achievements.toLocaleString()} of {g.achievements_total.toLocaleString()} achievements in those games
+        ({g.total_percent}%). The average counts every game the same; the total weighs big games more.
+      </p>
+      {!g.reached && g.plan && (
         <p className="muted small">
           {g.days_at_pace
             ? `At your pace (${s.unlocked_last_30_days} in the last 30 days), ${roughly(g.days_at_pace)} to go.`
@@ -267,7 +272,7 @@ export function VideoGamesTiles() {
       <Stat to="/videogames/dashboard" Icon={TrophyIcon} tone="ok" value={s.perfect} label="Games at 100%"
         sub={s.closest[0] ? `next: ${s.closest[0].name}` : 'Steam'} />
       <Stat to="/videogames/dashboard" Icon={GamepadIcon} tone="purple" value={`${s.goal.percent}%`}
-        label="Profile completion" sub={s.goal.reached ? `goal ${s.goal.goal_percent}% reached` : `goal ${s.goal.goal_percent}% · ${s.goal.needed.toLocaleString()} to go`} />
+        label="Profile completion" sub={s.goal.reached ? `goal ${s.goal.goal_percent}% reached` : `goal ${s.goal.goal_percent}% · ${s.goal.points_to_go} points to go`} />
     </>
   )
 }
