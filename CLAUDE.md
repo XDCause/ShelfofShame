@@ -823,6 +823,31 @@ DBeaver, psql, and the one-off import script.
      3000px and checks the search box is still near the top.
    - Games toolbar also has "Sync now" (steam.jsx SyncButton: quick sync, shows "Syncing 12 of 40..." while
      running, list reloads when done; tooltip = last synced). Full sync stays on the dashboard.
+   - **DLC split** (user: SteamHunters splits main game and DLC in each game's achievements). Desk review
+     2026-10-14: Steam's API and store data don't say which achievements are DLC; SteamHunters' groups
+     (/api/apps/<id>/updates) need a login; the SteamDB extension's groups come from a private SteamDB
+     endpoint fed by SteamHunters (not for us); TrueSteamAchievements has no API; completionist.me 403s.
+     **Exophase** works: plain-HTML game pages with an h3.dlc-add-on per DLC, robots.txt only blocks
+     /search, terms silent on automated access. 30_videogame_dlc.sql: vg_achievements.dlc (NULL = main
+     game), vg_games.sh_has_dlc (SteamHunters' hasPaidDlc), exo_url ('' = none found), exo_synced_at.
+     exophase.py: candidates() via api.exophase.com/public/archive/games?q= (Steam entries, same name
+     first, ™ dropped), the page must link to store.steampowered.com/app/<id>, parse() ul.achievement
+     lists, names matched by key() (case / punctuation / accents ignored). videogames.sync_dlc after
+     sync_community: started, not hidden, sh_has_dlc not false, exo_synced_at NULL (reset when the
+     schema is re-read) or full sync; 2 s pause. Panel: "Main game 40 of 50 · <DLC> 3 of 12" line,
+     Main game fold (open) + one fold per DLC with count and bar; filters work inside. Tests use a
+     made-up page in Exophase's layout (no copied page).
+   - **Free updates aren't DLC**: Exophase heads free content updates ("Update #1", "Commander Mode")
+     exactly like paid DLC (same markup). A section only counts as DLC if exophase.is_dlc() matches it
+     to one of the game's real DLCs from SteamHunters' public /api/apps/<id>/related (typeString DLC,
+     steamhunters.dlc_names); other sections stay with the main game (they count for its 100%).
+     dlc_name() trims the game / series name ("Far Cry® 5 - ...", "Just Cause™ 3 DLC: ...",
+     "Fallout 4 Far Harbor", "The Binding of Isaac: Afterbirth"); key() drops ™ ® ©.
+   - Both readers retry once 5 s after a timeout (SteamHunters was briefly slow twice in a row).
+   - GAME_SELECT: dlc_count / dlc_achievements / dlc_done (LATERAL with rarest_percent); the Games
+     list shows a purple "DLC" pill with a PuzzleIcon (DlcBadge; tooltip "2 DLCs with achievements:
+     3 of 12"). Dev result: 40 games with DLC, all found on Exophase (e.g. Dead by Daylight 46 DLCs).
+   - Tests: 283 API, 59 browser steps (video_games opens the game with the most DLCs).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
 import { api, shortDate } from '../../api.js'
 import Drawer from '../../components/Drawer.jsx'
+import Fold from '../../components/Fold.jsx'
 import { useApp } from '../../core/app-context.js'
 import JournalMentions from '../../core/journal/JournalMentions.jsx'
 import { BellCurveIcon, ClockIcon, HourglassIcon, TrophyIcon } from '../../components/icons.jsx'
 import { CompletionBar, GamePicture, playtime, rarity } from './steam.jsx'
 
 // One game: its picture, completion, every achievement (unlocked first; locked ones greyed, hidden
-// ones' descriptions kept secret), links to Steam, journal pages about it, and Hide.
+// ones' descriptions kept secret) - split into the main game and each DLC when Exophase says which
+// are which - links to Steam, journal pages about it, and Hide.
 export default function VideoGamePanel({ id, onClose }) {
   const { changed } = useApp()
   const [game, setGame] = useState(null)
@@ -30,7 +32,8 @@ export default function VideoGamePanel({ id, onClose }) {
     changed()
     onClose()
   }
-  const list = game.achievements.filter((a) => show === 'all' || (show === 'got' ? a.achieved : !a.achieved))
+  const groups = dlcGroups(game.achievements)
+  const shows = (a) => show === 'all' || (show === 'got' ? a.achieved : !a.achieved)
   const footer = (
     <>
       <a className="button secondary" href={`https://store.steampowered.com/app/${id}`} target="_blank" rel="noreferrer">Store page ↗</a>
@@ -55,6 +58,13 @@ export default function VideoGamePanel({ id, onClose }) {
           {game.completed_at && <span className="pill ok">100% · {shortDate(game.completed_at)}</span>}
         </div>
         <CompletionBar game={game} />
+        {groups.length > 1 && (
+          <p className="small dlc-split">
+            {groups.map((g) => (
+              <span key={g.name}><strong>{g.dlc ? g.name : 'Main game'}</strong> {g.done} of {g.items.length}{g.done === g.items.length && ' ✓'}</span>
+            ))}
+          </p>
+        )}
         {game.extra
           ? <p className="muted small">Added by hand: Steam doesn't list it in your library, so playtime isn't known.</p>
           : <p className="muted small">{playtime(game.playtime_minutes)} played{game.last_played && ` · last played ${shortDate(game.last_played)}`}</p>}
@@ -69,29 +79,64 @@ export default function VideoGamePanel({ id, onClose }) {
               <button key={k} type="button" aria-pressed={show === k} onClick={() => setShow(k)}>{label}</button>
             ))}
           </div>
-          <ul className="list achievements">
-            {list.map((a) => {
-              const r = rarity(a.global_percent)
-              const secret = a.hidden && !a.achieved
-              return (
-                <li key={a.api_name} className={a.achieved ? 'achievement got' : 'achievement'}>
-                  {(a.achieved ? a.icon : a.icon_gray ?? a.icon)
-                    ? <img className="achievement-icon" src={a.achieved ? a.icon : a.icon_gray ?? a.icon} alt="" loading="lazy" referrerPolicy="no-referrer" />
-                    : <span className="achievement-icon thumb-empty" />}
-                  <span className="grow">
-                    <span className="item-title">{a.name}</span>
-                    <span className="item-meta">{secret ? 'Hidden achievement' : a.description ?? ''}</span>
-                    {a.achieved && a.unlocked_at && <span className="item-meta">Unlocked {shortDate(a.unlocked_at)}</span>}
-                  </span>
-                  {r && <span className={`pill ${r.tone}`} title={r.label ? `${r.label}: ${r.text} of players have it` : `${r.text} of players have it`}>{r.text}</span>}
-                </li>
-              )
-            })}
-          </ul>
+          {groups.length === 1 ? <AchievementList items={groups[0].items.filter(shows)} /> : (
+            <div className="dlc-groups">
+              {groups.map((g) => {
+                const items = g.items.filter(shows)
+                const percent = Math.round((100 * g.done) / g.items.length)
+                return (
+                  <Fold key={g.name} open={!g.dlc} className="dlc-group"
+                    title={<>{g.dlc ? g.name : 'Main game'}{g.dlc && <span className="pill purple">DLC</span>}</>}
+                    detail={<>{g.done} of {g.items.length}
+                      <span className={percent === 100 ? 'fill-bar ok' : 'fill-bar tint'} aria-hidden="true"><span style={{ width: `${percent}%` }} /></span></>}>
+                    {items.length ? <AchievementList items={items} /> : <p className="muted small">None here.</p>}
+                  </Fold>
+                )
+              })}
+              <p className="hint">Which achievements come with a DLC: Exophase, read when the game's achievements change.</p>
+            </div>
+          )}
         </section>
       )}
       <JournalMentions kind="videogame" id={game.app_id} name={game.name} onLeave={onClose} />
     </Drawer>
+  )
+}
+
+// The achievements as groups: the main game first, then each DLC (A to Z), each with how many you have.
+function dlcGroups(achievements) {
+  const groups = new Map()
+  for (const a of achievements) {
+    const name = a.dlc ?? ''
+    if (!groups.has(name)) groups.set(name, { name: name || 'main', dlc: a.dlc, items: [], done: 0 })
+    const g = groups.get(name)
+    g.items.push(a)
+    if (a.achieved) g.done += 1
+  }
+  return [...groups.values()].sort((x, y) => (x.dlc == null ? -1 : y.dlc == null ? 1 : x.name.localeCompare(y.name)))
+}
+
+function AchievementList({ items }) {
+  return (
+    <ul className="list achievements">
+      {items.map((a) => {
+        const r = rarity(a.global_percent)
+        const secret = a.hidden && !a.achieved
+        return (
+          <li key={a.api_name} className={a.achieved ? 'achievement got' : 'achievement'}>
+            {(a.achieved ? a.icon : a.icon_gray ?? a.icon)
+              ? <img className="achievement-icon" src={a.achieved ? a.icon : a.icon_gray ?? a.icon} alt="" loading="lazy" referrerPolicy="no-referrer" />
+              : <span className="achievement-icon thumb-empty" />}
+            <span className="grow">
+              <span className="item-title">{a.name}</span>
+              <span className="item-meta">{secret ? 'Hidden achievement' : a.description ?? ''}</span>
+              {a.achieved && a.unlocked_at && <span className="item-meta">Unlocked {shortDate(a.unlocked_at)}</span>}
+            </span>
+            {r && <span className={`pill ${r.tone}`} title={r.label ? `${r.label}: ${r.text} of players have it` : `${r.text} of players have it`}>{r.text}</span>}
+          </li>
+        )
+      })}
+    </ul>
   )
 }
 

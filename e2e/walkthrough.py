@@ -1080,6 +1080,21 @@ def video_games(page):
             expect(drawer(page).locator(".compared")).to_contain_text("Compared with other players")
             shot(page, "d43_video_game_compared", full=False)
         page.keyboard.press("Escape")
+    # A game with DLC (when the data has one): a DLC badge in the list; the panel splits the main game
+    # from each DLC.
+    with_dlc = [g for g in json.load(urllib.request.urlopen(f"{BASE}/api/videogames?show=started")) if g.get("dlc_count")]
+    if with_dlc:
+        g = max(with_dlc, key=lambda g: g["dlc_count"])
+        page.get_by_label("Search your games").fill(g["name"])
+        row = page.locator(".game-rows li", has_text=g["name"]).first
+        expect(row.locator(".dlc-badge")).to_be_visible()
+        row.click()
+        expect(drawer(page).locator(".dlc-group")).to_have_count(g["dlc_count"] + 1)   # main game + each DLC
+        expect(drawer(page).locator(".dlc-group").first).to_contain_text("Main game")
+        drawer(page).locator(".dlc-group summary").nth(1).click()
+        expect(drawer(page).locator(".dlc-group").nth(1).locator(".achievements li").first).to_be_visible()
+        shot(page, "d45_video_game_dlc", full=False)
+        page.keyboard.press("Escape")
     page.get_by_label("Search your games").fill("")
     page.locator(".section-tabs").get_by_role("link", name="Stats").click()
     expect(page.locator(".chart")).to_have_count(4)

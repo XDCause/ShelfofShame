@@ -44,7 +44,7 @@ def clean_database():
 @pytest.fixture(autouse=True)
 def no_real_steam(monkeypatch):
     """Tests never call Steam (and never use the real key): a test that forgets to fake it fails."""
-    from app import steam, steamhunters, videogames
+    from app import exophase, steam, steamhunters, videogames
 
     def refuse(*_a, **_k):
         raise AssertionError("A test tried to call the real Steam API")
@@ -52,6 +52,8 @@ def no_real_steam(monkeypatch):
     monkeypatch.setattr(steam, "pause", lambda: None)
     monkeypatch.setattr(steamhunters, "_get", refuse)
     monkeypatch.setattr(steamhunters, "pause", lambda: None)
+    monkeypatch.setattr(exophase, "_get", refuse)
+    monkeypatch.setattr(exophase, "pause", lambda: None)
     videogames.SYNC.update(running=False, done=0, total=0, message=None, error=None, finished_at=None)
 
 

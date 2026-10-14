@@ -1369,3 +1369,14 @@ body.writing-mode .journal-title { font-size: 2.2rem; }
 }
 /* Phones: too tall to pin (it would cover half the screen), so it scrolls with the page. */
 @media (max-width: 700px) { .games-pinned { position: static; margin: 0; border-bottom: 0; } }
+
+/* A game's achievements split into the main game and each DLC (from Exophase). */
+.dlc-split { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 6px 0 0; }
+.dlc-split strong { font-weight: 600; }
+.dlc-groups { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.dlc-group .fold-title { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.dlc-group .fold-detail { display: flex; align-items: center; gap: 8px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.dlc-group .fold-detail .fill-bar { width: 64px; margin-top: 0; }
+.dlc-group .fold-body { padding: 0 0 4px; }
+.dlc-groups .hint { margin: 2px 0 0; }
+.dlc-badge { display: inline-flex; align-items: center; gap: 3px; }

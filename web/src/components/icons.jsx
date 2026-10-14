@@ -87,6 +87,10 @@ export const GamepadIcon = (p) => (
 export const BellCurveIcon = (p) => (
   <Icon {...p}><path d="M2.5 19.5h19" /><path d="M3 17.5c3.5 0 4.5-1.5 6-6S11 5.5 12 5.5s1.5 1.5 3 6 2.5 6 6 6" /></Icon>
 )
+// A puzzle piece: an add-on (DLC).
+export const PuzzleIcon = (p) => (
+  <Icon {...p}><path d="M4.5 8.5h4a2.2 2.2 0 1 1 4.4 0h4.6v4.6a2.2 2.2 0 1 1 0 4.4v3h-13z" /></Icon>
+)
 export const HourglassIcon = (p) => (
   <Icon {...p}><path d="M7 3.5h10M7 20.5h10" /><path d="M8 3.5c0 4.5 8 5.5 8 8.5s-8 4-8 8.5M16 3.5c0 4.5-8 5.5-8 8.5s8 4 8 8.5" /></Icon>
 )

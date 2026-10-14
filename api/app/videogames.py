@@ -2,7 +2,9 @@
 
     sync      reads Steam (steam.py) into vg_games / vg_achievements, then how other players did
               (steamhunters.py: median and fastest time to 100%, how many 100%'d it) for started
-              games - played since, a week old or never read (all of them on a full sync). The first sync reads every
+              games - played since, a week old or never read (all of them on a full sync); then
+              which achievements come with a DLC (exophase.py) for started games with DLC - once,
+              again when their achievements change, and on a full sync. The first sync reads every
               game; after that only games played since the last sync (or never read), unless
               full=true. Runs in the background; GET /videogames/sync shows how it's going.
               A sync also runs by itself once a day while the app is up (start_daily_sync).
@@ -24,7 +26,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 
-from . import steam, steamhunters
+from . import exophase, steam, steamhunters
 from .db import db, found
 from .settings import get_setting
 
@@ -63,13 +65,18 @@ GOAL_KEY, GOAL_DEFAULT = "vg_goal_percent", 50
 
 # perfect_rate: the % of SteamHunters' players who started the game and 100%'d it. rarest_percent:
 # Steam's cross-check - its rarest achievement's global %, the most players that can have 100%'d it.
+# dlc_count / dlc_achievements: DLCs with achievements (from Exophase) and how many those add.
+# dlc_done: how many of those you have.
 GAME_SELECT = """
 SELECT g.*, CASE WHEN g.achievements_total > 0
                  THEN round(100.0 * g.achievements_done / g.achievements_total, 1) END AS percent,
        g.achievements_total - g.achievements_done AS left_to_get,
        round(100.0 * g.sh_players_perfected / NULLIF(g.sh_players_started, 0), 1) AS perfect_rate,
-       (SELECT min(a.global_percent) FROM vg_achievements a WHERE a.app_id = g.app_id) AS rarest_percent
-FROM vg_games g"""
+       a.rarest_percent, a.dlc_count, a.dlc_achievements, a.dlc_done
+FROM vg_games g
+LEFT JOIN LATERAL (SELECT min(global_percent) AS rarest_percent, count(DISTINCT dlc)::int AS dlc_count,
+                          count(dlc)::int AS dlc_achievements, count(dlc) FILTER (WHERE achieved)::int AS dlc_done
+                   FROM vg_achievements WHERE app_id = g.app_id) a ON true"""
 
 
 def with_pictures(game: dict) -> dict:
@@ -108,6 +115,7 @@ def sync_game(conn, steam_id: str, app_id: int, rarity_due: bool):
                  a.get("icon"), a.get("icongray"), bool(a.get("hidden"))))
         steam.pause()
         rarity_due = True
+        conn.execute("UPDATE vg_games SET exo_synced_at = NULL WHERE app_id = %s", (app_id,))  # new ones: which DLC?
     for a in mine:
         conn.execute("""
             INSERT INTO vg_achievements (app_id, api_name, name, achieved, unlocked_at) VALUES (%s, %s, %s, %s, %s)
@@ -186,7 +194,8 @@ def run_sync(full: bool = False):
             conn.execute("UPDATE vg_sync SET last_sync_at = now(), last_error = NULL"
                          + (", last_full_at = now()" if full or not account["last_full_at"] else "") + " WHERE id = 1")
         community = sync_community(full, {app_id for app_id, _, _ in to_read})
-        SYNC.update(message=f"Done: {len(owned)} games, {len(to_read)} read from Steam{community}")
+        dlc = sync_dlc(full)
+        SYNC.update(message=f"Done: {len(owned)} games, {len(to_read)} read from Steam{community}{dlc}")
     except steam.SteamError as e:
         SYNC.update(error=str(e), message=None)
         with db() as conn:
@@ -222,12 +231,44 @@ def sync_community(full: bool, read_now: set[int]) -> str:
         with db() as conn:
             fields = numbers or {}
             conn.execute("UPDATE vg_games SET sh_median_minutes = %s, sh_fastest_minutes = %s, sh_players_perfected = %s, "
-                         "sh_players_started = %s, sh_points = %s, sh_synced_at = now() WHERE app_id = %s",
+                         "sh_players_started = %s, sh_points = %s, sh_has_dlc = %s, sh_synced_at = now() WHERE app_id = %s",
                          (fields.get("sh_median_minutes"), fields.get("sh_fastest_minutes"),
-                          fields.get("sh_players_perfected"), fields.get("sh_players_started"), fields.get("sh_points"), app_id))
+                          fields.get("sh_players_perfected"), fields.get("sh_players_started"), fields.get("sh_points"),
+                          fields.get("sh_has_dlc"), app_id))
         SYNC["done"] += 1
         steamhunters.pause()
     return f", community numbers for {len(due)}"
+
+
+def sync_dlc(full: bool) -> str:
+    """Which achievements come with a DLC, from Exophase, for started games with DLC (SteamHunters
+    says so, or doesn't know): ones never read or whose achievements changed, or all on a full sync.
+    Achievements Exophase doesn't list stay with the main game. Returns a note for the sync's message."""
+    with db() as conn:
+        due = conn.execute(
+            "SELECT app_id, name, achievements_total FROM vg_games WHERE achievements_done > 0 AND NOT hidden "
+            "AND sh_has_dlc IS NOT false" + ("" if full else " AND exo_synced_at IS NULL")
+            + " ORDER BY last_played DESC NULLS LAST").fetchall()
+    if not due:
+        return ""
+    SYNC.update(total=len(due), done=0)
+    for g in due:
+        SYNC.update(message=f"Which achievements are DLC: {g['name']}...")
+        try:
+            dlcs = steamhunters.dlc_names(g["app_id"])     # real DLC, not free updates
+            steamhunters.pause()
+            url, groups = exophase.dlc_of(g["app_id"], g["name"], g["achievements_total"], dlcs)
+        except (exophase.Unavailable, steamhunters.Unavailable) as e:
+            log.warning("DLC lists: %s", e)
+            return f" ({e} {len(due) - SYNC['done']} games' DLC lists wait for the next sync)"
+        with db() as conn:
+            for a in conn.execute("SELECT api_name, name FROM vg_achievements WHERE app_id = %s", (g["app_id"],)).fetchall():
+                conn.execute("UPDATE vg_achievements SET dlc = %s WHERE app_id = %s AND api_name = %s",
+                             (groups.get(exophase.key(a["name"])), g["app_id"], a["api_name"]))
+            conn.execute("UPDATE vg_games SET exo_url = %s, exo_synced_at = now() WHERE app_id = %s", (url, g["app_id"]))
+        SYNC["done"] += 1
+        exophase.pause()
+    return f", DLC lists for {len(due)}"
 
 
 def start_sync(background: BackgroundTasks | None, full: bool) -> bool:
@@ -498,7 +539,7 @@ def get_game(app_id: int):
     with db() as conn:
         game = with_pictures(found(conn.execute(GAME_SELECT + " WHERE g.app_id = %s", (app_id,)).fetchone(), "Game"))
         game["achievements"] = conn.execute("""
-            SELECT api_name, name, description, icon, icon_gray, hidden, global_percent, achieved, unlocked_at
+            SELECT api_name, name, description, icon, icon_gray, hidden, global_percent, achieved, unlocked_at, dlc
             FROM vg_achievements WHERE app_id = %s
             ORDER BY achieved DESC, unlocked_at DESC NULLS LAST, global_percent DESC NULLS LAST, name""",
             (app_id,)).fetchall()

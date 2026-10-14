@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from app import steam, steamhunters
+from app import exophase, steam, steamhunters
 
 ME = "76561198000000001"
 T = lambda d: int(datetime(2026, 10, d, 20, 0, tzinfo=timezone.utc).timestamp())  # noqa: E731
@@ -61,8 +61,13 @@ class FakeSteam:
         monkeypatch.setattr(steam, "header_pictures", log("pictures", lambda ids: {i: pictures.get(i) for i in ids}))
         # SteamHunters: Celeste 5,685 of 23,079 players 100%'d it (24.6%), median 2,994 min; it doesn't know Hades.
         community = {10: {"sh_median_minutes": 2994, "sh_fastest_minutes": 214, "sh_players_perfected": 5685,
-                          "sh_players_started": 23079, "sh_points": 4669}}
+                          "sh_players_started": 23079, "sh_points": 4669, "sh_has_dlc": False}}
         monkeypatch.setattr(steamhunters, "game", log("community", lambda app_id: community.get(app_id)))
+        # Exophase: Hades' Godlike comes with a DLC (SteamHunters doesn't know Hades, so it's looked up;
+        # Celeste has no DLC, so it isn't).
+        monkeypatch.setattr(steamhunters, "dlc_names", lambda app_id: ["Hades - Heat Pack"])
+        monkeypatch.setattr(exophase, "dlc_of", log("dlc", lambda app_id, name, total, dlcs: (
+            "https://www.exophase.com/game/hades-steam/achievements/", {"godlike": "Heat Pack"}) if app_id == 20 else ("", {})))
         monkeypatch.setattr(steam, "store_items", log("store", lambda ids: {
             i: {"name": "Counter-Strike 2", "header": "https://shared.akamai.steamstatic.com/cs2.jpg"} for i in ids if i == 730}))
         return self
@@ -340,3 +345,131 @@ def test_the_steamhunters_client_reads_its_answers(monkeypatch):
     monkeypatch.setattr(steamhunters, "_get", answer(403, "<html>Just a moment...</html>", "text/html"))   # a bot check
     with pytest.raises(steamhunters.Unavailable):
         steamhunters.game(1)
+
+
+def test_which_achievements_come_with_a_dlc(client, fake):
+    """Started games with DLC (or unknown to SteamHunters) are looked up once; full sync again."""
+    setup(client)
+    assert [c[1] for c in fake.calls if c[0] == "dlc"] == [20]          # not Celeste (no DLC), not the demo
+    hades = {a["name"]: a["dlc"] for a in client.get("/api/videogames/20").json()["achievements"]}
+    assert hades == {"Escape": None, "Secret": None, "Godlike": "Heat Pack"}
+    games = {g["name"]: g for g in client.get("/api/videogames").json()}
+    assert (games["Hades"]["dlc_count"], games["Hades"]["dlc_achievements"], games["Hades"]["dlc_done"]) == (1, 1, 0)
+    assert games["Celeste"]["dlc_count"] == 0                             # the list's DLC badge
+    fake.calls.clear()
+    client.post("/api/videogames/sync")
+    assert not [c for c in fake.calls if c[0] == "dlc"]                  # read already
+    fake.names[20].append({"name": "W", "displayName": "New One"})       # an update adds an achievement:
+    fake.mine[20].append({"apiname": "W", "achieved": 0, "unlocktime": 0})
+    fake.games[1]["rtime_last_played"] = T(13)
+    client.post("/api/videogames/sync")
+    assert [c[1] for c in fake.calls if c[0] == "dlc"] == [20]           # ...looked up again
+    fake.calls.clear()
+    client.post("/api/videogames/sync?full=true")
+    assert [c[1] for c in fake.calls if c[0] == "dlc"] == [20]
+
+
+def test_exophase_being_down_doesnt_spoil_the_sync(client, fake, monkeypatch):
+    def down(*_a):
+        raise exophase.Unavailable("Exophase didn't answer (HTTP 503).")
+    monkeypatch.setattr(exophase, "dlc_of", down)
+    setup(client)
+    account = client.get("/api/videogames/account").json()
+    assert account["last_error"] is None and "Exophase didn't answer (HTTP 503). 1 games' DLC lists wait" in account["sync"]["message"]
+    assert client.get("/api/videogames/20").json()["exo_synced_at"] is None    # tried again next time
+
+
+# A made-up page in Exophase's layout: the main game's list, then one list per DLC under its heading.
+EXO_PAGE = """<html><body>
+<a href="https://store.steampowered.com/app/4242">Store</a>
+<ul class="row list-unordered-base steam achievement">
+  <li class="award"><div class="award-title"><a href="#">First Steps</a></div></li>
+  <li class="award secret"><div class="award-title"><a href="#">Don’t Look Back</a></div></li>
+</ul>
+<h3 class="dlc-add-on"><span>Space Game: The Moon Expansion Achievements</span></h3>
+<ul class="row list-unordered-base steam achievement">
+  <li class="award"><div class="award-title"><a href="#">Moonwalker</a></div></li>
+</ul>
+<h3 class="dlc-add-on"><span>Update #2 Achievements</span></h3>
+<ul class="row list-unordered-base steam achievement">
+  <li class="award"><div class="award-title"><a href="#">Bonus!</a></div></li>
+</ul>
+</body></html>"""
+
+
+def test_the_exophase_reader(monkeypatch):
+    import httpx
+
+    assert exophase.key("Don’t Look Back") == exophase.key("dont look back") == "dontlookback"
+    assert exophase.parse(EXO_PAGE, "Space Game") == [
+        (None, "First Steps"), (None, "Don’t Look Back"), ("The Moon Expansion", "Moonwalker"), ("Update #2", "Bonus!")]
+    dlcs = ["Space Game - The Moon Expansion", "Space Game Soundtrack"]   # a free update isn't a DLC:
+    assert exophase.is_dlc("The Moon Expansion", "Space Game", dlcs) and not exophase.is_dlc("Update #2", "Space Game", dlcs)
+    assert exophase.is_dlc("Spaced Out!", "Oxygen Not Included", ["Oxygen Not Included - Spaced Out!"])
+    assert exophase.dlc_name("Space Game™ - Moon Achievements", "Space Game™") == "Moon"
+    for heading, game, short in [
+        ("Far Cry® 5 - Dead Living Zombies", "Far Cry 5", "Dead Living Zombies"),
+        ("Just Cause™ 3 DLC: Mech Land Assault", "Just Cause 3", "Mech Land Assault"),
+        ("Fallout 4 Far Harbor", "Fallout 4", "Far Harbor"),
+        ("The Binding of Isaac: Afterbirth+", "The Binding of Isaac: Rebirth", "Afterbirth+"),
+        ("Call of Duty®: Black Ops III - Zombies Chronicles", "Call of Duty: Black Ops III", "Zombies Chronicles"),
+        ("Call of Duty: WWII - Shadow War: DLC Pack 4", "Call of Duty: WWII - Multiplayer", "Shadow War: DLC Pack 4"),
+        ("Overture", "Lies of P", "Overture"),
+    ]:
+        assert exophase.dlc_name(heading, game) == short, heading
+    assert exophase.links_to(EXO_PAGE, 4242) and not exophase.links_to(EXO_PAGE, 424)
+
+    found = {"games": {"list": [
+        {"title": "Space Game", "environment_slug": "apple", "endpoint_awards": "https://x/space-game-apple/"},
+        {"title": "Space Game VR", "environment_slug": "steam", "endpoint_awards": "https://x/space-game-vr-steam/", "total_awards": 4},
+        {"title": "Space Game", "environment_slug": "steam", "endpoint_awards": "https://x/space-game-steam/", "total_awards": 4},
+    ]}}
+    pages = {"https://x/space-game-steam/": EXO_PAGE, "https://x/space-game-vr-steam/": "<a href='https://store.steampowered.com/app/9'></a>"}
+    asked = []
+
+    def get(url, params=None):
+        asked.append(url)
+        if url == exophase.SEARCH:
+            assert params["q"] == "Space Game"                                   # the ™ dropped for the search
+            return httpx.Response(200, json=found)
+        return httpx.Response(200, text=pages[url])
+    monkeypatch.setattr(exophase, "_get", get)
+    url, groups = exophase.dlc_of(4242, "Space Game™", 4, dlcs)
+    assert url == "https://x/space-game-steam/" and asked[1] == url                # same name first, not the VR one
+    assert groups == {"firststeps": None, "dontlookback": None, "moonwalker": "The Moon Expansion", "bonus": None}
+    assert exophase.dlc_of(77, "Space Game", 4, dlcs) == ("", {})                          # no page links to app 77
+    monkeypatch.setattr(exophase, "_get", lambda url, params=None: httpx.Response(503, text="busy"))
+    with pytest.raises(exophase.Unavailable):
+        exophase.dlc_of(4242, "Space Game", 4, dlcs)
+
+
+def test_the_steamhunters_dlc_list(monkeypatch):
+    import httpx
+    related = [{"appId": 1, "name": "Space Game", "typeString": "game"}, {"appId": 2, "name": "Space Game - Moon", "typeString": "DLC"},
+               {"appId": 3, "name": "Space Game Trailer", "typeString": "Media"}]
+    monkeypatch.setattr(steamhunters, "_get", lambda url: httpx.Response(200, json=related))
+    assert steamhunters.dlc_names(1) == ["Space Game - Moon"]
+
+
+def test_a_slow_answer_is_tried_once_more(monkeypatch):
+    """SteamHunters and Exophase are sometimes slow for a moment: one more try 5 s later, then give up."""
+    import httpx
+    import time
+    monkeypatch.undo()                                  # the real _get (conftest's stand-in refuses)
+    for fresh in (steamhunters, exophase):
+        tries = []
+
+        def get(url, **_k):
+            tries.append(url)
+            if len(tries) == 1:
+                raise httpx.ReadTimeout("slow")
+            return httpx.Response(200, text="ok")
+        monkeypatch.setattr(fresh.httpx, "get", get)
+        monkeypatch.setattr(time, "sleep", lambda s: None)
+        assert fresh._get("https://example.test/a").text == "ok" and len(tries) == 2
+
+        def always_slow(url, **_k):
+            raise httpx.ReadTimeout("slow")
+        monkeypatch.setattr(fresh.httpx, "get", always_slow)
+        with pytest.raises(fresh.Unavailable, match="timed out twice"):
+            fresh._get("https://example.test/b")

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api, shortDate, timeAgo } from '../../api.js'
-import { BellCurveIcon, ClockIcon, GamepadIcon, TrophyIcon } from '../../components/icons.jsx'
+import { BellCurveIcon, ClockIcon, GamepadIcon, PuzzleIcon, TrophyIcon } from '../../components/icons.jsx'
 import { useApp } from '../../core/app-context.js'
 import Stat, { StatSkeleton } from '../../core/Stat.jsx'
 import {
@@ -361,6 +361,7 @@ function GameTable({ games, onOpen }) {
                 <span className="item-title">{g.name}</span>
                 <span className="game-tags">
                   {g.completed_at && <span className="pill ok"><TrophyIcon size={12} /> 100%</span>}
+                  {g.dlc_count > 0 && <DlcBadge game={g} />}
                   {g.extra && <span className="pill" title="Added by hand">Added</span>}
                   {g.last_played && <span className="muted small">Played {shortDate(g.last_played)}</span>}
                 </span>
@@ -385,4 +386,11 @@ function GameTable({ games, onOpen }) {
       </ul>
     </div>
   )
+}
+
+// "DLC" beside a game's name when a DLC adds achievements (they count towards 100%); the tooltip says
+// how many DLCs, how many achievements they add and how many of those you have.
+export function DlcBadge({ game: g }) {
+  const what = `${g.dlc_count} DLC${g.dlc_count === 1 ? '' : 's'} with achievements: ${g.dlc_done} of ${g.dlc_achievements}`
+  return <span className="pill purple dlc-badge" title={what} aria-label={what}><PuzzleIcon size={12} /> DLC</span>
 }
