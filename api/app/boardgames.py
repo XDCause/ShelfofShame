@@ -1,7 +1,8 @@
 """Board games (a hobby module): your collection and every time you played.
 
     games   board_games: Owned / Wanted / Borrowed / Gone, players, play time, price, rating, photo
-    lookup  find a game on Wikidata (wikidata.py) and fill in its facts and photo - no account needed
+    lookup  find a game at Gameology (gameology.py: a shop whose products carry BGG's facts) and
+            fill in players, time, age, weight, categories, mechanisms, its photo and price
     plays   board_game_plays: the day, who played, who won, how long, notes
 
 Plays show on the calendar and in Recent activity (activity.py). Writing "played @Catan" in the
@@ -14,7 +15,7 @@ from typing import Literal
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 
-from . import wikidata
+from . import gameology
 from .db import GAME_STATUSES, db, found, insert_row, tidy_text, update_row
 from .images import add_photo_routes
 
@@ -40,8 +41,8 @@ class GameIn(BaseModel):
     bgg_url: str | None = Field(None, pattern=WEB_LINK)
     designer: str | None = None
     min_age: int | None = Field(None, ge=1, le=99)
-    wikidata_id: str | None = Field(None, pattern=r"^Q\d+$")   # found on Wikidata: its facts, BGG id and photo
-                                                                # are read from there (not taken from the browser)
+    shop_handle: str | None = Field(None, pattern=r"^[a-z0-9][a-z0-9-]{0,200}$")   # found at Gameology: its facts and
+                                                                # photo are read from there (not taken from the browser)
 
 
 class GamePatch(BaseModel):
@@ -61,9 +62,9 @@ class GamePatch(BaseModel):
     min_age: int | None = Field(None, ge=1, le=99)
 
 
-class WikidataIn(BaseModel):
-    wikidata_id: str = Field(pattern=r"^Q\d+$")
-    replace: bool = False          # true: Wikidata's facts replace yours; false: only fill in blanks
+class ShopIn(BaseModel):
+    shop_handle: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{0,200}$")
+    replace: bool = False          # true: the shop's facts replace yours; false: only fill in blanks
 
 
 class PlayIn(BaseModel):
@@ -85,7 +86,8 @@ class PlayPatch(BaseModel):
 GAME_SELECT = """
 SELECT g.game_id, g.name, g.publisher, g.year, g.min_players, g.max_players, g.play_minutes, g.status,
        g.purchase_date, g.price_paid, g.rating, g.notes, g.bgg_url, g.created_at, g.updated_at,
-       g.designer, g.min_age, g.wikidata_id, g.bgg_id,
+       g.designer, g.min_age, g.bgg_id, g.weight, g.categories, g.mechanisms, g.shop_handle, g.shop_url,
+       g.shop_price,
        g.photo IS NOT NULL AS has_photo,
        CASE WHEN g.photo IS NOT NULL THEN '/api/board-games/' || g.game_id || '/photo?v='
             || (extract(epoch FROM g.photo_updated) * 1000)::bigint END AS photo_url,
@@ -138,39 +140,37 @@ def summary():
         return row
 
 
-# Wikidata's facts -> board_games columns (fill_in only sets the empty ones unless told to replace).
-FACTS = ("name", "publisher", "year", "min_players", "max_players", "play_minutes", "designer", "min_age", "bgg_id")
-BGG_PAGE = "https://boardgamegeek.com/boardgame/{}"
+# The shop's facts -> board_games columns (fill_in only sets the empty ones unless told to replace).
+FACTS = ("name", "publisher", "min_players", "max_players", "play_minutes", "min_age", "weight")
 
 
-def wikidata_game(qid: str) -> dict:
+def shop_game(handle: str) -> dict:
     try:
-        found_ = wikidata.game(qid)
-    except wikidata.WikidataError as e:
+        found_ = gameology.product(handle)
+    except gameology.ShopError as e:
         raise HTTPException(502, str(e))
     if not found_:
-        raise HTTPException(404, f"Wikidata has no item {qid}.")
+        raise HTTPException(404, "Gameology doesn't have that product any more.")
     return found_
 
 
 def fill_in(conn, game_id: int, facts: dict, replace: bool = False):
-    """Wikidata's facts onto a game: blanks only (or everything with replace), the BGG link when
-    there's a BGG id, and the Wikidata item it came from."""
+    """The shop's facts onto a game: blanks only (or everything with replace); its categories and
+    mechanisms, its page, price and handle always (they're the shop's, not yours)."""
     game = fetch_game(conn, game_id)
     data = {k: facts[k] for k in FACTS if facts.get(k) is not None and (replace or game.get(k) in (None, ""))}
-    if facts.get("bgg_id") and (replace or not game["bgg_url"]):
-        data["bgg_url"] = BGG_PAGE.format(facts["bgg_id"])
     low, high = data.get("min_players", game["min_players"]), data.get("max_players", game["max_players"])
-    if low and high and high < low:                       # Wikidata's and yours don't fit together: keep yours
+    if low and high and high < low:                       # the shop's and yours don't fit together: keep yours
         data.pop("min_players", None)
         data.pop("max_players", None)
-    data["wikidata_id"] = facts["wikidata_id"]
+    data.update(categories=sorted(set(facts["categories"]) | set(facts["types"])), mechanisms=facts["mechanisms"],
+                shop_handle=facts["handle"], shop_url=facts["shop_url"], shop_price=facts["price"])
     update_row(conn, "board_games", "game_id", game_id, data)
 
 
 def fetch_photo(game_id: int, facts: dict):
-    """In the background: the game's Commons photo, if it still has none (Commons can be slow)."""
-    image, image_type = wikidata.photo(facts)
+    """In the background: the product's photo, if the game still has none."""
+    image, image_type = gameology.photo(facts)
     if image:
         with db() as conn:
             conn.execute("UPDATE board_games SET photo = %s, photo_type = %s, photo_updated = now() "
@@ -179,27 +179,26 @@ def fetch_photo(game_id: int, facts: dict):
 
 @router.get("/board-games/lookup")
 def lookup(q: str = Query(min_length=2, max_length=120)):
-    """Board games on Wikidata matching a name, best first, each with `game_id` if it's already
-    in your games (same Wikidata item or BGG id)."""
+    """Board games at Gameology matching a name, best first, each with `game_id` if it's already
+    in your games."""
     try:
-        results = wikidata.search(q)
-    except wikidata.WikidataError as e:
+        results = gameology.search(q)
+    except gameology.ShopError as e:
         raise HTTPException(502, str(e))
     with db() as conn:
         for r in results:
-            mine = conn.execute("SELECT game_id FROM board_games WHERE wikidata_id = %s OR bgg_id = %s LIMIT 1",
-                                (r["wikidata_id"], r["bgg_id"])).fetchone()
+            mine = conn.execute("SELECT game_id FROM board_games WHERE shop_handle = %s LIMIT 1", (r["handle"],)).fetchone()
             r["game_id"] = mine and mine["game_id"]
     return results
 
 
 @router.post("/board-games", status_code=201)
 def add_game(body: GameIn, background: BackgroundTasks):
-    """Add a game. With a wikidata_id, its facts fill in what you left blank and its photo is
-    fetched in the background."""
+    """Add a game. With a shop_handle, the shop's facts fill in what you left blank and its photo
+    is fetched in the background."""
     data = tidy_text(body.model_dump())
-    qid = data.pop("wikidata_id")
-    facts = wikidata_game(qid) if qid else None
+    handle = data.pop("shop_handle")
+    facts = shop_game(handle) if handle else None
     with db() as conn:
         game_id = insert_row(conn, "board_games", data, "game_id")
         if facts:
@@ -210,11 +209,11 @@ def add_game(body: GameIn, background: BackgroundTasks):
     return game
 
 
-@router.post("/board-games/{game_id}/wikidata")
-def from_wikidata(game_id: int, body: WikidataIn, background: BackgroundTasks):
-    """Fill in a game you already have from a Wikidata item (blanks only, unless replace), and
+@router.post("/board-games/{game_id}/shop")
+def from_shop(game_id: int, body: ShopIn, background: BackgroundTasks):
+    """Fill in a game you already have from a Gameology product (blanks only, unless replace), and
     fetch its photo in the background if it has none."""
-    facts = wikidata_game(body.wikidata_id)
+    facts = shop_game(body.shop_handle)
     with db() as conn:
         fill_in(conn, game_id, facts, body.replace)
         game = fetch_game(conn, game_id)

@@ -36,10 +36,14 @@ export const gameMeta = (g) => [
   g.play_minutes && `${g.play_minutes} min`, g.min_age && `${g.min_age}+`, g.designer, g.publisher, g.year,
 ].filter(Boolean).join(' · ')
 
-// Find a game on Wikidata (the open database behind Wikipedia - no account): type a name, pick
-// the right one. onPick(result) gets its facts (players, time, age, designer, publisher, year,
-// BGG id) and its Wikidata id; the API fetches its photo itself.
-function WikidataFind({ start = '', onPick, pickLabel = 'Use' }) {
+// How heavy a game is (BGG's weight, 1-5): "Light" ... "Heavy".
+export const weightName = (w) => (w == null ? null : w < 1.8 ? 'Light' : w < 2.6 ? 'Medium-light' : w < 3.4 ? 'Medium'
+  : w < 4.2 ? 'Medium-heavy' : 'Heavy')
+
+// Find a game at Gameology (an Australian board game shop whose products carry BoardGameGeek's
+// facts): type a name, pick the right one. onPick(result) gets its facts; the API reads the product
+// again itself when saving (and fetches its photo).
+function ShopFind({ start = '', onPick, pickLabel = 'Use' }) {
   const [q, setQ] = useState(start)
   const [results, setResults] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -54,8 +58,8 @@ function WikidataFind({ start = '', onPick, pickLabel = 'Use' }) {
       try {
         const r = await api.boardGameLookup(q.trim())
         if (n === asked.current) setResults(r)
-      } catch (e) {
-        if (n === asked.current) setError(e.message)
+      } catch (err) {
+        if (n === asked.current) setError(err.message)
       } finally {
         if (n === asked.current) setBusy(false)
       }
@@ -63,23 +67,24 @@ function WikidataFind({ start = '', onPick, pickLabel = 'Use' }) {
     return () => clearTimeout(t)
   }, [q])
   return (
-    <section className="panel-section wikidata-find">
-      <label className="field">Find it on Wikidata
+    <section className="panel-section shop-find">
+      <label className="field">Find it at Gameology
         <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Game name, e.g. Ticket to Ride"
-          aria-label="Find a board game on Wikidata" autoFocus={!start} /></label>
-      {busy && <p className="muted small">Looking on Wikidata...</p>}
+          aria-label="Find a board game at Gameology" autoFocus={!start} /></label>
+      {busy && <p className="muted small">Looking at Gameology...</p>}
       {error && <p className="alert error small">{error}</p>}
-      {results && !busy && results.length === 0 && <p className="muted small">Nothing found. Try the full name, or fill it in below.</p>}
+      {results && !busy && results.length === 0 && <p className="muted small">Nothing found. Try another name, or fill it in below.</p>}
       {results?.length > 0 && (
-        <ul className="list plain-list wikidata-results">
+        <ul className="list plain-list shop-results">
           {results.map((r) => (
-            <li key={r.wikidata_id}>
+            <li key={r.handle}>
               <div className="row-button static">
                 {r.image_url ? <img className="thumb" src={r.image_url} alt="" loading="lazy" referrerPolicy="no-referrer" />
                   : <span className="thumb thumb-empty" />}
                 <span className="grow">
-                  <span className="item-title">{r.name}</span>
-                  <span className="item-meta">{gameMeta(r) || r.description}</span>
+                  <span className="item-title">{r.title}{r.expansion && <span className="pill">Expansion</span>}</span>
+                  <span className="item-meta">{[gameMeta(r), r.weight && `weight ${r.weight}`, r.price != null && money(r.price)]
+                    .filter(Boolean).join(' · ')}</span>
                 </span>
                 {r.game_id ? <span className="pill">In your games</span>
                   : <button type="button" className="primary small" onClick={() => onPick(r)}>{pickLabel}</button>}
@@ -88,8 +93,8 @@ function WikidataFind({ start = '', onPick, pickLabel = 'Use' }) {
           ))}
         </ul>
       )}
-      <p className="muted small">From Wikidata, the free database behind Wikipedia; photos from Wikimedia Commons. BGG's ratings and
-        ranks aren't there.</p>
+      <p className="muted small">From Gameology's shop: BoardGameGeek's players, time, age, weight, categories and mechanisms,
+        plus the box photo and price. BGG's rating and rank aren't included.</p>
     </section>
   )
 }
@@ -155,14 +160,23 @@ export default function GamePanel({ id, onClose }) {
             {game.rating && <span className="pill low">★ {game.rating}/10</span>}
             {game.price_paid != null && <span className="chip">{money(game.price_paid)}</span>}
             {game.bgg_url && <a className="small" href={game.bgg_url} target="_blank" rel="noreferrer">BoardGameGeek ↗</a>}
-            {game.wikidata_id && <a className="small" href={`https://www.wikidata.org/wiki/${game.wikidata_id}`} target="_blank" rel="noreferrer">Wikidata ↗</a>}
-            {!game.wikidata_id && !finding && <button type="button" className="plain small" onClick={() => setFinding(true)}>Fill in from Wikidata</button>}
+            {game.weight && <span className="pill purple" title="BoardGameGeek's weight: how complex it is, 1 to 5">
+              {weightName(Number(game.weight))} · {Number(game.weight)}/5</span>}
+            {game.shop_url && <a className="small" href={game.shop_url} target="_blank" rel="noreferrer">
+              Gameology{game.shop_price != null && ` ${money(game.shop_price)}`} ↗</a>}
+            {!game.shop_handle && !finding && <button type="button" className="plain small" onClick={() => setFinding(true)}>Fill in from Gameology</button>}
           </div>
         </div>
       </div>
+      {(game.categories.length > 0 || game.mechanisms.length > 0) && (
+        <section className="panel-section game-tags">
+          {game.categories.length > 0 && <p className="chips">{game.categories.map((c) => <span key={c} className="chip">{c}</span>)}</p>}
+          {game.mechanisms.length > 0 && <p className="muted small">Mechanisms: {game.mechanisms.join(', ')}</p>}
+        </section>
+      )}
       {finding && (
-        <WikidataFind start={game.name} pickLabel="Fill in" onPick={(r) => run(async () => {
-          show(await api.boardGameFromWikidata(game.game_id, r.wikidata_id), 'Filled in from Wikidata ✓')
+        <ShopFind start={game.name} pickLabel="Fill in" onPick={(r) => run(async () => {
+          show(await api.boardGameFromShop(game.game_id, r.handle), 'Filled in from Gameology ✓')
           setFinding(false)
           changed()
           if (r.image_url && !game.has_photo) setTimeout(() => reload().catch(() => {}), 4000)   // the photo comes a moment later
@@ -216,13 +230,12 @@ export default function GamePanel({ id, onClose }) {
 function GameForm({ game, onClose, onCancel, onSaved }) {
   const { form, set, setForm, payload } = useRecordForm(GAME_FIELDS, game)
   const [status, setStatus] = useState(game?.status ?? 'Owned')
-  const [picked, setPicked] = useState(null)   // the Wikidata game the form was filled from
-  // Fill the form from a Wikidata game (your typing after this still wins when you save).
+  const [picked, setPicked] = useState(null)   // the Gameology product the form was filled from
+  // Fill the form from a Gameology product (your typing after this still wins when you save).
   const pick = (r) => {
     setPicked(r)
-    setForm((f) => ({ ...f, ...Object.fromEntries(['name', 'publisher', 'year', 'min_players', 'max_players', 'play_minutes',
-      'min_age', 'designer'].filter((k) => r[k] != null).map((k) => [k, String(r[k])])),
-    ...(r.bgg_id && { bgg_url: `https://boardgamegeek.com/boardgame/${r.bgg_id}` }) }))
+    setForm((f) => ({ ...f, ...Object.fromEntries(['name', 'publisher', 'min_players', 'max_players', 'play_minutes', 'min_age']
+      .filter((k) => r[k] != null).map((k) => [k, String(r[k])])) }))
   }
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -233,7 +246,7 @@ function GameForm({ game, onClose, onCancel, onSaved }) {
     setBusy(true)
     setError('')
     try {
-      const body = { ...payload(), status, ...(!game && picked && { wikidata_id: picked.wikidata_id }) }
+      const body = { ...payload(), status, ...(!game && picked && { shop_handle: picked.handle }) }
       onSaved(game ? await api.updateBoardGame(game.game_id, body) : await api.addBoardGame(body))
     } catch (err) {
       setError(err.message)
@@ -250,9 +263,10 @@ function GameForm({ game, onClose, onCancel, onSaved }) {
     <Drawer title={game ? `Edit ${game.name}` : 'Add a board game'} onClose={onClose} footer={footer}>
       {error && <p className="alert error" role="alert">{error}</p>}
       {!game && (picked ? (
-        <p className="alert ok small">Filled in from Wikidata: {picked.name}{picked.image_url && ' (its photo is added once you save)'}.{' '}
+        <p className="alert ok small">Filled in from Gameology: {picked.title}{picked.weight && ` · weight ${picked.weight}`}
+          {picked.image_url && ' (its photo, categories and price are added once you save)'}.{' '}
           <button type="button" className="plain small" onClick={() => setPicked(null)}>Pick another</button></p>
-      ) : <WikidataFind onPick={pick} />)}
+      ) : <ShopFind onPick={pick} />)}
       <form id="game-form" onSubmit={submit}>
         <div className="segmented form-segmented" role="group" aria-label="Status">
           {lookups.game_statuses.map((s) => (

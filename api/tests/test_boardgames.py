@@ -87,55 +87,66 @@ def test_pages_about_a_game(client):
     assert [p["title"] for p in pages] == ["Night in"]
 
 
-# Wikidata's answer for Catan, one row per combination of values (as SPARQL gives it): two
-# editions' player counts and years, a play time in hours, two designer properties.
-E = "http://www.wikidata.org/entity/"
-CATAN_ROWS = [
-    {"g": E + "Q17271", "name": "The Settlers of Catan", "ordinal": "1", "bgg": "13", "min": "3", "max": "4",
-     "time": "1.25", "unit": E + "Q25235", "date": "1995-01-01T00:00:00Z", "age": "10",
-     "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Catan%20box.jpg", "designer": "Klaus Teuber",
-     "publisher": "Kosmos", "description": "board game"},
-    {"g": E + "Q17271", "name": "The Settlers of Catan", "ordinal": "1", "bgg": "13", "min": "2", "max": "6",
-     "date": "1996-05-01T00:00:00Z", "designer": "Klaus Teuber", "publisher": "Mayfair Games"},
-    {"g": E + "Q28114052", "name": "Catan series", "ordinal": "0"},                      # nothing but a name
-]
+# Gameology's answers (made up, in the shape its store gives them): the search's products carry
+# prices in dollars and the picture as an object; a product's .js has the price in cents.
+CATAN = {"handle": "catan-6th-edition-base-game", "title": "CATAN 6th Edition Base Game", "type": "Board Games",
+         "vendor": "Catan Studios", "price": "69.95", "available": True,
+         "featured_image": {"url": "https://cdn.shopify.com/s/files/catan.jpg?v=1"},
+         "tags": ["BGG Category: Economic", "BGG Category: Negotiation", "BGG Max Play Time: 120", "BGG Max Players: 4",
+                  "BGG Mechanism: Dice Rolling", "BGG Mechanism: Trading", "BGG Min Age: 10", "BGG Min Play Time: 60",
+                  "BGG Min Players: 3", "BGG Type: Family Games", "BGG Weight: 2.5", "BGG Weight: 2.50", "Kmart"]}
+EXTENSION = {**CATAN, "handle": "catan-6th-edition-5-6-player-extension", "title": "CATAN 6th Edition 5-6 Player Extension",
+             "tags": ["BGG Category: Expansion for Base-game", "BGG Min Players: 5", "BGG Max Players: 6", "BGG Weight: 0.25"]}
+SLEEVES = {**CATAN, "handle": "card-sleeves", "title": "Catan Card Sleeves", "type": "Accessories", "tags": []}
 
 
 @pytest.fixture
-def wd(monkeypatch):
-    from app import wikidata
+def shop(monkeypatch):
+    from app import gameology
     asked = []
-    monkeypatch.setattr(wikidata, "_query", lambda q: asked.append(q) or [r for r in CATAN_ROWS if "Q28114052" not in q or True])
-    monkeypatch.setattr(wikidata, "photo", lambda facts: (b"\xff\xd8catan", "image/jpeg"))
+
+    def get(path, params=None):
+        asked.append((path, params))
+        if path == "/search/suggest.json":
+            return {"resources": {"results": {"products": [SLEEVES, EXTENSION, CATAN]}}}
+        if path == f"/products/{CATAN['handle']}.js":
+            return {**CATAN, "price": 6995, "featured_image": "//cdn.shopify.com/s/files/catan.jpg?v=1", "tags": CATAN["tags"]}
+        return None
+    monkeypatch.setattr(gameology, "_get", get)
+    monkeypatch.setattr(gameology, "photo", lambda facts: (b"\xff\xd8catan", "image/jpeg"))
     return asked
 
 
-def test_finding_a_game_on_wikidata(client, wd):
-    [catan] = client.get("/api/board-games/lookup?q=catan").json()          # the name-only series is left out
-    assert (catan["wikidata_id"], catan["name"], catan["year"], catan["min_players"], catan["max_players"]) ==         ("Q17271", "The Settlers of Catan", 1995, 2, 6)                    # widest players, earliest year
-    assert (catan["play_minutes"], catan["min_age"], catan["designer"], catan["bgg_id"]) == (75, 10, "Klaus Teuber", 13)
-    assert catan["publisher"] == "Kosmos, Mayfair Games" and catan["image_url"].endswith("Catan%20box.jpg?width=300")
-    assert catan["game_id"] is None
-    assert 'mwapi:search "catan"' in wd[0]
-    client.get('/api/board-games/lookup?q=say "hi"')                         # quotes can't break the query
-    assert 'mwapi:search "say \\"hi\\""' in wd[-1]
+def test_finding_a_game_at_gameology(client, shop):
+    found = client.get("/api/board-games/lookup?q=catan").json()
+    assert [g["handle"] for g in found] == [CATAN["handle"], EXTENSION["handle"]]   # no sleeves; the game before its extension
+    catan = found[0]
+    assert (catan["name"], catan["publisher"], catan["min_players"], catan["max_players"]) == ("Catan 6th Edition", "Catan Studios", 3, 4)
+    assert (catan["play_minutes"], catan["min_play_minutes"], catan["min_age"], catan["weight"], catan["price"]) == (120, 60, 10, 2.5, 69.95)
+    assert catan["categories"] == ["Economic", "Negotiation"] and catan["types"] == ["Family"]
+    assert catan["image_url"] == "https://cdn.shopify.com/s/files/catan.jpg?v=1&width=200" and catan["game_id"] is None
+    assert found[1]["weight"] is None and found[1]["expansion"]                  # 0.25 = not rated
+    assert shop[0][1]["q"] == 'catan product_type:"Board Games"' and shop[0][1]["resources[options][fields]"] == "title,product_type"
 
 
-def test_adding_a_game_from_wikidata_fills_blanks_and_fetches_the_photo(client, wd):
-    r = client.post("/api/board-games", json={"name": "Catan", "max_players": 4, "wikidata_id": "Q17271"})
+def test_adding_a_game_from_gameology_fills_blanks_and_fetches_the_photo(client, shop):
+    r = client.post("/api/board-games", json={"name": "Catan", "max_players": 4, "shop_handle": CATAN["handle"]})
     assert r.status_code == 201, r.text
     game = client.get(f"/api/board-games/{r.json()['game_id']}").json()
-    assert (game["name"], game["max_players"], game["min_players"]) == ("Catan", 4, 2)    # yours kept, blanks filled
-    assert (game["bgg_url"], game["bgg_id"], game["designer"], game["wikidata_id"]) ==         ("https://boardgamegeek.com/boardgame/13", 13, "Klaus Teuber", "Q17271")
+    assert (game["name"], game["min_players"], game["max_players"], game["min_age"]) == ("Catan", 3, 4, 10)   # yours kept
+    assert (float(game["weight"]), float(game["shop_price"]), game["shop_url"]) == \
+        (2.5, 69.95, "https://www.gameology.com.au/products/catan-6th-edition-base-game")
+    assert game["categories"] == ["Economic", "Family", "Negotiation"] and game["mechanisms"] == ["Dice Rolling", "Trading"]
     assert game["has_photo"]                                                 # fetched after the reply
     assert client.get("/api/board-games/lookup?q=catan").json()[0]["game_id"] == game["game_id"]
+    assert client.post("/api/board-games", json={"name": "X", "shop_handle": "gone-game"}).status_code == 404
+    assert client.post("/api/board-games", json={"name": "X", "shop_handle": "../admin"}).status_code == 422
 
 
-def test_filling_in_a_game_you_have(client, wd):
+def test_filling_in_a_game_you_have(client, shop):
     game = client.post("/api/board-games", json={"name": "Settlers", "min_players": 5, "max_players": 5}).json()
-    url = f"/api/board-games/{game['game_id']}/wikidata"
-    filled = client.post(url, json={"wikidata_id": "Q17271"}).json()
-    assert (filled["min_players"], filled["max_players"], filled["year"]) == (5, 5, 1995)     # yours kept
-    replaced = client.post(url, json={"wikidata_id": "Q17271", "replace": True}).json()
-    assert (replaced["name"], replaced["min_players"], replaced["max_players"]) == ("The Settlers of Catan", 2, 6)
-    assert client.post(url, json={"wikidata_id": "catan"}).status_code == 422
+    url = f"/api/board-games/{game['game_id']}/shop"
+    filled = client.post(url, json={"shop_handle": CATAN["handle"]}).json()
+    assert (filled["min_players"], filled["max_players"], filled["play_minutes"]) == (5, 5, 120)     # yours kept
+    replaced = client.post(url, json={"shop_handle": CATAN["handle"], "replace": True}).json()
+    assert (replaced["name"], replaced["min_players"], replaced["max_players"]) == ("Catan 6th Edition", 3, 4)

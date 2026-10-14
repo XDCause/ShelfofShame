@@ -1052,7 +1052,7 @@ DBeaver, psql, and the one-off import script.
    Where follows the team unless you typed a new place, datalists vb-opponents / vb-venues, kind starts as
    your last one; a calendar event's location is the venue when logging from it. FormPanel onField +
    deleteLabel. CSV Team column from the join. Tests: 310 API, 61 browser steps.
-3zq. **Board games from Wikidata** (2026-10-15; BGG needs a registered token, so Wikidata instead - CC0, no
+3zq. **Board games from Wikidata** (REPLACED by Gameology, 3zt) (2026-10-15; BGG needs a registered token, so Wikidata instead - CC0, no
    account). 39_board_game_wikidata.sql: board_games.wikidata_id / bgg_id / designer / min_age.
    wikidata.py: one SPARQL query - EntitySearch (mwapi) for the name, kept to items with a BGG id or an
    instance of board / card / tabletop game; facts P2339 BGG id, P1872/P1873 players, P2047 duration (minute /
@@ -1076,6 +1076,18 @@ DBeaver, psql, and the one-off import script.
    usual kind said once (rows mark exceptions); side column (sticky, 300px) Form (last 10 + run) and Head to
    head (record per opponent, top 8 + All). <=1000px the side cards go below; phones: dots on their own line.
    Prod has "vs BYE 0-0" on 29 Sept (made before byes existed) and venue typo "Aquatice" (12 games + team).
+3zt. **Board games from Gameology, not Wikidata** (2026-10-15; user: Wikidata "quite bad"). wikidata.py removed.
+   gameology.py: Shopify storefront /search/suggest.json with q = '<name> product_type:"Board Games"' and
+   resources[options][fields]=title,product_type (a plain search matched descriptions: "root" -> Magic cards),
+   /products/<handle>.js; facts from tags "BGG Min/Max Players", "BGG Min/Max Play Time", "BGG Min Age",
+   "BGG Weight" (only 1-5: 0.25 = not rated, 310.25 seen once), "BGG Category/Mechanism/Type"; vendor =
+   publisher ("(Self-Published)" dropped); search price in dollars, .js in cents; photos only from
+   cdn.shopify.com (?width=600). Ranked: title starts with the words > all words > rest, games before
+   expansions, ones with facts first. 41_board_game_shop.sql: weight, categories, mechanisms, shop_handle,
+   shop_url, shop_price; wikidata_id dropped. Routes: lookup, POST /board-games {shop_handle}, POST
+   /board-games/{id}/shop. Web ShopFind; panel: weight pill ("Medium-light · 2.5/5"), category chips,
+   mechanisms, "Gameology $69.95 ↗". No BGG rating / rank in the tags. robots.txt allows product pages;
+   agents.md asks for Web Bot Auth for server traffic - noted in BEFORE_GOING_PUBLIC.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

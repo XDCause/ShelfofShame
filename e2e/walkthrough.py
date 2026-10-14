@@ -947,7 +947,7 @@ def board_games(page):
     go(page, "Board games")
     page.get_by_role("button", name="+ Add game").click()
     d = drawer(page)
-    expect(d.get_by_label("Find a board game on Wikidata")).to_be_visible()   # (not searched: no Wikidata call here)
+    expect(d.get_by_label("Find a board game at Gameology")).to_be_visible()   # (not searched: no shop call here)
     d.get_by_label("Name").fill(f"Catan {MARK}")
     d.get_by_label("Fewest players").fill("3")
     d.get_by_label("Most players").fill("4")
