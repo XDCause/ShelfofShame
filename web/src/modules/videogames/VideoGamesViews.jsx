@@ -7,8 +7,8 @@ import {
   CompletionBar, GamePicture, playtime, rarity, SteamSetup, SyncBar, useSteamAccount, useSteamSummary,
 } from './steam.jsx'
 
-// The dashboard: the account and sync, headline tiles, what to finish next, what you've just
-// unlocked, your rarest achievements, your latest 100%s.
+// The dashboard: the account and sync, profile completion against your goal, headline tiles,
+// what to finish next, what you've just unlocked, your rarest achievements, your latest 100%s.
 export function Dashboard() {
   const { account, setAccount, error } = useSteamAccount()
   const { data: s } = useSteamSummary()
@@ -23,6 +23,7 @@ export function Dashboard() {
         <p className="empty card">{account.sync.running ? 'Reading your games from Steam...' : 'No games yet. Sync now to read them from Steam.'}</p>
       ) : (
         <>
+          <GoalCard summary={s} />
           <div className="home-stats">
             <Stat to="/videogames/games?show=perfect" Icon={TrophyIcon} tone="ok" value={s.perfect} label="Games at 100%"
               sub={`of ${s.with_achievements} games`} />
@@ -60,6 +61,79 @@ export function Dashboard() {
           </div>
         </>
       )}
+    </section>
+  )
+}
+
+// "About 2 years 8 months" from a number of days.
+function roughly(days) {
+  if (days < 14) return `about ${days} day${days === 1 ? '' : 's'}`
+  if (days < 60) return `about ${Math.round(days / 7)} weeks`
+  const months = Math.round(days / 30.4)
+  if (months < 24) return `about ${months} months`
+  const years = Math.floor(months / 12)
+  const rest = months % 12
+  return `about ${years} years${rest ? ` ${rest} month${rest === 1 ? '' : 's'}` : ''}`
+}
+
+// Profile completion: every achievement you've unlocked out of every achievement in your games,
+// with the goal marked on the bar, how many more it takes, and how long at your recent pace.
+function GoalCard({ summary: s }) {
+  const { changed } = useApp()
+  const g = s.goal
+  const [editing, setEditing] = useState(false)
+  const [value, setValue] = useState(String(g.goal_percent))
+  const [error, setError] = useState('')
+  const save = async (e) => {
+    e.preventDefault()
+    setError('')
+    try {
+      await api.setVideoGameGoal(Number(value))
+      setEditing(false)
+      changed()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+  return (
+    <section className="card goal-card" aria-label="Profile completion">
+      <div className="goal-head">
+        <span>
+          <span className="goal-label">Profile completion</span>
+          <strong className="goal-percent">{g.percent}%</strong>
+          <span className="muted small">of every achievement in your {s.with_achievements} games</span>
+        </span>
+        {editing ? (
+          <form className="goal-edit" onSubmit={save}>
+            <label className="small">Goal <input type="number" min="1" max="100" value={value}
+              onChange={(e) => setValue(e.target.value)} aria-label="Goal (%)" />%</label>
+            <button type="submit" className="primary small">Save</button>
+            <button type="button" className="plain small" onClick={() => setEditing(false)}>Cancel</button>
+          </form>
+        ) : (
+          <button type="button" className="plain small" onClick={() => { setValue(String(g.goal_percent)); setEditing(true) }}>
+            Goal {g.goal_percent}% · change
+          </button>
+        )}
+      </div>
+      <div className="goal-bar" role="img"
+        aria-label={`${g.percent}% done, goal ${g.goal_percent}%`}>
+        <span className="goal-fill" style={{ width: `${Math.min(100, g.percent)}%` }} />
+        <span className="goal-marker" style={{ left: `${g.goal_percent}%` }}><span>Goal {g.goal_percent}%</span></span>
+      </div>
+      <p className="goal-detail">
+        {g.reached ? <strong className="ok-text">Goal reached! 🎉 </strong>
+          : <><strong>{g.needed.toLocaleString()}</strong> more achievements to reach {g.goal_percent}% · </>}
+        {s.achievements.toLocaleString()} of {s.achievements_total.toLocaleString()} unlocked
+      </p>
+      {!g.reached && (
+        <p className="muted small">
+          {g.days_at_pace
+            ? `At your pace (${s.unlocked_last_30_days} in the last 30 days), ${roughly(g.days_at_pace)} to go.`
+            : 'No unlocks in the last 30 days, so no estimate yet.'}
+        </p>
+      )}
+      {error && <p className="alert error small">{error}</p>}
     </section>
   )
 }
@@ -191,8 +265,8 @@ export function VideoGamesTiles() {
     <>
       <Stat to="/videogames/dashboard" Icon={TrophyIcon} tone="ok" value={s.perfect} label="Games at 100%"
         sub={s.closest[0] ? `next: ${s.closest[0].name}` : 'Steam'} />
-      <Stat to="/videogames/dashboard" Icon={GamepadIcon} tone="purple" value={s.achievements.toLocaleString()}
-        label="Achievements" sub={`${s.unlocked_this_month} this month`} />
+      <Stat to="/videogames/dashboard" Icon={GamepadIcon} tone="purple" value={`${s.goal.percent}%`}
+        label="Profile completion" sub={s.goal.reached ? `goal ${s.goal.goal_percent}% reached` : `goal ${s.goal.goal_percent}% · ${s.goal.needed.toLocaleString()} to go`} />
     </>
   )
 }

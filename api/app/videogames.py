@@ -4,12 +4,15 @@
               game; after that only games played since the last sync (or never read), unless
               full=true. Runs in the background; GET /videogames/sync shows how it's going.
               A sync also runs by itself once a day while the app is up (start_daily_sync).
-    dashboard summary tiles, closest to 100%, recent unlocks, rarest achievements you have
+    dashboard summary tiles, closest to 100%, recent unlocks, rarest achievements you have, and
+              profile completion: every achievement unlocked / every achievement in your games,
+              against your goal (settings key vg_goal_percent, 50 unless changed) and your pace
     games     every game with its completion; one game with its achievements
 
 Steam's pictures are linked from Steam's own servers (header and icon addresses below).
 """
 import logging
+import math
 import threading
 from datetime import datetime, timedelta, timezone
 
@@ -18,6 +21,7 @@ from pydantic import BaseModel, Field
 
 from . import steam
 from .db import db, found
+from .settings import get_setting
 
 router = APIRouter(prefix="/api", tags=["video games"])
 log = logging.getLogger("videogames")
@@ -38,6 +42,13 @@ class ProfileIn(BaseModel):
 
 class GamePatch(BaseModel):
     hidden: bool
+
+
+class GoalIn(BaseModel):
+    percent: int = Field(ge=1, le=100)   # % of every achievement in your games
+
+
+GOAL_KEY, GOAL_DEFAULT = "vg_goal_percent", 50
 
 
 GAME_SELECT = """
@@ -261,6 +272,10 @@ def summary():
         totals["unlocked_this_month"] = conn.execute(
             "SELECT count(*)::int AS n FROM vg_achievements a JOIN vg_games g USING (app_id) WHERE NOT g.hidden "
             "AND a.achieved AND a.unlocked_at >= date_trunc('month', now())").fetchone()["n"]
+        totals["unlocked_last_30_days"] = conn.execute(
+            "SELECT count(*)::int AS n FROM vg_achievements a JOIN vg_games g USING (app_id) WHERE NOT g.hidden "
+            "AND a.achieved AND a.unlocked_at >= now() - interval '30 days'").fetchone()["n"]
+        totals["goal"] = goal_progress(totals, int(get_setting(conn, GOAL_KEY) or GOAL_DEFAULT))
         closest = conn.execute(GAME_SELECT + """ WHERE NOT g.hidden AND g.achievements_done > 0 AND g.completed_at IS NULL
             ORDER BY 1.0 * g.achievements_done / g.achievements_total DESC, g.achievements_total - g.achievements_done
             LIMIT 6""").fetchall()
@@ -277,6 +292,32 @@ def summary():
                                "ORDER BY g.completed_at DESC LIMIT 6").fetchall()
     return {**totals, "closest": [with_pictures(g) for g in closest], "recent": recent, "rarest": rarest,
             "recent_perfect": [with_pictures(g) for g in perfect]}
+
+
+def goal_progress(totals: dict, goal_percent: int) -> dict:
+    """Profile completion against the goal: every achievement you have / every achievement in your
+    (not hidden) games, how many more reach the goal, and how long that takes at your last-30-days pace."""
+    done, total = totals["achievements"], totals["achievements_total"]
+    target = math.ceil(total * goal_percent / 100)
+    needed = max(0, target - done)
+    per_day = totals["unlocked_last_30_days"] / 30
+    return {
+        "percent": round(100 * done / total, 1) if total else 0.0,
+        "goal_percent": goal_percent,
+        "target": target,
+        "needed": needed,
+        "reached": total > 0 and needed == 0,
+        "days_at_pace": math.ceil(needed / per_day) if needed and per_day else None,
+    }
+
+
+@router.put("/videogames/goal")
+def set_goal(body: GoalIn):
+    """Change the profile completion goal (a % of every achievement in your games)."""
+    with db() as conn:
+        conn.execute("INSERT INTO settings (key, value) VALUES (%s, %s) "
+                     "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", (GOAL_KEY, str(body.percent)))
+    return summary()
 
 
 @router.get("/videogames")

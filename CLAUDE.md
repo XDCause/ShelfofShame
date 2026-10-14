@@ -755,6 +755,13 @@ DBeaver, psql, and the one-off import script.
      sync. with_pictures() falls back to the old address; GamePicture (steam.jsx) shows a gamepad
      if an image fails. Activity uses header_url too. Result: 207/208 load (the last is a test
      server app with no picture anywhere). 269 API tests.
+   - **Profile completion** (user: "the aim is to get to 50% of all achievements completed for all the
+     games owned"): every achievement unlocked / every achievement in your (not hidden) games - NOT the
+     average per-game % (that's the "37.4% average" tile). summary.goal = goal_progress(): percent,
+     goal_percent (settings key vg_goal_percent, default 50; PUT /api/videogames/goal {percent 1-100}),
+     target, needed, reached, days_at_pace (needed / last-30-days unlocks). GoalCard first on the
+     dashboard (bar with the goal marked, "N more to reach 50%", "about 2 years 3 months to go",
+     change goal inline); Home tile "Profile completion". 271 API tests.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

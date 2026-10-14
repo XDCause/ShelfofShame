@@ -204,3 +204,27 @@ def test_the_store_api_answer_becomes_picture_addresses(monkeypatch):
     assert got[3672720] == ("https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3672720/"
                             "298ca32c/header.jpg?t=1791782793")
     assert got[413150].endswith("/steam/apps/413150/header.jpg?t=1") and got[99] is None
+
+
+def test_profile_completion_against_the_goal(client, fake):
+    """3 of 5 achievements = 60%; the default goal is 50% (3 of 5, so reached)."""
+    setup(client)
+    goal = client.get("/api/videogames/summary").json()["goal"]
+    assert (goal["percent"], goal["goal_percent"], goal["target"], goal["needed"], goal["reached"]) == (60.0, 50, 3, 0, True)
+    goal = client.put("/api/videogames/goal", json={"percent": 100}).json()["goal"]
+    assert (goal["goal_percent"], goal["target"], goal["needed"], goal["reached"]) == (100, 5, 2, False)
+    assert client.put("/api/videogames/goal", json={"percent": 0}).status_code == 422
+    assert client.put("/api/videogames/goal", json={"percent": 101}).status_code == 422
+    client.patch("/api/videogames/20", json={"hidden": True})            # hidden games don't count
+    goal = client.get("/api/videogames/summary").json()["goal"]
+    assert (goal["percent"], goal["needed"]) == (100.0, 0)
+
+
+def test_how_long_the_goal_takes_at_your_pace():
+    from app.videogames import goal_progress
+    totals = {"achievements": 2683, "achievements_total": 13161, "unlocked_last_30_days": 120}
+    goal = goal_progress(totals, 50)
+    assert (goal["percent"], goal["target"], goal["needed"]) == (20.4, 6581, 3898)
+    assert goal["days_at_pace"] == 975                                     # 3898 at 4 a day
+    assert goal_progress({**totals, "unlocked_last_30_days": 0}, 50)["days_at_pace"] is None
+    assert goal_progress({"achievements": 0, "achievements_total": 0, "unlocked_last_30_days": 0}, 50)["percent"] == 0.0

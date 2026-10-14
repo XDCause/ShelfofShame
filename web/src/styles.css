@@ -1212,3 +1212,20 @@ body.writing-mode .journal-title { font-size: 2.2rem; }
 @media (max-width: 700px) {
   .game-capsule { width: 72px; height: 34px; }
 }
+
+/* Profile completion (video games): a big number, the bar with the goal marked on it. */
+.goal-card { display: flex; flex-direction: column; gap: 10px; }
+.goal-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.goal-head > span { display: flex; flex-direction: column; }
+.goal-label { font-size: 0.8rem; font-weight: 650; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.goal-percent { font-size: 2.6rem; font-weight: 750; line-height: 1.1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.goal-bar { position: relative; height: 14px; margin: 18px 0 4px; border-radius: 7px; background: var(--fill); }
+.goal-fill { position: absolute; inset: 0 auto 0 0; border-radius: 7px; background: linear-gradient(90deg, var(--tint-2), var(--tint)); }
+.goal-marker { position: absolute; top: -6px; bottom: -6px; width: 2px; margin-left: -1px; background: var(--text); }
+.goal-marker span {
+  position: absolute; bottom: calc(100% + 2px); left: 50%; transform: translateX(-50%); white-space: nowrap;
+  font-size: 0.72rem; font-weight: 650; color: var(--text);
+}
+.goal-detail { margin: 0; }
+.goal-edit { display: flex; align-items: center; gap: 6px; }
+.goal-edit input { width: 64px; min-height: 30px; padding: 2px 6px; }

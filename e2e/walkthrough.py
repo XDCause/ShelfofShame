@@ -1045,6 +1045,11 @@ def video_games(page):
     expect(page.locator(".section-tabs a[aria-current=page]")).to_have_text("Dashboard")
     # Connected: the sync bar; not yet: the form to connect a profile (this never calls Steam).
     expect(page.locator(".sync-bar").or_(page.get_by_label("Steam profile"))).to_be_visible(timeout=15000)
+    # Connected: profile completion against the goal comes first.
+    expect(page.locator(".goal-card").or_(page.get_by_label("Steam profile"))).to_be_visible(timeout=15000)
+    if page.locator(".goal-card").count():
+        expect(page.locator(".goal-card")).to_contain_text("Profile completion")
+        expect(page.locator(".goal-marker")).to_contain_text("Goal")
     shot(page, "d41_video_games", full=False)
     page.locator(".section-tabs").get_by_role("link", name="Games").click()
     expect(page.get_by_label("Search your games")).to_be_visible()
