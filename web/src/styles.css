@@ -1812,3 +1812,12 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
   .recs-grid > li { flex: 0 0 42%; scroll-snap-align: start; }
 }
 .section-tabs a { white-space: nowrap; }
+
+/* ---------- Reading: series ---------- */
+.series-meta { color: var(--purple, var(--muted)); font-weight: 600; margin: 0; }
+.series-list { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.series-list li { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 10px; }
+.series-list li.this { background: var(--tint-soft); }
+.series-list .series-num { width: 2.4em; flex: none; text-align: right; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+.series-list .grow { display: flex; flex-direction: column; min-width: 0; }
+.series-list .item-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

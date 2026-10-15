@@ -1164,6 +1164,20 @@ DBeaver, psql, and the one-off import script.
    e2e: the kit steps now set the state they need first (set_model via PATCH: Sherman In stash, RX-78-2 In stash with no
    stage, Zero In progress) and read the stash value from the API - they had assumed old data and failed on a fresh
    copy of prod (the user's kits moved on: Zero On hold, RX-78-2 Finished).
+3zzc. **Book series + On my shelf** (2026-10-15). 45_book_series_shelf.sql: books.status adds 'owned' ("On my shelf" = yours,
+   not started; Want to read = you'd like it); books.series / series_number NUMERIC(6,2); Goodreads-style titles
+   "Golden Son (Red Rising Saga, #2)" were split (title "Golden Son") - reading.split_series / _with_series do the same on
+   add and Goodreads import (shelf names like owned / on-my-shelf / physical -> owned); book_series_cache (key
+   "series|author", source, books JSONB, a week). bookseries.py GET /reading/books/{id}/series: Wikidata first (SPARQL:
+   EntitySearch for the series, works P179 of it that aren't series themselves, ordinal P1545, date P577, author P50 must
+   match; the series named like ours with the most books wins), covers / work ids from openlibrary.by_author matched by
+   title; else Open Library series_books (q series:"X" author:"Y"). Merged with your books (work id / title key); yours
+   found in the list learn their series + number. Order: numbered by number, then by year. Live: Red Rising #1-#7 (Red
+   God "Not out yet"), DCC #1-#8, Hierarchy, Gentleman Bastard, First Law (+ standalones unnumbered); Farseer / Green
+   Bone not found anywhere. Web: SHELVES + 'owned' (purple), seriesText, series line on cards and under the author,
+   BookPanel SeriesList ("In this series": #, cover, year / Coming, your shelf or stars -> opens it, "+ Want to read"),
+   Edit details Series + Number. Up next = On my shelf first, then Want to read. conftest refuses bookseries._wikidata.
+   Tests: 327 API, 61 browser steps (shelf button; a typed series shows and "Couldn't find the other books").
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

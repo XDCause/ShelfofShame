@@ -110,7 +110,7 @@ def test_the_goal_summary_and_stats(client):
     assert (g["goal"], g["finished"], g["left"], g["year"]) == (12, 1, 11, today.year)
     assert g["on_pace"] == pytest.approx(12 * ((today - date(today.year, 1, 1)).days + 1) / (366 if today.year % 4 == 0 else 365), abs=0.1)
     assert [b["title"] for b in s["reading"]] == ["Now"] and s["week"]["pages"] == 40
-    assert s["year"]["pages_read"] == 340 and s["counts"] == {"want": 1, "reading": 1, "finished": 1, "dnf": 0}
+    assert s["year"]["pages_read"] == 340 and s["counts"] == {"want": 1, "owned": 0, "reading": 1, "finished": 1, "dnf": 0}
     assert s["streak"]["current"] == 1
     st = client.get("/api/reading/stats?months=3").json()
     assert st["by_month"][-1]["pages"] == 340 and len(st["by_month"]) == 3
@@ -137,13 +137,13 @@ def test_a_goodreads_import_then_covers_from_open_library(client, ol):
     hm = books["Project Hail Mary"]
     assert (hm["status"], hm["rating"], hm["finished_on"], hm["isbn"], hm["pages"], hm["review"]) == \
         ("finished", 5, "2024-03-09", "9780593135204", 496, "Loved it.\nRocky!")
-    assert (books["Dune (Dune, #1)"]["status"], books["Dune (Dune, #1)"]["format"]) == ("reading", "ebook")
+    assert (books["Dune"]["status"], books["Dune"]["format"], books["Dune"]["series"]) == ("reading", "ebook", "Dune")   # series out of the title
     assert (books["Some Slog"]["status"], books["Some Slog"]["format"]) == ("dnf", "audio")
     assert books["Tomorrow's Book"]["status"] == "want"
     # The background look-up ran after the reply: covers for the two Open Library knows.
     hm = client.get(f"/api/reading/books/{hm['book_id']}").json()
     assert hm["cover_id"] == 11200092 and hm["genres"] == ["Science fiction"]
-    dune = client.get(f"/api/reading/books/{books['Dune (Dune, #1)']['book_id']}").json()
+    dune = client.get(f"/api/reading/books/{books['Dune']['book_id']}").json()
     assert (dune["cover_id"], dune["pages"]) == (11481354, 604)                # pages filled in, title search
     assert {"title": "Dune", "author": "Frank Herbert", "limit": 5} in ol      # series dropped from the title
     assert client.get("/api/reading/covers").json()["done"] == 4

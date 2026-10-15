@@ -201,6 +201,7 @@ export const api = {
   setReadingGoal: (books) => request('/reading/goal', send('PUT', { books })),
   importGoodreads: (file) => request('/reading/import/goodreads', { method: 'POST', headers: { 'Content-Type': 'text/csv' }, body: file }),
   coverStatus: () => request('/reading/covers'),
+  bookSeries: (id) => request(`/reading/books/${id}/series`),
   bookRecs: () => request('/reading/recommendations'),
   refreshBookRecs: () => request('/reading/recommendations/refresh', send('POST')),
   wantBookRec: (work) => request(`/reading/recommendations/${work}/want`, send('POST')),

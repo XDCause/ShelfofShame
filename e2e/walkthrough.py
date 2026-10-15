@@ -1277,6 +1277,7 @@ def reading(page):
     page.locator(".section-tabs").get_by_role("link", name="Books").click()
     page.get_by_role("button", name="+ Add a book").first.click()
     d = drawer(page)
+    expect(d.get_by_role("group", name="Shelf").get_by_role("button", name="On my shelf")).to_be_visible()
     d.get_by_role("group", name="Shelf").get_by_role("button", name="Reading").click()
     d.get_by_role("button", name="Not there? Type it in").click()       # (no Open Library search in the walkthrough)
     d.get_by_label("Title").fill(f"Book-{MARK}")
@@ -1298,6 +1299,17 @@ def reading(page):
     d.get_by_role("group", name="Shelf").get_by_role("button", name="Finished").click()
     d.get_by_role("button", name="4 stars").click(position={"x": 4, "y": 20})     # left edge = a half
     expect(d.get_by_role("group", name="Your rating: 3.5 out of 5")).to_be_visible()
+    # A series, typed in Edit details: shown under the author, and "In this series" at the bottom (the
+    # made-up series isn't on Wikidata / Open Library, so it says so).
+    d.get_by_role("button", name="Edit details").click()
+    d = drawer(page)
+    d.get_by_label("Series", exact=True).fill(f"Saga-{MARK}")
+    d.get_by_label("Number in the series").fill("2")
+    page.get_by_role("button", name="Save details").click()
+    d = drawer(page)
+    expect(d.locator(".book-head .series-meta")).to_have_text(f"Saga-{MARK} #2")
+    expect(d.get_by_role("heading", name="In this series")).to_be_visible()
+    expect(d.get_by_text("Couldn't find the other books")).to_be_visible(timeout=60000)
     d.get_by_role("button", name="4 stars").click()                                # middle = whole
     expect(d.get_by_role("button", name="4 stars")).to_have_attribute("aria-pressed", "true")
     shot(page, "d51_reading_book", full=False)

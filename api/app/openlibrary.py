@@ -6,6 +6,7 @@ fill in covers and details for books imported from Goodreads (in the background,
                                                   cover id, the work's key, ISBNs, subjects
     by_isbn(isbn)        GET /search.json?isbn=   the same, for one ISBN
     find(title, author)  GET /search.json?title=&author=   the best match, for imports
+    series_books(s, a)   GET /search.json?q=series:"..."   a series' books (bookseries.py)
     by_author(name)      GET /search.json?q=author:"..."   an author's books, best rated first  } for
     popular_in(genre)    GET /search.json?q=subject:"..."  well-rated books in a genre           } suggestions
     cover_url(id)        covers.openlibrary.org/b/id/<id>-M.jpg (shown straight from Open Library)
@@ -22,7 +23,7 @@ SEARCH = "https://openlibrary.org/search.json"
 COVER = "https://covers.openlibrary.org/b/id/{id}-{size}.jpg"
 HEADERS = {"User-Agent": "Off the Clock (personal hobby tracker; https://github.com/XDCause/ShelfofShame)",
            "Accept": "application/json"}
-FIELDS = "key,title,author_name,first_publish_year,number_of_pages_median,cover_i,isbn,subject"
+FIELDS = "key,title,author_name,first_publish_year,number_of_pages_median,cover_i,isbn,subject,series_name,series_position"
 REC_FIELDS = FIELDS + ",ratings_average,ratings_count"
 TIMEOUT = 20
 PAUSE = 1.0
@@ -113,7 +114,15 @@ def _book(doc: dict) -> dict:
         "ol_work": (doc.get("key") or "").rsplit("/", 1)[-1] or None,
         "isbn": isbns[0] if isbns else None,
         "genres": genres_of(doc.get("subject")),
+        "series": (doc.get("series_name") or [None])[0],
+        "series_number": _position(doc.get("series_position")),
     }
+
+
+def _position(values: list | None) -> float | None:
+    """Open Library's series_position: ["1"] -> 1.0 (anything not a plain number -> None)."""
+    m = re.fullmatch(r"\s*(\d+(?:\.\d+)?)\s*", str((values or [None])[0] or ""))
+    return float(m.group(1)) if m and float(m.group(1)) < 10000 else None
 
 
 def search(q: str, limit: int = 10) -> list[dict]:
@@ -167,6 +176,12 @@ def by_author(name: str, limit: int = 40) -> list[dict]:
     name = name.replace('"', "")
     docs = _get({"q": f'author:"{name}" language:eng', "sort": "rating", "limit": limit, "fields": REC_FIELDS})
     return [_rec(d) for d in docs if d.get("title")]
+
+
+def series_books(series: str, author: str | None, limit: int = 40) -> list[dict]:
+    """Books Open Library lists in a series (by that author, when known), English editions."""
+    q = f'series:"{series.replace(chr(34), "")}"' + (f' author:"{author.replace(chr(34), "")}"' if author else "") + " language:eng"
+    return [_rec(d) for d in _get({"q": q, "limit": limit, "fields": REC_FIELDS}) if d.get("title")]
 
 
 def popular_in(genre: str, limit: int = 60) -> list[dict]:

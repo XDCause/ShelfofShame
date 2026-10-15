@@ -9,7 +9,7 @@ import Stat, { StatSkeleton } from '../../core/Stat.jsx'
 import EmptyState from '../../core/EmptyState.jsx'
 import { UnlockCalendar } from '../videogames/StatsView.jsx'
 import { RecsCard } from './RecsView.jsx'
-import { BookCover, GoalCard, GoodreadsImport, Progress, ProgressForm, SHELVES, ShelfPill, Stars, starsText, useReadingSummary } from './readingParts.jsx'
+import { BookCover, GoalCard, GoodreadsImport, Progress, ProgressForm, SHELVES, ShelfPill, Stars, seriesText, starsText, useReadingSummary } from './readingParts.jsx'
 
 // The Reading hobby's pages: a dashboard (the goal, what you're reading now, up next, latest
 // finished), your books by shelf, stats, and every saved quote.
@@ -44,7 +44,7 @@ export function Dashboard() {
             <Stat to="/reading/stats" Icon={BookIcon} tone="teal" value={plural(s.streak.current, 'day')} label="Reading streak"
               sub={s.streak.longest ? `longest ${plural(s.streak.longest, 'day')}` : 'update your page to start one'} />
             <Stat to="/reading/quotes" Icon={QuoteIcon} tone="purple" value={s.quotes} label="Quotes saved"
-              sub={`${s.counts.want} on your want-to-read list`} />
+              sub={`${s.counts.owned} on your shelf · ${s.counts.want} wanted`} />
           </div>
           <div className="home-grid">
             <section className="card home-card wide-card">
@@ -179,6 +179,7 @@ export function BooksView() {
                 <span className="book-card-text">
                   <span className="item-title">{b.title}</span>
                   <span className="item-meta">{b.author}</span>
+                  {b.series && <span className="item-meta series-meta">{seriesText(b)}</span>}
                   {b.status === 'reading' ? <Progress book={b} />
                     : b.status === 'finished' ? <span className="item-meta"><Stars value={b.rating} size="small" />{b.finished_on && ` ${shortDate(b.finished_on)}`}</span>
                       : !status && <ShelfPill status={b.status} />}

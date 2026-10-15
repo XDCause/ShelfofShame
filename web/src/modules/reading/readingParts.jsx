@@ -9,9 +9,13 @@ import { useShared } from '../../core/useShared.js'
 // Pieces the reading pages share: covers, stars, shelves, progress, adding a book, the goal and
 // the Goodreads import.
 
-export const SHELVES = [['want', 'Want to read'], ['reading', 'Reading'], ['finished', 'Finished'], ['dnf', "Didn't finish"]]
+// Want to read = you'd like it; On my shelf = you have it, not started yet.
+export const SHELVES = [['want', 'Want to read'], ['owned', 'On my shelf'], ['reading', 'Reading'], ['finished', 'Finished'], ['dnf', "Didn't finish"]]
 const shelfName = (s) => Object.fromEntries(SHELVES)[s] ?? s
-const SHELF_TONE = { want: 'tint', reading: 'low', finished: 'ok', dnf: 'out' }
+const SHELF_TONE = { want: 'tint', owned: 'purple', reading: 'low', finished: 'ok', dnf: 'out' }
+
+// "Red Rising Saga #2" (numbers like 1.5 kept; none - just the name)
+export const seriesText = (b) => b.series && `${b.series}${b.series_number != null ? ` #${Number(b.series_number)}` : ''}`
 
 export const useReadingSummary = () => {
   const { refreshKey } = useApp()

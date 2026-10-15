@@ -1,6 +1,6 @@
 """Reading (a hobby module): your books, where you're up to, what you thought.
 
-    books     every book (want to read / reading / finished / didn't finish), found on Open Library
+    books     every book (want to read / on my shelf / reading / finished / didn't finish), found on Open Library
               (openlibrary.py) by title, author or ISBN - or typed in - with its cover and pages
     progress  "I'm on page 120": a reading_log entry (pages read since the last one, on a day);
               starting a book you wanted to read moves it to Reading
@@ -27,7 +27,10 @@ from .videogames import streaks
 router = APIRouter(prefix="/api", tags=["reading"])
 log = logging.getLogger("reading")
 
-STATUSES = ("want", "reading", "finished", "dnf")
+STATUSES = ("want", "owned", "reading", "finished", "dnf")     # owned = On my shelf: yours, not started
+STATUS = "^(want|owned|reading|finished|dnf)$"
+# Goodreads puts a book's series in its title: "Golden Son (Red Rising Saga, #2)".
+SERIES_IN_TITLE = re.compile(r"\s*\(([^()]+),\s*#(\d+(?:\.\d+)?)\)\s*$")
 COVER = "'https://covers.openlibrary.org/b/id/' || b.cover_id || '-M.jpg'"
 
 # A book as lists show it: progress (0-100, from the page you're on), when you last read it, and
@@ -62,7 +65,9 @@ class BookIn(BaseModel):
     year: int | None = Field(None, ge=-3000, le=3000)
     genres: list[str] = Field(default_factory=list, max_length=10)
     format: str | None = Field(None, pattern="^(paper|ebook|audio)$")
-    status: str = Field("want", pattern="^(want|reading|finished|dnf)$")
+    status: str = Field("want", pattern=STATUS)
+    series: str | None = Field(None, max_length=200)
+    series_number: float | None = Field(None, ge=0, le=9999)
     rating: float | None = Field(None, ge=0.5, le=5, multiple_of=0.5)     # adding a book you've read; halves allowed
     review: str | None = Field(None, max_length=20000)
 
@@ -76,7 +81,9 @@ class BookPatch(BaseModel):
     year: int | None = Field(None, ge=-3000, le=3000)
     genres: list[str] | None = Field(None, max_length=10)
     format: str | None = Field(None, pattern="^(paper|ebook|audio)$")
-    status: str | None = Field(None, pattern="^(want|reading|finished|dnf)$")
+    status: str | None = Field(None, pattern=STATUS)
+    series: str | None = Field(None, max_length=200)
+    series_number: float | None = Field(None, ge=0, le=9999)
     current_page: int | None = Field(None, ge=0, le=50000)
     started_on: date | None = None
     finished_on: date | None = None
@@ -114,6 +121,23 @@ def _isbn(value: str | None) -> str | None:
     return isbn
 
 
+def split_series(title: str) -> tuple[str, str | None, float | None]:
+    """"Golden Son (Red Rising Saga, #2)" -> ("Golden Son", "Red Rising Saga", 2.0)."""
+    m = SERIES_IN_TITLE.search(title or "")
+    if not m or not title[:m.start()].strip():
+        return title, None, None
+    return title[:m.start()].strip(), m.group(1).strip(), float(m.group(2))
+
+
+def _with_series(data: dict) -> dict:
+    """A title carrying its series gives the series (and number) unless they were given."""
+    if data.get("title"):
+        title, series, number = split_series(data["title"])
+        if series and not data.get("series"):
+            data.update(title=title, series=series, series_number=data.get("series_number") or number)
+    return data
+
+
 def _genres(names: list[str] | None) -> list[str]:
     out = []
     for g in names or []:
@@ -142,7 +166,7 @@ def _status_dates(conn, data: dict, book: dict | None = None) -> dict:
         data["started_on"] = today
     if status in ("finished", "dnf") and "finished_on" not in data and old.get("status") != status:
         data["finished_on"] = today
-    if status in ("want", "reading") and old.get("status") in ("finished", "dnf") and "finished_on" not in data:
+    if status in ("want", "owned", "reading") and old.get("status") in ("finished", "dnf") and "finished_on" not in data:
         data["finished_on"] = None
     pages = data.get("pages", old.get("pages"))
     if status == "finished" and pages and "current_page" not in data:
@@ -176,7 +200,7 @@ def lookup(q: str = Query(min_length=2, max_length=200)):
 
 
 @router.get("/reading/books")
-def list_books(status: str | None = Query(None, pattern="^(want|reading|finished|dnf)$"),
+def list_books(status: str | None = Query(None, pattern=STATUS),
                q: str | None = Query(None, max_length=200), sort: str = Query("recent", pattern="^(" + "|".join(SORTS) + ")$"),
                year: int | None = Query(None, ge=1900, le=2100)):
     """Your books (all, or one shelf), searched by title / author / genre, finished in `year`."""
@@ -198,7 +222,7 @@ def list_books(status: str | None = Query(None, pattern="^(want|reading|finished
 
 @router.post("/reading/books", status_code=201)
 def add_book(body: BookIn):
-    data = tidy_text(body.model_dump(), required=("title",))
+    data = _with_series(tidy_text(body.model_dump(), required=("title",)))
     data["isbn"] = _isbn(data["isbn"])
     data["genres"] = _genres(data["genres"])
     with db() as conn:
@@ -259,7 +283,7 @@ def add_progress(book_id: int, body: ProgressIn):
                                          "pages": max(0, body.page - (book["current_page"] or 0)),
                                          "minutes": body.minutes, "note": (body.note or "").strip() or None}, "log_id")
         changes = {"current_page": body.page}
-        if book["status"] in ("want", "dnf"):
+        if book["status"] in ("want", "owned", "dnf"):
             changes["status"] = "reading"
             changes["finished_on"] = None
         if not book["started_on"]:
@@ -356,7 +380,8 @@ def summary():
         goal = conn.execute("SELECT value FROM settings WHERE key = %s", (goal_key(today.year),)).fetchone()
         days = [r["d"] for r in conn.execute("SELECT DISTINCT logged_on AS d FROM reading_log WHERE pages > 0").fetchall()]
         finished = conn.execute(LIST + " WHERE b.status = 'finished' ORDER BY b.finished_on DESC NULLS LAST, b.book_id DESC LIMIT 6").fetchall()
-        next_up = conn.execute(LIST + " WHERE b.status = 'want' ORDER BY b.created_at DESC LIMIT 5").fetchall()
+        next_up = conn.execute(LIST + " WHERE b.status IN ('owned', 'want') "        # ones you have first
+                               "ORDER BY b.status = 'owned' DESC, b.created_at DESC LIMIT 5").fetchall()
         counts = {r["status"]: r["n"] for r in conn.execute("SELECT status, count(*)::int AS n FROM books GROUP BY status")}
         quotes = conn.execute("SELECT count(*)::int AS n FROM book_quotes").fetchone()["n"]
     return {"reading": reading, "year": year, "week": week, "goal": goal_progress(int(goal["value"]) if goal else None,
@@ -428,6 +453,7 @@ COVERS = {"running": False, "done": 0, "total": 0, "found": 0, "error": None}
 _covers_lock = threading.Lock()
 
 SHELVES = {"read": "finished", "currently-reading": "reading", "to-read": "want"}
+OWNED_SHELF = re.compile(r"owned|own-|on-my-shelf|my-shelf|physical|tbr-own|bought")
 
 
 def _goodreads_date(text: str | None) -> date | None:
@@ -458,14 +484,16 @@ def goodreads_rows(text: str) -> list[dict]:
         if not title:
             continue
         shelf = (r.get("Exclusive Shelf") or "").strip().lower()
-        status = SHELVES.get(shelf) or ("dnf" if re.search(r"dnf|did-not-finish|abandon|gave-up", shelf) else "want")
+        status = SHELVES.get(shelf) or ("dnf" if re.search(r"dnf|did-not-finish|abandon|gave-up", shelf)
+                                        else "owned" if OWNED_SHELF.search(shelf) else "want")
+        title, series, number = split_series(title)
         pages = (r.get("Number of Pages") or "").strip()
         year = (r.get("Original Publication Year") or r.get("Year Published") or "").strip()
         rating = int(re.sub(r"\D", "", r.get("My Rating") or "") or 0)
         added = _goodreads_date(r.get("Date Added"))
         out.append({
             "goodreads_id": (r.get("Book Id") or "").strip() or None,
-            "title": title, "author": (r.get("Author") or "").strip() or None,
+            "title": title, "series": series, "series_number": number, "author": (r.get("Author") or "").strip() or None,
             "isbn": openlibrary.isbn13(r.get("ISBN13")) or openlibrary.isbn13(r.get("ISBN")),
             "pages": int(pages) if pages.isdigit() and int(pages) > 0 else None,
             "year": int(year) if re.fullmatch(r"-?\d{1,4}", year) else None,
