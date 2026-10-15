@@ -91,6 +91,11 @@ export const api = {
     request(`/lookup/hasegawa/${enc(code)}${refresh ? '?refresh=true' : ''}`),
   // A Bandai kit via hlj.com: your code (G5057403), barcode, HLJ code or a name ({choices} if several)
   lookupBandai: (code, refresh = false) => request(`/lookup/bandai/${enc(code)}${refresh ? '?refresh=true' : ''}`),
+  // Warhammer kits from Good Games: a name ({choices}), GW code (59-05), box barcode or id:<product>
+  lookupWarhammer: (code, refresh = false) => request(`/lookup/warhammer/${enc(code)}${refresh ? '?refresh=true' : ''}`),
+  warhammerArmy: (name, refresh = false) => request(`/warhammer/army?name=${enc(name)}${refresh ? '&refresh=true' : ''}`),
+  warhammerArmies: () => request('/warhammer/armies'),
+  wantWarhammer: (id) => request('/warhammer/want', send('POST', { id })),
   uploadPhoto: (brandId, productCode, blob) =>
     request(`/product-photo?brand_id=${brandId}&product_code=${enc(productCode)}`, image('PUT', blob)),
   deletePhoto: (brandId, productCode) =>

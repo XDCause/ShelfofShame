@@ -706,7 +706,8 @@ def warhammer(page):
     page.get_by_role("button", name="+ Add model").click()
     d = drawer(page)
     d.locator(".hobby-picker button", has_text="Warhammer").click()
-    expect(d.get_by_label("Brand")).to_have_value("new:Games Workshop")
+    # Games Workshop: "(new)" until you've used it (a Warhammer lookup adds it), else your brand.
+    expect(d.get_by_label("Brand").locator("option:checked")).to_have_text(re.compile(r"^Games Workshop( \(new\))?$"))
     d.get_by_label("Model name").fill("Intercessors")
     d.get_by_label("Army").fill("Ultramarines")
     d.get_by_label("Minis in the box").fill("10")
@@ -1330,6 +1331,28 @@ def reading(page):
     shot(page, "d53_reading_for_you", full=False)
 
 
+@step("Warhammer: an army's range from Good Games (live), + Wanted adds the Combat Patrol to your kits")
+def warhammer_range(page):
+    go(page, "Models")
+    page.locator(".section-tabs").get_by_role("link", name="Warhammer").click()
+    page.get_by_role("group", name="Army").get_by_role("button", name="Adeptus Mechanicus", exact=True).click()
+    expect(page.locator(".wh-title, .wh-range .alert").first).to_be_visible(timeout=60000)
+    if page.locator(".wh-range .alert").count():                 # the shop couldn't be reached: nothing more to check
+        return
+    expect(page.locator(".wh-title")).to_have_text("Adeptus Mechanicus")
+    card = page.locator(".wh-card", has=page.locator(".wh-code", has_text="59-05"))
+    expect(card).to_contain_text("Combat Patrol: Adeptus Mechanicus")
+    shot(page, "d54_warhammer_range", full=False)
+    if card.get_by_role("button", name="+ Wanted").count():
+        card.get_by_role("button", name="+ Wanted").click()
+        expect(card.get_by_role("button", name="Yours · Wanted")).to_be_visible(timeout=60000)
+    card.get_by_role("button", name=re.compile("^Yours")).click()
+    d = drawer(page)
+    expect(d.locator(".item-name")).to_have_text("Combat Patrol: Adeptus Mechanicus")
+    expect(d.locator(".item-sub").first).to_contain_text("Adeptus Mechanicus")
+    page.keyboard.press("Escape")
+
+
 @step("Settings: price guide, default shop, backups, exports, catalogue")
 def settings_more(page):
     page.get_by_role("button", name="Settings").click()
@@ -1424,7 +1447,7 @@ with sync_playwright() as p:
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
                matches, used_on, gundam, bandai_lookup, warhammer, journal_write, journal_links, journal_from_model,
                journal_suggestion, journal_todo, global_search, journal_wishlist, appearance,
-               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, settings_more, no_panel):
+               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, settings_more, no_panel):
         fn(desk)
     ctx = browser.new_context(**p.devices["iPhone 13"], timezone_id=zone)
     mob = ctx.new_page()

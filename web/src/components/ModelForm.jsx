@@ -11,11 +11,12 @@ const ONLY_FOR = { grade: 'Gundam', faction: 'Warhammer', figures: 'Warhammer' }
 const NEW_BRAND = 'new:' // brand_id value for a brand you haven't used yet, e.g. "new:Bandai"
 
 // Whose kits each hobby can look up, and what to type for each.
-const MAKERS = { 'Scale model': ['Tamiya', 'Hasegawa'], Gundam: ['Bandai'] }
+const MAKERS = { 'Scale model': ['Tamiya', 'Hasegawa'], Gundam: ['Bandai'], Warhammer: ['Games Workshop'] }
 const LOOKUP_HELP = {
   Tamiya: { label: 'Kit number', example: 'e.g. 32595' },
   Hasegawa: { label: 'Series code or item number from the box', example: 'e.g. JT86 or 09086' },
   Bandai: { label: 'Code from the box, its barcode, or the name', example: 'e.g. G5057403 or rx-78-2 revive' },
+  'Games Workshop': { label: 'Kit name, Games Workshop code or box barcode', example: 'e.g. combat patrol adeptus mechanicus or 59-05' },
 }
 
 // Hints that change with the hobby.
@@ -50,7 +51,7 @@ export default function ModelForm({ model, lookups, settings, onClose, onCancel,
   const [kitCode, setKitCode] = useState('')
   const [makerPick, setMaker] = useState('Tamiya') // whose kit number it is
   const [found, setFound] = useState(null)
-  const [choices, setChoices] = useState(null) // several Bandai kits matched a name: pick one
+  const [choices, setChoices] = useState(null) // several Bandai / Warhammer kits matched a name: pick one
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const set = (f) => (e) => setForm((x) => ({ ...x, [f]: e.target.value }))
@@ -85,11 +86,22 @@ export default function ModelForm({ model, lookups, settings, onClose, onCancel,
     setError('')
     setChoices(null)
     try {
-      let r, name, scale, grade
-      if (maker === 'Bandai') {
+      let r, name, scale, grade, faction, figures
+      if (maker === 'Games Workshop') {
+        r = await api.lookupWarhammer(code.trim())
+        if (r.choices) {
+          setChoices(r.choices.map((c) => ({ key: c.id, code: `id:${c.id}`, title: c.title, thumb_url: c.image && `${c.image}&width=120`,
+            note: [c.price != null && `$${c.price.toFixed(2)}`, c.available ? 'in stock' : 'sold out', c.my_model && 'yours'].filter(Boolean).join(' · ') })))
+          setFound(null)
+          return
+        }
+        name = r.name
+        faction = r.faction
+        figures = r.figures
+      } else if (maker === 'Bandai') {
         r = await api.lookupBandai(code.trim())
         if (r.choices) {
-          setChoices(r.choices)
+          setChoices(r.choices.map((c) => ({ key: c.hlj_code, code: c.hlj_code, title: c.title, thumb_url: c.thumb_url })))
           setFound(null)
           return
         }
@@ -108,6 +120,7 @@ export default function ModelForm({ model, lookups, settings, onClose, onCancel,
       }
       setFound(r)
       setForm((f) => ({ ...f, name: name || f.name, scale: scale || f.scale, grade: grade || f.grade,
+        faction: faction || f.faction, figures: figures ? String(figures) : f.figures,
         brand_id: brandValue(maker), product_code: r.product_code }))
     } catch (e) {
       setError(e.message)
@@ -160,17 +173,18 @@ export default function ModelForm({ model, lookups, settings, onClose, onCancel,
             </div>
           )}
           {maker === 'Bandai' && <p className="hint">Bandai kits are looked up on hlj.com (HobbyLink Japan).</p>}
+          {maker === 'Games Workshop' && <p className="hint">Warhammer kits are looked up at Good Games (goodgames.com.au).</p>}
           <div className="lookup-row">
             <label className="field">
               <span className="field-label">{LOOKUP_HELP[maker].label}</span>
               <input value={kitCode} onChange={(e) => setKitCode(e.target.value)}
-                placeholder={LOOKUP_HELP[maker].example} autoCapitalize={maker === 'Bandai' ? 'none' : 'characters'}
+                placeholder={LOOKUP_HELP[maker].example} autoCapitalize={['Bandai', 'Games Workshop'].includes(maker) ? 'none' : 'characters'}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); lookup() } }} />
             </label>
             <button type="button" className="secondary" onClick={() => lookup()} disabled={busy || !kitCode.trim()}>
               {busy ? 'Looking up...' : 'Look up'}
             </button>
-            {maker === 'Bandai' && (
+            {['Bandai', 'Games Workshop'].includes(maker) && (
               <ScanButton className="secondary" label="Scan the box"
                 onBarcode={(barcode) => { setKitCode(barcode); return lookup(barcode) }} />
             )}
@@ -180,12 +194,12 @@ export default function ModelForm({ model, lookups, settings, onClose, onCancel,
               <p className="hint">{choices.length} kits match. Which one?</p>
               <ul className="list kit-choices">
                 {choices.map((c) => (
-                  <li key={c.hlj_code}>
-                    <button type="button" className="row-button" onClick={() => { setKitCode(c.hlj_code); lookup(c.hlj_code) }}>
+                  <li key={c.key}>
+                    <button type="button" className="row-button" onClick={() => { setKitCode(c.title); lookup(c.code) }}>
                       {c.thumb_url
                         ? <img className="thumb" src={c.thumb_url} alt="" referrerPolicy="no-referrer" loading="lazy" />
                         : <span className="thumb thumb-empty" aria-hidden="true" />}
-                      <span>{c.title}</span>
+                      <span>{c.title}{c.note && <span className="muted small"> · {c.note}</span>}</span>
                     </button>
                   </li>
                 ))}

@@ -1821,3 +1821,29 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .series-list .series-num { width: 2.4em; flex: none; text-align: right; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
 .series-list .grow { display: flex; flex-direction: column; min-width: 0; }
 .series-list .item-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- Models: Warhammer range (Good Games) ---------- */
+.wh-armies { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 14px; }
+.wh-armies .chips { flex: 1 1 420px; }
+.wh-other { display: flex; gap: 8px; flex: 0 1 340px; }
+.wh-other input { flex: 1; min-width: 0; }
+.chip-mark { color: #e0a100; }
+.wh-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 16px; margin-bottom: 12px; }
+.wh-title { margin: 0; font-size: 1.3rem; }
+.wh-head p { margin: 2px 0 0; }
+.wh-tools { display: flex; align-items: center; gap: 10px; }
+.wh-grid { list-style: none; margin: 0; padding: 0; }
+.wh-card.mine { border-color: color-mix(in srgb, var(--ok) 55%, var(--border)); }
+.wh-code, .wh-stock { position: absolute; top: 10px; padding: 3px 9px; border-radius: 999px; font-size: 0.75rem; font-weight: 700;
+  box-shadow: 0 0 0 1.5px #fff, 0 1px 4px rgb(0 0 0 / 0.25); }
+.wh-code { left: 10px; background: #1f2937; color: #fff; font-variant-numeric: tabular-nums; }
+.wh-stock { right: 10px; color: #fff; }
+.wh-stock.in { background: #15803d; }
+.wh-stock.out { background: #6b7280; }
+.wh-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 6px; }
+@media (max-width: 700px) {
+  .wh-armies .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .wh-other { flex: 1 1 100%; }
+  .wh-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .wh-card .model-body { padding: 10px; }
+}

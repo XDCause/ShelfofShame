@@ -27,7 +27,7 @@ from fastapi import FastAPI
 
 from . import (activity, boardgames, bookseries, build, calendar, catalog, chess, colours, journal, journal_drawings,
                lookups, models, othergames, products, reading, reading_recs, settings, spending, supplies, videogames,
-               volleyball, wishlist)
+               volleyball, warhammer, wishlist)
 from .db import db
 
 @asynccontextmanager
@@ -43,7 +43,7 @@ async def lifespan(_app):
 app = FastAPI(title="Off the Clock API", docs_url="/api/docs", openapi_url="/api/openapi.json", lifespan=lifespan)
 
 for part in (activity, journal_drawings, journal, calendar, supplies, wishlist, products, catalog, models, build, colours,
-             boardgames, volleyball, othergames, videogames, chess, reading, reading_recs, bookseries, spending, settings, lookups):
+             boardgames, volleyball, othergames, videogames, chess, reading, reading_recs, bookseries, warhammer, spending, settings, lookups):
     app.include_router(part.router)
 
 

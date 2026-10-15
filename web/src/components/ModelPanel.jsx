@@ -15,6 +15,7 @@ const SOURCES = {
   Tamiya: { site: 'tamiya.com', lookup: api.lookupTamiya },
   Hasegawa: { site: 'hasegawa-model.co.jp', lookup: api.lookupHasegawa },
   Bandai: { site: 'hlj.com', lookup: api.lookupBandai },
+  'Games Workshop': { site: 'goodgames.com.au', lookup: api.lookupWarhammer },
 }
 
 // Opens Scalemates' own search in your browser (the app itself never fetches Scalemates).

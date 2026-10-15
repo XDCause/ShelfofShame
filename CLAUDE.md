@@ -1178,6 +1178,34 @@ DBeaver, psql, and the one-off import script.
    BookPanel SeriesList ("In this series": #, cover, year / Coming, your shelf or stars -> opens it, "+ Want to read"),
    Edit details Series + Number. Up next = On my shelf first, then Want to read. conftest refuses bookseries._wikidata.
    Tests: 327 API, 61 browser steps (shelf button; a typed series shows and "Couldn't find the other books").
+3zzd. **Warhammer kits from Good Games (official UCP)** (2026-10-15). User wanted an API for Warhammer kits, tested on
+   Combat Patrol: Adeptus Mechanicus, and the whole AdMech range ("all 33 items") to keep buying from. warhammer.com: AWS
+   WAF CAPTCHA (`x-amzn-waf-action: captcha`) for any app -> not used, never bypass. Gameology lacked many kits.
+   **Good Games** (goodgames.com.au, Shopify) has the range with the GW code in titles "(59-05)", army tag
+   "Faction_Adeptus Mechanicus", barcode = variant SKU, box contents ("1x ..., 10x ..."). User chose its OFFICIAL route
+   (robots.txt / agents.md: "AJAX surfaces: agents should use UCP/MCP"): JSON-RPC POST /api/ucp/mcp tools/call
+   search_catalog {query, filters.available, pagination limit/cursor} / get_product {id gid}. Every call needs
+   meta.ucp-agent.profile = a public JSON (content type application/json, no redirects) with ucp.version, services,
+   capabilities, payment_handlers: `ucp-agent.json` (repo root) asks only dev.ucp.shopping.catalog.search / .lookup +
+   dev.shopify.catalog (without them: "Tool not found: search_catalog"). Served by jsDelivr from git TAG ucp-agent-1
+   (raw.githubusercontent is text/plain -> "Invalid content type"; a jsDelivr BRANCH URL stays cached for hours after a
+   change). New profile version = new tag + goodgames.PROFILE; UCP_PROFILE env overrides. Gotchas: filters.available
+   true = in stock ONLY, false = sold out ONLY -> search both; get_product / lookup_catalog have NO tags -> get() finds the
+   same product by SKU in a search for its tags; titles have U+FFFD for dashes (-> –); minis = sum of "Nx Name" with
+   brackets removed ("(which can alternatively be built as 3x ...)" double-counted: 37 -> 19). goodgames.py kit():
+   id, title, name ("Adeptus Mechanicus - Onager Dunecrawler" -> "Onager Dunecrawler"; "Combat Patrol: Adeptus
+   Mechanicus"), code, army, figures, contents, barcode (13 digits), price, available, url, image (cdn.shopify only),
+   is_kit (NOT_KITS: codex, datacards, index, dice, collectibles, books...). army_range = tagged with the army, or the army
+   in the title + a GW code (Thulia Ghuld isn't tagged), by code. warhammer.py: GET /warhammer/search, /warhammer/army
+   (kept an hour in memory, ?refresh), /warhammer/armies (yours + quick picks), /lookup/warhammer/{code} (GW code /
+   barcode / name -> choices with every word / id:<n>; product_info brand Games Workshop, product_code = GW code, series =
+   army, description "GW 59-05 · Adeptus Mechanicus · 19 minis · Good Games $192.77", photo, barcode -> scan "known"),
+   POST /warhammer/want {id} (Wanted Warhammer model; 409 if you have it). Every kit has my_model. Web: Models tab
+   "Warhammer" (WarhammerRange.jsx: army chip-filters, "Another army", All / In stock / Don't have, cards with GW code +
+   stock badges, "+ Wanted" / "Yours · Wanted", "Good Games ↗"), ModelForm maker Games Workshop (+ Scan the box; fills
+   name, Army, Minis, code), ModelPanel SOURCES 'Games Workshop'. ShieldIcon. Live: AdMech 28 kits, 10 in stock.
+   Tests: 332 API (test_warhammer.py fakes _call; conftest refuses goodgames._call), 62 browser steps (warhammer_range,
+   live; skips if the shop can't be reached).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"
