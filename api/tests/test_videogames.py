@@ -715,3 +715,45 @@ def test_the_exophase_profile_and_game_readers(monkeypatch):
     assert games == [{"source_id": "5", "name": "Tom Clancy's Game", "picture_url": "https://m.exophase.com/t.png",
                       "page_url": "https://x/g/", "exo_done": 26, "exo_total": 57, "exo_minutes": 125,
                       "last_played": T(1), "exo_completed_at": None}]
+
+
+def test_scouting_a_game_you_dont_own(client, fake, monkeypatch):
+    from app import vgfind
+    setup(client)
+    vgfind._found.clear()
+    vgfind._scouted.clear()
+    searched = []
+    monkeypatch.setattr(steam, "store_search", lambda term: searched.append(term) or [
+        {"type": "app", "id": 10, "name": "Celeste", "tiny_image": "https://x/10.jpg", "price": {"final": 2995}},
+        {"type": "app", "id": 99, "name": "Celeste 64", "tiny_image": "https://x/99.jpg"},
+        {"type": "sub", "id": 5, "name": "Celeste Bundle"}, {"type": "app", "id": 6, "name": "Celeste Original Soundtrack"}])
+    found = client.get("/api/videogames/find?q=  Celeste ").json()
+    assert [(g["app_id"], g["price"], g["yours"]) for g in found] == [
+        (10, 29.95, {"id": 10, "platform": "steam"}), (99, None, None)]      # yours marked; bundles, soundtracks left out
+    client.get("/api/videogames/find?q=celeste")
+    assert searched == ["celeste"]                                            # kept: asked once
+    assert client.get("/api/videogames/find?q=c").status_code == 422
+    assert not vgfind.NOT_GAMES.search("Ghost of Tsushima") and vgfind.NOT_GAMES.search("Celeste OST")
+
+    fake.names[99] = [{"name": "P", "displayName": "Easy", "icon": "i/p.jpg"}, {"name": "Q", "displayName": "Hard", "hidden": 1},
+                      {"name": "R", "displayName": "Gone"}]
+    fake.rarity[99] = {"P": 91.23, "Q": 2.5, "R": 0.1}
+    monkeypatch.setattr(steam, "store_items", lambda ids: {99: {"name": "Celeste 64", "header": "https://x/h99.jpg"}} if 99 in ids else {})
+    monkeypatch.setattr(steamhunters, "game", lambda app_id: {"sh_median_minutes": 120, "sh_fastest_minutes": 30,
+                                                             "sh_players_perfected": 25, "sh_players_started": 100,
+                                                             "sh_unobtainable": 1} if app_id == 99 else None)
+    monkeypatch.setattr(steamhunters, "unobtainable", lambda app_id: {"R"})
+    g = client.get("/api/videogames/scout/99").json()
+    assert (g["name"], g["achievements_total"], g["unobtainable_count"], g["ultra_rare"], g["rarest_percent"], g["perfect_rate"]) == \
+        ("Celeste 64", 2, 1, 1, 2.5, 25.0)
+    assert [a["name"] for a in g["achievements"]] == ["Easy", "Hard", "Gone"] and g["yours"] is None
+    assert g["sh_median_minutes"] == 120 and g["notes"] == []
+    assert client.get("/api/videogames/scout/12345").status_code == 404
+
+    # SteamHunters down: Steam's part still answers, with a note.
+    def down(_app_id):
+        raise steamhunters.Unavailable("Couldn't reach SteamHunters.")
+    monkeypatch.setattr(steamhunters, "game", down)
+    vgfind._scouted.clear()
+    g = client.get("/api/videogames/scout/99").json()
+    assert g["achievements_total"] == 3 and g["perfect_rate"] is None and "SteamHunters" in g["notes"][0]

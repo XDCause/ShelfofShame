@@ -1136,21 +1136,23 @@ def video_games(page):
     if page.locator(".goal-card").count():
         expect(page.locator(".home-card-title", has_text="Quick wins")).to_be_visible()
         expect(page.locator(".home-card-title", has_text="Epic and Ubisoft")).to_be_visible()
-    # Epic / Ubisoft games: the dashboard counts every platform; Steam alone matches SteamHunters.
+    # Epic / Ubisoft games: the dashboard counts every platform; with all on, tapping Steam means
+    # Steam alone (matches SteamHunters); a second platform can be added back; All turns them all on.
     toggles = page.get_by_role("group", name="Platforms to count")
     if page.locator(".goal-card").count() and toggles.count():
         everything = page.locator(".goal-percent").inner_text()
-        for p in ("Epic", "Ubisoft"):
-            if toggles.get_by_role("button", name=p).count():
-                toggles.get_by_role("button", name=p).click()
+        toggles.get_by_role("button", name="Steam").click()
         expect(toggles).to_contain_text("matches SteamHunters")
         expect(toggles.get_by_role("button", name="Steam")).to_be_disabled()      # the last one stays on
         page.wait_for_timeout(500)
         print(f"    profile completion: all {everything}, Steam only {page.locator('.goal-percent').inner_text()}")
-        for p in ("Epic", "Ubisoft"):
-            if toggles.get_by_role("button", name=p).count():
-                toggles.get_by_role("button", name=p).click()
+        others = [p for p in ("Epic", "Ubisoft") if toggles.get_by_role("button", name=p).count()]
+        toggles.get_by_role("button", name=others[0]).click()                      # adds it: Steam stays on
+        expect(toggles.get_by_role("button", name="Steam")).to_have_attribute("aria-pressed", "true")
+        expect(toggles.get_by_role("button", name=others[0])).to_have_attribute("aria-pressed", "true")
+        toggles.get_by_role("button", name="All", exact=True).click()
         expect(toggles).not_to_contain_text("matches SteamHunters")
+        expect(toggles.get_by_role("button", name="All", exact=True)).to_have_count(0)
     shot(page, "d41_video_games", full=False)
     page.locator(".section-tabs").get_by_role("link", name="Games").click()
     expect(page.get_by_label("Search your games")).to_be_visible()
@@ -1161,6 +1163,22 @@ def video_games(page):
     page.locator(".add-game").get_by_role("button", name="Add", exact=True).click()
     expect(page.locator(".add-game .alert")).to_contain_text("store link")
     page.locator(".add-game").get_by_role("button", name="Cancel").click()
+    # Find a game: scout any Steam game by name (live: Steam's store search + SteamHunters, read only).
+    page.get_by_role("button", name="Find a game").click()
+    page.get_by_label("Search Steam").fill("hollow knight")
+    expect(page.locator(".find-games li").first.or_(page.locator(".drawer .alert"))).to_be_visible(timeout=30000)
+    if page.locator(".find-games li").count():
+        expect(page.locator(".find-games")).not_to_contain_text("Soundtrack")
+        page.locator(".find-games li").first.click()
+        expect(page.locator(".drawer .section-head").or_(page.locator(".drawer .alert"))).to_be_visible(timeout=30000)
+        shot(page, "d44b_find_a_game", full=False)
+        if page.locator(".drawer .section-head").count():
+            expect(page.locator(".drawer .section-head")).to_contain_text("achievements")
+        page.get_by_role("button", name="‹ Back to results").click()
+        expect(page.get_by_label("Search Steam")).to_have_value("hollow knight")   # the search is kept
+    else:
+        print("    Steam's store search couldn't be reached - skipped")
+    page.keyboard.press("Escape")
     # A game's panel: how you compare with other players (when the community numbers are in).
     # The search, filters and headings stay pinned while the list scrolls (on a PC).
     page.mouse.wheel(0, 3000)
@@ -1202,8 +1220,7 @@ def video_games(page):
     toggles = page.get_by_role("group", name="Platforms to count")
     if toggles.count():
         expect(page.locator(".game-rows .pill.platform-steam").first).to_be_visible()   # all together, each row says where
-        toggles.get_by_role("button", name="Steam").click()
-        toggles.get_by_role("button", name="Epic").click()                              # Ubisoft only
+        toggles.get_by_role("button", name="Ubisoft").click()                           # all on: a tap = Ubisoft only
         expect(page.locator(".game-rows .pill.platform-steam")).to_have_count(0)
         page.locator(".game-rows li").first.click()
         d = drawer(page)
@@ -1218,8 +1235,7 @@ def video_games(page):
         toggles.get_by_role("button", name="Ubisoft").click()                           # Epic only
         expect(page.locator(".game-rows li").first).to_be_visible()
         shot(page, "d48_epic_games", full=False)
-        toggles.get_by_role("button", name="Steam").click()
-        toggles.get_by_role("button", name="Ubisoft").click()                           # all three again
+        toggles.get_by_role("button", name="All", exact=True).click()                   # all three again
         expect(toggles.get_by_role("button", name="Steam")).to_have_attribute("aria-pressed", "true")
     page.locator(".section-tabs").get_by_role("link", name="Stats").click()
     # This month's recap (back a month and forward again), then the unlock calendar.

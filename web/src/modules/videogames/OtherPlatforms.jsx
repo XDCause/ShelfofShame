@@ -22,12 +22,15 @@ export function useCounting() {
 }
 
 // "Counting: Steam Epic Ubisoft" toggles above the dashboard, stats and games (only platforms you have
-// games on; at least one stays on). Steam alone matches SteamHunters' numbers.
+// games on; at least one stays on; "All" turns them all back on). Steam alone matches SteamHunters' numbers.
 export function PlatformToggles({ available }) {
   const [chosen, setChosen] = useCounting()
   if (!available || available.length < 2) return null
   const on = new Set(chosen ?? available)
+  const all = available.every((p) => on.has(p))
+  // With every platform on, a tap means "just this one"; after that, taps add or take away.
   const flip = (id) => {
+    if (all) return setChosen([id])
     const next = new Set(on)
     if (next.has(id)) next.delete(id)
     else next.add(id)
@@ -42,6 +45,7 @@ export function PlatformToggles({ available }) {
           disabled={on.has(id) && on.size === 1} title={on.has(id) && on.size === 1 ? 'At least one platform stays on' : undefined}>
           {label}</button>
       ))}
+      {!all && <button type="button" className="plain small" onClick={() => setChosen(null)}>All</button>}
       {chosen?.length === 1 && chosen[0] === 'steam' && <span className="muted small">· matches SteamHunters</span>}
     </div>
   )

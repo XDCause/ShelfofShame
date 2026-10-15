@@ -1191,6 +1191,8 @@ body.writing-mode .journal-title { font-size: 2.2rem; }
 .achievements .grow { display: flex; flex-direction: column; min-width: 0; }
 .achievement:not(.got) .item-title { color: var(--muted); }
 .achievement:not(.got) .achievement-icon { opacity: 0.7; }
+.scout-list .achievement .item-title { color: inherit; }
+.scout-list .achievement .achievement-icon { opacity: 1; }
 .perfect-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 .perfect-card {
   position: relative; display: flex; flex-direction: column; gap: 2px; padding: 0 0 8px; overflow: hidden; text-align: left;
@@ -1866,3 +1868,8 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .game-kind .field { flex: 1 1 220px; margin: 0; }
 .link-title.inline { display: inline; padding: 0; font: inherit; color: var(--tint); }
 .game-toolbar { justify-content: flex-end; }
+
+/* Find a game (Steam store search): Steam's small capsule pictures are 231 x 87. */
+.find-games .row-button { gap: 12px; }
+.find-thumb { width: 120px; aspect-ratio: 231 / 87; object-fit: cover; border-radius: 6px; flex: none; background: var(--fill); }
+@media (max-width: 700px) { .find-thumb { width: 92px; } }

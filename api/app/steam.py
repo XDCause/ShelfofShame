@@ -179,6 +179,15 @@ def _name_key(name: str) -> str:
     return re.sub(r"[^0-9a-z]+", "", name.casefold())
 
 
+def store_search(term: str) -> list[dict]:
+    """Steam's store search for some words: its items (type, id, name, tiny_image, price), best first."""
+    try:
+        r = httpx.get(STORE_SEARCH, params={"term": term, "l": "english", "cc": "AU"}, headers=HEADERS, timeout=TIMEOUT)
+        return (r.json().get("items") or []) if r.status_code == 200 else []
+    except (httpx.HTTPError, ValueError):
+        raise SteamError("Couldn't reach Steam's store search.") from None
+
+
 def find_app(name: str) -> tuple[int, str] | None:
     """(app id, Steam's name) of the game called `name` on Steam, or None. Tries the whole name, then
     with words dropped from the end ("Rainbow Six Siege X" -> "Rainbow Six Siege"); only an exact
@@ -187,12 +196,7 @@ def find_app(name: str) -> tuple[int, str] | None:
     shortest = max(len(words) - 2, min(len(words), 2))     # drop up to 2 words, never below 2 ("Supraland" = 1)
     for n in range(len(words), shortest - 1, -1):
         term = " ".join(words[:n])
-        try:
-            r = httpx.get(STORE_SEARCH, params={"term": term, "l": "english", "cc": "AU"}, headers=HEADERS, timeout=TIMEOUT)
-            items = (r.json().get("items") or []) if r.status_code == 200 else []
-        except (httpx.HTTPError, ValueError):
-            raise SteamError("Couldn't reach Steam's store search.") from None
-        for item in items:
+        for item in store_search(term):
             if item.get("type") == "app" and _name_key(item.get("name", "")) == _name_key(term):
                 return int(item["id"]), item["name"]
         pause()

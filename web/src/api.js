@@ -192,6 +192,8 @@ export const api = {
   videoGameRecap: (month, platforms) => request(`/videogames/recap?${new URLSearchParams({
     ...(month && { month }), ...(platforms && { platforms: platforms.join(',') }) })}`),
   addExtraVideoGame: (game) => request('/videogames/extra', send('POST', { game })),
+  findSteamGames: (q) => request(`/videogames/find?q=${encodeURIComponent(q)}`),
+  scoutVideoGame: (appId) => request(`/videogames/scout/${appId}`),
   otherGames: () => request('/videogames/other'),
 
   // Chess

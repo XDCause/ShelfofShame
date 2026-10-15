@@ -59,6 +59,7 @@ def no_real_steam(monkeypatch):
     monkeypatch.setattr(steamhunters, "pause", lambda: None)
     monkeypatch.setattr(exophase, "_get", refuse)
     monkeypatch.setattr(steam, "find_app", refuse)            # Steam's store search (not via steam._get)
+    monkeypatch.setattr(steam, "store_search", refuse)
     monkeypatch.setattr(chesscom, "_get", refuse)
     monkeypatch.setattr(chesscom, "pause", lambda: None)
     monkeypatch.setattr(openlibrary, "_get", refuse)

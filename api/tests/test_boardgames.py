@@ -309,7 +309,7 @@ def test_good_games_fills_the_holes(client, both_shops):
     exp = client.post("/api/board-games", json={"name": "Leaders and Lore", "gg_id": "2"}).json()
     assert client.get(f"/api/board-games/{exp['game_id']}").json()["kind"] == "expansion"
     # The Gameology type check leaves Good Games' games alone.
-    check = client.post("/api/board-games/check-types").json()
+    client.post("/api/board-games/check-types").json()
     assert client.get("/api/board-games/check-types").json()["total"] == 0
     assert client.post("/api/board-games", json={"name": "X", "gg_id": "99"}).status_code == 404
     assert client.post("/api/board-games", json={"name": "X", "gg_id": "1x"}).status_code == 422

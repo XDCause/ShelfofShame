@@ -1,4 +1,5 @@
 import { GamepadIcon, GridIcon, TrophyIcon } from '../../components/icons.jsx'
+import FindGamePanel from './FindGamePanel.jsx'
 import StatsView from './StatsView.jsx'
 import VideoGamePanel from './VideoGamePanel.jsx'
 import { Dashboard, GamesPage, VideoGamesTiles } from './VideoGamesViews.jsx'
@@ -12,7 +13,7 @@ export default {
   what: 'Steam achievements and 100% runs',
   Icon: GamepadIcon,
   home: { Tiles: VideoGamesTiles },
-  panels: { videogame: VideoGamePanel },
+  panels: { videogame: VideoGamePanel, findgame: FindGamePanel },
   pages: [
     { path: 'dashboard', label: 'Dashboard', Icon: TrophyIcon, render: () => <Dashboard /> },
     { path: 'games', label: 'Games', Icon: GamepadIcon, render: () => <GamesPage /> },

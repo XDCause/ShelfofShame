@@ -321,6 +321,7 @@ function GamesView({ chosen, other, switcher }) {
           </select>
         </label>
         <SyncButton />
+        <button type="button" className="secondary" onClick={() => openPanel('findgame')}>Find a game</button>
         {withSteam && (
           <button type="button" className="secondary" onClick={() => setAdding(adding === 'steam' ? null : 'steam')}>
             {several ? '+ Add a Steam game' : '+ Add a game'}</button>
@@ -341,7 +342,8 @@ function GamesView({ chosen, other, switcher }) {
       {adding === 'steam' && (
         <form className="card add-game" onSubmit={addGame}>
           <p className="small muted">For a game with achievements that isn't in your Steam library list, like a free
-            game (Counter-Strike 2) or one you no longer own. Paste its Steam store link or app id.</p>
+            game (Counter-Strike 2) or one you no longer own. Paste its Steam store link or app id - or
+            {' '}<button type="button" className="plain small inline" onClick={() => { setAdding(null); openPanel('findgame') }}>find it by name</button>.</p>
           <div className="lookup-row">
             <input value={link} onChange={(e) => setLink(e.target.value)} required autoFocus
               placeholder="https://store.steampowered.com/app/730/..." aria-label="Steam store link or app id" />

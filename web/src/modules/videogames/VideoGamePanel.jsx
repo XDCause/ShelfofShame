@@ -233,7 +233,7 @@ function dlcGroups(achievements) {
 }
 
 // onTick (Ubisoft): a tick button on each, to mark it as one you have.
-function AchievementList({ items, onTick }) {
+export function AchievementList({ items, onTick }) {
   return (
     <ul className="list achievements">
       {items.map((a) => {
@@ -266,7 +266,7 @@ function AchievementList({ items, onTick }) {
 // How you compare, as icon tiles: your time, the median and fastest times to 100%, and how many
 // players who started it 100%'d it (SteamHunters); bars to compare the times; Steam's cross-check -
 // its rarest achievement's share of all players, the most that can have 100%'d it.
-function Compared({ game: g }) {
+export function Compared({ game: g, hint = "Median, fastest and 100% rate: SteamHunters' players, refreshed with Sync now." }) {
   const hasCommunity = g.sh_median_minutes || g.perfect_rate != null
   if (!hasCommunity && g.rarest_percent == null) return null
   const tiles = [
@@ -312,7 +312,7 @@ function Compared({ game: g }) {
         <p className="small muted">Steam's cross-check: its rarest achievement is held by {Number(g.rarest_percent)}% of all
           players, so no more than that have 100%'d it.</p>
       )}
-      {hasCommunity && <p className="hint">Median, fastest and 100% rate: SteamHunters' players, refreshed with Sync now.</p>}
+      {hasCommunity && <p className="hint">{hint}</p>}
       {!hasCommunity && g.achievements_done > 0 && <p className="hint">SteamHunters has no numbers for this game (yet).</p>}
     </section>
   )

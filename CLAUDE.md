@@ -1261,6 +1261,17 @@ DBeaver, psql, and the one-off import script.
    Use .	est_all.ps1 in dev after changes; the next promote then only backs up, rebuilds, restarts and pushes (~1 minute).
    The fingerprint leaves out top-level *.md (Get-TreeHash filters `git ls-tree` and hashes the rest), so editing notes after
    testing doesn't force a re-test; any code / script / migration change does. Side by side measured 108-144 s.
+3zzg. **Video games: platform tap = "just this one", Find a game** (2026-10-16). PlatformToggles: with every platform on, a
+   tap keeps only that one; then taps add / remove (one stays on); an "All" button shows when not all are on. Find a game
+   (api/app/vgfind.py, router before videogames): GET /videogames/find?q= (steam.store_search - split out of find_app -
+   type app only, soundtracks / OST / artbooks dropped by NOT_GAMES with \b word edges; `yours` = Steam game or the Epic /
+   Ubisoft game whose Steam version it is), GET /videogames/scout/{app_id} (store_items + schema + global %, SteamHunters
+   game + unobtainable; SteamHunters down -> a note; achievements most-held first, colour icons; ultra_rare <= 5%,
+   rarest_percent, perfect_rate). Both kept an hour in memory, nothing stored. Web FindGamePanel.jsx (panel 'findgame';
+   "Find a game" in the Games toolbar and "find it by name" in + Add a game): search as you type, pick -> picture, counts,
+   the panel's Compared (exported, `hint` prop) and AchievementList (.scout-list un-dims rows); "Open yours" or "I've played
+   it - track it" (= + Add a game by app id). conftest refuses steam.store_search. Tests: 344 API, 64 browser steps
+   (find step is live; skips if Steam can't be reached).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"
