@@ -1,11 +1,43 @@
 {
   "ucp": {
     "version": "2026-08-25",
-    "services": {},
-    "capabilities": {},
+    "services": {
+      "dev.ucp.shopping": [
+        {
+          "version": "2026-08-25",
+          "spec": "https://ucp.dev/2026-08-25/specification/overview/",
+          "transport": "mcp",
+          "schema": "https://ucp.dev/2026-08-25/services/shopping/mcp.openrpc.json"
+        }
+      ]
+    },
+    "capabilities": {
+      "dev.ucp.shopping.catalog.search": [
+        {
+          "version": "2026-08-25",
+          "spec": "https://ucp.dev/2026-08-25/specification/shopping/catalog/",
+          "schema": "https://ucp.dev/2026-08-25/schemas/shopping/catalog_search.json"
+        }
+      ],
+      "dev.ucp.shopping.catalog.lookup": [
+        {
+          "version": "2026-08-25",
+          "spec": "https://ucp.dev/2026-08-25/specification/shopping/catalog/",
+          "schema": "https://ucp.dev/2026-08-25/schemas/shopping/catalog_lookup.json"
+        }
+      ],
+      "dev.shopify.catalog": [
+        {
+          "version": "2026-08-25",
+          "spec": "https://shopify.dev/docs/agents/catalog",
+          "schema": "https://shopify.dev/ucp/schemas/2026-08-25/shopify_catalog.json",
+          "extends": ["dev.ucp.shopping.catalog.search", "dev.ucp.shopping.catalog.lookup"]
+        }
+      ]
+    },
     "payment_handlers": {}
   },
   "name": "Off the Clock",
-  "description": "A personal hobby tracker (one user). Searches and reads public product details of shops that offer the Universal Commerce Protocol, to fill in kits the user owns or wants; it never creates carts or checkouts.",
+  "description": "A personal hobby tracker (one user). Searches and reads public product details of shops that offer the Universal Commerce Protocol, to fill in kits the user owns or wants. Read-only: it never creates carts or checkouts.",
   "contact": "https://github.com/XDCause/ShelfofShame/issues"
 }
