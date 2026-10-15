@@ -3,17 +3,20 @@
 #   .\promote.ps1            # tests + browser walk-through on dev, then update prod
 #   .\promote.ps1 -Quick     # API tests only on dev (skip the ~2 minute browser walk-through)
 #   .\promote.ps1 -Push      # also push main and dev to GitHub afterwards
+#   .\promote.ps1 -Retest    # run the tests even if they already passed on this exact code
 #
 # Run it in the prod folder (C:\Users\xdhar\hobby-inventory). Steps, stopping at the first problem:
 #   1. checks: prod is on main with nothing uncommitted; dev has nothing uncommitted
 #   2. shows the commits that will move (main..dev)
-#   3. runs the API tests (and the browser walk-through) against the DEV copy
+#   3. runs the API tests and the browser walk-through against the DEV copy, side by side - or skips
+#      them if both already passed on exactly the code being promoted (stamps in ..-dev\.tested,
+#      written by run_tests.ps1 / run_e2e.ps1; see scripts\common.ps1)
 #   4. backs up prod
 #   5. fast-forwards main to dev (git merge --ff-only: never a merge commit, never rewrites history)
 #   6. applies new database changes to prod (migrate.ps1)
 #   7. rebuilds and restarts prod, and waits until it's healthy
 # If anything goes wrong after step 4, the end of the output says how to go back.
-param([switch]$Quick, [switch]$Push)
+param([switch]$Quick, [switch]$Push, [switch]$Retest)
 
 . "$PSScriptRoot\scripts\common.ps1"
 Set-Location -Path $Root
@@ -36,14 +39,21 @@ Step "$($commits.Count) change(s) to promote:"
 $commits | ForEach-Object { Write-Host "  $_" }
 $before = git rev-parse --short HEAD
 
-# 3. Tests on dev
-Step 'API tests on the dev copy'
-powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $DevRoot 'run_tests.ps1')
-if ($LASTEXITCODE -ne 0) { Fail 'API tests failed on dev - prod not touched.' }
-if (-not $Quick) {
-    Step 'Browser walk-through on the dev copy'
-    powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $DevRoot 'run_e2e.ps1')
-    if ($LASTEXITCODE -ne 0) { Fail 'Browser walk-through failed on dev - prod not touched.' }
+# 3. Tests on dev - skipped when they already passed on exactly this code (dev is clean, checked above,
+#    so the code on disk is the dev commit's tree)
+$devTree = git -C $DevRoot rev-parse 'dev^{tree}'
+$api = Get-Stamp 'api' $DevRoot
+$e2e = Get-Stamp 'e2e' $DevRoot
+$passed = ($api[0] -eq $devTree) -and ($Quick -or $e2e[0] -eq $devTree)
+if ($passed -and -not $Retest) {
+    $when = if ($Quick) { $api[1] } else { @($api[1], $e2e[1]) | Sort-Object | Select-Object -First 1 }
+    Step "Tests: already passed on exactly this code in dev (since $when) - not run again (-Retest to run them)"
+} else {
+    Step 'Tests on the dev copy (API tests and browser walk-through side by side)'
+    $testArgs = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $DevRoot 'test_all.ps1'))
+    if ($Quick) { $testArgs += '-Quick' }
+    powershell @testArgs
+    if ($LASTEXITCODE -ne 0) { Fail 'Tests failed on dev - prod not touched.' }
 }
 
 # 4. Backup

@@ -28,10 +28,12 @@ function In-Dev([scriptblock]$block) {
 
 function Start-Dev {
     Write-Host 'Building and starting the dev copy...' -ForegroundColor Cyan
+    $code = Get-CodeHash $DevRoot       # the code this build is made from (for run_e2e's "passed" stamp)
     In-Dev { docker compose up -d --build 2>$null | Out-Null }
     if ($LASTEXITCODE -ne 0) { Write-Host 'docker compose up failed (run it in the dev folder to see why).' -ForegroundColor Red; exit 1 }
     Write-Host -NoNewline 'Waiting for it to be healthy'
     if (-not (Wait-Healthy @('hobby-dev-db', 'hobby-dev-api', 'hobby-dev-web'))) { exit 1 }
+    Set-Stamp 'built' $code $DevRoot
 }
 
 function Refresh-Dev {

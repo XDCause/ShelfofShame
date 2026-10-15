@@ -51,3 +51,35 @@ function Wait-Healthy([string[]]$containers, [int]$seconds = 120) {
     }
     return $notReady.Count -eq 0
 }
+
+# --- "Already tested" stamps (promote.ps1 skips tests that passed on exactly this code) ---
+# Get-CodeHash: a fingerprint of the code on disk in a copy (tracked and new files, .gitignore
+# respected) = the git tree hash it would have if committed now. Committing unchanged code gives a
+# commit with that same tree, so a pass recorded before the commit still matches after it.
+function Get-CodeHash([string]$root = $Root) {
+    $index = (git -C $root rev-parse --git-path index)
+    if (-not [IO.Path]::IsPathRooted($index)) { $index = Join-Path $root $index }
+    $tmp = [IO.Path]::GetTempFileName()
+    Copy-Item $index $tmp -Force
+    $env:GIT_INDEX_FILE = $tmp           # a scratch copy of the index: the real one is untouched
+    try {
+        git -C $root add -A 2>$null | Out-Null
+        return (git -C $root write-tree)
+    } finally {
+        Remove-Item Env:GIT_INDEX_FILE
+        Remove-Item $tmp -ErrorAction SilentlyContinue
+    }
+}
+
+# Stamps live in <copy>\.tested (git-ignored): api.txt, e2e.txt (passed), built.txt (what the running
+# containers were built from). Line 1 = the code hash, line 2 = when.
+function Set-Stamp([string]$what, [string]$hash, [string]$root = $Root) {
+    $dir = Join-Path $root '.tested'
+    New-Item -ItemType Directory -Force $dir | Out-Null
+    Set-Content -Path (Join-Path $dir "$what.txt") -Value @($hash, (Get-Date -Format 'yyyy-MM-dd HH:mm')) -Encoding ascii
+}
+function Get-Stamp([string]$what, [string]$root = $Root) {
+    $file = Join-Path (Join-Path $root '.tested') "$what.txt"
+    if (Test-Path $file) { return @(Get-Content $file) }
+    return @($null, $null)
+}

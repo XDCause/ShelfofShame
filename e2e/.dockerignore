@@ -1,0 +1,3 @@
+# The image needs nothing from this folder (walkthrough.py is mounted in when it runs).
+*
+!Dockerfile

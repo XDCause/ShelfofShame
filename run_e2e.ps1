@@ -11,8 +11,13 @@
 
 . "$PSScriptRoot\scripts\common.ps1"
 Set-Location -Path $Root
-$image = 'mcr.microsoft.com/playwright/python:v1.47.0-jammy'
+$image = 'offtheclock-e2e:1.47.0'    # e2e\Dockerfile: Playwright's image with its Python package installed
 $db = $DbContainer
+$code = Get-CodeHash
+$built = (Get-Stamp 'built')[0]
+
+docker build -q -t $image e2e | Out-Null    # cached after the first time: instant
+if ($LASTEXITCODE -ne 0) { Write-Host 'Building the walk-through image failed.' -ForegroundColor Red; exit 1 }
 
 powershell -NoProfile -ExecutionPolicy Bypass -File .\backup.ps1
 if ($LASTEXITCODE -ne 0) { Write-Host 'Backup failed - not running the walk-through.' -ForegroundColor Red; exit 1 }
@@ -24,7 +29,7 @@ Remove-Item e2e\out\*.png -ErrorAction SilentlyContinue
 try {
     docker run --rm --network $Network --ipc=host `
         -v "${PSScriptRoot}\e2e:/e2e" -v "${PSScriptRoot}\e2e\out:/out" $image `
-        sh -c 'pip install -q --disable-pip-version-check playwright==1.47.0 2>/dev/null; python /e2e/walkthrough.py'
+        python /e2e/walkthrough.py
     $result = $LASTEXITCODE
 } finally {
     Write-Host 'Restoring your data...' -ForegroundColor Cyan
@@ -33,5 +38,10 @@ try {
     if ($LASTEXITCODE -eq 0) { Write-Host 'Data restored.' -ForegroundColor Green }
     else { Write-Host "RESTORE FAILED - restore $($restorePoint.Name) by hand (see README)." -ForegroundColor Red }
     docker exec $db rm -f /tmp/restore.dump | Out-Null
+}
+# A pass counts for promote.ps1 only if the running app was built from the code on disk.
+if ($result -eq 0) {
+    if ($built -eq $code) { Set-Stamp 'e2e' $code }
+    else { Write-Host 'Note: the running app was built from older code than is on disk (rebuild with .\dev.ps1), so this pass is not recorded for promote.ps1.' -ForegroundColor Yellow }
 }
 exit $result

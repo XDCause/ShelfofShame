@@ -1244,6 +1244,21 @@ DBeaver, psql, and the one-off import script.
    which; check-types only re-reads Gameology games. Web: ShopFind "Find it at a shop", Good Games pill, complexity in the
    meta, shopRef(r) in api.js, gameMeta "up to N players". Live: "scythe" + Good Games -> Scythe Encounters, Rise of Fenris,
    Scythe & Expeditions Metal Coins. Prod data fix: SUP-0006 renamed "Craft Bond 20g" (was "Craft Bind"). Tests: 343 API.
+3zzg. **Faster promotes** (2026-10-16). Measured: API tests ~46 s (pytest ~35 s + ~10 s running 48 db\init files one psql each),
+   walk-through ~2 min 15 s (+7 s pip install per run), prod rebuild ~30 s (web vite build ~23 s, api ~2 s), push ~5 s - and
+   promote re-ran both suites on code already tested minutes before. Now:
+   - "passed" stamps: scripts\common.ps1 Get-CodeHash = git write-tree of a scratch copy of the index after `git add -A` (the
+     tree the code on disk would commit as; equals dev^{tree} once committed unchanged); Set-Stamp / Get-Stamp in
+     <copy>\.tested\{api,e2e,built}.txt (git-ignored; line 1 hash, line 2 time). run_tests.ps1 stamps api on a full pass (not
+     -k); dev.ps1 Start-Dev stamps built after a healthy build; run_e2e.ps1 stamps e2e only if built == code on disk (else a
+     note: the running app is older than the code). promote.ps1 skips step 3 when dev is clean and api (+ e2e unless -Quick)
+     == dev^{tree}; -Retest forces; otherwise it runs test_all.ps1.
+   - test_all.ps1: run_tests.ps1 and run_e2e.ps1 side by side (Start-Process, logs in .tested\*.log; `$null = $p.Handle` right
+     after starting or PS 5.1's ExitCode reads empty). 144 s for both vs 148 s for the walk-through alone. -Quick = API only.
+   - run_tests.ps1: all db\init files in ONE psql session (\echo "applying <file>" before each names a failure).
+   - run_e2e.ps1: image offtheclock-e2e:1.47.0 from e2e\Dockerfile (Playwright + its pip package, built once, cached;
+     e2e\.dockerignore keeps the context empty).
+   Use .	est_all.ps1 in dev after changes; the next promote then only backs up, rebuilds, restarts and pushes (~1 minute).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"
