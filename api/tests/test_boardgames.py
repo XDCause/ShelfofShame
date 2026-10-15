@@ -153,3 +153,81 @@ def test_filling_in_a_game_you_have(client, shop):
     assert (filled["min_players"], filled["max_players"], filled["play_minutes"]) == (5, 5, 120)     # yours kept
     replaced = client.post(url, json={"shop_handle": CATAN["handle"], "replace": True}).json()
     assert (replaced["name"], replaced["min_players"], replaced["max_players"]) == ("Catan 6th Edition", 3, 4)
+
+
+# What each product is, from the shop's "Board Game BEA" tag; a base game lists its expansions' handles.
+TYPED = {
+    "scythe": {"handle": "scythe", "title": "Scythe", "type": "Board Games", "vendor": "Stonemaier", "price": 11000,
+               "tags": ["Board Game BEA: Base Game", "Expansion: scythe-invaders-from-afar", "BGG Min Players: 1"]},
+    "scythe-invaders-from-afar": {"handle": "scythe-invaders-from-afar", "title": "Scythe Invaders from Afar",
+                                  "type": "Board Games", "vendor": "Stonemaier", "price": 4500,
+                                  "tags": ["Board Game BEA: Expansion"]},
+    "scythe-metal-coins": {"handle": "scythe-metal-coins", "title": "Scythe Metal Coins", "type": "Board Games",
+                           "vendor": "Stonemaier", "price": 3000, "tags": ["Board Game BEA: Board Game Accessorie"]},
+    "flip-7": {"handle": "flip-7", "title": "Flip 7 With a Vengeance", "type": "Board Games", "vendor": "x", "price": 2000,
+               "tags": ["Board Game BEA: Base Game"]},
+}
+
+
+@pytest.fixture
+def typed_shop(monkeypatch):
+    from app import gameology
+
+    def get(path, params=None):
+        handle = path.removeprefix("/products/").removesuffix(".js")
+        return TYPED.get(handle)
+    monkeypatch.setattr(gameology, "_get", get)
+    monkeypatch.setattr(gameology, "photo", lambda facts: (None, None))
+
+
+def test_kinds_from_the_shop_and_base_games(client, typed_shop):
+    from app import gameology
+    assert [gameology.kind_of(p["tags"]) for p in TYPED.values()] == ["game", "expansion", "other", "game"]
+    assert gameology.kind_of(["BGG Category: Expansion for Base-game"]) == "expansion" and gameology.kind_of([]) is None
+    # Added from the shop: the kind comes with it; the expansion finds its base game (the base lists it).
+    scythe = client.post("/api/board-games", json={"name": "Scythe", "shop_handle": "scythe"}).json()
+    afar = client.post("/api/board-games", json={"name": "Invaders from Afar", "shop_handle": "scythe-invaders-from-afar"}).json()
+    assert (scythe["kind"], afar["kind"], afar["base_game_id"], afar["base_name"]) == ("game", "expansion", scythe["game_id"], "Scythe")
+    # Added by name only: guessed from the name when the shop's check runs; the base by the name.
+    coins = client.post("/api/board-games", json={"name": "Scythe Metal Coins"}).json()
+    assert coins["kind"] == "game"
+    client.patch(f"/api/board-games/{coins['game_id']}", json={"bgg_url": None})
+    from app.db import db
+    with db() as conn:
+        conn.execute("UPDATE board_games SET shop_handle = 'scythe-metal-coins' WHERE game_id = %s", (coins["game_id"],))
+    assert client.post("/api/board-games/check-types").status_code == 202        # background: done when it answers
+    check = client.get("/api/board-games/check-types").json()
+    assert (check["done"], check["total"], check["changed"], check["error"]) == (3, 3, 1, None)
+    coins = client.get(f"/api/board-games/{coins['game_id']}").json()
+    assert (coins["kind"], coins["base_name"]) == ("other", "Scythe")
+    assert client.get(f"/api/board-games/{scythe['game_id']}").json()["add_ons"] == 2
+
+
+def test_choosing_a_kind_and_base_by_hand(client):
+    base = add_game(client, name="Catan")
+    ext = add_game(client, name="Seafarers")
+    r = client.patch(f"/api/board-games/{ext['game_id']}", json={"kind": "expansion", "base_game_id": base["game_id"]}).json()
+    assert (r["kind"], r["base_name"]) == ("expansion", "Catan")
+    assert client.patch(f"/api/board-games/{ext['game_id']}", json={"base_game_id": ext["game_id"]}).status_code == 422
+    assert client.patch(f"/api/board-games/{base['game_id']}", json={"kind": "other", "base_game_id": ext["game_id"]}).status_code == 422
+    assert client.patch(f"/api/board-games/{ext['game_id']}", json={"kind": "game"}).json()["base_game_id"] is None
+    assert client.patch(f"/api/board-games/{ext['game_id']}", json={"kind": "board"}).status_code == 422
+    assert client.patch(f"/api/board-games/{ext['game_id']}", json={"kind": None}).status_code == 422
+
+
+def test_to_sell_is_still_yours(client):
+    game = add_game(client, name="Old Favourite")
+    r = client.patch(f"/api/board-games/{game['game_id']}", json={"status": "To sell"}).json()
+    assert r["status"] == "To sell"
+    s = client.get("/api/board-games/summary").json()
+    assert (s["owned"], s["to_sell"]) == (1, 1)                                # still counts as owned until it's Gone
+    assert "To sell" in client.get("/api/lookups").json()["game_statuses"]
+    assert client.patch(f"/api/board-games/{game['game_id']}", json={"status": "Sold"}).status_code == 422
+
+
+def test_a_base_game_turned_expansion_lets_go(client):
+    base = add_game(client, name="Base")
+    ext = add_game(client, name="Ext")
+    client.patch(f"/api/board-games/{ext['game_id']}", json={"kind": "expansion", "base_game_id": base["game_id"]})
+    client.patch(f"/api/board-games/{base['game_id']}", json={"kind": "expansion"})
+    assert client.get(f"/api/board-games/{ext['game_id']}").json()["base_game_id"] is None

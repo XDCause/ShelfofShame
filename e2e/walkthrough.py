@@ -1334,9 +1334,10 @@ def reading(page):
 @step("Warhammer: an army's range from Good Games (live), + Wanted adds the Combat Patrol to your kits")
 def warhammer_range(page):
     go(page, "Models")
+    # Open straight on the army (one range from the shop, not the remembered one and then this one).
+    page.evaluate("localStorage.setItem('offtheclock.warhammerArmy', 'Adeptus Mechanicus')")
     page.locator(".section-tabs").get_by_role("link", name="Warhammer").click()
-    page.get_by_role("group", name="Army").get_by_role("button", name="Adeptus Mechanicus", exact=True).click()
-    expect(page.locator(".wh-title, .wh-range .alert").first).to_be_visible(timeout=60000)
+    expect(page.locator(".wh-title, .wh-range .alert").first).to_be_visible(timeout=120000)
     if page.locator(".wh-range .alert").count():                 # the shop couldn't be reached: nothing more to check
         return
     expect(page.locator(".wh-title")).to_have_text("Adeptus Mechanicus")
@@ -1345,11 +1346,53 @@ def warhammer_range(page):
     shot(page, "d54_warhammer_range", full=False)
     if card.get_by_role("button", name="+ Wanted").count():
         card.get_by_role("button", name="+ Wanted").click()
-        expect(card.get_by_role("button", name="Yours · Wanted")).to_be_visible(timeout=60000)
+        expect(card.get_by_role("button", name="Yours · Wanted").or_(page.locator(".toast", has_text="Good Games"))
+               ).to_be_visible(timeout=120000)
+        if not card.get_by_role("button", name="Yours · Wanted").count():   # the shop said "slow down": stop here
+            return
     card.get_by_role("button", name=re.compile("^Yours")).click()
     d = drawer(page)
     expect(d.locator(".item-name")).to_have_text("Combat Patrol: Adeptus Mechanicus")
     expect(d.locator(".item-sub").first).to_contain_text("Adeptus Mechanicus")
+    page.keyboard.press("Escape")
+
+
+@step("Gundam: in stock now at Good Games (live), a search, grade chips")
+def gundam_range(page):
+    go(page, "Models")
+    page.locator(".section-tabs").get_by_role("link", name="Gundam").click()
+    expect(page.locator(".wh-title, .wh-range .alert").first).to_be_visible(timeout=120000)
+    if page.locator(".wh-range .alert").count():                 # the shop couldn't be reached
+        return
+    expect(page.locator(".wh-title")).to_have_text("In stock now")
+    page.get_by_label("Search Gunpla").fill("rx-78-2")
+    page.get_by_role("button", name="Search", exact=True).click()
+    expect(page.locator(".wh-title", has_text="rx-78-2").or_(page.locator(".wh-range .alert")).first).to_be_visible(timeout=120000)
+    if page.locator(".wh-range .alert").count():                 # the shop said "slow down": stop here
+        return
+    expect(page.locator(".wh-card").first).to_be_visible()
+    page.get_by_role("group", name="Grade").get_by_role("button", name=re.compile("^HG")).click()
+    expect(page.locator(".wh-card .wh-code").first).to_contain_text("HG")
+    shot(page, "d55_gundam_range", full=False)
+
+
+@step("Board games: game / expansion / other groups and filter; To sell")
+def board_game_kinds(page):
+    base = page.request.post(f"{BASE}/api/board-games", data={"name": f"Base-{MARK}"}).json()
+    page.request.post(f"{BASE}/api/board-games", data={"name": f"Base-{MARK} Big Expansion", "kind": "expansion",
+                                                        "base_game_id": base["game_id"]})
+    go(page, "Board games")
+    groups = page.locator(".game-group summary .fold-title")
+    expect(groups.first).to_have_text("Base games")
+    expect(page.locator(".model-card", has_text=f"Base-{MARK} Big Expansion")).to_contain_text(f"Expansion for Base-{MARK}")
+    page.get_by_role("group", name="Type").get_by_role("button", name=re.compile("^Base games")).click()
+    expect(groups).to_have_count(1)
+    expect(page.locator(".model-card", has_text=f"Base-{MARK} Big Expansion")).to_have_count(0)
+    page.get_by_role("group", name="Type").get_by_role("button", name=re.compile("^All types")).click()
+    page.locator(".model-card", has_text=f"Base-{MARK}").first.click()
+    d = drawer(page)
+    d.get_by_role("group", name="Status").get_by_role("button", name="To sell").click()
+    expect(d.get_by_role("group", name="Status").get_by_role("button", name="To sell")).to_have_attribute("aria-pressed", "true")
     page.keyboard.press("Escape")
 
 
@@ -1447,7 +1490,7 @@ with sync_playwright() as p:
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
                matches, used_on, gundam, bandai_lookup, warhammer, journal_write, journal_links, journal_from_model,
                journal_suggestion, journal_todo, global_search, journal_wishlist, appearance,
-               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, settings_more, no_panel):
+               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, gundam_range, board_game_kinds, settings_more, no_panel):
         fn(desk)
     ctx = browser.new_context(**p.devices["iPhone 13"], timezone_id=zone)
     mob = ctx.new_page()

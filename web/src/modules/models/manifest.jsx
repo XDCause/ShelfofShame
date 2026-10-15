@@ -1,7 +1,8 @@
 import ColoursView from '../../components/ColoursView.jsx'
-import { DropsIcon, PlaneIcon, ShieldIcon } from '../../components/icons.jsx'
+import { DropsIcon, PlaneIcon, RobotIcon, ShieldIcon } from '../../components/icons.jsx'
 import ModelsView from '../../components/ModelsView.jsx'
 import { ModelsCards, ModelsTiles } from './ModelsHome.jsx'
+import GundamRange from './GundamRange.jsx'
 import WarhammerRange from './WarhammerRange.jsx'
 
 // Models: scale models, Gundam and Warhammer kits - the shelf of shame - and paint colours.
@@ -21,6 +22,10 @@ export default {
     {
       path: 'warhammer', label: 'Warhammer', Icon: ShieldIcon,
       render: (app) => <WarhammerRange onOpenModel={app.openModel} />,
+    },
+    {
+      path: 'gundam', label: 'Gundam', Icon: RobotIcon,
+      render: (app) => <GundamRange onOpenModel={app.openModel} />,
     },
     {
       path: 'colours', label: 'Colours', Icon: DropsIcon,

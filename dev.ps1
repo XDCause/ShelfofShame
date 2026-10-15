@@ -42,8 +42,12 @@ function Refresh-Dev {
         Sort-Object Name -Descending | Select-Object -First 1
     Write-Host "Loading $($dump.Name) into the dev database..." -ForegroundColor Cyan
     docker cp $dump.FullName 'hobby-dev-db:/tmp/prod.dump' | Out-Null
+    # Start from an empty schema rather than pg_restore --clean: dev can be ahead of prod (e.g. a new
+    # foreign key prod doesn't have), and --clean then can't drop the tables in a working order.
     docker exec -e 'PGOPTIONS=-c client_min_messages=warning' hobby-dev-db `
-        pg_restore -U $DbUser -d $DbName --clean --if-exists --no-owner /tmp/prod.dump
+        psql -U $DbUser -d $DbName -q -v ON_ERROR_STOP=1 -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;' | Out-Null
+    docker exec -e 'PGOPTIONS=-c client_min_messages=warning' hobby-dev-db `
+        pg_restore -U $DbUser -d $DbName --no-owner /tmp/prod.dump
     $ok = $LASTEXITCODE -eq 0
     docker exec hobby-dev-db rm -f /tmp/prod.dump | Out-Null
     if (-not $ok) { Write-Host 'Restore into dev failed.' -ForegroundColor Red; exit 1 }

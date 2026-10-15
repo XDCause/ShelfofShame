@@ -22,6 +22,7 @@ SITE = "https://www.gameology.com.au"
 HEADERS = {"User-Agent": "OffTheClock/1.0 (personal hobby tracker; https://github.com/XDCause/ShelfofShame)",
            "Accept": "application/json"}
 TIMEOUT = 20
+PAUSE = 1.0          # between products when several are checked in a row
 GAME_TYPES = ("board game", "card game", "dice game", "party game", "puzzle", "family game", "war game")
 
 
@@ -94,12 +95,27 @@ def facts(p: dict) -> dict:
         "mechanisms": sorted(set(_tag(tags, "Mechanism"))),
         "types": sorted({t.replace(" Games", "") for t in _tag(tags, "Type")}),
         "expansion": "Expansion for Base-game" in _tag(tags, "Category"),
+        "kind": kind_of(tags),
+        "expansion_handles": [t.split(":", 1)[1].strip() for t in tags if t.lower().startswith("expansion:")],
         "price": float(price) if price not in (None, "") else None,
         "available": p.get("available"),
         "shop_url": f"{SITE}/products/{p['handle']}",
         "image": _image(picture, 600),
         "image_url": _image(picture, 200),
     }
+
+
+def kind_of(tags: list[str]) -> str | None:
+    """The shop's "Board Game BEA" tag: Base Game -> game, Expansion -> expansion, Board Game
+    Accessorie(s) -> other; else BGG's "Expansion for Base-game" category; else not known."""
+    bea = " ".join(t.split(":", 1)[1] for t in tags if t.lower().startswith("board game bea:")).lower()
+    if "accessor" in bea:
+        return "other"
+    if "expansion" in bea or "Expansion for Base-game" in _tag(tags, "Category"):
+        return "expansion"
+    if "base game" in bea:
+        return "game"
+    return None
 
 
 def tidy_title(title: str) -> str:

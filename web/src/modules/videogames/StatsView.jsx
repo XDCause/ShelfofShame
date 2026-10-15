@@ -118,6 +118,21 @@ function Recap({ counting }) {
   )
 }
 
+// 53 weeks of days up to today, Monday first: [[{iso, n, first}]] (first = the first Monday of a month).
+function calendarWeeks(today, counts) {
+  const end = new Date(`${today}T12:00:00`)
+  const d = new Date(end)
+  d.setDate(d.getDate() - 52 * 7 - ((end.getDay() + 6) % 7))           // the Monday 52 weeks back
+  const weeks = []
+  while (d <= end) {
+    if ((d.getDay() + 6) % 7 === 0) weeks.push([])
+    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    weeks[weeks.length - 1].push({ iso, n: counts.get(iso) ?? 0, first: d.getDate() <= 7 && (d.getDay() + 6) % 7 === 0 })
+    d.setDate(d.getDate() + 1)
+  }
+  return weeks
+}
+
 // A year of unlock days, a square a day (weeks across, Monday at the top), darker = more unlocked
 // that day, with your current and longest streaks. Levels are your own quartiles, so one huge day
 // doesn't wash the rest out. Hover a day for its count; the table lists every day with an unlock.
@@ -130,15 +145,7 @@ export function UnlockCalendar({ days, today, streak, title = 'Unlock calendar',
   const cuts = [q(0.25), q(0.5), q(0.75)]
   const level = (n) => (!n ? 0 : n <= cuts[0] ? 1 : n <= cuts[1] ? 2 : n <= cuts[2] ? 3 : 4)
 
-  const end = new Date(`${today}T12:00:00`)
-  const start = new Date(end)
-  start.setDate(start.getDate() - 52 * 7 - ((end.getDay() + 6) % 7))   // the Monday 52 weeks back
-  const weeks = []
-  for (const d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-    if ((d.getDay() + 6) % 7 === 0) weeks.push([])
-    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-    weeks[weeks.length - 1].push({ iso, n: counts.get(iso) ?? 0, first: d.getDate() <= 7 && (d.getDay() + 6) % 7 === 0 })
-  }
+  const weeks = calendarWeeks(today, counts)
   const inYear = days.filter((d) => d.day >= weeks[0][0].iso)
   const total = inYear.reduce((s, d) => s + d.count, 0)
   return (

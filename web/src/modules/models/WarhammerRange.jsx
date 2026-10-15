@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { api, money, timeAgo } from '../../api.js'
 import { useApp } from '../../core/app-context.js'
 
@@ -22,6 +22,7 @@ export default function WarhammerRange({ onOpenModel }) {
   const [error, setError] = useState('')
   const [show, setShow] = useState('all')
   const [busy, setBusy] = useState(null)
+  const latest = useRef(null)          // the army last asked for: an older, slower answer is ignored
 
   useEffect(() => {
     api.warhammerArmies().then((a) => {
@@ -31,9 +32,12 @@ export default function WarhammerRange({ onOpenModel }) {
   }, [])
 
   const load = (name, refresh = false) => {
+    latest.current = name
     setError('')
     setData((d) => (d?.army === name ? { ...d, refreshing: true } : null))
-    api.warhammerArmy(name, refresh).then(setData).catch((e) => { setError(e.message); setData(null) })
+    api.warhammerArmy(name, refresh)
+      .then((r) => { if (latest.current === name) setData(r) })
+      .catch((e) => { if (latest.current === name) { setError(e.message); setData(null) } })
   }
   useEffect(() => {
     if (!army) return
@@ -105,7 +109,10 @@ export default function WarhammerRange({ onOpenModel }) {
             <p className="empty card">Good Games has no kits for “{data.army}”. Check the army's name (e.g. “T'au Empire”, “Orks”).</p>
           ) : kits.length === 0 ? <p className="empty card">Nothing here with that filter.</p> : (
             <ul className="model-grid wh-grid">
-              {kits.map((k) => <KitCard key={k.id} kit={k} busy={busy === k.id} onWant={() => want(k)} onOpenModel={onOpenModel} />)}
+              {kits.map((k) => (
+                <KitCard key={k.id} kit={k} badge={k.code} busy={busy === k.id} onWant={() => want(k)} onOpenModel={onOpenModel}
+                  meta={[k.figures && `${k.figures} mini${k.figures === 1 ? '' : 's'}`, k.price != null && money(k.price)]} />
+              ))}
             </ul>
           )}
         </>
@@ -114,18 +121,20 @@ export default function WarhammerRange({ onOpenModel }) {
   )
 }
 
-function KitCard({ kit: k, busy, onWant, onOpenModel }) {
+// A kit from the shop: box photo with its badge (GW code, or grade + scale) and stock, name, details,
+// "+ Wanted" (or "Yours · <status>", which opens it) and a link to buy it. Also used by the Gundam tab.
+export function KitCard({ kit: k, badge, meta, busy, onWant, onOpenModel }) {
   const picture = k.image && `${k.image}${k.image.includes('?') ? '&' : '?'}width=400`
   return (
     <li className={`model-card wh-card${k.my_model ? ' mine' : ''}`}>
       <span className="model-photo">
         {picture ? <img src={picture} alt="" loading="lazy" referrerPolicy="no-referrer" /> : <span className="photo-missing">No photo</span>}
-        {k.code && <span className="wh-code">{k.code}</span>}
+        {badge && <span className="wh-code">{badge}</span>}
         <span className={`wh-stock ${k.available ? 'in' : 'out'}`}>{k.available ? 'In stock' : 'Sold out'}</span>
       </span>
       <span className="model-body">
         <span className="model-name">{k.name}</span>
-        <span className="model-meta">{[k.figures && `${k.figures} mini${k.figures === 1 ? '' : 's'}`, k.price != null && money(k.price)].filter(Boolean).join(' · ')}</span>
+        <span className="model-meta">{meta.filter(Boolean).join(' · ')}</span>
         <span className="wh-actions">
           {k.my_model ? (
             <button type="button" className="secondary small" onClick={() => onOpenModel(k.my_model.model_id)}>Yours · {k.my_model.status}</button>

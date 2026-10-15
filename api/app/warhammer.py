@@ -76,6 +76,8 @@ async def army(name: str = Query(min_length=2, max_length=60), refresh: bool = F
     else:
         kits = await run_in_threadpool(_shop, goodgames.army_range, name)
         fetched = time.time()
+        for old in [k for k, (t, _) in _ranges.items() if fetched - t >= RANGE_FOR]:
+            del _ranges[old]                      # (kept small: only ranges still fresh)
         _ranges[key] = (fetched, kits)
     kits = _with_mine([dict(k) for k in kits])
     return {"army": name.strip(), "kits": kits, "total": len(kits), "in_stock": sum(k["available"] for k in kits),
@@ -90,18 +92,16 @@ def armies():
     return {"yours": yours, "others": [a for a in ARMIES if a.lower() not in {y.lower() for y in yours}]}
 
 
-def _store(k: dict) -> tuple[int, str]:
-    """Keep the kit in product_info (and its box photo, and its barcode if no other product has it)."""
+def store(brand: str, code: str, k: dict, series: str | None, description: str) -> int:
+    """Keep a Good Games product in product_info under your brand + code: its title, the shop's page,
+    the box photo (600 px, Shopify's CDN only) and its barcode (if no other product has it, so
+    scanning the box finds it). Shared with the Gundam tab (gundam.py)."""
     image, image_type = (None, None)
     if k["image"]:
         image, image_type = gameology.photo({"image": k["image"] + ("&" if "?" in k["image"] else "?") + "width=600"})
-    code = product_code_for(k)
-    description = " · ".join(filter(None, [
-        k["code"] and f"GW {k['code']}", k["army"], k["figures"] and f"{k['figures']} minis",
-        k["price"] is not None and f"Good Games ${k['price']:.2f}{'' if k['available'] else ' (sold out)'}"]))
     with db() as conn:
-        brand_id = ensure_brand(conn, BRAND)
-        conn.execute(UPSERT_INFO, {"brand_id": brand_id, "code": code, "title": k["title"], "series": k["army"],
+        brand_id = ensure_brand(conn, brand)
+        conn.execute(UPSERT_INFO, {"brand_id": brand_id, "code": code, "title": k["title"], "series": series,
                                    "description": description, "source_url": k["url"], "image": image,
                                    "image_type": image_type, "kit_paints": None})
         if k["barcode"]:
@@ -109,7 +109,18 @@ def _store(k: dict) -> tuple[int, str]:
                 UPDATE product_info SET barcode = %(b)s WHERE brand_id = %(id)s AND product_code = %(c)s
                 AND NOT EXISTS (SELECT 1 FROM product_info WHERE barcode = %(b)s)""",
                          {"b": k["barcode"], "id": brand_id, "c": code})
-    return brand_id, code
+    return brand_id
+
+
+def shop_price(k: dict) -> str | None:
+    return k["price"] is not None and f"Good Games ${k['price']:.2f}{'' if k['available'] else ' (sold out)'}" or None
+
+
+def _store(k: dict) -> tuple[int, str]:
+    code = product_code_for(k)
+    description = " · ".join(filter(None, [k["code"] and f"GW {k['code']}", k["army"],
+                                           k["figures"] and f"{k['figures']} minis", shop_price(k)]))
+    return store(BRAND, code, k, k["army"], description), code
 
 
 def _found(brand_id: int, code: str, k: dict | None, cached: bool) -> dict:

@@ -1206,6 +1206,32 @@ DBeaver, psql, and the one-off import script.
    name, Army, Minis, code), ModelPanel SOURCES 'Games Workshop'. ShieldIcon. Live: AdMech 28 kits, 10 in stock.
    Tests: 332 API (test_warhammer.py fakes _call; conftest refuses goodgames._call), 62 browser steps (warhammer_range,
    live; skips if the shop can't be reached).
+3zze. **Gundam tab, board game types, To sell** (2026-10-16).
+   - Models tab "Gundam" (GundamRange.jsx; KitCard shared with WarhammerRange, takes badge + meta): Good Games via the same
+     UCP client. goodgames.base() (shared fields) / kit() (Warhammer) / gunpla(): grade (hlj.grade_of), scale (Scale_ tag, else
+     "1/144" or "1-144" in the title), code = hlj.product_code_for(barcode) -> G50xxxxx (so the user's HLJ-looked-up kits match
+     "Yours"), is_kit (NOT_GUNPLA: card game, decks, Gundam Universe / Robot Spirits figures, markers, tools...; Bandai barcode
+     prefixes 4573102 / 4549660 / 4543112 or tag Model). gunpla_name tidies the shop's titles ("Gundam HG MSN-06S SINANJU
+     Mobile Suit" -> "MSN-06S Sinanju"). gunpla_search: no words = "gundam" in stock only (4 pages); words = both. gundam.py:
+     GET /gundam/kits?q= (kept an hour), POST /gundam/want {id} (Wanted Gundam model, grade, scale, photo). Live: 160 in stock.
+     warhammer.store() / shop_price() shared. NOT_KITS also drops Citadel paints / sprays / primers / brushes.
+   - Good Games rate-limits bursts (429 seen after a day of testing, gone a minute later, no Retry-After): PAUSE 1 s, one
+     retry after Retry-After (<= 30 s) or RETRY_WAIT 3 s, then the friendly message. Web: an older answer is ignored when a
+     newer army / search was asked (`latest` ref) - the e2e caught Ultramarines overwriting Adeptus Mechanicus.
+   - Board games: 46_board_game_kind.sql kind game | expansion | other, base_game_id (self FK, SET NULL, not itself),
+     shop_expansions TEXT[]; backfill guesses from names. Gameology tag "Board Game BEA: Base Game | Expansion | Board Game
+     Accessorie" -> gameology.kind_of(); a base product lists "Expansion: <handle>" -> link_add_ons() (else name prefix).
+     Kind set on add from the shop (or replace / set_kind); POST /board-games/check-types (background, 1 s apart, KINDS_CHECK)
+     re-reads every shop game - placed BEFORE /board-games/{game_id} (else "check-types" is parsed as an int -> 422).
+     Rows: kind, base_game_id, base_name, add_ons. Web: GamesView type chips + status chips, <details> groups Base games /
+     Expansions / Other, "Expansion for Scythe" / "+ 4 expansions / extras"; GameForm Type + "Expansion for" select; panel line
+     links to the base. Live on prod's data: 3 Scythe expansions + Metal Coins (other) under Scythe, 14 base games.
+   - 47_board_game_to_sell.sql: status "To sell" (still counts as owned; summary.to_sell; tone low).
+   - dev.ps1 -Refresh now empties dev's public schema and restores without --clean (a dev-only FK made --clean fail).
+   - User asked about board games from Good Games instead of Gameology: its tags lack min players, play time, numeric weight
+     and the BEA type tag (only max players, age, Complexity_ word, Mechanic_ / Theme_) - suggested keeping Gameology, maybe
+     adding Good Games price / stock. Awaiting the user's answer.
+   - Tests: 339 API, 64 browser steps (gundam_range live, board_game_kinds).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

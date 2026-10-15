@@ -19,25 +19,37 @@ import html
 import json
 import os
 import re
+import threading
 import time
 
 import httpx
 
+from .hlj import grade_of, product_code_for
+
 MCP = "https://www.goodgames.com.au/api/ucp/mcp"
+SHOP_PAGES = "https://www.goodgames.com.au/"
 # A fixed version (git tag) of ucp-agent.json: jsDelivr serves a tag as JSON straight away and for good
 # (a branch address is cached for hours after a change). A new version of the file = a new tag here.
 PROFILE = "https://cdn.jsdelivr.net/gh/XDCause/ShelfofShame@ucp-agent-1/ucp-agent.json"
 HEADERS = {"User-Agent": "OffTheClock/1.0 (personal hobby tracker; https://github.com/XDCause/ShelfofShame)",
            "Content-Type": "application/json", "Accept": "application/json"}
 TIMEOUT = 30
-PAUSE = 0.5            # between the pages of one search
+PAUSE = 1.0            # between the requests of one search (the shop rate-limits quick bursts)
+RETRY_WAIT = 3         # seconds to wait after a 429 without Retry-After, before the one retry
 PAGE = 50
 GW_CODE = re.compile(r"\(\s*(\d{2,3}-\d{1,3})\s*\)")
 # Things the shop sells for an army that aren't kits to build.
 NOT_KITS = re.compile(
     r"(?i)\bcodex\b|data ?cards?|datasheet|\bindex\b|\bdice\b|collectibles|\bnovel\b|black library|\(BL\d+\)|"
     r"\bjumper\b|\bjacket\b|baubles|paint set|\bbook\b|battletome|army list|\brpg\b|munchkin|\bannual\b|"
-    r"\bcomm:|\btokens?\b|transfer sheet|\bt-?shirt\b|\bmug\b|art of")
+    r"\bcomm:|\btokens?\b|transfer sheet|\bt-?shirt\b|\bmug\b|art of|\bcitadel\b|\bpaints?\b|\bspray\b|"
+    r"\bprimer\b|brush")
+
+
+# Requests take turns across the whole app (two pages loading at once would otherwise burst):
+# one at a time, PAUSE after the previous one.
+_turn = threading.Lock()
+_last = [0.0]
 
 
 class ShopError(Exception):
@@ -52,12 +64,22 @@ def profile() -> str:
 def _call(tool: str, catalog: dict) -> dict:
     body = {"jsonrpc": "2.0", "id": 1, "method": "tools/call",
             "params": {"name": tool, "arguments": {"meta": {"ucp-agent": {"profile": profile()}}, "catalog": catalog}}}
-    try:
-        r = httpx.post(MCP, json=body, headers=HEADERS, timeout=TIMEOUT)
-    except httpx.HTTPError as e:
-        raise ShopError(f"Couldn't reach Good Games ({e.__class__.__name__}).") from None
-    if r.status_code == 429:
-        raise ShopError("Good Games asked us to slow down - try again in a minute.")
+    for attempt in (1, 2):
+        try:
+            with _turn:
+                time.sleep(max(0.0, _last[0] + PAUSE - time.monotonic()))
+                try:
+                    r = httpx.post(MCP, json=body, headers=HEADERS, timeout=TIMEOUT)
+                finally:
+                    _last[0] = time.monotonic()
+        except httpx.HTTPError as e:
+            raise ShopError(f"Couldn't reach Good Games ({e.__class__.__name__}).") from None
+        if r.status_code != 429:
+            break
+        if attempt == 2:
+            raise ShopError("Good Games asked us to slow down - try again in a minute.")
+        wait = r.headers.get("Retry-After", "")              # "slow down": wait as asked (at most 30 s), once
+        time.sleep(min(int(wait), 30) if wait.isdigit() else RETRY_WAIT)
     try:
         reply = r.json()
     except ValueError:
@@ -75,8 +97,6 @@ def _call(tool: str, catalog: dict) -> dict:
 def _search(query: str, available: bool, pages: int) -> list[dict]:
     out, cursor = [], None
     for page in range(pages):
-        if page:
-            time.sleep(PAUSE)
         r = _call("search_catalog", {"query": query, "filters": {"available": available},
                                      "pagination": {"limit": PAGE, **({"cursor": cursor} if cursor else {})}})
         out += r.get("products") or []
@@ -93,14 +113,16 @@ def search(query: str, pages: int = 1) -> list[dict]:
     for available in (True, False):
         for p in _search(query, available, pages):
             seen.setdefault(p["id"], p)
-        time.sleep(PAUSE)
     return list(seen.values())
 
 
 def get(product_id: str) -> dict | None:
     """One product by its number (or full Shopify id). get_product leaves out the tags (the army is
     one), so the same product is then found by its barcode / SKU in a search, which has them."""
-    gid = product_id if product_id.startswith("gid://") else f"gid://shopify/Product/{int(product_id)}"
+    number = product_id.rsplit("/", 1)[-1]
+    if not re.fullmatch(r"\d{1,20}", number):
+        return None
+    gid = f"gid://shopify/Product/{number}"
     try:
         p = _call("get_product", {"id": gid}).get("product")
     except ShopError as e:
@@ -111,7 +133,6 @@ def get(product_id: str) -> dict | None:
         v = (p.get("variants") or [{}])[0]
         sku = str(v.get("sku") or "")
         if sku:
-            time.sleep(PAUSE)
             available = str((v.get("availability") or {}).get("available")).lower() == "true"
             same = next((x for x in _search(sku, available, 1) if x["id"] == p["id"]), None)
             if same:
@@ -147,31 +168,33 @@ def name_of(title: str, army: str | None) -> str:
     return re.sub(r"\s+[-–]\s+", ": ", name, count=1)
 
 
-def kit(p: dict) -> dict:
-    """A product as the app uses it."""
+def base(p: dict) -> dict:
+    """What every product has: id, title, barcode, price, stock, link, picture, tags, description."""
     v = (p.get("variants") or [{}])[0]
-    title = (p.get("title") or "").replace("�", "–").strip()       # the shop has some mis-encoded dashes
-    code = GW_CODE.search(title)
-    army = next((t.split("_", 1)[1].strip() for t in p.get("tags") or [] if t.startswith("Faction_")), None)
     sku = str(v.get("sku") or "")
     media = (v.get("media") or p.get("media") or [{}])[0].get("url")
     price = (v.get("price") or {}).get("amount")
-    text = _text((p.get("description") or {}).get("html"))
     return {
         "id": p["id"].rsplit("/", 1)[-1],
-        "title": title,
-        "name": name_of(title, army),
-        "code": code.group(1) if code else None,
-        "army": army,
-        "figures": _figures(text),
-        "contents": text[:600] or None,
+        "title": (p.get("title") or "").replace("\ufffd", "–").strip(),     # the shop has some mis-encoded dashes
         "barcode": sku if re.fullmatch(r"\d{13}", sku) else None,
         "price": int(price) / 100 if price not in (None, "") else None,
         "available": str((v.get("availability") or {}).get("available")).lower() == "true",
-        "url": p.get("url"),
+        "url": p["url"] if str(p.get("url") or "").startswith(SHOP_PAGES) else None,       # the shop's own pages only
         "image": media if media and media.startswith("https://cdn.shopify.com/") else None,
-        "is_kit": not NOT_KITS.search(title),
+        "tags": p.get("tags") or [],
+        "text": _text((p.get("description") or {}).get("html")),
     }
+
+
+def kit(p: dict) -> dict:
+    """A product as a Warhammer kit: GW code, army, minis."""
+    k = base(p)
+    tags, text = k.pop("tags"), k.pop("text")
+    code = GW_CODE.search(k["title"])
+    army = next((t.split("_", 1)[1].strip() for t in tags if t.startswith("Faction_")), None)
+    return {**k, "name": name_of(k["title"], army), "code": code.group(1) if code else None, "army": army,
+            "figures": _figures(text), "contents": text[:600] or None, "is_kit": not NOT_KITS.search(k["title"])}
 
 
 def _code_order(k: dict):
@@ -183,7 +206,7 @@ def army_range(army: str) -> list[dict]:
     """Every kit the shop lists for an army (in stock and sold out), by Games Workshop code: products
     tagged with the army, plus kits with the army in their title and a GW code (some aren't tagged)."""
     want = army.strip().lower()
-    kits = [kit(p) for p in search(army, pages=4)]
+    kits = [kit(p) for p in search(army, pages=3)]        # 150 results each for in stock / sold out
     mine = [k for k in kits if k["is_kit"] and ((k["army"] or "").lower() == want
                                                 or (k["code"] and want in k["title"].lower()))]
     return sorted(mine, key=_code_order)
@@ -201,3 +224,62 @@ def find(query: str) -> list[dict]:
         exact = q in (k["code"], k["barcode"])
         return (not exact, not k["is_kit"], not all(w in title for w in words), not k["available"], _code_order(k))
     return sorted(kits, key=rank)
+
+
+# ---- Gunpla (Bandai's Gundam kits) --------------------------------------------------------------
+
+# Gundam things the shop sells that aren't kits to build: the card game, ready-made figures, markers, tools.
+NOT_GUNPLA = re.compile(
+    r"(?i)card game|\bdeck\b|booster|\btcg\b|sleeves?|playmat|assemble|gundam universe|robot spirits|ensemble|"
+    r"figuarts|metal build|chogokin|\bmarkers?\b|action base|nippers?|\btool|\bdecals?\b|\bpaint\b|\bbook\b|t-?shirt")
+BANDAI_BARCODES = ("4573102", "4549660", "4543112")       # Bandai Spirits, and the older Bandai prefixes
+
+
+def gunpla_name(title: str) -> str:
+    """"Hg 1-144 Gundam Aerial Rebuild" -> "Gundam Aerial Rebuild"; "G5063530 1/100 Mg Mbf-02Vv Gundam Astray
+    Turn Red" -> "MBF-02VV Gundam Astray Turn Red"; "Gundam HG MSN-06S SINANJU Mobile Suit" -> "MSN-06S
+    Sinanju" (the grade and scale have their own fields)."""
+    name = re.sub(r"(?i)\b(bandai|g50\d{5}|1\s*[/-]\s*\d{2,3}(\s*scale(\s*kit)?)?|mobile suit)\b", " ", title)
+    name = re.sub(r"(?i)^\s*(?:\S+\s+)?\b(HG\w*|RG|MG\w*|PG\w*|EG|SD\w*|RE/100|FM|ENTRY GRADE|MASTER GRADE|"
+                  r"REAL GRADE|HIGH GRADE|PERFECT GRADE)\b",
+                  lambda m: re.sub(r"(?i)^\s*gundam\s*$", "", m.group(0)[:m.start(1) - m.start(0)]), name, count=1)
+    words = []
+    for w in name.split():
+        if re.fullmatch(r"[A-Za-z]+\d[\w-]*|[A-Za-z]+-[\w-]*\d[\w-]*", w):
+            words.append(w.upper())                   # model numbers: Mbf-02Vv -> MBF-02VV
+        elif w.isupper() and len(w) > 3 and w.isalpha():
+            words.append(w.capitalize())              # SINANJU -> Sinanju
+        else:
+            words.append(w)
+    return re.sub(r"\s+", " ", " ".join(words)).strip(" -–:")
+
+
+def gunpla(p: dict) -> dict:
+    """A product as a Gunpla kit: grade, scale, your box code (G5057403 from the barcode)."""
+    k = base(p)
+    tags = k.pop("tags")
+    k.pop("text")
+    scale = next((t.split("_", 1)[1] for t in tags if t.startswith("Scale_")), None)
+    if not scale:
+        m = re.search(r"\b1\s*[/-]\s*(\d{2,3})\b", k["title"])
+        scale = f"1/{m.group(1)}" if m else None
+    code = product_code_for(k["barcode"], "") if k["barcode"] else ""
+    is_bandai = bool(k["barcode"] and k["barcode"].startswith(BANDAI_BARCODES)) or "Bandai" in tags
+    return {**k, "name": gunpla_name(k["title"]), "grade": grade_of(k["title"]), "scale": scale,
+            "code": code or None,
+            "is_kit": not NOT_GUNPLA.search(k["title"]) and (is_bandai or "Model" in tags or "Model-DIY-Kit" in tags)}
+
+
+def gunpla_search(query: str | None) -> list[dict]:
+    """Gunpla for some words (in stock and sold out), or - no words - every Gundam kit in stock now.
+    In stock first, then by grade and name."""
+    if query and query.strip():
+        products = search(query.strip(), pages=2)
+    else:
+        products = _search("gundam", True, 4)
+    kits = [k for k in (gunpla(p) for p in products) if k["is_kit"]]
+    if query and re.fullmatch(r"\d{13}|G?50\d{5}", query.strip(), re.I):          # a barcode / box code: that kit only
+        q = query.strip().upper()
+        exact = [k for k in kits if q in (k["barcode"], (k["code"] or "").upper(), "G" + q)]
+        kits = exact or kits
+    return sorted(kits, key=lambda k: (not k["available"], k["grade"] or "~", k["name"]))

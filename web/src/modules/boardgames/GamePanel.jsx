@@ -29,6 +29,9 @@ const PLAY_FIELDS = [
   { name: 'notes', label: 'Notes', type: 'textarea' },
 ]
 
+// What a game is: a game, an expansion for one, or something else (metal coins, sleeves...).
+export const KINDS = [['game', 'Game'], ['expansion', 'Expansion'], ['other', 'Other']]
+
 // "3-4 players · 75 min · 10+ · Klaus Teuber · Kosmos · 1995"
 export const gameMeta = (g) => [
   g.min_players && (g.max_players && g.max_players !== g.min_players
@@ -156,6 +159,11 @@ export default function GamePanel({ id, onClose }) {
           onChanged={(msg) => run(() => reload(msg))} />
         <div>
           <h3 className="item-name">{game.name}</h3>
+          <p className="item-sub">
+            {game.kind === 'game' ? (game.add_ons > 0 ? `Game · ${game.add_ons} expansion${game.add_ons === 1 ? '' : 's'} / extra${game.add_ons === 1 ? '' : 's'}` : 'Game')
+              : <>{game.kind === 'expansion' ? 'Expansion' : 'Extra'}{game.base_game_id && <> for <button type="button" className="link-title inline"
+                  onClick={() => openPanel('boardgame', { id: game.base_game_id })}>{game.base_name}</button></>}</>}
+          </p>
           <p className="item-sub">{gameMeta(game)}</p>
           <div className="chips">
             {game.rating && <span className="pill low">★ {game.rating}/10</span>}
@@ -231,10 +239,17 @@ export default function GamePanel({ id, onClose }) {
 function GameForm({ game, onClose, onCancel, onSaved }) {
   const { form, set, setForm, payload } = useRecordForm(GAME_FIELDS, game)
   const [status, setStatus] = useState(game?.status ?? 'Owned')
+  const [kind, setKind] = useState(game?.kind ?? 'game')
+  const [baseId, setBaseId] = useState(game?.base_game_id ? String(game.base_game_id) : '')
+  const [bases, setBases] = useState([])       // your games that are games (an expansion's base)
+  useEffect(() => {
+    api.listBoardGames().then((all) => setBases(all.filter((g) => g.kind === 'game' && g.game_id !== game?.game_id))).catch(() => {})
+  }, [game?.game_id])
   const [picked, setPicked] = useState(null)   // the Gameology product the form was filled from
   // Fill the form from a Gameology product (your typing after this still wins when you save).
   const pick = (r) => {
     setPicked(r)
+    if (r.kind) setKind(r.kind)
     setForm((f) => ({ ...f, ...Object.fromEntries(['name', 'publisher', 'min_players', 'max_players', 'play_minutes', 'min_age']
       .filter((k) => r[k] != null).map((k) => [k, String(r[k])])) }))
   }
@@ -247,7 +262,8 @@ function GameForm({ game, onClose, onCancel, onSaved }) {
     setBusy(true)
     setError('')
     try {
-      const body = { ...payload(), status, ...(!game && picked && { shop_handle: picked.handle }) }
+      const body = { ...payload(), status, kind, base_game_id: kind !== 'game' && baseId ? Number(baseId) : null,
+        ...(!game && picked && { shop_handle: picked.handle }) }
       onSaved(game ? await api.updateBoardGame(game.game_id, body) : await api.addBoardGame(body))
     } catch (err) {
       setError(err.message)
@@ -273,6 +289,20 @@ function GameForm({ game, onClose, onCancel, onSaved }) {
           {lookups.game_statuses.map((s) => (
             <button key={s} type="button" aria-pressed={status === s} onClick={() => setStatus(s)}>{s}</button>
           ))}
+        </div>
+        <div className="game-kind">
+          <div className="segmented form-segmented" role="group" aria-label="Type">
+            {KINDS.map(([k, label]) => <button key={k} type="button" aria-pressed={kind === k} onClick={() => setKind(k)}>{label}</button>)}
+          </div>
+          {kind !== 'game' && (
+            <label className="field">
+              <span className="field-label">{kind === 'expansion' ? 'Expansion for' : 'Goes with'}</span>
+              <select value={baseId} onChange={(e) => setBaseId(e.target.value)}>
+                <option value="">{picked ? 'Found from the shop when you save' : '—'}</option>
+                {bases.map((g) => <option key={g.game_id} value={g.game_id}>{g.name}</option>)}
+              </select>
+            </label>
+          )}
         </div>
         <RecordFields fields={GAME_FIELDS} form={form} set={set} />
       </form>

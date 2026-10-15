@@ -96,6 +96,9 @@ export const api = {
   warhammerArmy: (name, refresh = false) => request(`/warhammer/army?name=${enc(name)}${refresh ? '&refresh=true' : ''}`),
   warhammerArmies: () => request('/warhammer/armies'),
   wantWarhammer: (id) => request('/warhammer/want', send('POST', { id })),
+  // Gundam kits from Good Games: words, box code or barcode; none = everything in stock now
+  gundamKits: (q = '', refresh = false) => request(`/gundam/kits?${new URLSearchParams({ ...(q ? { q } : {}), ...(refresh ? { refresh: 'true' } : {}) })}`),
+  wantGundam: (id) => request('/gundam/want', send('POST', { id })),
   uploadPhoto: (brandId, productCode, blob) =>
     request(`/product-photo?brand_id=${brandId}&product_code=${enc(productCode)}`, image('PUT', blob)),
   deletePhoto: (brandId, productCode) =>

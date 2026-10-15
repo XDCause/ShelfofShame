@@ -1847,3 +1847,22 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
   .wh-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .wh-card .model-body { padding: 10px; }
 }
+
+/* ---------- Models: Gundam (Good Games) ---------- */
+.gundam-search { margin-bottom: 14px; }
+.gundam-search .search { flex: 1 1 280px; }
+.wh-grades { margin: -2px 0 12px; }
+@media (max-width: 700px) {
+  .gundam-search .search { flex-basis: 100%; }
+  .wh-grades { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+}
+
+/* ---------- Board games: types (game / expansion / other) in drop-down groups ---------- */
+.game-group { margin-bottom: 14px; }
+.game-group > .fold-body { padding-top: 4px; }
+.game-group .model-grid { margin: 0; }
+.game-for { color: var(--purple); font-weight: 600; }
+.game-kind { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 16px; margin: 12px 0 4px; }
+.game-kind .field { flex: 1 1 220px; margin: 0; }
+.link-title.inline { display: inline; padding: 0; font: inherit; color: var(--tint); }
+.game-toolbar { justify-content: flex-end; }

@@ -3,6 +3,8 @@ import pytest
 
 from app import gameology, goodgames, warhammer
 
+REAL_CALL = goodgames._call          # kept when this file loads, before the tests' guard replaces it
+
 PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 64
 
 
@@ -26,6 +28,7 @@ SHOP = [
     product(5, "Adeptus Mechanicus: Thulia Ghuld (59-33)", "5011921250000", 6000, text="1 plastic miniature"),  # not tagged
     product(6, "Horus Heresy - Mechanicum Battle Group (31-87)", "5011921000000", 30000, tags=("Faction_Mechanicum",)),
     product(7, "Warhammer Collectibles: 1/18 Scale Adeptus Mechanicus Skitarii Marshal", "JT7752", 14500, tags=(ADMECH,)),
+    product(8, "Citadel Contrast Paint: Mechanicus Standard Grey (29-18)", "5011921000001", 1139, tags=(ADMECH,)),   # a paint
 ]
 
 
@@ -59,7 +62,7 @@ def test_a_product_becomes_a_kit():
     assert old["title"] == "Combat Patrol – Adeptus Mechanicus (59-25)" and not old["available"]
     assert old["figures"] == 12                         # "3 Kataphron Servitors" has no "x", so it isn't counted
     assert goodgames.kit(SHOP[2])["name"] == "Onager Dunecrawler"
-    assert not goodgames.kit(SHOP[3])["is_kit"] and not goodgames.kit(SHOP[6])["is_kit"]
+    assert not goodgames.kit(SHOP[3])["is_kit"] and not goodgames.kit(SHOP[6])["is_kit"] and not goodgames.kit(SHOP[7])["is_kit"]
     assert goodgames.kit(SHOP[4])["figures"] == 1 and goodgames.kit(SHOP[6])["barcode"] is None
 
 
@@ -112,3 +115,23 @@ def test_codes_that_dont_exist_and_shop_errors(client, shop, monkeypatch):
     monkeypatch.setattr(goodgames, "_call", busy)
     r = client.get("/api/warhammer/search?q=onager")
     assert r.status_code == 502 and "slow down" in r.json()["detail"]
+
+
+def test_slow_down_is_waited_out_once(monkeypatch):
+    """A 429 is retried once (after Retry-After); a second one becomes the friendly message."""
+    import httpx
+    ok = httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"content": [{"type": "text", "text": '{"products": []}'}]}})
+    busy = httpx.Response(429, headers={"Retry-After": "0"})
+    answers = [busy, ok]
+    monkeypatch.setattr(goodgames.httpx, "post", lambda *a, **k: answers.pop(0))
+    assert REAL_CALL("search_catalog", {"query": "x"}) == {"products": []} and answers == []
+    answers[:] = [busy, busy]
+    with pytest.raises(goodgames.ShopError, match="slow down"):
+        REAL_CALL("search_catalog", {"query": "x"})
+
+
+def test_odd_ids_and_foreign_links(client, shop):
+    assert client.get("/api/lookup/warhammer/id:abc").status_code == 404           # not a number: not a crash
+    assert goodgames.get("12abc") is None
+    p = {**SHOP[2], "url": "javascript:alert(1)"}
+    assert goodgames.kit(p)["url"] is None and goodgames.kit(SHOP[2])["url"].startswith("https://www.goodgames.com.au/")

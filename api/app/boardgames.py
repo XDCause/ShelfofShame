@@ -1,6 +1,6 @@
 """Board games (a hobby module): your collection and every time you played.
 
-    games   board_games: Owned / Wanted / Borrowed / Gone, players, play time, price, rating, photo
+    games   board_games: Owned / To sell / Wanted / Borrowed / Gone, players, play time, price, rating, photo
     lookup  find a game at Gameology (gameology.py: a shop whose products carry BGG's facts) and
             fill in players, time, age, weight, categories, mechanisms, its photo and price
     plays   board_game_plays: the day, who played, who won, how long, notes
@@ -8,6 +8,7 @@
 Plays show on the calendar and in Recent activity (activity.py). Writing "played @Catan" in the
 journal offers to log a play (journal_actions.py).
 """
+import time
 from datetime import date
 from decimal import Decimal
 from typing import Literal
@@ -22,6 +23,7 @@ from .images import add_photo_routes
 router = APIRouter(prefix="/api", tags=["board games"])
 
 Status = Literal[tuple(GAME_STATUSES)]
+Kind = Literal["game", "expansion", "other"]     # a game, an expansion for one, or something else (coins, sleeves...)
 # A BoardGameGeek link is shown as a link, so only web addresses (no "javascript:...").
 WEB_LINK = r"^https?://\S+$"
 
@@ -41,6 +43,8 @@ class GameIn(BaseModel):
     bgg_url: str | None = Field(None, pattern=WEB_LINK)
     designer: str | None = None
     min_age: int | None = Field(None, ge=1, le=99)
+    kind: Kind = "game"
+    base_game_id: int | None = None             # an expansion's base game
     shop_handle: str | None = Field(None, pattern=r"^[a-z0-9][a-z0-9-]{0,200}$")   # found at Gameology: its facts and
                                                                 # photo are read from there (not taken from the browser)
 
@@ -60,6 +64,8 @@ class GamePatch(BaseModel):
     bgg_url: str | None = Field(None, pattern=WEB_LINK)
     designer: str | None = None
     min_age: int | None = Field(None, ge=1, le=99)
+    kind: Kind | None = None
+    base_game_id: int | None = None
 
 
 class ShopIn(BaseModel):
@@ -87,13 +93,14 @@ GAME_SELECT = """
 SELECT g.game_id, g.name, g.publisher, g.year, g.min_players, g.max_players, g.play_minutes, g.status,
        g.purchase_date, g.price_paid, g.rating, g.notes, g.bgg_url, g.created_at, g.updated_at,
        g.designer, g.min_age, g.bgg_id, g.weight, g.categories, g.mechanisms, g.shop_handle, g.shop_url,
-       g.shop_price,
+       g.shop_price, g.kind, g.base_game_id, base.name AS base_name,
+       (SELECT count(*) FROM board_games x WHERE x.base_game_id = g.game_id)::int AS add_ons,
        g.photo IS NOT NULL AS has_photo,
        CASE WHEN g.photo IS NOT NULL THEN '/api/board-games/' || g.game_id || '/photo?v='
             || (extract(epoch FROM g.photo_updated) * 1000)::bigint END AS photo_url,
        (SELECT count(*) FROM board_game_plays p WHERE p.game_id = g.game_id)::int AS plays,
        (SELECT max(played_on) FROM board_game_plays p WHERE p.game_id = g.game_id) AS last_played
-FROM board_games g"""
+FROM board_games g LEFT JOIN board_games base ON base.game_id = g.base_game_id"""
 
 PLAY_SELECT = """
 SELECT p.*, g.name AS game_name FROM board_game_plays p JOIN board_games g USING (game_id)"""
@@ -120,7 +127,7 @@ def add_play(conn, game_id: int, body: PlayIn) -> dict:
 def list_games():
     """Every game: owned first, then by name."""
     with db() as conn:
-        return conn.execute(GAME_SELECT + " ORDER BY g.status = 'Gone', g.status <> 'Owned', lower(g.name)").fetchall()
+        return conn.execute(GAME_SELECT + " ORDER BY g.status = 'Gone', g.status NOT IN ('Owned', 'To sell'), lower(g.name)").fetchall()
 
 
 @router.get("/board-games/summary")
@@ -128,7 +135,8 @@ def summary():
     """For Home and the Games page: games owned, plays this month and year, the most played."""
     with db() as conn:
         row = conn.execute("""
-            SELECT (SELECT count(*) FROM board_games WHERE status = 'Owned')::int AS owned,
+            SELECT (SELECT count(*) FROM board_games WHERE status IN ('Owned', 'To sell'))::int AS owned,     -- still yours
+                   (SELECT count(*) FROM board_games WHERE status = 'To sell')::int AS to_sell,
                    (SELECT count(*) FROM board_games WHERE status = 'Wanted')::int AS wanted,
                    count(*) FILTER (WHERE played_on >= date_trunc('month', current_date))::int AS plays_this_month,
                    count(*) FILTER (WHERE played_on >= date_trunc('year', current_date))::int AS plays_this_year,
@@ -154,9 +162,10 @@ def shop_game(handle: str) -> dict:
     return found_
 
 
-def fill_in(conn, game_id: int, facts: dict, replace: bool = False):
+def fill_in(conn, game_id: int, facts: dict, replace: bool = False, set_kind: bool = False):
     """The shop's facts onto a game: blanks only (or everything with replace); its categories and
-    mechanisms, its page, price and handle always (they're the shop's, not yours)."""
+    mechanisms, its page, price and handle always (they're the shop's, not yours). Its kind (game /
+    expansion / other) when it's new, or with replace / set_kind."""
     game = fetch_game(conn, game_id)
     data = {k: facts[k] for k in FACTS if facts.get(k) is not None and (replace or game.get(k) in (None, ""))}
     low, high = data.get("min_players", game["min_players"]), data.get("max_players", game["max_players"])
@@ -164,8 +173,27 @@ def fill_in(conn, game_id: int, facts: dict, replace: bool = False):
         data.pop("min_players", None)
         data.pop("max_players", None)
     data.update(categories=sorted(set(facts["categories"]) | set(facts["types"])), mechanisms=facts["mechanisms"],
-                shop_handle=facts["handle"], shop_url=facts["shop_url"], shop_price=facts["price"])
+                shop_handle=facts["handle"], shop_url=facts["shop_url"], shop_price=facts["price"],
+                shop_expansions=facts.get("expansion_handles") or [])
+    if facts.get("kind") and (replace or set_kind):
+        data["kind"] = facts["kind"]
     update_row(conn, "board_games", "game_id", game_id, data)
+    link_add_ons(conn)
+
+
+def link_add_ons(conn):
+    """Expansions / extras without a base game get one: the game whose shop product lists them as
+    its expansion, else the game whose name starts theirs ("Scythe the Wind Gambit" -> Scythe)."""
+    conn.execute("""
+        UPDATE board_games e SET base_game_id = b.game_id FROM board_games b
+        WHERE e.kind <> 'game' AND e.base_game_id IS NULL AND e.shop_handle IS NOT NULL
+          AND b.game_id <> e.game_id AND e.shop_handle = ANY(b.shop_expansions)""")
+    conn.execute("""
+        UPDATE board_games e SET base_game_id = (
+            SELECT b.game_id FROM board_games b
+            WHERE b.kind = 'game' AND b.game_id <> e.game_id AND lower(e.name) LIKE lower(b.name) || ' %%'
+            ORDER BY length(b.name) DESC LIMIT 1)
+        WHERE e.kind <> 'game' AND e.base_game_id IS NULL""")
 
 
 def fetch_photo(game_id: int, facts: dict):
@@ -200,9 +228,10 @@ def add_game(body: GameIn, background: BackgroundTasks):
     handle = data.pop("shop_handle")
     facts = shop_game(handle) if handle else None
     with db() as conn:
+        _check_base(conn, None, data)
         game_id = insert_row(conn, "board_games", data, "game_id")
         if facts:
-            fill_in(conn, game_id, facts)
+            fill_in(conn, game_id, facts, set_kind=True)
         game = fetch_game(conn, game_id)
     if facts and facts["image"]:
         background.add_task(fetch_photo, game_id, facts)
@@ -229,6 +258,55 @@ def list_plays(limit: int = Query(100, ge=1, le=1000)):
         return conn.execute(PLAY_SELECT + " ORDER BY p.played_on DESC, p.play_id DESC LIMIT %s", (limit,)).fetchall()
 
 
+# ---------------------------------------------------------------------------
+# Types from the shop: every game you found at Gameology, checked again (one at a time, a second
+# apart, in the background) for what the shop says it is and which expansions a base game has.
+# ---------------------------------------------------------------------------
+KINDS_CHECK = {"running": False, "done": 0, "total": 0, "changed": 0, "error": None}
+
+
+def check_kinds():
+    if KINDS_CHECK["running"]:
+        return
+    with db() as conn:
+        games = conn.execute("SELECT game_id, kind, shop_handle FROM board_games WHERE shop_handle IS NOT NULL "
+                             "ORDER BY game_id").fetchall()
+    KINDS_CHECK.update(running=True, done=0, total=len(games), changed=0, error=None)
+    try:
+        for i, g in enumerate(games):
+            if i:
+                time.sleep(gameology.PAUSE)
+            facts = gameology.product(g["shop_handle"])
+            if facts:
+                with db() as conn:
+                    conn.execute("UPDATE board_games SET kind = COALESCE(%s, kind), shop_expansions = %s WHERE game_id = %s",
+                                 (facts["kind"], facts["expansion_handles"], g["game_id"]))
+                    if facts["kind"] and facts["kind"] != g["kind"]:
+                        KINDS_CHECK["changed"] += 1
+                        if facts["kind"] == "game":
+                            conn.execute("UPDATE board_games SET base_game_id = NULL WHERE game_id = %s", (g["game_id"],))
+            KINDS_CHECK["done"] = i + 1
+        with db() as conn:
+            link_add_ons(conn)
+    except gameology.ShopError as e:
+        KINDS_CHECK["error"] = str(e)
+    finally:
+        KINDS_CHECK["running"] = False
+
+
+@router.post("/board-games/check-types", status_code=202)
+def start_check_kinds(background: BackgroundTasks):
+    """Ask Gameology again what each of your games is (game / expansion / other) and link expansions
+    to their base games. Runs in the background; GET shows how far it got."""
+    background.add_task(check_kinds)
+    return KINDS_CHECK
+
+
+@router.get("/board-games/check-types")
+def check_kinds_status():
+    return KINDS_CHECK
+
+
 @router.get("/board-games/{game_id}")
 def get_game(game_id: int):
     with db() as conn:
@@ -240,12 +318,36 @@ def update_game(game_id: int, body: GamePatch):
     data = tidy_text(body.model_dump(exclude_unset=True))
     if "name" in data and not data["name"]:
         raise HTTPException(422, "A game needs a name.")
-    if data.get("status", "x") is None:
-        raise HTTPException(422, "Status can't be empty.")
+    if data.get("status", "x") is None or data.get("kind", "x") is None:
+        raise HTTPException(422, "Status and type can't be empty.")
     with db() as conn:
-        fetch_game(conn, game_id)
+        current = fetch_game(conn, game_id)
+        _check_base(conn, current, data)
         update_row(conn, "board_games", "game_id", game_id, data)
+        if data.get("kind", "game") != "game":   # no longer a base game: its add-ons lose their base
+            conn.execute("UPDATE board_games SET base_game_id = NULL WHERE base_game_id = %s", (game_id,))
         return fetch_game(conn, game_id)
+
+
+def _check_base(conn, current: dict | None, data: dict):
+    """An expansion / extra can name its base game (another game, which is a game itself); a game
+    that is one has no base."""
+    kind = data.get("kind", current["kind"] if current else "game")
+    if kind == "game":
+        data["base_game_id"] = None
+        return
+    base_id = data.get("base_game_id")
+    if base_id is None:
+        return
+    if current and base_id == current["game_id"]:
+        raise HTTPException(422, "A game can't be its own base game.")
+    base = conn.execute("SELECT kind FROM board_games WHERE game_id = %s", (base_id,)).fetchone()
+    if not base:
+        raise HTTPException(422, "That base game isn't in your games.")
+    if base["kind"] != "game":
+        raise HTTPException(422, "The base game has to be a game, not an expansion or extra.")
+
+
 
 
 @router.delete("/board-games/{game_id}", status_code=204)
