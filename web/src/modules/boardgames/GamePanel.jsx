@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { api, money, shortDate, today } from '../../api.js'
+import { api, money, shopRef, shortDate, today } from '../../api.js'
 import Drawer from '../../components/Drawer.jsx'
 import RecordFields, { RowPhoto, useRecordForm } from '../../components/RecordFields.jsx'
 import { useApp } from '../../core/app-context.js'
@@ -34,8 +34,9 @@ export const KINDS = [['game', 'Game'], ['expansion', 'Expansion'], ['other', 'O
 
 // "3-4 players · 75 min · 10+ · Klaus Teuber · Kosmos · 1995"
 export const gameMeta = (g) => [
-  g.min_players && (g.max_players && g.max_players !== g.min_players
-    ? `${g.min_players}-${g.max_players} players` : `${g.min_players}+ players`),
+  g.min_players ? (g.max_players && g.max_players !== g.min_players
+    ? `${g.min_players}-${g.max_players} players` : `${g.min_players}+ players`)
+    : g.max_players && `up to ${g.max_players} players`,                // Good Games only knows the most
   g.play_minutes && `${g.play_minutes} min`, g.min_age && `${g.min_age}+`, g.designer, g.publisher, g.year,
 ].filter(Boolean).join(' · ')
 
@@ -43,51 +44,57 @@ export const gameMeta = (g) => [
 const weightName = (w) => (w == null ? null : w < 1.8 ? 'Light' : w < 2.6 ? 'Medium-light' : w < 3.4 ? 'Medium'
   : w < 4.2 ? 'Medium-heavy' : 'Heavy')
 
-// Find a game at Gameology (an Australian board game shop whose products carry BoardGameGeek's
-// facts): type a name, pick the right one. onPick(result) gets its facts; the API reads the product
+// Find a game: Gameology first (an Australian board game shop whose products carry BoardGameGeek's
+// facts), Good Games for what Gameology doesn't have (fewer facts: most players, age, themes,
+// mechanics) - asked by the API when Gameology has no match, or with "Search Good Games too".
+// Type a name, pick the right one. onPick(result) gets its facts; the API reads the product
 // again itself when saving (and fetches its photo).
 function ShopFind({ start = '', onPick, pickLabel = 'Use' }) {
   const [q, setQ] = useState(start)
-  const [results, setResults] = useState(null)
+  const [found, setFound] = useState(null)      // {results, asked_good_games, notes}
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const asked = useRef(0)
+  const look = async (more = false) => {
+    const n = ++asked.current
+    setBusy(true)
+    setError('')
+    try {
+      const r = await api.boardGameLookup(q.trim(), more)
+      if (n === asked.current) setFound(r)
+    } catch (err) {
+      if (n === asked.current) setError(err.message)
+    } finally {
+      if (n === asked.current) setBusy(false)
+    }
+  }
   useEffect(() => {
-    if (q.trim().length < 2) { setResults(null); return undefined }
-    const t = setTimeout(async () => {
-      const n = ++asked.current
-      setBusy(true)
-      setError('')
-      try {
-        const r = await api.boardGameLookup(q.trim())
-        if (n === asked.current) setResults(r)
-      } catch (err) {
-        if (n === asked.current) setError(err.message)
-      } finally {
-        if (n === asked.current) setBusy(false)
-      }
-    }, 450)
+    if (q.trim().length < 2) { setFound(null); return undefined }
+    const t = setTimeout(() => look(), 450)
     return () => clearTimeout(t)
-  }, [q])
+  }, [q])                                          // eslint-disable-line react-hooks/exhaustive-deps
+  const results = found?.results
   return (
     <section className="panel-section shop-find">
-      <label className="field">Find it at Gameology
+      <label className="field">Find it at a shop
         <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Game name, e.g. Ticket to Ride"
-          aria-label="Find a board game at Gameology" autoFocus={!start} /></label>
-      {busy && <p className="muted small">Looking at Gameology...</p>}
+          aria-label="Find a board game" autoFocus={!start} /></label>
+      {busy && <p className="muted small">Looking...</p>}
+      {found?.notes?.length > 0 && !busy && <p className="muted small">{found.notes.join(' ')}</p>}
       {error && <p className="alert error small">{error}</p>}
       {results && !busy && results.length === 0 && <p className="muted small">Nothing found. Try another name, or fill it in below.</p>}
       {results?.length > 0 && (
         <ul className="list plain-list shop-results">
           {results.map((r) => (
-            <li key={r.handle}>
+            <li key={`${r.source}-${r.handle}`}>
               <div className="row-button static">
                 {r.image_url ? <img className="thumb" src={r.image_url} alt="" loading="lazy" referrerPolicy="no-referrer" />
                   : <span className="thumb thumb-empty" />}
                 <span className="grow">
                   <span className="item-title">{r.title}{r.expansion && <span className="pill">Expansion</span>}
+                    {r.source === 'goodgames' && <span className="pill teal">Good Games</span>}
                     {r.available === false && <span className="pill out">Sold out</span>}</span>
-                  <span className="item-meta">{[gameMeta(r), r.weight && `weight ${r.weight}`, r.price != null && money(r.price)]
+                  <span className="item-meta">{[gameMeta(r), r.weight && `weight ${r.weight}`, r.complexity, r.price != null && money(r.price)]
                     .filter(Boolean).join(' · ')}</span>
                 </span>
                 {r.game_id ? <span className="pill">In your games</span>
@@ -97,8 +104,12 @@ function ShopFind({ start = '', onPick, pickLabel = 'Use' }) {
           ))}
         </ul>
       )}
-      <p className="muted small">From Gameology's shop: BoardGameGeek's players, time, age, weight, categories and mechanisms,
-        plus the box photo and price. BGG's rating and rank aren't included.</p>
+      {found && !busy && !found.asked_good_games && (
+        <button type="button" className="plain small" onClick={() => look(true)}>Not here? Search Good Games too</button>
+      )}
+      <p className="muted small">Gameology first: BoardGameGeek's players, time, age, weight, categories and mechanisms, plus the
+        box photo and price. Good Games fills the gaps with what it has (most players, age, themes, mechanics, price, photo).
+        BGG's rating and rank aren't included.</p>
     </section>
   )
 }
@@ -172,8 +183,8 @@ export default function GamePanel({ id, onClose }) {
             {game.weight && <span className="pill purple" title="BoardGameGeek's weight: how complex it is, 1 to 5">
               {weightName(Number(game.weight))} · {Number(game.weight)}/5</span>}
             {game.shop_url && <a className="small" href={game.shop_url} target="_blank" rel="noreferrer">
-              Gameology{game.shop_price != null && ` ${money(game.shop_price)}`} ↗</a>}
-            {!game.shop_handle && !finding && <button type="button" className="plain small" onClick={() => setFinding(true)}>Fill in from Gameology</button>}
+              {game.shop_name ?? 'Gameology'}{game.shop_price != null && ` ${money(game.shop_price)}`} ↗</a>}
+            {!game.shop_handle && !finding && <button type="button" className="plain small" onClick={() => setFinding(true)}>Fill in from a shop</button>}
           </div>
         </div>
       </div>
@@ -185,7 +196,7 @@ export default function GamePanel({ id, onClose }) {
       )}
       {finding && (
         <ShopFind start={game.name} pickLabel="Fill in" onPick={(r) => run(async () => {
-          show(await api.boardGameFromShop(game.game_id, r.handle), 'Filled in from Gameology ✓')
+          show(await api.boardGameFromShop(game.game_id, r), `Filled in from ${r.shop_name} ✓`)
           setFinding(false)
           changed()
           if (r.image_url && !game.has_photo) setTimeout(() => reload().catch(() => {}), 4000)   // the photo comes a moment later
@@ -245,7 +256,7 @@ function GameForm({ game, onClose, onCancel, onSaved }) {
   useEffect(() => {
     api.listBoardGames().then((all) => setBases(all.filter((g) => g.kind === 'game' && g.game_id !== game?.game_id))).catch(() => {})
   }, [game?.game_id])
-  const [picked, setPicked] = useState(null)   // the Gameology product the form was filled from
+  const [picked, setPicked] = useState(null)   // the shop product the form was filled from
   // Fill the form from a Gameology product (your typing after this still wins when you save).
   const pick = (r) => {
     setPicked(r)
@@ -263,7 +274,7 @@ function GameForm({ game, onClose, onCancel, onSaved }) {
     setError('')
     try {
       const body = { ...payload(), status, kind, base_game_id: kind !== 'game' && baseId ? Number(baseId) : null,
-        ...(!game && picked && { shop_handle: picked.handle }) }
+        ...(!game && picked && shopRef(picked)) }
       onSaved(game ? await api.updateBoardGame(game.game_id, body) : await api.addBoardGame(body))
     } catch (err) {
       setError(err.message)
@@ -280,7 +291,7 @@ function GameForm({ game, onClose, onCancel, onSaved }) {
     <Drawer title={game ? `Edit ${game.name}` : 'Add a board game'} onClose={onClose} footer={footer}>
       {error && <p className="alert error" role="alert">{error}</p>}
       {!game && (picked ? (
-        <p className="alert ok small">Filled in from Gameology: {picked.title}{picked.weight && ` · weight ${picked.weight}`}
+        <p className="alert ok small">Filled in from {picked.shop_name}: {picked.title}{picked.weight && ` · weight ${picked.weight}`}
           {picked.image_url && ' (its photo, categories and price are added once you save)'}.{' '}
           <button type="button" className="plain small" onClick={() => setPicked(null)}>Pick another</button></p>
       ) : <ShopFind onPick={pick} />)}

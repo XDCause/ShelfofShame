@@ -8,6 +8,7 @@
 Plays show on the calendar and in Recent activity (activity.py). Writing "played @Catan" in the
 journal offers to log a play (journal_actions.py).
 """
+import re
 import time
 from datetime import date
 from decimal import Decimal
@@ -16,7 +17,7 @@ from typing import Literal
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 
-from . import gameology
+from . import gameology, goodgames
 from .db import GAME_STATUSES, db, found, insert_row, tidy_text, update_row
 from .images import add_photo_routes
 
@@ -45,6 +46,7 @@ class GameIn(BaseModel):
     min_age: int | None = Field(None, ge=1, le=99)
     kind: Kind = "game"
     base_game_id: int | None = None             # an expansion's base game
+    gg_id: str | None = Field(None, pattern=r"^\d{1,20}$")                       # or found at Good Games (its product number)
     shop_handle: str | None = Field(None, pattern=r"^[a-z0-9][a-z0-9-]{0,200}$")   # found at Gameology: its facts and
                                                                 # photo are read from there (not taken from the browser)
 
@@ -69,7 +71,8 @@ class GamePatch(BaseModel):
 
 
 class ShopIn(BaseModel):
-    shop_handle: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{0,200}$")
+    shop_handle: str | None = Field(None, pattern=r"^[a-z0-9][a-z0-9-]{0,200}$")   # a Gameology product
+    gg_id: str | None = Field(None, pattern=r"^\d{1,20}$")                          # or a Good Games one
     replace: bool = False          # true: the shop's facts replace yours; false: only fill in blanks
 
 
@@ -93,7 +96,7 @@ GAME_SELECT = """
 SELECT g.game_id, g.name, g.publisher, g.year, g.min_players, g.max_players, g.play_minutes, g.status,
        g.purchase_date, g.price_paid, g.rating, g.notes, g.bgg_url, g.created_at, g.updated_at,
        g.designer, g.min_age, g.bgg_id, g.weight, g.categories, g.mechanisms, g.shop_handle, g.shop_url,
-       g.shop_price, g.kind, g.base_game_id, base.name AS base_name,
+       g.shop_price, g.shop_name, g.kind, g.base_game_id, base.name AS base_name,
        (SELECT count(*) FROM board_games x WHERE x.base_game_id = g.game_id)::int AS add_ons,
        g.photo IS NOT NULL AS has_photo,
        CASE WHEN g.photo IS NOT NULL THEN '/api/board-games/' || g.game_id || '/photo?v='
@@ -152,14 +155,23 @@ def summary():
 FACTS = ("name", "publisher", "min_players", "max_players", "play_minutes", "min_age", "weight")
 
 
-def shop_game(handle: str) -> dict:
+def shop_game(handle: str | None = None, gg_id: str | None = None) -> dict:
+    """The shop's facts for a product: Gameology's by handle, or Good Games' by product number."""
+    if gg_id:
+        try:
+            p = goodgames.get(gg_id)
+        except goodgames.ShopError as e:
+            raise HTTPException(502, str(e))
+        if not p:
+            raise HTTPException(404, "Good Games doesn't have that product any more.")
+        return goodgames.board_game(p)
     try:
         found_ = gameology.product(handle)
     except gameology.ShopError as e:
         raise HTTPException(502, str(e))
     if not found_:
         raise HTTPException(404, "Gameology doesn't have that product any more.")
-    return found_
+    return {**found_, "shop_name": "Gameology"}
 
 
 def fill_in(conn, game_id: int, facts: dict, replace: bool = False, set_kind: bool = False):
@@ -174,6 +186,7 @@ def fill_in(conn, game_id: int, facts: dict, replace: bool = False, set_kind: bo
         data.pop("max_players", None)
     data.update(categories=sorted(set(facts["categories"]) | set(facts["types"])), mechanisms=facts["mechanisms"],
                 shop_handle=facts["handle"], shop_url=facts["shop_url"], shop_price=facts["price"],
+                shop_name=facts.get("shop_name", "Gameology"),
                 shop_expansions=facts.get("expansion_handles") or [])
     if facts.get("kind") and (replace or set_kind):
         data["kind"] = facts["kind"]
@@ -205,19 +218,49 @@ def fetch_photo(game_id: int, facts: dict):
                          "WHERE game_id = %s AND photo IS NULL", (image, image_type, game_id))
 
 
+GG_FOR = 600                           # seconds a Good Games answer is kept (the box searches as you type)
+_gg_found: dict[str, tuple[float, list[dict]]] = {}
+
+
+def _good_games(q: str) -> list[dict]:
+    key, now = q.strip().lower(), time.time()
+    held = _gg_found.get(key)
+    if held and now - held[0] < GG_FOR:
+        return held[1]
+    found_ = goodgames.board_games(q)
+    for old in [k for k, (t, _) in _gg_found.items() if now - t >= GG_FOR]:
+        del _gg_found[old]
+    _gg_found[key] = (now, found_)
+    return found_
+
+
 @router.get("/board-games/lookup")
-def lookup(q: str = Query(min_length=2, max_length=120)):
-    """Board games at Gameology matching a name, best first, each with `game_id` if it's already
-    in your games."""
+def lookup(q: str = Query(min_length=2, max_length=120), more: bool = False):
+    """Board games matching a name, best first, each with `game_id` if it's already in your games and
+    `source` (gameology / goodgames). Gameology first (BoardGameGeek's facts); Good Games fills the
+    holes - asked when Gameology has nothing with every word you typed, or with more=true. If only one
+    shop answers, its results come back (`notes` says what went wrong with the other)."""
+    notes, results = [], []
     try:
-        results = gameology.search(q)
+        results = [{**r, "source": "gameology", "shop_name": "Gameology"} for r in gameology.search(q)]
     except gameology.ShopError as e:
-        raise HTTPException(502, str(e))
+        notes.append(str(e))
+    words = re.findall(r"[a-z0-9]+", q.lower())
+    full_match = any(all(w in " ".join(re.findall(r"[a-z0-9]+", r["title"].lower())) for w in words) for r in results)
+    if more or not full_match:
+        try:
+            have = {re.sub(r"[^a-z0-9]", "", r["name"].lower()) for r in results}
+            results += [g for g in _good_games(q) if re.sub(r"[^a-z0-9]", "", g["name"].lower()) not in have]
+        except goodgames.ShopError as e:
+            notes.append(str(e))
+    if not results and notes:
+        raise HTTPException(502, " ".join(notes))
     with db() as conn:
         for r in results:
-            mine = conn.execute("SELECT game_id FROM board_games WHERE shop_handle = %s LIMIT 1", (r["handle"],)).fetchone()
+            mine = conn.execute("SELECT game_id FROM board_games WHERE shop_handle = %s AND shop_name = %s LIMIT 1",
+                                (r["handle"], r["shop_name"])).fetchone()
             r["game_id"] = mine and mine["game_id"]
-    return results
+    return {"results": results, "asked_good_games": more or not full_match, "notes": notes}
 
 
 @router.post("/board-games", status_code=201)
@@ -225,8 +268,8 @@ def add_game(body: GameIn, background: BackgroundTasks):
     """Add a game. With a shop_handle, the shop's facts fill in what you left blank and its photo
     is fetched in the background."""
     data = tidy_text(body.model_dump())
-    handle = data.pop("shop_handle")
-    facts = shop_game(handle) if handle else None
+    handle, gg_id = data.pop("shop_handle"), data.pop("gg_id")
+    facts = shop_game(handle, gg_id) if handle or gg_id else None
     with db() as conn:
         _check_base(conn, None, data)
         game_id = insert_row(conn, "board_games", data, "game_id")
@@ -242,7 +285,9 @@ def add_game(body: GameIn, background: BackgroundTasks):
 def from_shop(game_id: int, body: ShopIn, background: BackgroundTasks):
     """Fill in a game you already have from a Gameology product (blanks only, unless replace), and
     fetch its photo in the background if it has none."""
-    facts = shop_game(body.shop_handle)
+    if not body.shop_handle and not body.gg_id:
+        raise HTTPException(422, "Which product? (a Gameology handle or a Good Games product number)")
+    facts = shop_game(body.shop_handle, body.gg_id)
     with db() as conn:
         fill_in(conn, game_id, facts, body.replace)
         game = fetch_game(conn, game_id)
@@ -270,7 +315,7 @@ def check_kinds():
         return
     with db() as conn:
         games = conn.execute("SELECT game_id, kind, shop_handle FROM board_games WHERE shop_handle IS NOT NULL "
-                             "ORDER BY game_id").fetchall()
+                             "AND shop_name = 'Gameology' ORDER BY game_id").fetchall()     # Good Games has no type tag
     KINDS_CHECK.update(running=True, done=0, total=len(games), changed=0, error=None)
     try:
         for i, g in enumerate(games):

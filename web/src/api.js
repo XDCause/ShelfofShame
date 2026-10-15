@@ -131,8 +131,10 @@ export const api = {
   getBoardGame: (id) => request(`/board-games/${id}`),
   addBoardGame: (data) => request('/board-games', send('POST', data)),
   // Gameology: board games matching a name; fill in a game you have from one (blanks only unless replace)
-  boardGameLookup: (q) => request(`/board-games/lookup?q=${encodeURIComponent(q)}`),
-  boardGameFromShop: (id, handle, replace = false) => request(`/board-games/${id}/shop`, send('POST', { shop_handle: handle, replace })),
+  // Gameology first, Good Games for the holes (more = ask Good Games too): {results, asked_good_games, notes}
+  boardGameLookup: (q, more = false) => request(`/board-games/lookup?q=${encodeURIComponent(q)}${more ? '&more=true' : ''}`),
+  // r = a lookup result (Gameology: its handle; Good Games: its product number)
+  boardGameFromShop: (id, r, replace = false) => request(`/board-games/${id}/shop`, send('POST', { ...shopRef(r), replace })),
   updateBoardGame: (id, data) => request(`/board-games/${id}`, send('PATCH', data)),
   deleteBoardGame: (id) => request(`/board-games/${id}`, send('DELETE')),
   listPlays: (limit = 200) => request(`/board-games/plays?limit=${limit}`),
@@ -293,6 +295,9 @@ export const imageUrl = (item) =>
   `/api/product-images/${item.product_info_id}?v=${enc(item.photo_updated ?? '')}`
 
 // "just now", "5 min ago", "2h ago", "yesterday", "3 days ago", else the date.
+// Which shop product a board-game lookup result is, as the API wants it.
+export const shopRef = (r) => (r.source === 'goodgames' ? { gg_id: r.gg_id } : { shop_handle: r.handle })
+
 export const timeAgo = (when) => {
   const minutes = (Date.now() - new Date(when).getTime()) / 60000
   if (minutes < 1) return 'just now'

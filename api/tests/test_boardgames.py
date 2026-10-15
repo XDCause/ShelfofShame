@@ -119,8 +119,11 @@ def shop(monkeypatch):
 
 
 def test_finding_a_game_at_gameology(client, shop):
-    found = client.get("/api/board-games/lookup?q=catan").json()
+    r = client.get("/api/board-games/lookup?q=catan").json()
+    found = r["results"]
+    assert r["asked_good_games"] is False                     # Gameology had "catan": Good Games not asked
     assert [g["handle"] for g in found] == [CATAN["handle"], EXTENSION["handle"], RIVALS["handle"]]   # no sleeves; sold out too
+    assert {g["source"] for g in found} == {"gameology"}
     assert found[2]["available"] is False
     catan = found[0]
     assert (catan["name"], catan["publisher"], catan["min_players"], catan["max_players"]) == ("Catan 6th Edition", "Catan Studios", 3, 4)
@@ -141,7 +144,8 @@ def test_adding_a_game_from_gameology_fills_blanks_and_fetches_the_photo(client,
         (2.5, 69.95, "https://www.gameology.com.au/products/catan-6th-edition-base-game")
     assert game["categories"] == ["Economic", "Family", "Negotiation"] and game["mechanisms"] == ["Dice Rolling", "Trading"]
     assert game["has_photo"]                                                 # fetched after the reply
-    assert client.get("/api/board-games/lookup?q=catan").json()[0]["game_id"] == game["game_id"]
+    assert client.get("/api/board-games/lookup?q=catan").json()["results"][0]["game_id"] == game["game_id"]
+    assert game["shop_name"] == "Gameology"
     assert client.post("/api/board-games", json={"name": "X", "shop_handle": "gone-game"}).status_code == 404
     assert client.post("/api/board-games", json={"name": "X", "shop_handle": "../admin"}).status_code == 422
 
@@ -194,7 +198,8 @@ def test_kinds_from_the_shop_and_base_games(client, typed_shop):
     client.patch(f"/api/board-games/{coins['game_id']}", json={"bgg_url": None})
     from app.db import db
     with db() as conn:
-        conn.execute("UPDATE board_games SET shop_handle = 'scythe-metal-coins' WHERE game_id = %s", (coins["game_id"],))
+        conn.execute("UPDATE board_games SET shop_handle = 'scythe-metal-coins', shop_name = 'Gameology' WHERE game_id = %s",
+                     (coins["game_id"],))
     assert client.post("/api/board-games/check-types").status_code == 202        # background: done when it answers
     check = client.get("/api/board-games/check-types").json()
     assert (check["done"], check["total"], check["changed"], check["error"]) == (3, 3, 1, None)
@@ -231,3 +236,97 @@ def test_a_base_game_turned_expansion_lets_go(client):
     client.patch(f"/api/board-games/{ext['game_id']}", json={"kind": "expansion", "base_game_id": base["game_id"]})
     client.patch(f"/api/board-games/{base['game_id']}", json={"kind": "expansion"})
     assert client.get(f"/api/board-games/{ext['game_id']}").json()["base_game_id"] is None
+
+
+
+# Good Games' answers (made up, in its UCP layout): board-game tags are "Maximum Players_5" style.
+def gg_product(n, title, tags, cents=5000, available=True):
+    return {"id": f"gid://shopify/Product/{n}", "handle": f"gg-{n}", "title": title, "url": f"https://www.goodgames.com.au/products/gg-{n}",
+            "description": {"html": ""}, "tags": tags,
+            "media": [{"type": "image", "url": f"https://cdn.shopify.com/s/files/gg{n}.jpg?v=1"}],
+            "variants": [{"sku": f"93{n:011d}", "price": {"amount": str(cents), "currency": "AUD"}, "availability": {"available": available}}]}
+
+
+GG = [
+    gg_product(1, "Arcs Board Game", ["Maximum Players_4", "Recommended Age_14+", "Complexity_Medium Heavy", "Mechanic_Hand Management",
+                                      "Theme_Science Fiction", "Strategy Games"]),
+    gg_product(2, "Arcs - Leaders and Lore Expansion", ["Maximum Players_4", "Recommended Age_14+", "Theme_Science Fiction"]),
+    gg_product(3, "Arcs Card Sleeves", ["Accessories"]),
+    gg_product(4, "Catan 6th Edition Base Game", ["Maximum Players_4"]),       # Gameology has it: not repeated
+    gg_product(5, "Joan of Arc", ["Maximum Players_5"]),                         # the shop's loose match: left out
+]
+
+
+@pytest.fixture
+def both_shops(shop, monkeypatch):
+    """Gameology knows Catan only; Good Games has Arcs (and Catan)."""
+    from app import boardgames, goodgames
+    asked = []
+
+    def call(tool, catalog):
+        asked.append((tool, catalog))
+        if tool == "get_product":
+            n = catalog["id"].rsplit("/", 1)[-1]
+            p = next((p for p in GG if p["id"].endswith("/" + n)), None)
+            if not p:
+                raise goodgames.ShopError("Good Games said no: Product not found.")
+            return {"product": {k: v for k, v in p.items() if k != "tags"}}
+        words = catalog["query"].lower().split()
+        hits = [p for p in GG if p["variants"][0]["availability"]["available"] == catalog["filters"]["available"]
+                and (all(w in p["title"].lower() for w in words) or catalog["query"] == p["variants"][0]["sku"])]
+        return {"products": hits, "pagination": {"has_next_page": False}}
+    monkeypatch.setattr(goodgames, "_call", call)
+    boardgames._gg_found.clear()
+    return asked
+
+
+def test_good_games_fills_the_holes(client, both_shops):
+    from app import gameology
+    gameology_get = gameology._get
+    gameology._get = lambda path, params=None: {"resources": {"results": {"products": []}}} if "suggest" in path else gameology_get(path, params)
+    try:
+        r = client.get("/api/board-games/lookup?q=arcs").json()
+    finally:
+        gameology._get = gameology_get
+    assert r["asked_good_games"] is True
+    assert [(g["source"], g["name"]) for g in r["results"]] == [("goodgames", "Arcs"), ("goodgames", "Arcs: Leaders and Lore Expansion")]
+    arcs = r["results"][0]
+    assert (arcs["max_players"], arcs["min_age"], arcs["complexity"], arcs["categories"], arcs["mechanisms"], arcs["price"]) == \
+        (4, 14, "Medium Heavy", ["Science Fiction"], ["Hand Management"], 50.0)
+    assert r["results"][1]["kind"] == "expansion" and arcs["kind"] is None
+    # Gameology found Catan: Good Games only on request, and its Catan isn't repeated.
+    calls = len(both_shops)
+    r = client.get("/api/board-games/lookup?q=catan").json()
+    assert not r["asked_good_games"] and len(both_shops) == calls
+    r = client.get("/api/board-games/lookup?q=catan&more=true").json()
+    assert [g["source"] for g in r["results"]].count("goodgames") == 0 and r["asked_good_games"]
+    # Added from Good Games: its facts, its photo, its shop.
+    game = client.post("/api/board-games", json={"name": "Arcs", "gg_id": "1"}).json()
+    game = client.get(f"/api/board-games/{game['game_id']}").json()
+    assert (game["shop_name"], game["max_players"], game["min_age"], game["kind"], float(game["shop_price"])) == ("Good Games", 4, 14, "game", 50.0)
+    assert game["shop_url"] == "https://www.goodgames.com.au/products/gg-1" and game["has_photo"]
+    assert game["categories"] == ["Science Fiction"] and game["mechanisms"] == ["Hand Management"]
+    exp = client.post("/api/board-games", json={"name": "Leaders and Lore", "gg_id": "2"}).json()
+    assert client.get(f"/api/board-games/{exp['game_id']}").json()["kind"] == "expansion"
+    # The Gameology type check leaves Good Games' games alone.
+    check = client.post("/api/board-games/check-types").json()
+    assert client.get("/api/board-games/check-types").json()["total"] == 0
+    assert client.post("/api/board-games", json={"name": "X", "gg_id": "99"}).status_code == 404
+    assert client.post("/api/board-games", json={"name": "X", "gg_id": "1x"}).status_code == 422
+
+
+def test_one_shop_down_still_answers(client, both_shops, monkeypatch):
+    from app import gameology, goodgames
+
+    def down(*a, **k):
+        raise gameology.ShopError("Couldn't reach Gameology (ConnectTimeout).")
+    monkeypatch.setattr(gameology, "_get", down)
+    r = client.get("/api/board-games/lookup?q=arcs").json()
+    assert [g["name"] for g in r["results"]][0] == "Arcs" and "Gameology" in r["notes"][0]
+
+    def busy(*a, **k):
+        raise goodgames.ShopError("Good Games asked us to slow down - try again in a minute.")
+    monkeypatch.setattr(goodgames, "_call", busy)
+    from app import boardgames
+    boardgames._gg_found.clear()
+    assert client.get("/api/board-games/lookup?q=arcs").status_code == 502       # both down: an error

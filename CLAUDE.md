@@ -1232,6 +1232,18 @@ DBeaver, psql, and the one-off import script.
      and the BEA type tag (only max players, age, Complexity_ word, Mechanic_ / Theme_) - suggested keeping Gameology, maybe
      adding Good Games price / stock. Awaiting the user's answer.
    - Tests: 339 API, 64 browser steps (gundam_range live, board_game_kinds).
+3zzf. **Board games: Gameology first, Good Games fills the holes** (2026-10-16, user's choice). GET /board-games/lookup now returns
+   {results, asked_good_games, notes}: Gameology results (source gameology) first; Good Games (goodgames.board_games, same UCP
+   client) is asked only when no Gameology title has every typed word, or with more=true ("Not here? Search Good Games too") -
+   the box searches as you type and Good Games rate-limits; answers kept 10 min (_gg_found). Good Games results: titles with
+   every word only (its search is loose), same name as a Gameology result dropped, tags -> max_players (Maximum Players_),
+   min_age (Recommended Age_), complexity word (Complexity_), categories (Theme_), mechanisms (Mechanic_); kind expansion only
+   from the name; no min players / play time / weight / publisher. One shop down: the other's results + notes; both: 502.
+   POST /board-games {gg_id} and POST /board-games/{id}/shop {gg_id} fill in from Good Games (shop_game reads it server-side).
+   48_board_game_shop_name.sql board_games.shop_name Gameology | Good Games (old shop rows = Gameology); the panel link says
+   which; check-types only re-reads Gameology games. Web: ShopFind "Find it at a shop", Good Games pill, complexity in the
+   meta, shopRef(r) in api.js, gameMeta "up to N players". Live: "scythe" + Good Games -> Scythe Encounters, Rise of Fenris,
+   Scythe & Expeditions Metal Coins. Prod data fix: SUP-0006 renamed "Craft Bond 20g" (was "Craft Bind"). Tests: 343 API.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

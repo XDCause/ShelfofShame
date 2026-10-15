@@ -283,3 +283,63 @@ def gunpla_search(query: str | None) -> list[dict]:
         exact = [k for k in kits if q in (k["barcode"], (k["code"] or "").upper(), "G" + q)]
         kits = exact or kits
     return sorted(kits, key=lambda k: (not k["available"], k["grade"] or "~", k["name"]))
+
+
+# ---- Board games (to fill the holes in Gameology's range) ---------------------------------------
+
+# A board game's tags here: "Maximum Players_5", "Recommended Age_14+", "Complexity_Medium",
+# "Mechanic_Area Control", "Theme_Economic". Things with them that aren't board games: kits, cards.
+GAME_TAGS = ("Maximum Players_", "Recommended Age_", "Complexity_", "Mechanic_", "Theme_")
+NOT_BOARD_GAMES = re.compile(r"(?i)\bsleeves?\b|playmat|\bdeck\b|booster|\btcg\b|\bpaints?\b|\bdice set\b|organi[sz]er")
+EXPANSION_WORDS = re.compile(r"(?i)\b(expansion|extension|exp\.?)\b")
+
+
+def _tag_values(tags: list[str], prefix: str) -> list[str]:
+    return [t[len(prefix):].strip() for t in tags if t.startswith(prefix)]
+
+
+def board_game(p: dict) -> dict:
+    """A product as the board-game facts Gameology's search gives (gameology.facts), as far as this
+    shop has them: most players, age, a complexity word, themes as categories, mechanics; no fewest
+    players, play time, BGG weight or publisher."""
+    k = base(p)
+    tags = k.pop("tags")
+    k.pop("text")
+    most = next((int(v) for v in _tag_values(tags, "Maximum Players_") if v.isdigit()), None)
+    age = next((int(m.group(1)) for v in _tag_values(tags, "Recommended Age_") if (m := re.match(r"(\d+)", v))), None)
+    expansion = bool(EXPANSION_WORDS.search(k["title"]))
+    image = k["image"]
+    return {
+        "source": "goodgames", "shop_name": "Good Games", "gg_id": k["id"],
+        "handle": str(p.get("handle") or ""), "title": k["title"], "name": tidy_board_title(k["title"]),
+        "publisher": None, "min_players": None, "max_players": most, "play_minutes": None,
+        "min_play_minutes": None, "min_age": age, "weight": None,
+        "complexity": next(iter(_tag_values(tags, "Complexity_")), None),
+        "categories": sorted(set(_tag_values(tags, "Theme_"))), "mechanisms": sorted(set(_tag_values(tags, "Mechanic_"))),
+        "types": [], "expansion": expansion, "kind": "expansion" if expansion else None, "expansion_handles": [],
+        "price": k["price"], "available": k["available"], "shop_url": k["url"],
+        "image": image and image + ("&" if "?" in image else "?") + "width=600",
+        "image_url": image and image + ("&" if "?" in image else "?") + "width=200",
+        "is_board_game": any(t.startswith(GAME_TAGS) for t in tags) and not NOT_BOARD_GAMES.search(k["title"])
+                         and not any(t.startswith(("Faction_", "Scale_")) for t in tags),
+    }
+
+
+def tidy_board_title(title: str) -> str:
+    """"Catan Board Game (6th Edition)" -> "Catan (6th Edition)"; "Scythe - Modular Board" -> "Scythe: Modular Board"."""
+    name = re.sub(r"(?i)\s+(base game|board game|card game)\b", "", title.strip())
+    return re.sub(r"\s+[-–]\s+", ": ", name, count=1)
+
+
+def board_games(query: str, limit: int = 8) -> list[dict]:
+    """Board games with every word of the name in their title (the shop's own search is loose: "arcs"
+    also finds "Joan of Arc"), in stock first, ranked like Gameology's: titles that start with your
+    words first; games before expansions."""
+    games = [g for g in (board_game(p) for p in search(query)) if g["is_board_game"]]
+    words = re.findall(r"[a-z0-9]+", query.lower())
+
+    def rank(g):
+        title = " ".join(re.findall(r"[a-z0-9]+", g["title"].lower()))
+        return (0 if title.startswith(" ".join(words)) else 1 if all(w in title for w in words) else 2,
+                g["expansion"], not g["available"], len(title))
+    return [g for g in sorted(games, key=rank) if rank(g)[0] < 2][:limit]
