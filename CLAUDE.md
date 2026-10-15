@@ -1259,6 +1259,8 @@ DBeaver, psql, and the one-off import script.
    - run_e2e.ps1: image offtheclock-e2e:1.47.0 from e2e\Dockerfile (Playwright + its pip package, built once, cached;
      e2e\.dockerignore keeps the context empty).
    Use .	est_all.ps1 in dev after changes; the next promote then only backs up, rebuilds, restarts and pushes (~1 minute).
+   The fingerprint leaves out top-level *.md (Get-TreeHash filters `git ls-tree` and hashes the rest), so editing notes after
+   testing doesn't force a re-test; any code / script / migration change does. Side by side measured 108-144 s.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

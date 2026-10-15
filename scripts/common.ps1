@@ -54,8 +54,13 @@ function Wait-Healthy([string[]]$containers, [int]$seconds = 120) {
 
 # --- "Already tested" stamps (promote.ps1 skips tests that passed on exactly this code) ---
 # Get-CodeHash: a fingerprint of the code on disk in a copy (tracked and new files, .gitignore
-# respected) = the git tree hash it would have if committed now. Committing unchanged code gives a
-# commit with that same tree, so a pass recorded before the commit still matches after it.
+# respected): the git tree it would commit as, with the top-level notes (*.md - CLAUDE.md, README...)
+# left out, since they can't change how the app runs. Committing unchanged code gives the same
+# fingerprint (Get-TreeHash of the commit), so a pass recorded before the commit still counts after.
+function Get-TreeHash([string]$root, [string]$tree) {
+    $entries = @(git -C $root ls-tree $tree | Where-Object { $_ -notmatch '\t[^/]+\.md$' })
+    return (($entries -join "`n") | git -C $root hash-object --stdin)
+}
 function Get-CodeHash([string]$root = $Root) {
     $index = (git -C $root rev-parse --git-path index)
     if (-not [IO.Path]::IsPathRooted($index)) { $index = Join-Path $root $index }
@@ -64,11 +69,12 @@ function Get-CodeHash([string]$root = $Root) {
     $env:GIT_INDEX_FILE = $tmp           # a scratch copy of the index: the real one is untouched
     try {
         git -C $root add -A 2>$null | Out-Null
-        return (git -C $root write-tree)
+        $tree = git -C $root write-tree
     } finally {
         Remove-Item Env:GIT_INDEX_FILE
         Remove-Item $tmp -ErrorAction SilentlyContinue
     }
+    return (Get-TreeHash $root $tree)
 }
 
 # Stamps live in <copy>\.tested (git-ignored): api.txt, e2e.txt (passed), built.txt (what the running

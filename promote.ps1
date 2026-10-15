@@ -41,7 +41,7 @@ $before = git rev-parse --short HEAD
 
 # 3. Tests on dev - skipped when they already passed on exactly this code (dev is clean, checked above,
 #    so the code on disk is the dev commit's tree)
-$devTree = git -C $DevRoot rev-parse 'dev^{tree}'
+$devTree = Get-TreeHash $DevRoot 'dev^{tree}'      # the dev commit's code, notes (*.md) left out
 $api = Get-Stamp 'api' $DevRoot
 $e2e = Get-Stamp 'e2e' $DevRoot
 $passed = ($api[0] -eq $devTree) -and ($Quick -or $e2e[0] -eq $devTree)
