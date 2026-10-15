@@ -1,0 +1,11 @@
+{
+  "ucp": {
+    "version": "2026-08-25",
+    "services": {},
+    "capabilities": {},
+    "payment_handlers": {}
+  },
+  "name": "Off the Clock",
+  "description": "A personal hobby tracker (one user). Searches and reads public product details of shops that offer the Universal Commerce Protocol, to fill in kits the user owns or wants; it never creates carts or checkouts.",
+  "contact": "https://github.com/XDCause/ShelfofShame/issues"
+}
