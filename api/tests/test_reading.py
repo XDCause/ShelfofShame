@@ -80,6 +80,9 @@ def test_reading_a_book_page_by_page(client):
     client.delete(f"/api/reading/log/{r['log'][0]['log_id']}")
     assert client.get(url).json()["current_page"] == 170
     assert client.patch(url, json={"rating": 6}).status_code == 422
+    assert client.patch(url, json={"rating": 3.3}).status_code == 422          # halves only
+    assert client.patch(url, json={"rating": 3.5}).json()["rating"] == 3.5
+    client.patch(url, json={"rating": 5})
 
 
 def test_quotes(client):
@@ -112,7 +115,7 @@ def test_the_goal_summary_and_stats(client):
     st = client.get("/api/reading/stats?months=3").json()
     assert st["by_month"][-1]["pages"] == 340 and len(st["by_month"]) == 3
     assert st["by_year"] == [{"year": today.year, "books": 1, "pages": 300}]
-    assert [r["books"] for r in st["ratings"]] == [0, 0, 0, 1, 0] and st["facts"]["longest"]["title"] == "Old one"
+    assert [r["books"] for r in st["ratings"] if r["stars"] % 1 == 0] == [0, 0, 0, 1, 0] and len(st["ratings"]) == 10 and st["facts"]["longest"]["title"] == "Old one"
     feed = client.get(f"/api/activity?since={today.isoformat()}").json()
     assert {(a["verb"], a["title"]) for a in feed if a["kind"] == "book"} >= {("Read", "Now"), ("Finished", "Old one"), ("Started reading", "Now")}
     assert any(m["kind"] == "book" and m["label"] == "Now" for m in client.get("/api/journal/mentionable?q=now").json())

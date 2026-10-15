@@ -131,7 +131,7 @@ WITH feed AS (
   UNION ALL
     SELECT {NOON.format('b.finished_on')}, 'book', b.book_id,
            CASE WHEN b.status = 'dnf' THEN 'Stopped reading' ELSE 'Finished' END, b.title,
-           concat_ws(' · ', b.author, repeat('★', b.rating)), NULL, NULL, CASE WHEN b.cover_id IS NOT NULL THEN 'https://covers.openlibrary.org/b/id/' || b.cover_id || '-M.jpg' END
+           concat_ws(' · ', b.author, repeat('★', floor(b.rating)::int) || CASE WHEN b.rating > floor(b.rating) THEN '½' ELSE '' END), NULL, NULL, CASE WHEN b.cover_id IS NOT NULL THEN 'https://covers.openlibrary.org/b/id/' || b.cover_id || '-M.jpg' END
     FROM books b WHERE b.finished_on IS NOT NULL AND b.status IN ('finished', 'dnf')
 )
 SELECT f.at, (f.at AT TIME ZONE current_setting('TimeZone'))::date AS day,

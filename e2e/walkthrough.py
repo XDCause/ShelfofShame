@@ -1285,7 +1285,9 @@ def reading(page):
     d.get_by_role("button", name="Save quote").click()
     expect(d.locator(".quote-list")).to_contain_text(f"Words worth keeping {MARK}")
     d.get_by_role("group", name="Shelf").get_by_role("button", name="Finished").click()
-    d.get_by_role("button", name="4 stars").click()
+    d.get_by_role("button", name="4 stars").click(position={"x": 4, "y": 20})     # left edge = a half
+    expect(d.get_by_role("group", name="Your rating: 3.5 out of 5")).to_be_visible()
+    d.get_by_role("button", name="4 stars").click()                                # middle = whole
     expect(d.get_by_role("button", name="4 stars")).to_have_attribute("aria-pressed", "true")
     shot(page, "d51_reading_book", full=False)
     page.keyboard.press("Escape")

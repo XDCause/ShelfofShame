@@ -1532,10 +1532,15 @@ body.writing-mode .journal-title { font-size: 2.2rem; }
 .book-card-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .book-card .item-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .book-progress { display: flex; flex-direction: column; gap: 4px; }
-.stars { color: #e0a100; letter-spacing: 1px; white-space: nowrap; }
+/* Shown stars: a grey row of five with the gold row on top, cut to the rating's width (so halves work). */
+.stars { position: relative; display: inline-block; color: #e0a100; letter-spacing: 1px; white-space: nowrap; line-height: 1.2; }
 .stars.small { font-size: 0.8rem; }
 .stars-off { color: var(--fill); }
-.stars-input { display: inline-flex; gap: 2px; }
+.stars-on { position: absolute; inset: 0 auto 0 0; overflow: hidden; }
+.stars-input { display: inline-flex; align-items: center; gap: 2px; }
+.stars-input button.half { background: linear-gradient(90deg, #e0a100 50%, var(--fill) 50%); -webkit-background-clip: text;
+  background-clip: text; color: transparent; }
+.stars-value { margin-left: 6px; color: var(--muted); font-weight: 600; min-width: 2ch; }
 .stars-input button { font-size: 1.7rem; line-height: 1; padding: 2px 4px; min-height: 44px; border: 0; background: none;
   color: var(--fill); cursor: pointer; }
 .stars-input button.on { color: #e0a100; }

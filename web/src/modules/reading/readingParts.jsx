@@ -36,17 +36,42 @@ export function ShelfPill({ status }) {
   return <span className={`pill ${SHELF_TONE[status]}`}>{shelfName(status)}</span>
 }
 
-// ★★★★☆ - shown, or (with onChange) tapped to rate; tapping your current rating clears it.
+// 3.5 -> "3½"
+export const starsText = (v) => `${Math.floor(v)}${v % 1 ? '½' : ''}`.replace(/^0½/, '½')
+
+// ★★★½☆ - shown, or (with onChange) tapped to rate: the left half of a star gives a half, the right
+// half a whole one; tapping your current rating clears it. (Keyboard: Enter gives whole stars, the
+// arrow keys step by halves.)
 export function Stars({ value, onChange, size = '' }) {
+  const v = value == null ? 0 : Number(value)
   if (!onChange) {
-    return value ? <span className={`stars ${size}`} aria-label={`${value} out of 5 stars`}>{'★'.repeat(value)}<span className="stars-off">{'★'.repeat(5 - value)}</span></span> : null
+    return v ? (
+      <span className={`stars ${size}`} role="img" aria-label={`${v} out of 5 stars`}>
+        <span className="stars-off" aria-hidden="true">★★★★★</span>
+        <span className="stars-on" aria-hidden="true" style={{ width: `${(v / 5) * 100}%` }}>★★★★★</span>
+      </span>
+    ) : null
+  }
+  const pick = (n, e) => {
+    const box = e.currentTarget.getBoundingClientRect()
+    const half = e.detail > 0 && e.clientX < box.left + box.width * 0.4    // left 40% = a half; detail 0 = keyboard
+    const next = half ? n - 0.5 : n
+    onChange(next === v ? null : next)
+  }
+  const keys = (e) => {
+    const step = { ArrowRight: 0.5, ArrowUp: 0.5, ArrowLeft: -0.5, ArrowDown: -0.5 }[e.key]
+    if (!step) return
+    e.preventDefault()
+    const next = Math.min(5, Math.max(0, v + step))
+    onChange(next || null)
   }
   return (
-    <span className="stars-input" role="group" aria-label="Your rating">
+    <span className="stars-input" role="group" aria-label={`Your rating${v ? `: ${v} out of 5` : ''}`} onKeyDown={keys}>
       {[1, 2, 3, 4, 5].map((n) => (
-        <button key={n} type="button" className={n <= (value ?? 0) ? 'on' : ''} aria-pressed={value === n}
-          aria-label={`${n} star${n === 1 ? '' : 's'}`} onClick={() => onChange(value === n ? null : n)}>★</button>
+        <button key={n} type="button" className={v >= n ? 'on' : v === n - 0.5 ? 'half' : ''} aria-pressed={v === n}
+          aria-label={`${n} star${n === 1 ? '' : 's'}`} onClick={(e) => pick(n, e)}>★</button>
       ))}
+      {v > 0 && <span className="stars-value">{starsText(v)}</span>}
     </span>
   )
 }

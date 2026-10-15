@@ -1137,6 +1137,12 @@ DBeaver, psql, and the one-off import script.
    short. core/EmptyState.jsx (icon, title, text, action) for first-time empties: board games + plays, volleyball
    games / gear / videos, kits, wishlist, journal, books, quotes (filter "no match" messages stay plain). e2e: an empty
    page has two add buttons (toolbar + empty state) -> `.first` for + Add gear / + Add video / + Add a book.
+3zza. **Half-star book ratings** (2026-10-15). 43_half_star_ratings.sql: books.rating NUMERIC(2,1), CHECK 0.5-5 in halves (old
+   CHECK found by definition and dropped). API rating float multiple_of 0.5; stats.ratings = 10 rows (0.5..5); activity
+   "★★★½" (floor + '½' - no `%` in SQL that has parameters: psycopg reads it as a placeholder). Stars: shown = grey row
+   with the gold row on top cut to rating/5 width; input = left 40% of a star gives a half (middle/right whole; keyboard
+   Enter whole, arrows step halves), "3½" beside it. Ratings chart shows half columns only once a half rating exists.
+   Goodreads exports whole stars only. Tests: 315 API, 61 browser steps (clicks a half, then a whole).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

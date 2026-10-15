@@ -63,7 +63,7 @@ class BookIn(BaseModel):
     genres: list[str] = Field(default_factory=list, max_length=10)
     format: str | None = Field(None, pattern="^(paper|ebook|audio)$")
     status: str = Field("want", pattern="^(want|reading|finished|dnf)$")
-    rating: int | None = Field(None, ge=1, le=5)     # adding a book you've read
+    rating: float | None = Field(None, ge=0.5, le=5, multiple_of=0.5)     # adding a book you've read; halves allowed
     review: str | None = Field(None, max_length=20000)
 
 
@@ -80,7 +80,7 @@ class BookPatch(BaseModel):
     current_page: int | None = Field(None, ge=0, le=50000)
     started_on: date | None = None
     finished_on: date | None = None
-    rating: int | None = Field(None, ge=1, le=5)
+    rating: float | None = Field(None, ge=0.5, le=5, multiple_of=0.5)
     review: str | None = Field(None, max_length=20000)
 
 
@@ -401,8 +401,8 @@ def stats(months: int = Query(24, ge=1, le=120)):
             SELECT g AS genre, count(*)::int AS books FROM books, unnest(genres) g
             WHERE status = 'finished' GROUP BY g ORDER BY 2 DESC, 1 LIMIT 10""").fetchall()
         ratings = conn.execute("""
-            SELECT r AS stars, count(b.book_id)::int AS books FROM generate_series(1, 5) r
-            LEFT JOIN books b ON b.rating = r AND b.status = 'finished' GROUP BY r ORDER BY r""").fetchall()
+            SELECT (r / 2.0)::float AS stars, count(b.book_id)::int AS books FROM generate_series(1, 10) r
+            LEFT JOIN books b ON b.rating * 2 = r AND b.status = 'finished' GROUP BY r ORDER BY r""").fetchall()
         facts = conn.execute("""
             SELECT count(*)::int AS finished, round(avg(rating), 2) AS average_rating, round(avg(pages))::int AS average_pages,
                    COALESCE(sum(pages), 0)::int AS pages

@@ -8,9 +8,7 @@ import { useApp } from '../../core/app-context.js'
 import Stat, { StatSkeleton } from '../../core/Stat.jsx'
 import EmptyState from '../../core/EmptyState.jsx'
 import { UnlockCalendar } from '../videogames/StatsView.jsx'
-import {
-  BookCover, GoalCard, GoodreadsImport, Progress, ProgressForm, SHELVES, ShelfPill, Stars, useReadingSummary,
-} from './readingParts.jsx'
+import { BookCover, GoalCard, GoodreadsImport, Progress, ProgressForm, SHELVES, ShelfPill, Stars, starsText, useReadingSummary } from './readingParts.jsx'
 
 // The Reading hobby's pages: a dashboard (the goal, what you're reading now, up next, latest
 // finished), your books by shelf, stats, and every saved quote.
@@ -237,7 +235,9 @@ export function StatsView() {
         <section className="card home-card">
           <h2 className="home-card-title">Your ratings</h2>
           {st.ratings.some((r) => r.books) ? (
-            <ColumnChart title="Stars" valueLabel="books" labelValues rows={st.ratings.map((r) => ({ label: '★'.repeat(r.stars), value: r.books }))} />
+            <ColumnChart title="Stars" valueLabel="books" labelValues
+              rows={st.ratings.filter((r) => r.stars % 1 === 0 || st.ratings.some((h) => h.stars % 1 && h.books))
+                .map((r) => ({ label: `${starsText(r.stars)}★`, value: r.books }))} />
           ) : <p className="muted small">Rate a book you've finished and it shows here.</p>}
         </section>
         <section className="card home-card wide-card">
