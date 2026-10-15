@@ -8,6 +8,7 @@ import { useApp } from '../../core/app-context.js'
 import Stat, { StatSkeleton } from '../../core/Stat.jsx'
 import EmptyState from '../../core/EmptyState.jsx'
 import { UnlockCalendar } from '../videogames/StatsView.jsx'
+import { RecsCard } from './RecsView.jsx'
 import { BookCover, GoalCard, GoodreadsImport, Progress, ProgressForm, SHELVES, ShelfPill, Stars, starsText, useReadingSummary } from './readingParts.jsx'
 
 // The Reading hobby's pages: a dashboard (the goal, what you're reading now, up next, latest
@@ -69,6 +70,7 @@ export function Dashboard() {
               )}
               <Link className="button plain small" to="/reading/books?status=want">Want to read →</Link>
             </section>
+            <RecsCard />
           </div>
           {s.covers?.running && <p className="muted small">Finding covers on Open Library... {s.covers.done} of {s.covers.total}</p>}
         </>

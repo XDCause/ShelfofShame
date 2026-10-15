@@ -1143,6 +1143,27 @@ DBeaver, psql, and the one-off import script.
    with the gold row on top cut to rating/5 width; input = left 40% of a star gives a half (middle/right whole; keyboard
    Enter whole, arrows step halves), "3½" beside it. Ratings chart shows half columns only once a half rating exists.
    Goodreads exports whole stars only. Tests: 315 API, 61 browser steps (clicks a half, then a whole).
+3zzb. **Reading: For you (book suggestions)** (2026-10-15). No AI, no account: Open Library search (openlibrary.by_author /
+   popular_in, REC_FIELDS adds ratings_average / ratings_count; `_get` lets params override fields). reading_recs.py: seeds()
+   = top 5 authors of finished books rated 4★+ (by total stars; seed = their best-rated, the first finished on a tie) and
+   genres (finished books by rating, first genre full / others half, want / reading half again; a genre needs 40% of the
+   top one's weight; max 3). refresh() (background, REFRESH state, 1 s apart; on an error the old ones stay): per author
+   their solo books, rated ones first by year (= series order; unrated / unreleased after), same title -> most rated,
+   max 6; per genre (subject search, no juvenile / YA / children's / manga unless that's the genre) one book per author
+   (their most-rated, usually a series' book 1), >= 20 ratings, authors you have or already shown skipped, max 8. Both
+   skip: no cover, JUNK titles (summaries, box sets, collections...), < 120 pages, other scripts (translations), books
+   on your shelves (work id or title key without "(Series, #1)"), dismissed. 44_book_recs.sql: book_recs (stored picks)
+   + book_rec_dismissed; settings reading_recs_seeds = the seeds they were made from -> `stale` when seeds change or
+   7 days pass; the page starts a refresh once per visit and polls. Routes GET /reading/recommendations, POST .../refresh,
+   POST .../{OLnnnW}/want (adds as Want to read), .../dismiss, DELETE .../dismissed (bring back + due). Web RecsView.jsx:
+   page /reading/foryou ("More by X - You gave Y 5★", "Popular in Fantasy"), cards with + Want to read / Not interested,
+   swipe rows on phones; RecsCard "You might like" (5 covers, round-robin) on the dashboard. SparkleIcon.
+   First live run on prod's data: Brown -> Dark Age / Iron Gold / Light Bringer, Dinniman -> DCC #3-#8 in order,
+   Islington -> The Strength of the Few; Fantasy -> Mort, LOTR, A Game of Thrones...; SF -> Hitchhiker's, Ender's Game...
+   (Open Library's years can be off: Dark Age shows 2015.) Tests: 321 API, 61 browser steps.
+   e2e: the kit steps now set the state they need first (set_model via PATCH: Sherman In stash, RX-78-2 In stash with no
+   stage, Zero In progress) and read the stash value from the API - they had assumed old data and failed on a fresh
+   copy of prod (the user's kits moved on: Zero On hold, RX-78-2 Finished).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

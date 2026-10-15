@@ -6,6 +6,8 @@ fill in covers and details for books imported from Goodreads (in the background,
                                                   cover id, the work's key, ISBNs, subjects
     by_isbn(isbn)        GET /search.json?isbn=   the same, for one ISBN
     find(title, author)  GET /search.json?title=&author=   the best match, for imports
+    by_author(name)      GET /search.json?q=author:"..."   an author's books, best rated first  } for
+    popular_in(genre)    GET /search.json?q=subject:"..."  well-rated books in a genre           } suggestions
     cover_url(id)        covers.openlibrary.org/b/id/<id>-M.jpg (shown straight from Open Library)
 
 Open Library asks apps to say who they are (User-Agent) and to keep to about one request a second;
@@ -21,6 +23,7 @@ COVER = "https://covers.openlibrary.org/b/id/{id}-{size}.jpg"
 HEADERS = {"User-Agent": "Off the Clock (personal hobby tracker; https://github.com/XDCause/ShelfofShame)",
            "Accept": "application/json"}
 FIELDS = "key,title,author_name,first_publish_year,number_of_pages_median,cover_i,isbn,subject"
+REC_FIELDS = FIELDS + ",ratings_average,ratings_count"
 TIMEOUT = 20
 PAUSE = 1.0
 
@@ -56,7 +59,7 @@ class BookError(Exception):
 
 def _get(params: dict) -> list[dict]:
     try:
-        r = httpx.get(SEARCH, params={**params, "fields": FIELDS}, headers=HEADERS, timeout=TIMEOUT,
+        r = httpx.get(SEARCH, params={"fields": FIELDS, **params}, headers=HEADERS, timeout=TIMEOUT,
                       follow_redirects=True)
     except httpx.HTTPError as e:
         raise BookError(f"Couldn't reach Open Library ({e.__class__.__name__}).") from None
@@ -140,3 +143,34 @@ def find(title: str, author: str | None) -> dict | None:
         if d.get("title") and _key(d.get("title")).startswith(_key(plain)[:20]) or _key(plain).startswith(_key(d.get("title"))[:20]):
             return _book(d)
     return None
+
+
+# ---- suggestions ------------------------------------------------------------------------------
+
+# What to search Open Library's subjects for, per genre (default: the genre's first word list entry).
+SUBJECTS = {name: words[0] for name, words in GENRES}
+# Searches by subject leave out children's / young-adult books unless that's the genre asked for
+# (they top every "fantasy" list otherwise), and manga (single volumes, "Naruto 33").
+NOT_YA = ' -subject:"juvenile fiction" -subject:"young adult fiction" -subject:"children\'s fiction" -subject:manga'
+
+
+def _rec(doc: dict) -> dict:
+    book = _book(doc)
+    book["authors"] = doc.get("author_name") or []
+    book["ol_rating"] = round(doc["ratings_average"], 2) if doc.get("ratings_average") else None
+    book["ol_ratings"] = doc.get("ratings_count") or 0
+    return book
+
+
+def by_author(name: str, limit: int = 40) -> list[dict]:
+    """An author's books that have an English edition, best rated first."""
+    name = name.replace('"', "")
+    docs = _get({"q": f'author:"{name}" language:eng', "sort": "rating", "limit": limit, "fields": REC_FIELDS})
+    return [_rec(d) for d in docs if d.get("title")]
+
+
+def popular_in(genre: str, limit: int = 60) -> list[dict]:
+    """Well-rated books in a genre (English editions), best rated first."""
+    subject = SUBJECTS.get(genre, genre.lower()).replace('"', "")
+    q = f'subject:"{subject}" language:eng' + ("" if genre in ("Young adult", "Children's") else NOT_YA)
+    return [_rec(d) for d in _get({"q": q, "sort": "rating", "limit": limit, "fields": REC_FIELDS}) if d.get("title")]

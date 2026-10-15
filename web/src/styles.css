@@ -1789,3 +1789,26 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
   .glance { display: flex; flex-wrap: wrap; }
   .glance-card { flex: 1 1 250px; }
 }
+
+/* ---------- Reading: For you (suggestions from Open Library) ---------- */
+.recs-head { display: flex; align-items: flex-start; gap: 12px; justify-content: space-between; }
+.recs-head p { margin: 0; max-width: 70ch; }
+.recs-head button { flex: none; }
+.recs-section { display: flex; flex-direction: column; gap: 2px; margin-top: 18px; }
+.recs-section-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.recs-section-head .home-card-title { margin: 0; }
+.recs-grid { margin-top: 8px; }
+.rec-card .book-cover { display: block; }
+.rec-card .book-card-text { flex: 1; }
+.rec-rating .stars { font-size: 0.85em; }
+.rec-actions { display: flex; flex-direction: column; gap: 4px; }
+.rec-actions button { width: 100%; }
+@media (max-width: 700px) {
+  .recs-head { flex-direction: column; }
+  /* Each section is a row you swipe through (a card and a bit showing), so the page stays short. */
+  .recs-grid { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 10px; margin-inline: calc(-1 * var(--gutter));
+    padding: 2px var(--gutter) 8px; scrollbar-width: none; }
+  .recs-grid::-webkit-scrollbar { display: none; }
+  .recs-grid > li { flex: 0 0 42%; scroll-snap-align: start; }
+}
+.section-tabs a { white-space: nowrap; }

@@ -504,6 +504,13 @@ def no_panel(page):
 PIXEL = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==")
 
 
+def set_model(page, name, **fields):
+    """Put a kit in the state a step needs first (the real data moves on; the run restores it after)."""
+    [kit] = [m for m in page.request.get(f"{BASE}/api/models").json() if name in m["name"]]
+    r = page.request.patch(f"{BASE}/api/models/{kit['model_id']}", data=fields)
+    assert r.ok, r.text()
+
+
 def open_model(page, name):
     go(page, "Models")
     page.locator(".model-card", has_text=name).click()
@@ -578,6 +585,7 @@ def build_log(page):
 
 @step("Kit stash: price paid shows on the model and in the stash value")
 def stash(page):
+    set_model(page, "Sherman", status="In stash")             # a Wanted kit's price isn't in the stash
     d = open_model(page, "Sherman")
     d.get_by_role("button", name="Edit details").click()
     d = drawer(page)
@@ -586,7 +594,8 @@ def stash(page):
     page.get_by_role("button", name="Save details").click()
     expect(drawer(page)).to_contain_text("Paid $54.95")
     page.keyboard.press("Escape")
-    expect(page.locator(".stat-grid")).to_contain_text("$54.95")
+    stash = page.request.get(f"{BASE}/api/models/summary").json()["shelf_of_shame"]["value"]   # every kit in it
+    expect(page.locator(".stat-grid")).to_contain_text(f"${stash:,.2f}")
     page.get_by_role("button", name=re.compile("^Shelf of shame")).click()
     expect(page.locator(".model-card", has_text="Sherman")).to_be_visible()
     shot(page, "d19_models_stash", full=False)
@@ -647,6 +656,7 @@ def used_on(page):
 
 @step("Gundam: the RX-78-2's grade, build steps and panel line colours")
 def gundam(page):
+    set_model(page, "RX-78-2", status="In stash", stage=None)       # in the box, no steps done
     d = open_model(page, "RX-78-2")
     expect(d.locator(".item-sub").first).to_contain_text("HG · 1/144 · Bandai · G5057403")
     expect(d.locator(".steps button")).to_have_count(5)                      # ... Top coat, Complete
@@ -860,6 +870,7 @@ def appearance(page):
 
 @step("Build steps: an In progress kit shows the step underway")
 def build_underway(page):
+    set_model(page, "Zero", status="In progress")
     d = open_model(page, "Zero")
     expect(d.locator(".steps li.underway")).to_have_count(1)
     expect(d.locator(".section-head .pill")).to_contain_text("Now:")
@@ -1301,6 +1312,10 @@ def reading(page):
     page.locator(".section-tabs").get_by_role("link", name="Dashboard").click()
     expect(page.locator(".goal-card")).to_contain_text("reading goal")
     shot(page, "d52_reading_dashboard", full=False)
+    # For you: suggestions from Open Library (may refresh live), or what it needs to start.
+    page.locator(".section-tabs").get_by_role("link", name="For you").click()
+    expect(page.locator(".recs-section-head, .recs .empty, .empty-state, .recs .loading").first).to_be_visible(timeout=30000)
+    shot(page, "d53_reading_for_you", full=False)
 
 
 @step("Settings: price guide, default shop, backups, exports, catalogue")
