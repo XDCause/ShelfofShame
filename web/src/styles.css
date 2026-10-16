@@ -1936,3 +1936,8 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .under-construction { display: inline-flex; vertical-align: -2px; margin-left: 6px; color: var(--low); }
 .side-link .under-construction svg, .under-construction svg { color: var(--low); stroke: var(--low); }
 .edit-pill { align-self: flex-start; margin: 2px 0; }
+
+/* Calendar: the All day switch in the event form; all-day events are solid bars in the month. */
+.all-day-switch { display: flex; align-items: center; gap: 10px; margin: 4px 0 12px; font-weight: 500; cursor: pointer; }
+.all-day-switch input { width: 20px; height: 20px; margin: 0; accent-color: var(--tint); }
+@media (min-width: 701px) { .day-event.all-day { background: var(--tone, var(--tint)); color: var(--surface); } }

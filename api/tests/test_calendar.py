@@ -79,3 +79,14 @@ def test_a_volleyball_event_knows_when_its_game_is_logged(client):
                                                "opponent": "Spikers", "sets_won": 3, "sets_lost": 1})
     events = client.get("/api/calendar?start=2026-10-06&end=2026-10-13").json()["events"]
     assert [e["logged_id"] is not None for e in events] == [False, True]
+
+
+def test_all_day_events_and_every_hobby(client):
+    e = client.post("/api/calendar/events", json={"title": "Track day", "hobby": "car", "starts_on": "2026-11-07"}).json()
+    assert (e["start_time"], e["end_time"], e["hobby"]) == (None, None, "car")                  # no time = all day
+    timed = client.post("/api/calendar/events", json={"title": "Chess club", "hobby": "chess", "starts_on": "2026-11-07",
+                                                     "start_time": "18:00"}).json()
+    # Turned into an all-day event: the times go.
+    assert client.patch(f"/api/calendar/events/{timed['event_id']}", json={"start_time": None, "end_time": None}).json()["start_time"] is None
+    for hobby in ("videogames", "reading"):
+        assert client.post("/api/calendar/events", json={"title": "X", "hobby": hobby, "starts_on": "2026-11-08"}).status_code == 201

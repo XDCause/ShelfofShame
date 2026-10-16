@@ -895,6 +895,21 @@ def calendar(page):
     expect(detail).to_contain_text(f"Volleyball comp {MARK}")
     assert page.locator(".day-event", has_text=MARK).count() >= 3      # every week on the grid
     shot(page, "d31_calendar")
+    # An all-day event: the switch hides the times; it shows as a solid bar and "All day".
+    page.get_by_role("button", name="+ Add event").click()
+    d = drawer(page)
+    d.get_by_label("What").fill(f"Track day {MARK}")
+    d.get_by_role("switch", name="All day").check()
+    expect(d.get_by_label("From")).to_have_count(0)
+    d.get_by_label("Hobby").select_option("car")                              # any hobby can have events
+    d.get_by_role("button", name="Add event").click()
+    expect(page.locator(".day-event.all-day", has_text=f"Track day {MARK}")).to_be_visible()
+    expect(detail.locator(".row-button", has_text=f"Track day {MARK}")).to_contain_text("All day")
+    detail.locator(".row-button", has_text=f"Track day {MARK}").click()
+    d = drawer(page)
+    expect(d.get_by_role("switch", name="All day")).to_be_checked()          # opens as all day
+    d.get_by_role("button", name="Delete", exact=True).click()
+    d.locator(".confirm").get_by_role("button", name="Delete").click()
     detail.locator(".row-button", has_text=f"Volleyball comp {MARK}").click()
     d = drawer(page)
     d.get_by_role("button", name="Log the result").click()

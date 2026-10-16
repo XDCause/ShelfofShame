@@ -9,7 +9,7 @@ import { useNewPage } from '../journal/JournalList.jsx'
 import { moodOf } from '../journal/moods.js'
 
 // Colours: planned events by hobby, what happened by kind (dots) and verb (like Recent activity).
-const HOBBY_TONE = { models: 'purple', boardgames: 'teal', volleyball: 'low' }
+const HOBBY_TONE = { models: 'purple', boardgames: 'teal', volleyball: 'low', videogames: 'purple', chess: 'tint', reading: 'low', car: 'ok' }
 const KIND_TONE = { model: 'purple', supply: 'ok', page: 'teal', game: 'teal', volleyball: 'low', gear: 'ok', videogame: 'purple',
   chess: 'tint', book: 'low' }
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -88,7 +88,7 @@ export default function CalendarPage() {
                   {day?.mood && <span className="day-mood" title={moodOf(day.mood.mood).label}>{moodOf(day.mood.mood).face}</span>}
                 </span>
                 {day?.events.slice(0, 2).map((e) => (
-                  <span key={`${e.event_id}`} className={`day-event ${HOBBY_TONE[e.hobby] ?? 'tint'}`}>
+                  <span key={`${e.event_id}`} className={`day-event ${HOBBY_TONE[e.hobby] ?? 'tint'}${e.start_time ? '' : ' all-day'}`}>
                     {e.start_time && <span className="day-time">{clock(e.start_time)}</span>} {e.title}
                   </span>
                 ))}

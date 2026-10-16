@@ -31,7 +31,7 @@ function EventForm({ event, day, defaults, lookups, onClose, onSaved, onLog }) {
     { name: 'title', label: 'What', required: true, wide: true, placeholder: 'e.g. Volleyball comp, Games night' },
     { name: 'hobby', label: 'Hobby', type: 'select', options: MODULES.map((m) => [m.id, m.name]) },
     { name: 'starts_on', label: event?.repeats !== 'never' && event ? 'First day' : 'Day', type: 'date', required: true },
-    { name: 'start_time', label: 'From', type: 'time', hint: 'Leave empty for all day' },
+    { name: 'start_time', label: 'From', type: 'time' },
     { name: 'end_time', label: 'Until', type: 'time' },
     { name: 'location', label: 'Where', wide: true },
     { name: 'repeats', label: 'Repeats', type: 'select', required: true, options: lookups.repeats.map((r) => [r, REPEAT_LABEL[r]]) },
@@ -39,10 +39,13 @@ function EventForm({ event, day, defaults, lookups, onClose, onSaved, onLog }) {
     { name: 'notes', label: 'Notes', type: 'textarea' },
   ]
   const { form, set, payload } = useRecordForm(fields, event, defaults)
+  const [allDay, setAllDay] = useState(Boolean(event && !event.start_time))   // no time = all day
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const shown = fields.filter((f) => f.name !== 'repeat_until' || form.repeats !== 'never')
+  const shown = fields.filter((f) => (f.name !== 'repeat_until' || form.repeats !== 'never')
+    && !(allDay && ['start_time', 'end_time'].includes(f.name)))
+  const when = shown.findIndex((f) => f.name === 'starts_on') + 1     // the All day switch goes after the day
 
   const run = async (fn) => {
     setBusy(true)
@@ -52,7 +55,8 @@ function EventForm({ event, day, defaults, lookups, onClose, onSaved, onLog }) {
   const submit = (e) => {
     e.preventDefault()
     run(async () => {
-      const body = { ...payload(), ...(form.repeats === 'never' ? { repeat_until: null } : {}) }
+      const body = { ...payload(), ...(form.repeats === 'never' ? { repeat_until: null } : {}),
+        ...(allDay ? { start_time: null, end_time: null } : {}) }
       onSaved(event ? await api.updateEvent(event.event_id, body) : await api.addEvent(body), event ? 'saved' : 'added to the calendar')
     })
   }
@@ -94,7 +98,14 @@ function EventForm({ event, day, defaults, lookups, onClose, onSaved, onLog }) {
           {repeating && <p className="hint">Changes below apply to every day it repeats.</p>}
         </section>
       )}
-      <form id="event-form" onSubmit={submit}><RecordFields fields={shown} form={form} set={set} /></form>
+      <form id="event-form" onSubmit={submit}>
+        <RecordFields fields={shown.slice(0, when)} form={form} set={set} />
+        <label className="all-day-switch">
+          <input type="checkbox" role="switch" checked={allDay} onChange={(e) => setAllDay(e.target.checked)} />
+          <span>All day</span>
+        </label>
+        <RecordFields fields={shown.slice(when)} form={form} set={set} />
+      </form>
     </Drawer>
   )
 }

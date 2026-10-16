@@ -1336,6 +1336,12 @@ DBeaver, psql, and the one-off import script.
    `edit`. Web: "Raw or edited" select in the video form, Raw / Edited pill on cards (.edit-pill), All | Raw | Edited
    segmented filter on Videos (only when both exist). Spanner colour: .side-link svg (tint) needed an override.
    Tests: 368 API, 65 browser steps.
+3zzm. **Calendar: All day switch; events for every hobby** (2026-10-16). EventPanel: an "All day" switch (role=switch) after
+   the Day field (two RecordFields groups around it) hides From / Until and sends them null (no start_time = all day,
+   as before); an existing event without a time opens with it on. Month cells: .day-event.all-day = solid tone bar
+   (text in --surface; phones keep their 4px bars). 53_calendar_hobbies.sql + db.MODULE_IDS: events can be any module
+   (the old CHECK only allowed models / boardgames / volleyball, so picking Chess etc. failed). HOBBY_TONE for all.
+   Tests: 369 API, 65 browser steps.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"
