@@ -96,19 +96,20 @@ function GoalSection({ section: s, thisYear }) {
   )
 }
 
+// The title always comes first (a row of pills above it put titles at different heights side by side).
 function GoalCard({ goal: g }) {
   const due = dueText(g)
   const progress = progressText(g)
   return (
     <li>
       <Link to={`/goals/${g.goal_id}`} className={`goal-tile card ${g.status}`}>
+        <span className="goal-title">{g.title}</span>
         <span className="goal-tile-top">
           {g.pinned && <span className="pill purple">Pinned</span>}
           {g.hobby && <span className="pill">{hobbyName(g.hobby)}</span>}
           {g.status !== 'active' && <span className={`pill ${STATUS[g.status].tone}`}>{STATUS[g.status].label}</span>}
           {due && <span className={`goal-due ${g.days_left != null && g.days_left < 0 ? 'late' : ''}`}>{due}</span>}
         </span>
-        <span className="goal-title">{g.title}</span>
         {g.why && <span className="goal-why">{g.why}</span>}
         <ProgressBar goal={g} />
         {(progress || g.progress != null) && (
