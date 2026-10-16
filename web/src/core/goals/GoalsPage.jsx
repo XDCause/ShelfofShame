@@ -106,7 +106,7 @@ function GoalCard({ goal: g }) {
         <span className="goal-title">{g.title}</span>
         <span className="goal-tile-top">
           {g.pinned && <span className="pill purple">Pinned</span>}
-          {g.hobby && <span className="pill">{hobbyName(g.hobby)}</span>}
+          <span className="pill">{g.hobby ? hobbyName(g.hobby) : 'Life in general'}</span>
           {g.status !== 'active' && <span className={`pill ${STATUS[g.status].tone}`}>{STATUS[g.status].label}</span>}
           {due && <span className={`goal-due ${g.days_left != null && g.days_left < 0 ? 'late' : ''}`}>{due}</span>}
         </span>
