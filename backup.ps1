@@ -4,6 +4,10 @@
 #   .\backup.ps1 -Keep 30             # keep more
 #   .\backup.ps1 -CopyTo "D:\Backups" # also copy each backup somewhere else (USB drive, OneDrive...)
 #
+# The nightly task copies to the network drive on the modem (a slow, sometimes flaky share - about
+# 2 MB/s): \\10.0.0.138\Seagate_ExpansionDesk_2_917f\Off the Clock backups. That copy keeps the newest
+# $Keep backups too. If the drive can't be reached, the backup here still counts; the log says so.
+#
 # Restore (replaces the current data!):
 #   docker cp .\backups\<file>.dump hobby-inventory-db:/tmp/restore.dump
 #   docker exec hobby-inventory-db pg_restore -U hobby -d hobby_inventory --clean --if-exists /tmp/restore.dump
@@ -53,10 +57,13 @@ Log "OK: $name ($size KB)"
 
 # Uploaded videos: copy the new ones (robocopy /E = with subfolders; /XC /XN /XO = skip files the
 # backup already has). Robocopy's exit codes 0-7 mean success, 8 and up mean something failed.
-function Copy-Media($to) {
+# To a network drive (-Slow): /Z = restartable (a dropped connection carries on where it stopped),
+# 3 tries 30 s apart, and /IPG = a short gap between chunks so the modem's file sharing keeps up.
+function Copy-Media($to, [switch]$Slow) {
     $media = Join-Path $Root 'media'
     if (-not (Test-Path $media)) { return }
-    robocopy $media $to /E /XC /XN /XO /R:1 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
+    $extra = if ($Slow) { @('/Z', '/R:3', '/W:30', '/IPG:5') } else { @('/R:1', '/W:1') }
+    robocopy $media $to /E /XC /XN /XO @extra /NFL /NDL /NJH /NJS /NP | Out-Null
     if ($LASTEXITCODE -ge 8) { Log "WARNING: copying videos to $to failed (robocopy $LASTEXITCODE)"; return }
     $files = Get-ChildItem $to -Recurse -File -ErrorAction SilentlyContinue
     $mb = [math]::Round((($files | Measure-Object Length -Sum).Sum) / 1MB)
@@ -67,9 +74,12 @@ Copy-Media (Join-Path $folder 'media')
 if ($CopyTo) {
     try {
         New-Item -ItemType Directory -Force $CopyTo | Out-Null
-        Copy-Item (Join-Path $folder $name) $CopyTo
-        Log "Copied to $CopyTo"
-        Copy-Media (Join-Path $CopyTo 'media')
+        Copy-Item (Join-Path $folder $name) $CopyTo -ErrorAction Stop
+        $same = (Get-FileHash (Join-Path $folder $name)).Hash -eq (Get-FileHash (Join-Path $CopyTo $name)).Hash
+        if ($same) { Log "Copied to $CopyTo (checked: identical)" } else { Log "WARNING: the copy in $CopyTo doesn't match" }
+        Get-ChildItem $CopyTo -Filter 'hobby_inventory_*.dump' | Sort-Object Name -Descending |
+            Select-Object -Skip $Keep | ForEach-Object { Remove-Item $_.FullName; Log "Removed old copy $($_.Name) from $CopyTo" }
+        Copy-Media (Join-Path $CopyTo 'media') -Slow:($CopyTo -like '\\*')
     } catch {
         Log "WARNING: copy to $CopyTo failed: $($_.Exception.Message)"
     }
