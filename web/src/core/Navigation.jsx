@@ -1,7 +1,5 @@
 import { Link, NavLink, useLocation } from 'react-router'
-import {
-  BoltIcon, BoxIcon, CalendarIcon, CartIcon, ClockIcon, GridIcon, HomeIcon, JournalIcon, WrenchIcon,
-} from '../components/icons.jsx'
+import { BoltIcon, BoxIcon, CalendarIcon, CartIcon, ClockIcon, GridIcon, HomeIcon, JournalIcon, TargetIcon, WrenchIcon } from '../components/icons.jsx'
 import { MODULES, moduleFor } from '../modules/index.js'
 
 // A spanner after a hobby's name: it's a placeholder, still to be built (manifest underConstruction).
@@ -15,12 +13,13 @@ export function UnderConstruction() {
 // it differs from the menu label.
 const CORE_PAGES = [
   { path: '/', label: 'Home', Icon: HomeIcon },
+  { path: '/goals', label: 'Goals', Icon: TargetIcon },
   { path: '/journal', label: 'Journal', Icon: JournalIcon },
   { path: '/calendar', label: 'Calendar', Icon: CalendarIcon },
   { path: '/supplies', label: 'Supplies', title: 'Hobby supplies', Icon: BoxIcon },
   { path: '/wishlist', label: 'Wishlist', Icon: CartIcon },
 ]
-const SUPPLY_PAGES = CORE_PAGES.slice(3)
+const SUPPLY_PAGES = CORE_PAGES.slice(4)
 const HOBBIES_PAGE = { path: '/hobbies', label: 'Hobbies', Icon: GridIcon }
 
 const under = (pathname, path) => pathname === path || pathname.startsWith(`${path}/`)
@@ -69,13 +68,13 @@ export function Sidebar() {
   )
 }
 
-// Phones: five tabs. Supplies covers the wishlist too, and Hobbies covers every hobby (a page
+// Phones: five tabs (Goals is reached from its Home card). Supplies covers the wishlist too, and Hobbies covers every hobby (a page
 // listing them), so the bar never overflows however many hobbies there are. Plain Links: a
 // NavLink would mark itself by its own address only.
 export function TabBar() {
   const { pathname } = useLocation()
   const tabs = [
-    ...CORE_PAGES.slice(0, 3).map((p) => ({ ...p, on: p.path === '/' ? pathname === '/' : under(pathname, p.path) })),
+    ...CORE_PAGES.filter((p) => ['/', '/journal', '/calendar'].includes(p.path)).map((p) => ({ ...p, on: p.path === '/' ? pathname === '/' : under(pathname, p.path) })),
     { ...SUPPLY_PAGES[0], on: SUPPLY_PAGES.some((p) => under(pathname, p.path)) },
     { ...HOBBIES_PAGE, on: under(pathname, HOBBIES_PAGE.path) || Boolean(moduleFor(pathname)) },
   ]

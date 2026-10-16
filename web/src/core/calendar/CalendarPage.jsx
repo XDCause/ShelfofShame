@@ -11,7 +11,7 @@ import { moodOf } from '../journal/moods.js'
 // Colours: planned events by hobby, what happened by kind (dots) and verb (like Recent activity).
 const HOBBY_TONE = { models: 'purple', boardgames: 'teal', volleyball: 'low', videogames: 'purple', chess: 'tint', reading: 'low', car: 'ok', travel: 'teal' }
 const KIND_TONE = { model: 'purple', supply: 'ok', page: 'teal', game: 'teal', volleyball: 'low', gear: 'ok', videogame: 'purple',
-  chess: 'tint', book: 'low' }
+  chess: 'tint', book: 'low', goal: 'ok' }
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const hobbyName = (id) => MODULES.find((m) => m.id === id)?.name
 

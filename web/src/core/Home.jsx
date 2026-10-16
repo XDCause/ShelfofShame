@@ -5,6 +5,7 @@ import { MODULES } from '../modules/index.js'
 import { KIND_ICON, KIND_NAME, VERB_TONE } from './activityKinds.js'
 import { useApp } from './app-context.js'
 import { ComingUp } from './calendar/CalendarPage.jsx'
+import GoalsHome from './goals/GoalsHome.jsx'
 import JournalHome from './journal/JournalHome.jsx'
 import { useNewPage } from './journal/JournalList.jsx'
 import { RunningLow, SuppliesTiles } from './SuppliesHome.jsx'
@@ -59,6 +60,7 @@ export default function Home() {
         </div>
         <div className="home-column">
           <QuickActions newPage={newPage} />
+          <GoalsHome />
           <JournalHome />
         </div>
       </div>

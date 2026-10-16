@@ -1392,6 +1392,20 @@ DBeaver, psql, and the one-off import script.
      Web WishlistPage.jsx (route /wishlist): shop chips, the default shop's heading over the supplies WishlistView, then
      "Kits you want", then a section per other shop (cards open the item; "View in the shop").
    - Tests: 376 API (test_wanted.py, Blue Sky in test_volleyball.py), 69 steps (wishlist_shops: live Blue Sky search).
+3zzr. **Alignment + Goals** (2026-10-16).
+   - Video games / Reading dashboards: cards in two .home-stack columns (a short card left a gap before the next grid row);
+     .heatmap fills its card (weeks flex 11-22px, square days); .cover-row is one sideways-scrolling row; Longest book wide.
+   - **Goals** (core page between Home and Journal; phones reach it from Home's Goals card - the tab bar stays at 5).
+     59_goals.sql: goals (title, hobby = a MODULE_ID or NULL "life in general", why, details, status active / paused / done /
+     dropped, started_on, target_date, done_on, unit + start / target / current value, pinned), goal_steps (done, done_on,
+     sort_order), goal_updates (day, text, value; a value moves current_value = latest dated note with a number).
+     api/app/goals.py (progress = number from start to target, works downwards too, else steps ticked; days_left and
+     "today" from the DB - the container is UTC). Activity: "Reached" (done_on) and "Progress on" (each note), kind goal ->
+     openThing navigates to /goals/:id. Web core/goals: GoalsPage (status chips, tiles, "+ New goal" asks only the name),
+     GoalPage (everything saves on blur / tap; Why, Details, Progress notes left; How far along + Steps right, sticky),
+     GoalsHome (Home card, active goals, top 4). components/FitTextarea.jsx (moved out of PaintChecklist).
+     Class names `.goal-card` / `.goal-head` already belong to the video games goal - Goals uses goal-tile / goal-top.
+   - Tests: 379 API (test_goals.py), 70 browser steps (goals).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

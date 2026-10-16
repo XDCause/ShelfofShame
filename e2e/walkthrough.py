@@ -1530,6 +1530,50 @@ def volleyball_coach(page):
     expect(page.locator(".coach-card .item-title", has_text=re.compile("^Setter$"))).to_be_visible()
 
 
+@step("Goals: a new goal with why / details, steps, a number and a progress note; done; deleted")
+def goals(page):
+    go(page, "Goals")
+    page.get_by_role("button", name="+ New goal").first.click()
+    page.get_by_label("What's the goal?").fill(f"Finish three kits {MARK}")
+    page.get_by_role("button", name="Add", exact=True).click()
+    expect(page.get_by_label("Goal", exact=True)).to_have_value(f"Finish three kits {MARK}")
+    page.get_by_label("Why it matters").fill("The stash keeps growing.")
+    page.get_by_label("Details").click()                             # leaving a box saves it
+    page.get_by_label("Details").fill("One a month. Zero first.")
+    page.get_by_label("New step").fill("Finish the Zero")
+    page.get_by_label("New step").press("Enter")
+    page.get_by_label("New step").fill("Prime the Sherman")
+    page.get_by_label("New step").press("Enter")
+    expect(page.locator(".goal-steps li")).to_have_count(2)
+    page.get_by_label("Done: Finish the Zero").check()
+    expect(page.locator(".goal-percent")).to_have_text("50%")
+    page.get_by_role("button", name="Track a number").click()
+    page.get_by_label("Counting").fill("kits")
+    page.get_by_label("Target").fill("3")
+    page.get_by_label("Progress note").fill("Zero done, decals went on well")
+    page.get_by_label("Number now").fill("1")
+    page.get_by_role("button", name="Add note").click()
+    expect(page.locator(".goal-notes li")).to_contain_text("1 kits · Zero done")
+    expect(page.locator(".goal-percent")).to_have_text("33%")            # the number wins over the steps
+    shot(page, "d60_goal", full=True)
+    page.get_by_role("group", name="Status").get_by_role("button", name="Done").click()
+    expect(page.locator(".goal-top .goal-due")).to_contain_text("Reached")
+    page.get_by_role("link", name="‹ All goals").click()
+    page.locator(".chip-filter", has_text="Done").click()
+    tile = page.locator(".goal-tile", has_text=MARK)
+    expect(tile).to_contain_text("1 of 3 kits")
+    expect(tile).to_contain_text("The stash keeps growing.")
+    go(page, "Home")
+    expect(page.locator(".home-card", has_text="Recent activity")).to_contain_text(f"Finish three kits {MARK}")
+    tile_goal = page.request.get(f"{BASE}/api/goals?status=done").json()["goals"]
+    goal_id = next(g["goal_id"] for g in tile_goal if MARK in g["title"])
+    page.goto(f"{BASE}/goals/{goal_id}")
+    page.once("dialog", lambda d: d.accept())
+    page.get_by_role("button", name="Delete goal").click()
+    expect(page).to_have_url(re.compile(r"/goals$"))
+    expect(page.locator(".goal-tile", has_text=MARK)).to_have_count(0)
+
+
 @step("Wishlist by shop: the default shop first, Good Games for board games; gear from Blue Sky (live)")
 def wishlist_shops(page):
     game = page.request.post(f"{BASE}/api/board-games", data={"name": f"Wantgame {MARK}", "status": "Wanted"}).json()
@@ -1710,7 +1754,7 @@ with sync_playwright() as p:
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
                matches, used_on, gundam, bandai_lookup, warhammer, journal_write, journal_links, journal_from_model,
                journal_suggestion, journal_todo, global_search, journal_wishlist, appearance,
-               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, warhammer_minis, gundam_range, board_game_kinds, board_game_elsewhere, volleyball_coach, video_game_friends, wishlist_shops, settings_more, no_panel):
+               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, warhammer_minis, gundam_range, board_game_kinds, board_game_elsewhere, volleyball_coach, video_game_friends, wishlist_shops, goals, settings_more, no_panel):
         fn(desk)
     ctx = browser.new_context(**p.devices["iPhone 13"], timezone_id=zone)
     mob = ctx.new_page()

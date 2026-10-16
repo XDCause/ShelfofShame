@@ -5,6 +5,10 @@ const Icon = ({ children, size = 24, ...props }) => (
     strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>{children}</svg>
 )
 
+export const TargetIcon = (p) => (
+  <Icon {...p}><circle cx="11" cy="13" r="7.5" /><circle cx="11" cy="13" r="3.5" /><path d="M11 13 19 5" />
+    <path d="M16.5 4.5 19 5l.5 2.5" /></Icon>
+)
 export const SparkleIcon = (p) => (
   <Icon {...p}><path d="M11 3.5c.5 3.9 2.6 6 6.5 6.5-3.9.5-6 2.6-6.5 6.5-.5-3.9-2.6-6-6.5-6.5 3.9-.5 6-2.6 6.5-6.5z" />
     <path d="M18.5 15c.2 1.6 1 2.4 2.5 2.5-1.5.1-2.3.9-2.5 2.5-.2-1.6-1-2.4-2.5-2.5 1.5-.1 2.3-.9 2.5-2.5z" /></Icon>

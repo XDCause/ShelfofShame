@@ -12,6 +12,7 @@
     chess       online games: one entry per time control per day ("Blitz chess: 12 games · 7-4-1");
                 over the board: each game                    (chess_games)
     reading     pages read (one entry per book per day), started, finished / stopped   (reading_log, books)
+    goals       reached, and each progress note                                     (goals, goal_updates)
 
 Each item: {at, day, kind, ref, verb, title, detail, photo_url}; the photo (if any) is the
 product's, the game's or the gear's. Newest first. Part of the core: Home shows the latest, and
@@ -133,6 +134,14 @@ WITH feed AS (
            CASE WHEN b.status = 'dnf' THEN 'Stopped reading' ELSE 'Finished' END, b.title,
            concat_ws(' · ', b.author, repeat('★', floor(b.rating)::int) || CASE WHEN b.rating > floor(b.rating) THEN '½' ELSE '' END), NULL, NULL, CASE WHEN b.cover_id IS NOT NULL THEN 'https://covers.openlibrary.org/b/id/' || b.cover_id || '-M.jpg' END
     FROM books b WHERE b.finished_on IS NOT NULL AND b.status IN ('finished', 'dnf')
+  UNION ALL
+    SELECT {NOON.format('g.done_on')}, 'goal', g.goal_id, 'Reached', g.title, NULL, NULL, NULL, NULL
+    FROM goals g WHERE g.done_on IS NOT NULL AND g.status = 'done'
+  UNION ALL
+    SELECT {_on_day('u.day', 'u.created_at')}, 'goal', u.goal_id, 'Progress on', g.title,
+           concat_ws(' · ', CASE WHEN u.value IS NOT NULL THEN trim_scale(u.value) || COALESCE(' ' || g.unit, '') END, left(u.text, 120)),
+           NULL, NULL, NULL
+    FROM goal_updates u JOIN goals g USING (goal_id)
 )
 SELECT f.at, (f.at AT TIME ZONE current_setting('TimeZone'))::date AS day,
        f.kind, f.ref, f.verb, f.title, NULLIF(f.detail, '') AS detail,

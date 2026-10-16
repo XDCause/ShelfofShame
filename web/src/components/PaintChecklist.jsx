@@ -1,5 +1,6 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { api, imageUrl } from '../api.js'
+import FitTextarea from './FitTextarea.jsx'
 import KitPaintsPicker from './KitPaintsPicker.jsx'
 
 // A model's paint checklist. Paints you own are ticked and locked (your inventory says you have
@@ -171,30 +172,4 @@ function PaintRow({ paint, onChange, onRemove, onOpenSupply, onWish }) {
       <button type="button" className="icon-btn small remove-paint" onClick={onRemove} aria-label={`Remove ${paint.paint_name}`}>✕</button>
     </li>
   )
-}
-
-// A textarea exactly as tall as its text (measured, not guessed from the length - a guess left a
-// blank line under short notes on a wide screen and cut long ones off on a phone), re-measured
-// when the text or the width changes.
-function FitTextarea(props) {
-  const box = useRef(null)
-  const fit = () => {
-    const el = box.current
-    if (!el) return
-    el.style.height = 'auto'
-    el.style.height = `${el.scrollHeight + el.offsetHeight - el.clientHeight}px`
-  }
-  useLayoutEffect(fit, [props.value])
-  useEffect(() => {
-    let width = box.current.clientWidth
-    const watch = new ResizeObserver(() => {     // only a new width re-measures (not its own height)
-      if (box.current && box.current.clientWidth !== width) {
-        width = box.current.clientWidth
-        fit()
-      }
-    })
-    watch.observe(box.current)
-    return () => watch.disconnect()
-  }, [])
-  return <textarea ref={box} rows={1} {...props} />
 }

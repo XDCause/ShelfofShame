@@ -15,6 +15,8 @@ import { AppContext } from './core/app-context.js'
 import CalendarPage from './core/calendar/CalendarPage.jsx'
 import EventPanel from './core/calendar/EventPanel.jsx'
 import GlobalSearch from './core/GlobalSearch.jsx'
+import GoalPage from './core/goals/GoalPage.jsx'
+import GoalsPage from './core/goals/GoalsPage.jsx'
 import HobbiesPage from './core/HobbiesPage.jsx'
 import Home from './core/Home.jsx'
 import JournalList from './core/journal/JournalList.jsx'
@@ -133,6 +135,7 @@ export default function App() {
     else if (kind === 'videogame') openPanel('videogame', { id })
     else if (kind === 'chess') openPanel('chessgame', { id })
     else if (kind === 'book') openPanel('book', { id })
+    else if (kind === 'goal') navigate(`/goals/${id}`)
   }, [openModel, openItem, navigate, openPanel])
   const app = useMemo(() => ({
     lookups, settings, refreshKey, changed, openItem, openModel, openAdd, openPanel, openThing, adjusted, showToast,
@@ -191,6 +194,8 @@ export default function App() {
               {!lookups ? (!error && <p className="muted loading">Loading...</p>) : (
                 <Routes>
                   <Route path="/" element={<Home />} />
+                  <Route path="/goals" element={<GoalsPage />} />
+                  <Route path="/goals/:id" element={<GoalPage />} />
                   <Route path="/journal" element={<JournalList />} />
                   <Route path="/journal/:id" element={<JournalPage />} />
                   <Route path="/calendar" element={<CalendarPage />} />
