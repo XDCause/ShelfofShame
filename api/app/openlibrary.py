@@ -184,8 +184,14 @@ def series_books(series: str, author: str | None, limit: int = 40) -> list[dict]
     return [_rec(d) for d in _get({"q": q, "limit": limit, "fields": REC_FIELDS}) if d.get("title")]
 
 
+RECENT = 2000          # genre picks: books first out this year or later (the popular-now ones, not the classics)
+
+
 def popular_in(genre: str, limit: int = 60) -> list[dict]:
-    """Well-rated books in a genre (English editions), best rated first."""
+    """Books people want to read now in a genre (English editions): Open Library's want_to_read sort - the
+    books most added to readers' Want to Read lists, which follows BookTok and the bestseller lists
+    (Fourth Wing, A Court of Thorns and Roses...). Sorting by rating gave mostly classics."""
     subject = SUBJECTS.get(genre, genre.lower()).replace('"', "")
-    q = f'subject:"{subject}" language:eng' + ("" if genre in ("Young adult", "Children's") else NOT_YA)
-    return [_rec(d) for d in _get({"q": q, "sort": "rating", "limit": limit, "fields": REC_FIELDS}) if d.get("title")]
+    q = (f'subject:"{subject}" language:eng first_publish_year:[{RECENT} TO *]'
+         + ("" if genre in ("Young adult", "Children's") else NOT_YA))
+    return [_rec(d) for d in _get({"q": q, "sort": "want_to_read", "limit": limit, "fields": REC_FIELDS}) if d.get("title")]

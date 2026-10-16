@@ -88,5 +88,5 @@ def test_all_day_events_and_every_hobby(client):
                                                      "start_time": "18:00"}).json()
     # Turned into an all-day event: the times go.
     assert client.patch(f"/api/calendar/events/{timed['event_id']}", json={"start_time": None, "end_time": None}).json()["start_time"] is None
-    for hobby in ("videogames", "reading"):
+    for hobby in ("videogames", "reading", "travel"):
         assert client.post("/api/calendar/events", json={"title": "X", "hobby": hobby, "starts_on": "2026-11-08"}).status_code == 201

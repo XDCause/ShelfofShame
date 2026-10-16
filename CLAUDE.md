@@ -1357,6 +1357,12 @@ DBeaver, psql, and the one-off import script.
    - Chess dashboard: rating chart + Over the board stacked in the left column (.home-stack) - it used to start a new
      grid row below the tall Recent games card.
    - Tests: 372 API, 67 browser steps (board_game_elsewhere, volleyball_coach).
+3zzo. **Travel placeholder; mainstream book picks** (2026-10-16). modules/travel (like car: underConstruction, SuitcaseIcon,
+   one empty page); 56_calendar_travel.sql + MODULE_IDS. Reading "Popular now in <genre>": openlibrary.popular_in sorts
+   by want_to_read (most added to readers' Want to Read lists - BookTok / bestsellers: Fourth Wing, Powerless, Midnight
+   Library...) with first_publish_year >= 2000 (RECENT); sort=rating gave classics; sort=trending was noisy (manga,
+   translations) and trending_yearly answered HTTP 500. Translations in Latin script (Cadáver exquisito) still slip
+   through - "Not interested" hides them.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

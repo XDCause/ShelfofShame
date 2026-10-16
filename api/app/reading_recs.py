@@ -127,7 +127,7 @@ def pick_by_author(name: str, books: list[dict], shelf: dict, seen: set) -> list
 def pick_in_genre(books: list[dict], shelf: dict, seen: set, shown: set) -> list[dict]:
     """One book per author - their most-rated one, which is usually a series' first book - from
     authors you don't have yet and not already suggested (`shown`, across genres), in Open
-    Library's order (best rated first)."""
+    Library's order (most wanted first - openlibrary.popular_in)."""
     best: dict[str, dict] = {}
     order: list[str] = []
     for b in books:

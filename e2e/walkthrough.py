@@ -1641,7 +1641,7 @@ def phone(page):
         page.locator(".tabbar a", has_text=tab).click()
         fits(tab)
     page.locator(".tabbar a", has_text="Hobbies").click()
-    expect(page.locator(".hobby-card")).to_have_count(7)          # models, board games, volleyball, video games, chess, reading, car
+    expect(page.locator(".hobby-card")).to_have_count(8)          # models, board games, volleyball, video games, chess, reading, car, travel
     car = page.locator(".hobby-card", has_text="Building my car")
     expect(car.locator(".under-construction")).to_be_visible()     # the spanner: still to be built
     fits("Hobbies")

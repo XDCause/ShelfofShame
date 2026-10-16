@@ -74,7 +74,7 @@ export function RecsView() {
       {data.sections.map((s) => (
         <section key={`${s.kind}:${s.reason}`} className="recs-section">
           <div className="recs-section-head">
-            <h2 className="home-card-title">{s.kind === 'author' ? `More by ${s.reason}` : `Popular in ${s.reason}`}</h2>
+            <h2 className="home-card-title">{s.kind === 'author' ? `More by ${s.reason}` : `Popular now in ${s.reason}`}</h2>
             <span className="muted small">
               {s.kind === 'author' ? `You gave ${s.seed} ${starsText(Number(s.seed_rating))}★` : 'Well rated on Open Library, by authors new to you'}
             </span>
