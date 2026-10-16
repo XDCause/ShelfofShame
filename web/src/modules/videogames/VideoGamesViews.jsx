@@ -41,41 +41,45 @@ export function Dashboard() {
           </div>
 
           <div className="home-grid">
-            <section className="card home-card">
-              <h2 className="home-card-title">Closest to 100%</h2>
-              {s.closest.length === 0 ? <p className="muted small">Nothing part-done. Pick a game and start hunting!</p> : (
-                <ul className="list plain-list">{s.closest.map((g) => <GameRow key={g.app_id} game={g} detail={`${g.left_to_get} to go`} />)}</ul>
-              )}
-            </section>
-            <section className="card home-card">
-              <h2 className="home-card-title">Recently unlocked<StreakPill streak={s.streak} /></h2>
-              <AchievementList items={s.recent} when />
-            </section>
-            <section className="card home-card">
-              <h2 className="home-card-title">Quick wins</h2>
-              <p className="muted small chart-sub">Started games with the least time left to 100% (from SteamHunters' median)</p>
-              {s.quick_wins.length === 0 ? <p className="muted small">Nothing yet - Sync now reads how long others took.</p> : (
-                <ul className="list plain-list">
-                  {s.quick_wins.map((g) => (
-                    <GameRow key={g.app_id} game={g} detail={`about ${playtime(g.minutes_left)} left${
-                      g.perfect_rate != null ? ` · ${Number(g.perfect_rate)}% of players 100% it` : ''}`} />
-                  ))}
-                </ul>
-              )}
-            </section>
-            <section className="card home-card">
-              <h2 className="home-card-title">Rarest you have</h2>
-              <AchievementList items={s.rarest} />
-            </section>
-            <OtherPlatformsCard />
-            <section className="card home-card">
-              <h2 className="home-card-title">Latest 100%</h2>
-              {s.recent_perfect.length === 0 ? <p className="muted small">Your first 100% will show here.</p> : (
-                <div className="perfect-grid">
-                  {s.recent_perfect.map((g) => <PerfectCard key={g.app_id} game={g} />)}
-                </div>
-              )}
-            </section>
+            <div className="home-stack">
+              <section className="card home-card">
+                <h2 className="home-card-title">Closest to 100%</h2>
+                {s.closest.length === 0 ? <p className="muted small">Nothing part-done. Pick a game and start hunting!</p> : (
+                  <ul className="list plain-list">{s.closest.map((g) => <GameRow key={g.app_id} game={g} detail={`${g.left_to_get} to go`} />)}</ul>
+                )}
+              </section>
+              <section className="card home-card">
+                <h2 className="home-card-title">Quick wins</h2>
+                <p className="muted small chart-sub">Started games with the least time left to 100% (from SteamHunters' median)</p>
+                {s.quick_wins.length === 0 ? <p className="muted small">Nothing yet - Sync now reads how long others took.</p> : (
+                  <ul className="list plain-list">
+                    {s.quick_wins.map((g) => (
+                      <GameRow key={g.app_id} game={g} detail={`about ${playtime(g.minutes_left)} left${
+                        g.perfect_rate != null ? ` · ${Number(g.perfect_rate)}% of players 100% it` : ''}`} />
+                    ))}
+                  </ul>
+                )}
+              </section>
+              <OtherPlatformsCard />
+            </div>
+            <div className="home-stack">
+              <section className="card home-card">
+                <h2 className="home-card-title">Recently unlocked<StreakPill streak={s.streak} /></h2>
+                <AchievementList items={s.recent} when />
+              </section>
+              <section className="card home-card">
+                <h2 className="home-card-title">Rarest you have</h2>
+                <AchievementList items={s.rarest} />
+              </section>
+              <section className="card home-card">
+                <h2 className="home-card-title">Latest 100%</h2>
+                {s.recent_perfect.length === 0 ? <p className="muted small">Your first 100% will show here.</p> : (
+                  <div className="perfect-grid">
+                    {s.recent_perfect.map((g) => <PerfectCard key={g.app_id} game={g} />)}
+                  </div>
+                )}
+              </section>
+            </div>
           </div>
         </>
       )}

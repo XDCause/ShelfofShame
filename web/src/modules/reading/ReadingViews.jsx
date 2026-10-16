@@ -47,30 +47,34 @@ export function Dashboard() {
               sub={`${s.counts.owned} on your shelf · ${s.counts.want} wanted`} />
           </div>
           <div className="home-grid">
-            <section className="card home-card wide-card">
-              <div className="section-head">
-                <h2 className="home-card-title">Reading now</h2>
-                <button type="button" className="plain small" onClick={() => openPanel('addbook', { status: 'reading' })}>+ Add a book</button>
-              </div>
-              {s.reading.length === 0 ? <p className="muted small">Nothing on the go. Pick something from your want-to-read list!</p> : (
-                <ul className="reading-now">{s.reading.map((b) => <ReadingNow key={b.book_id} book={b} />)}</ul>
-              )}
-            </section>
-            <section className="card home-card">
-              <h2 className="home-card-title">Recently finished</h2>
-              {s.finished.length === 0 ? <p className="muted small">Your finished books will show here.</p> : (
-                <div className="cover-row">{s.finished.map((b) => <CoverCard key={b.book_id} book={b} />)}</div>
-              )}
-              <Link className="button plain small" to="/reading/books?status=finished">All finished →</Link>
-            </section>
-            <section className="card home-card">
-              <h2 className="home-card-title">Up next</h2>
-              {s.next_up.length === 0 ? <p className="muted small">Add books you want to read.</p> : (
-                <ul className="list plain-list">{s.next_up.map((b) => <BookRow key={b.book_id} book={b} />)}</ul>
-              )}
-              <Link className="button plain small" to="/reading/books?status=want">Want to read →</Link>
-            </section>
-            <RecsCard />
+            <div className="home-stack">
+              <section className="card home-card">
+                <div className="section-head">
+                  <h2 className="home-card-title">Reading now</h2>
+                  <button type="button" className="plain small" onClick={() => openPanel('addbook', { status: 'reading' })}>+ Add a book</button>
+                </div>
+                {s.reading.length === 0 ? <p className="muted small">Nothing on the go. Pick something from your want-to-read list!</p> : (
+                  <ul className="reading-now">{s.reading.map((b) => <ReadingNow key={b.book_id} book={b} />)}</ul>
+                )}
+              </section>
+              <section className="card home-card">
+                <h2 className="home-card-title">Up next</h2>
+                {s.next_up.length === 0 ? <p className="muted small">Add books you want to read.</p> : (
+                  <ul className="list plain-list">{s.next_up.map((b) => <BookRow key={b.book_id} book={b} />)}</ul>
+                )}
+                <Link className="button plain small" to="/reading/books?status=want">Want to read →</Link>
+              </section>
+            </div>
+            <div className="home-stack">
+              <section className="card home-card">
+                <h2 className="home-card-title">Recently finished</h2>
+                {s.finished.length === 0 ? <p className="muted small">Your finished books will show here.</p> : (
+                  <div className="cover-row">{s.finished.map((b) => <CoverCard key={b.book_id} book={b} />)}</div>
+                )}
+                <Link className="button plain small" to="/reading/books?status=finished">All finished →</Link>
+              </section>
+              <RecsCard />
+            </div>
           </div>
           {s.covers?.running && <p className="muted small">Finding covers on Open Library... {s.covers.done} of {s.covers.total}</p>}
         </>
@@ -250,7 +254,7 @@ export function StatsView() {
           )}
         </section>
         {f.longest && (
-          <section className="card home-card">
+          <section className="card home-card wide-card">
             <h2 className="home-card-title">Longest book</h2>
             <ul className="list plain-list"><BookRow book={f.longest} /></ul>
             <button type="button" className="plain small" onClick={() => openPanel('book', { id: f.longest.book_id })}>{f.longest.pages} pages ›</button>
