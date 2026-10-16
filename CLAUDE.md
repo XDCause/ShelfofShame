@@ -1310,6 +1310,27 @@ DBeaver, psql, and the one-off import script.
    Web: "+ Want" (GearPanel wanted=true preselects Wanted, "Add to wanted"), a "Wanted" group below your gear, "N wanted"
    in the summary, purple badge / picker button. Wanted = not bought yet: the form hides Bought on + Price paid
    (FormPanel `hide`, values still sent) and the API clears both for Wanted (not_bought_yet). Tests: 362 API, 65 browser steps.
+3zzk. **Volleyball clips + highlight videos; car placeholder** (2026-10-16).
+   - 51_volleyball_clips.sql: volleyball_clips (video_id CASCADE, title, start_s / end_s NUMERIC(9,2), end > start);
+     volleyball_videos.processing (NULL | 'making' | 'failed: why') + made_from. api/app/vbclips.py: clips = bookmarks
+     (GET/POST /volleyball/videos/{id}/clips, PATCH/DELETE /volleyball/clips/{id}; times are floats from the player,
+     rounded to hundredths - the first version used Decimal(decimal_places=2) and refused 12.3456789; <= 30 min; 409 for
+     links / unfinished videos). POST /volleyball/highlights {title, clip_ids} (202) -> new video (topic Highlights, game
+     if all from one) 'making'; BackgroundTasks render(): ffprobe (rotation from side_data: Samsung portrait = -90),
+     ffmpeg -ss/-t per input, scale+pad to the first clip's shape (long side <= 1920, even), fps 30, stereo 48k (anullsrc
+     for silent clips), concat filter, libx264 veryfast crf 23 + aac, +faststart, -progress pipe -> PROGRESS[id]; one at a
+     time (lock), nice 10; .part then rename. GET /volleyball/highlights/{id} = progress. main lifespan:
+     forget_unfinished() marks 'making' as failed + removes *.part. GET .../file?download=true = attachment named after
+     the title. ffmpeg 7.1 from Debian in api/Dockerfile (image ~1 GB). Real footage: prod's full game is HEVC 1080p
+     portrait, 37.5 min / 4.15 GB; a 20 s cut took 4.9 s -> 1080x1920 H.264, 5 MB.
+     Web ClipEditor.jsx (in VideoPanel, wide drawer): Mark start / Mark end (times tap to jump), name, Preview, Save clip;
+     clip list (tick, play - stops at the end, delete), Play all / Play N ticked, Make a highlight video -> title ->
+     toast; Making (polls 2 s, progress bar / failed message); Download link. VideosView: Making... / Couldn't be made
+     cards, polls 3 s while any is making, "N clips". GOTCHA: Playwright's Chromium can't play H.264 MP4 (no licence) -
+     browser tests of real playback need WebM; the walkthrough adds clips through the API.
+   - modules/car: "Building my car" (Modified Toyota 86) placeholder - one page with an EmptyState; manifest
+     underConstruction: true -> Navigation's UnderConstruction (amber WrenchIcon) after the name in the sidebar and on the
+     Hobbies page. CarIcon, WrenchIcon. Tests: 367 API (test_vbclips.py runs the real ffmpeg on generated videos), 65 steps.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

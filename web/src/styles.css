@@ -1919,3 +1919,18 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
   .mini-steps { width: 100%; }
   .mini-steps button { flex: 1; padding: 0 4px; min-height: 36px; }
 }
+
+/* Volleyball clips (ClipEditor): mark start / end under the player, the clip list, highlight videos. */
+.clip-marks { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.clip-save { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.clip-save input { flex: 1 1 220px; min-width: 0; }
+.clip-list { list-style: none; margin: 0 0 12px; padding: 0; }
+.clip-list li { display: flex; align-items: center; gap: 10px; padding: 8px 4px; border-top: 0.5px solid var(--separator); border-radius: 8px; }
+.clip-list li:first-child { border-top: 0; }
+.clip-list li.playing { background: color-mix(in srgb, var(--tint) 12%, transparent); }
+.clip-list .grow { display: flex; flex-direction: column; min-width: 0; }
+.clip-play { width: 36px; height: 36px; border-radius: 50%; background: var(--fill); flex: none; padding: 0; }
+.making-mark { font-weight: 600; color: var(--muted); }
+
+/* A hobby still to be built: a small amber spanner after its name (sidebar, Hobbies page). */
+.under-construction { display: inline-flex; vertical-align: -2px; margin-left: 6px; color: var(--low); }

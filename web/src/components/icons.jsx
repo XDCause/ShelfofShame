@@ -115,3 +115,11 @@ export const PuzzleIcon = (p) => (
 export const HourglassIcon = (p) => (
   <Icon {...p}><path d="M7 3.5h10M7 20.5h10" /><path d="M8 3.5c0 4.5 8 5.5 8 8.5s-8 4-8 8.5M16 3.5c0 4.5-8 5.5-8 8.5s8 4 8 8.5" /></Icon>
 )
+export const CarIcon = (p) => (
+  <Icon {...p}><path d="M4 15.5v-3l1.8-4.2A2 2 0 0 1 7.6 7h8.8a2 2 0 0 1 1.8 1.3L20 12.5v3" /><path d="M3 15.5h18v2.5H3zM4.5 12.5h15" />
+    <circle cx="7.5" cy="18.5" r="1.6" /><circle cx="16.5" cy="18.5" r="1.6" /></Icon>
+)
+// "Under construction": a spanner.
+export const WrenchIcon = (p) => (
+  <Icon {...p}><path d="M14.7 6.3a4 4 0 0 0 4.8 5.2l-8.3 8.3a2 2 0 0 1-2.8-2.8l8.3-8.3a4 4 0 0 0-5.2-4.8l2.6 2.6-.4 2.2-2.2.4z" /></Icon>
+)

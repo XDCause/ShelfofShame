@@ -1,8 +1,14 @@
 import { Link, NavLink, useLocation } from 'react-router'
 import {
-  BoltIcon, BoxIcon, CalendarIcon, CartIcon, ClockIcon, GridIcon, HomeIcon, JournalIcon,
+  BoltIcon, BoxIcon, CalendarIcon, CartIcon, ClockIcon, GridIcon, HomeIcon, JournalIcon, WrenchIcon,
 } from '../components/icons.jsx'
 import { MODULES, moduleFor } from '../modules/index.js'
+
+// A spanner after a hobby's name: it's a placeholder, still to be built (manifest underConstruction).
+export function UnderConstruction() {
+  return <span className="under-construction" title="Under construction"><WrenchIcon size={14} />
+    <span className="visually-hidden"> (under construction)</span></span>
+}
 
 // The core: pages for every hobby. Supplies and the wishlist are shared (paints, glue, tape...
 // for any hobby), so they sit here rather than inside a hobby. `title` is the page heading when
@@ -51,7 +57,7 @@ export function Sidebar() {
         <p className="side-section">Hobbies</p>
         {MODULES.map((m) => (
           <NavLink key={m.id} to={`/${m.id}`} className="side-link" title={m.what}>
-            <m.Icon size={20} /><span>{m.name}</span>
+            <m.Icon size={20} /><span>{m.name}{m.underConstruction && <UnderConstruction />}</span>
           </NavLink>
         ))}
       </nav>

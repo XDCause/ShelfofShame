@@ -26,7 +26,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from . import (activity, boardgames, bookseries, build, calendar, catalog, chess, colours, journal, journal_drawings,
-               gundam, lookups, minis, models, othergames, products, reading, reading_recs, settings, spending, supplies, vgfind, videogames, webphoto,
+               gundam, lookups, minis, models, othergames, products, reading, reading_recs, settings, spending, supplies, vbclips, vgfind, videogames, webphoto,
                volleyball, warhammer, wishlist)
 from .db import db
 
@@ -34,6 +34,7 @@ from .db import db
 async def lifespan(_app):
     """While the API runs: the daily Steam sync (videogames.py) - only when a key is set - and the
     daily chess.com sync (chess.py; it waits until a username is set)."""
+    vbclips.forget_unfinished()            # a highlight video being made when the app stopped
     if os.environ.get("STEAM_API_KEY"):
         videogames.start_daily_sync()
     chess.start_daily_sync()
@@ -43,7 +44,7 @@ async def lifespan(_app):
 app = FastAPI(title="Off the Clock API", docs_url="/api/docs", openapi_url="/api/openapi.json", lifespan=lifespan)
 
 for part in (activity, journal_drawings, journal, calendar, supplies, wishlist, products, catalog, models, minis, build, colours,
-             boardgames, volleyball, othergames, vgfind, videogames, chess, reading, reading_recs, bookseries, warhammer, gundam, spending, settings, lookups, webphoto):
+             boardgames, volleyball, vbclips, othergames, vgfind, videogames, chess, reading, reading_recs, bookseries, warhammer, gundam, spending, settings, lookups, webphoto):
     app.include_router(part.router)
 
 

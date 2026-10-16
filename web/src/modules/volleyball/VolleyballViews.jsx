@@ -283,6 +283,13 @@ export function VideosView() {
   const [topic, setTopic] = useState('')
   const [error, setError] = useState('')
   useEffect(() => { api.listVideos().then(setVideos).catch((e) => setError(e.message)) }, [refreshKey])
+  // While a highlight video is being made, look again every 3 seconds until it's ready.
+  const makingAny = videos?.some((v) => v.processing === 'making')
+  useEffect(() => {
+    if (!makingAny) return undefined
+    const timer = setInterval(() => api.listVideos().then(setVideos).catch(() => {}), 3000)
+    return () => clearInterval(timer)
+  }, [makingAny])
   if (error) return <p className="alert error">{error}</p>
   if (!videos) return <p className="muted loading">Loading...</p>
   const topics = [...new Set(videos.map((v) => v.topic).filter(Boolean))]
@@ -320,6 +327,10 @@ export function VideosView() {
                     <video src={`${v.file_url}#t=0.5`} preload="metadata" muted playsInline />
                     <span className="play-mark" aria-hidden="true">▶</span>
                   </button>
+                ) : v.processing ? (
+                  <button type="button" className="video-thumb" onClick={open} aria-label={`Open ${v.title}`}>
+                    <span className="photo-missing making-mark">{v.processing === 'making' ? 'Making...' : "Couldn't be made"}</span>
+                  </button>
                 ) : (
                   <a href={v.url ?? undefined} target="_blank" rel="noreferrer" className="video-thumb">
                     {yt ? <img src={`https://img.youtube.com/vi/${yt}/mqdefault.jpg`} alt="" loading="lazy" referrerPolicy="no-referrer" />
@@ -327,10 +338,11 @@ export function VideosView() {
                   </a>
                 )}
                 <div className="video-body">
-                  {v.file_url ? <button type="button" className="link-title item-title" onClick={open}>{v.title}</button>
+                  {v.file_url || v.processing ? <button type="button" className="link-title item-title" onClick={open}>{v.title}</button>
                     : v.url ? <a href={v.url} target="_blank" rel="noreferrer" className="item-title">{v.title} ↗</a>
                       : <span className="item-title">{v.title} <span className="muted small">(upload didn't finish)</span></span>}
-                  <span className="item-meta">{[v.topic, v.game_day && `${shortDate(v.game_day)}${v.game_opponent ? ` vs ${v.game_opponent}` : ''}`].filter(Boolean).join(' · ')}</span>
+                  <span className="item-meta">{[v.topic, v.game_day && `${shortDate(v.game_day)}${v.game_opponent ? ` vs ${v.game_opponent}` : ''}`,
+                    v.clip_count > 0 && `${v.clip_count} clip${v.clip_count > 1 ? 's' : ''}`].filter(Boolean).join(' · ')}</span>
                   <span className="button-row">
                     <label className="tick-label"><input type="checkbox" checked={v.watched} onChange={() => watched(v)} /> Watched</label>
                     <button type="button" className="plain small" onClick={() => openPanel('video', { id: v.video_id })}>Edit</button>

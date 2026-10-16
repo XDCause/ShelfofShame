@@ -190,6 +190,11 @@ export const api = {
   addVideo: (data) => request('/volleyball/videos', send('POST', data)),
   updateVideo: (id, data) => request(`/volleyball/videos/${id}`, send('PATCH', data)),
   deleteVideo: (id) => request(`/volleyball/videos/${id}`, send('DELETE')),
+  videoClips: (id) => request(`/volleyball/videos/${id}/clips`),
+  addClip: (id, clip) => request(`/volleyball/videos/${id}/clips`, send('POST', clip)),
+  deleteClip: (clipId) => request(`/volleyball/clips/${clipId}`, send('DELETE')),
+  makeHighlights: (title, clipIds) => request('/volleyball/highlights', send('POST', { title, clip_ids: clipIds })),
+  highlightProgress: (id) => request(`/volleyball/highlights/${id}`),
 
   // Video games (Steam achievements)
   steamAccount: () => request('/videogames/account'),

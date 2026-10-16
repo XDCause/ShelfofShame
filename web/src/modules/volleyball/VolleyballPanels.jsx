@@ -4,6 +4,7 @@ import Drawer from '../../components/Drawer.jsx'
 import PhotoPick from '../../components/PhotoPick.jsx'
 import RecordFields, { RowPhoto, useRecordForm } from '../../components/RecordFields.jsx'
 import { useApp } from '../../core/app-context.js'
+import ClipEditor, { Making } from './ClipEditor.jsx'
 import JournalMentions from '../../core/journal/JournalMentions.jsx'
 import { useNewPage } from '../../core/journal/JournalList.jsx'
 
@@ -50,7 +51,8 @@ export const youtubeId = (url) =>
 // A form panel shared by them all: fields + Save, and Delete when editing. onField(name, value,
 // setForm) hears every change (the game form fills Where when the team changes).
 // hide: names of fields not shown right now (their values are still sent).
-function FormPanel({ title, fields, record, defaults, before, children, onSave, onDelete, onClose, saveLabel, onField, deleteLabel, hide = [] }) {
+function FormPanel({ title, fields, record, defaults, before, children, onSave, onDelete, onClose, saveLabel, onField, deleteLabel, hide = [],
+  wide = false }) {
   const { form, set: setField, setForm, payload } = useRecordForm(fields, record, defaults)
   const set = (name) => (e) => { setField(name)(e); onField?.(name, e.target.value, setForm) }
   const [busy, setBusy] = useState(false)
@@ -82,7 +84,7 @@ function FormPanel({ title, fields, record, defaults, before, children, onSave, 
     </>
   )
   return (
-    <Drawer title={title} onClose={onClose} footer={footer}>
+    <Drawer title={title} onClose={onClose} footer={footer} wide={wide}>
       {error && <p className="alert error" role="alert">{error}</p>}
       {before}
       <form id="vb-form" onSubmit={submit}>{children?.({ form, set })}<RecordFields fields={fields.filter((f) => !hide.includes(f.name))} form={form} set={set} /></form>
@@ -249,13 +251,17 @@ export function VideoPanel({ id = null, gameId = null, onClose }) {
   const [file, setFile] = useState(null)          // a video picked to upload (new, or to replace the one there)
   const [asLink, setAsLink] = useState(false)     // add a link instead (YouTube...)
   const [progress, setProgress] = useState(null)  // 0-1 while uploading
+  const reloadVideo = useCallback(() => api.listVideos().then((vs) => {
+    const v = vs.find((x) => x.video_id === id)
+    setVideo(v)
+    setAsLink(Boolean(v?.url))
+  }), [id])
   useEffect(() => {
     api.listVolleyball().then(setGames).catch(() => {})
     if (id != null) {
-      api.listVideos().then((vs) => { const v = vs.find((x) => x.video_id === id); setVideo(v); setAsLink(Boolean(v?.url)) })
-        .catch((e) => showToast(e.message))
+      reloadVideo().catch((e) => showToast(e.message))
     }
-  }, [id, showToast])
+  }, [id, showToast])  // eslint-disable-line react-hooks/exhaustive-deps -- once per video
   if (id != null && !video) return <Drawer title="Video" onClose={onClose}><p className="muted">Loading...</p></Drawer>
 
   const fields = [
@@ -306,19 +312,23 @@ export function VideoPanel({ id = null, gameId = null, onClose }) {
     </section>
   )
   return (
-    <FormPanel title={video ? video.title : 'Add a video'} fields={fields} record={video}
+    <FormPanel title={video ? video.title : 'Add a video'} fields={fields} record={video} wide={Boolean(video?.file_url)}
       defaults={{ game_id: gameId ?? '' }} onClose={onClose} onSave={save}
       saveLabel={progress != null ? 'Uploading...' : video ? 'Save' : 'Add video'}
       onDelete={video && (async () => { await api.deleteVideo(video.video_id); changed(); onClose() })}
       before={<>
+        {video?.processing && <Making video={video} onDone={() => { reloadVideo(); changed() }} />}
         {video?.file_url && (
-          <section className="panel-section">
-            <video className="video-player" src={video.file_url} controls playsInline preload="metadata" />
-            <p className="muted small">{[video.original_name, video.file_size && fileSize(video.file_size)].filter(Boolean).join(' · ')}</p>
-          </section>
+          <>
+            <ClipEditor video={video} />
+            <p className="panel-section muted small">
+              {[video.made_from ?? video.original_name, video.file_size && fileSize(video.file_size)].filter(Boolean).join(' · ')}
+              {' · '}<a href={`/api/volleyball/videos/${video.video_id}/file?download=true`} download>Download</a>
+            </p>
+          </>
         )}
         {video?.url && !video.file_url && <p className="panel-section"><a href={video.url} target="_blank" rel="noreferrer">Open the link ↗</a></p>}
-        {picker}
+        {!video?.processing && !video?.made_from && picker}
       </>}>
       {() => <datalist id="video-topics">{VIDEO_TOPICS.map((t) => <option key={t} value={t} />)}</datalist>}
     </FormPanel>

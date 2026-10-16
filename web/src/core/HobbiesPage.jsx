@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import { ChevronIcon } from '../components/icons.jsx'
+import { UnderConstruction } from './Navigation.jsx'
 import { MODULES } from '../modules/index.js'
 
 // Every hobby, with its numbers: the phone's Hobbies tab (wide screens list them in the sidebar).
@@ -11,7 +12,7 @@ export default function HobbiesPage() {
           <Link to={`/${m.id}`} className="hobby-head">
             <span className="stat-icon tint"><m.Icon size={24} /></span>
             <span className="grow">
-              <span className="item-title">{m.name}</span>
+              <span className="item-title">{m.name}{m.underConstruction && <UnderConstruction />}</span>
               <span className="item-meta">{m.what}</span>
             </span>
             <ChevronIcon size={18} className="chevron" />

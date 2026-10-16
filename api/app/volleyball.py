@@ -14,6 +14,7 @@
 Games show on the calendar and in Recent activity (activity.py).
 """
 import os
+import re
 import secrets
 from datetime import date
 from decimal import Decimal
@@ -142,7 +143,8 @@ FROM gear g"""
 VIDEO_SELECT = """
 SELECT x.*, v.played_on AS game_day, v.opponent AS game_opponent,
        CASE WHEN x.file_name IS NOT NULL THEN '/api/volleyball/videos/' || x.video_id || '/file?v=' || x.file_name END
-           AS file_url
+           AS file_url,
+       (SELECT count(*) FROM volleyball_clips c WHERE c.video_id = x.video_id)::int AS clip_count
 FROM volleyball_videos x LEFT JOIN volleyball_games v USING (game_id)"""
 
 
@@ -488,12 +490,17 @@ async def upload_video(video_id: int, request: Request):
 
 
 @router.get("/volleyball/videos/{video_id}/file")
-def video_file(video_id: int):
-    """Plays the video (the browser asks for parts of it as you skip around - Range requests)."""
+def video_file(video_id: int, download: bool = False):
+    """Plays the video (the browser asks for parts of it as you skip around - Range requests);
+    ?download=true saves it instead, named after its title."""
     with db() as conn:
         video = fetch_video(conn, video_id)
     path = video_dir() / (video["file_name"] or "")
     if not video["file_name"] or not path.is_file():
         raise HTTPException(404, "No video file.")
+    if download:
+        stem = re.sub(r"[^\w\- ]+", "", video["title"]).strip() or f"video-{video_id}"
+        return FileResponse(path, media_type=video["file_type"], filename=f"{stem}.{path.suffix.lstrip('.')}",
+                            headers={"X-Content-Type-Options": "nosniff"})
     return FileResponse(path, media_type=video["file_type"], headers={
         "Cache-Control": "private, max-age=31536000, immutable", "X-Content-Type-Options": "nosniff"})

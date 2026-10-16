@@ -991,8 +991,20 @@ def volleyball(page):
     card.get_by_role("button", name=f"Float serve {MARK}", exact=True).click()   # its panel has the player
     d = drawer(page)
     expect(d.locator("video.video-player")).to_be_visible()
+    # Clips: a bookmarked part (added through the API - the test browser can't play MP4), ticked
+    # for a highlight video.
+    video_id = int(re.search(r"/videos/(\d+)/file", d.locator("video.video-player").get_attribute("src")).group(1))
+    page.request.post(f"{BASE}/api/volleyball/videos/{video_id}/clips", data={"title": "Ace", "start": 0, "end": 0.5})
+    page.keyboard.press("Escape")
+    card.get_by_role("button", name=f"Float serve {MARK}", exact=True).click()
+    d = drawer(page)
+    expect(d.locator(".clip-list li", has_text="Ace")).to_contain_text("0:00.0 – 0:00.5")
+    expect(d.get_by_role("button", name="Tick clips to make a highlight video")).to_be_disabled()
+    d.get_by_label("Use Ace in a highlight video").check()
+    expect(d.get_by_role("button", name=re.compile(r"^Make a highlight video \(1 clip"))).to_be_enabled()
+    expect(d.get_by_role("link", name="Download")).to_have_attribute("href", re.compile(r"download=true"))
     # Delete it: its file goes too (the data restore after the run can't take files off the disk).
-    d.get_by_role("button", name="Delete").click()
+    d.get_by_role("button", name="Delete", exact=True).click()
     d.locator(".confirm").get_by_role("button", name="Delete").click()
     expect(page.locator(".video-card", has_text=MARK)).to_have_count(0)
 
@@ -1550,7 +1562,9 @@ def phone(page):
         page.locator(".tabbar a", has_text=tab).click()
         fits(tab)
     page.locator(".tabbar a", has_text="Hobbies").click()
-    expect(page.locator(".hobby-card")).to_have_count(6)          # models, board games, volleyball, video games, chess, reading
+    expect(page.locator(".hobby-card")).to_have_count(7)          # models, board games, volleyball, video games, chess, reading, car
+    car = page.locator(".hobby-card", has_text="Building my car")
+    expect(car.locator(".under-construction")).to_be_visible()     # the spanner: still to be built
     fits("Hobbies")
     for hobby, tabs in (("Models", ("Kits", "Colours")), ("Board games", ("Games", "Plays")),
                         ("Volleyball", ("Games", "Gear", "Videos")), ("Video games", ("Dashboard", "Games", "Stats"))):
