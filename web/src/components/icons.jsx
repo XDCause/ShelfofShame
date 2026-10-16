@@ -130,6 +130,9 @@ export const WrenchIcon = (p) => (
 export const WhistleIcon = (p) => (
   <Icon {...p}><circle cx="9" cy="14" r="5" /><path d="M12.5 10.5 21 7v4l-6.2 1.6" /><path d="M5 4.5 6.5 7M9 3v3M13 4.5 11.5 7" /></Icon>
 )
+export const CrosshairIcon = (p) => (
+  <Icon {...p}><circle cx="12" cy="12" r="7.5" /><circle cx="12" cy="12" r="1.2" /><path d="M12 2.5v5M12 16.5v5M2.5 12h5M16.5 12h5" /></Icon>
+)
 export const SuitcaseIcon = (p) => (
   <Icon {...p}><rect x="3.5" y="7" width="17" height="12.5" rx="2.5" /><path d="M9 7V5.2A1.7 1.7 0 0 1 10.7 3.5h2.6A1.7 1.7 0 0 1 15 5.2V7M8 7v12.5M16 7v12.5" /></Icon>
 )

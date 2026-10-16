@@ -9,7 +9,7 @@ import { useNewPage } from '../journal/JournalList.jsx'
 import { moodOf } from '../journal/moods.js'
 
 // Colours: planned events by hobby, what happened by kind (dots) and verb (like Recent activity).
-const HOBBY_TONE = { models: 'purple', boardgames: 'teal', volleyball: 'low', videogames: 'purple', chess: 'tint', reading: 'low', car: 'ok', travel: 'teal' }
+const HOBBY_TONE = { models: 'purple', boardgames: 'teal', volleyball: 'low', videogames: 'purple', chess: 'tint', reading: 'low', car: 'ok', travel: 'teal', shooting: 'out' }
 const KIND_TONE = { model: 'purple', supply: 'ok', page: 'teal', game: 'teal', volleyball: 'low', gear: 'ok', videogame: 'purple',
   chess: 'tint', book: 'low', goal: 'ok' }
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']

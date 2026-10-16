@@ -1413,6 +1413,8 @@ DBeaver, psql, and the one-off import script.
      in sections (groupGoals): this year's, 3-year goals running now, next year's and later, Other goals, past years'
      (with "N of M done"); the status filter now starts on All. The user already had goals in dev (Career Change, Complete
      MBA, Get Engaged, Div 2 Volleyball, Triathlon). 380 API tests, 70 browser steps.
+3zzs. **Precision shooting placeholder** (2026-10-16): modules/shooting (like car / travel: underConstruction, CrosshairIcon, one
+   empty Sessions page); 61_calendar_shooting.sql + MODULE_IDS; calendar tone 'out'. e2e: 9 hobby cards.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"
