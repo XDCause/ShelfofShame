@@ -1406,6 +1406,13 @@ DBeaver, psql, and the one-off import script.
      GoalsHome (Home card, active goals, top 4). components/FitTextarea.jsx (moved out of PaintChecklist).
      Class names `.goal-card` / `.goal-head` already belong to the video games goal - Goals uses goal-tile / goal-top.
    - Tests: 379 API (test_goals.py), 70 browser steps (goals).
+   - Timeframes (user asked for New Year's and 3-year goals): 60_goal_timeframe.sql goals.timeframe year | three_years
+     (NULL = no set time) + period_start (the year; 3 years = start..start+2). API: a new one with no year = this year (DB
+     date); target_date follows the period's end (31 Dec) unless you'd picked another day. Web: "When" choice on + New goal
+     (This year / Next year / 3 years from either / No set time; periodChoices), a When select on the goal page; the list is
+     in sections (groupGoals): this year's, 3-year goals running now, next year's and later, Other goals, past years'
+     (with "N of M done"); the status filter now starts on All. The user already had goals in dev (Career Change, Complete
+     MBA, Get Engaged, Div 2 Volleyball, Triathlon). 380 API tests, 70 browser steps.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

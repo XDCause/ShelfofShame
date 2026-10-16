@@ -66,3 +66,21 @@ def test_status_and_order_and_activity(client):
     assert back["done_on"] is None
     assert client.delete(f"/api/goals/{c['goal_id']}").status_code == 204
     assert client.get(f"/api/goals/{c['goal_id']}").status_code == 404
+
+
+def test_year_and_three_year_goals(client):
+    this_year = client.get("/api/goals").json()["this_year"]
+    year = client.post("/api/goals", json={"title": "Read 30 books", "timeframe": "year"}).json()
+    assert (year["period_start"], year["target_date"]) == (this_year, f"{this_year}-12-31")
+    three = client.post("/api/goals", json={"title": "Build a car", "timeframe": "three_years", "period_start": 2027}).json()
+    assert three["target_date"] == "2029-12-31"
+    # Moving it to next year moves the target day along; a day you picked yourself stays.
+    moved = client.patch(f"/api/goals/{year['goal_id']}", json={"period_start": this_year + 1}).json()
+    assert moved["target_date"] == f"{this_year + 1}-12-31"
+    client.patch(f"/api/goals/{three['goal_id']}", json={"target_date": "2028-06-30"})
+    kept = client.patch(f"/api/goals/{three['goal_id']}", json={"timeframe": "year"}).json()
+    assert (kept["timeframe"], kept["period_start"], kept["target_date"]) == ("year", 2027, "2028-06-30")
+    plain = client.patch(f"/api/goals/{three['goal_id']}", json={"timeframe": None}).json()
+    assert (plain["timeframe"], plain["period_start"]) == (None, None)
+    assert client.post("/api/goals", json={"title": "X", "timeframe": "decade"}).status_code == 422
+    assert client.post("/api/goals", json={"title": "No time", "target_date": None}).json()["target_date"] is None

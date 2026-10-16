@@ -1537,6 +1537,8 @@ def goals(page):
     page.get_by_label("What's the goal?").fill(f"Finish three kits {MARK}")
     page.get_by_role("button", name="Add", exact=True).click()
     expect(page.get_by_label("Goal", exact=True)).to_have_value(f"Finish three kits {MARK}")
+    expect(page.get_by_label("When")).to_have_value(re.compile(r"^year:\d{4}$"))           # new goals: this year's
+    expect(page.locator(".goal-top .goal-due")).to_contain_text(re.compile("31 Dec|Due in|Due today"))   # aims for 31 December
     page.get_by_label("Why it matters").fill("The stash keeps growing.")
     page.get_by_label("Details").click()                             # leaving a box saves it
     page.get_by_label("Details").fill("One a month. Zero first.")
@@ -1561,6 +1563,7 @@ def goals(page):
     page.get_by_role("link", name="‹ All goals").click()
     page.locator(".chip-filter", has_text="Done").click()
     tile = page.locator(".goal-tile", has_text=MARK)
+    expect(page.locator(".goal-section", has=tile).locator(".goal-section-title")).to_contain_text(re.compile(r"\d{4} goals"))
     expect(tile).to_contain_text("1 of 3 kits")
     expect(tile).to_contain_text("The stash keeps growing.")
     go(page, "Home")

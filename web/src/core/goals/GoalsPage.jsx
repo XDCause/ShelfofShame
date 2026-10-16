@@ -4,18 +4,20 @@ import { api } from '../../api.js'
 import { TargetIcon } from '../../components/icons.jsx'
 import { useApp } from '../app-context.js'
 import EmptyState from '../EmptyState.jsx'
-import { dueText, hobbyName, ProgressBar, progressText, STATUS } from './goalParts.jsx'
+import { dueText, groupGoals, hobbyName, periodChoices, periodLabel, ProgressBar, progressText, STATUS } from './goalParts.jsx'
 
 const SHOWS = [['active', 'Active'], ['paused', 'Paused'], ['done', 'Done'], ['dropped', 'Dropped'], ['', 'All']]
 
-// Goals: a card per goal (how far along, what's next, when it's due); tap one for its own page.
-// "+ New goal" asks only for the name, then opens the goal's page to fill in the rest.
+// Goals: a card per goal (how far along, what's next, when it's due), in sections - this year's goals,
+// 3-year goals, next year's, no set time, past years'. Tap one for its own page. "+ New goal" asks
+// for the name and when it's for, then opens the goal's page to fill in the rest.
 export default function GoalsPage() {
   const { refreshKey } = useApp()
   const navigate = useNavigate()
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
-  const [show, setShow] = useState('active')
+  const [show, setShow] = useState('')
+  const [when, setWhen] = useState(null)        // a periodChoices value; null = this year
   const [adding, setAdding] = useState(false)
   const [title, setTitle] = useState('')
   useEffect(() => { api.goals().then(setData).catch((e) => setError(e.message)) }, [refreshKey])
@@ -24,7 +26,8 @@ export default function GoalsPage() {
     e.preventDefault()
     if (!title.trim()) return
     try {
-      const goal = await api.addGoal({ title })
+      const choice = choices.find((c) => c.value === (when ?? choices[0].value))
+      const goal = await api.addGoal({ title, timeframe: choice.timeframe, period_start: choice.period_start })
       navigate(`/goals/${goal.goal_id}`)
     } catch (err) {
       setError(err.message)
@@ -33,12 +36,19 @@ export default function GoalsPage() {
 
   if (error && !data) return <p className="alert error">{error}</p>
   if (!data) return <p className="muted loading">Loading...</p>
+  const choices = periodChoices(data.this_year)
   const shown = data.goals.filter((g) => !show || g.status === show)
+  const sections = groupGoals(shown, data.this_year)
   const newForm = (
     <form className="goal-new card" onSubmit={add}>
       <label className="field grow">What's the goal?
         <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Read 30 books this year" maxLength={200} />
       </label>
+      <div className="segmented goal-when" role="group" aria-label="When">
+        {choices.map((c) => (
+          <button key={c.value || 'none'} type="button" aria-pressed={(when ?? choices[0].value) === c.value} onClick={() => setWhen(c.value)}>{c.label}</button>
+        ))}
+      </div>
       <button type="submit" className="primary" disabled={!title.trim()}>Add</button>
       <button type="button" className="plain" onClick={() => { setAdding(false); setTitle('') }}>Cancel</button>
     </form>
@@ -64,11 +74,24 @@ export default function GoalsPage() {
           </div>
           {error && <p className="alert error">{error}</p>}
           {adding && newForm}
-          {shown.length === 0 ? <p className="muted">No {STATUS[show]?.label.toLowerCase()} goals.</p> : (
-            <ul className="goal-grid">{shown.map((g) => <GoalCard key={g.goal_id} goal={g} />)}</ul>
-          )}
+          {shown.length === 0 ? <p className="muted">No {STATUS[show]?.label.toLowerCase()} goals.</p>
+            : sections.map((s) => <GoalSection key={s.key || 'none'} section={s} thisYear={data.this_year} />)}
         </>
       )}
+    </section>
+  )
+}
+
+function GoalSection({ section: s, thisYear }) {
+  const done = s.goals.filter((g) => g.status === 'done').length
+  const past = s.timeframe && s.start + (s.timeframe === 'year' ? 0 : 2) < thisYear
+  const title = s.timeframe === 'year' && s.start === thisYear ? `${thisYear} goals`
+    : s.timeframe === 'year' && s.start === thisYear + 1 ? `${thisYear + 1} goals (next year)` : periodLabel(s.timeframe, s.start)
+  return (
+    <section className={`goal-section${past ? ' past' : ''}`} aria-label={title}>
+      <h2 className="goal-section-title">{s.timeframe ? title : 'Other goals'}
+        {s.timeframe && <span className="muted small">{done} of {s.goals.length} done</span>}</h2>
+      <ul className="goal-grid">{s.goals.map((g) => <GoalCard key={g.goal_id} goal={g} />)}</ul>
     </section>
   )
 }

@@ -4,7 +4,7 @@ import { api, shortDate, today } from '../../api.js'
 import FitTextarea from '../../components/FitTextarea.jsx'
 import { MODULES } from '../../modules/index.js'
 import { useApp } from '../app-context.js'
-import { dueText, ProgressBar, progressText, STATUS } from './goalParts.jsx'
+import { dueText, periodChoices, periodValue, ProgressBar, progressText, STATUS } from './goalParts.jsx'
 
 // One goal, in detail. Everything saves as you go: text when you leave the box, buttons and
 // pickers straight away.
@@ -34,6 +34,7 @@ export default function GoalPage() {
 
   if (!goal) return error ? <p className="alert error">{error} <Link to="/goals">All goals</Link></p> : <p className="muted loading">Loading...</p>
   const due = dueText(goal)
+  const choices = periodChoices(new Date().getFullYear(), goal)
 
   return (
     <section className="page goal-page">
@@ -55,6 +56,14 @@ export default function GoalPage() {
               {due && <span className={`goal-due ${goal.days_left != null && goal.days_left < 0 ? 'late' : ''}`}>{due}</span>}
             </div>
             <div className="goal-fields">
+              <label className="field">When
+                <select value={periodValue(goal)} onChange={(e) => {
+                  const c = choices.find((x) => x.value === e.target.value)
+                  save({ timeframe: c.timeframe, period_start: c.period_start })
+                }}>
+                  {choices.map((c) => <option key={c.value || 'none'} value={c.value}>{c.label}</option>)}
+                </select>
+              </label>
               <label className="field">Hobby
                 <select value={goal.hobby ?? ''} onChange={(e) => save({ hobby: e.target.value || null })}>
                   <option value="">Life in general</option>

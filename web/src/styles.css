@@ -2006,6 +2006,7 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .goal-tile:hover { border-color: var(--tint); }
 .goal-tile.done, .goal-tile.dropped { opacity: 0.75; }
 .goal-tile-top { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 22px; }
+.goal-tile-top:empty { display: none; }
 .goal-title { font-size: 1.1rem; font-weight: 650; line-height: 1.3; }
 .goal-why { color: var(--muted); font-size: 0.9rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .goal-next { font-size: 0.9rem; }
@@ -2057,3 +2058,9 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
   .goal-layout { grid-template-columns: minmax(0, 1fr); }
   .goal-side { position: static; }
 }
+.goal-section { margin-top: 18px; }
+.goal-section-title { display: flex; align-items: baseline; gap: 10px; font-size: 1.15rem; margin: 0 0 2px; }
+.goal-section.past { opacity: 0.8; }
+.goal-new .segmented.goal-when { flex: 1 1 100%; flex-wrap: wrap; order: 1; }
+.goal-new .segmented.goal-when button { flex: 1 1 auto; }
+.goal-new > button { order: 2; }

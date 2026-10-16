@@ -1,6 +1,9 @@
 """Goals (core): what you're aiming for, in as much detail as you like - why it matters, the plan,
 steps to tick off, a number to track and dated progress notes.
 
+    timeframe: 'year' (a year's goals - New Year's goals) or 'three_years' (period_start .. + 2), or none.
+    A goal for a set time aims for the end of it (31 December) unless you pick another day.
+
     GET    /goals                    every goal (pinned, then active by target day, then paused, done, dropped)
     POST   /goals                    a new goal (steps: a list of texts, optional)
     GET    /goals/{id}               one goal with its steps and progress notes
@@ -27,6 +30,8 @@ from .db import MODULE_IDS, db, found, insert_row, tidy_text, update_row
 router = APIRouter(prefix="/api", tags=["goals"])
 
 Status = Literal["active", "paused", "done", "dropped"]
+Timeframe = Literal["year", "three_years"]
+YEARS = {"year": 1, "three_years": 3}
 STATUSES = ["active", "paused", "done", "dropped"]
 
 
@@ -43,6 +48,8 @@ class GoalIn(BaseModel):
     current_value: float | None = None
     pinned: bool = False
     started_on: date | None = None
+    timeframe: Timeframe | None = None
+    period_start: int | None = Field(None, ge=2000, le=2200)     # the year; empty = this year
     steps: list[str] = Field(default_factory=list, max_length=100)
 
 
@@ -60,6 +67,8 @@ class GoalPatch(BaseModel):
     pinned: bool | None = None
     started_on: date | None = None
     done_on: date | None = None
+    timeframe: Timeframe | None = None
+    period_start: int | None = Field(None, ge=2000, le=2200)
 
 
 class StepIn(BaseModel):
@@ -128,6 +137,26 @@ def fetch(conn, goal_id: int) -> dict:
     return g
 
 
+def period_end(timeframe: str, start: int) -> date:
+    return date(start + YEARS[timeframe] - 1, 12, 31)
+
+
+def tidy_timeframe(conn, data: dict, old: dict | None = None):
+    """A year / 3-year goal needs its first year (this year if not given); no timeframe, no year. Its
+    target day follows the end of the period, unless you'd set a different one."""
+    if "timeframe" not in data and "period_start" not in data:
+        return
+    timeframe = data.get("timeframe", old["timeframe"] if old else None)
+    if timeframe is None:
+        data["timeframe"] = data["period_start"] = None
+        return
+    start = data.get("period_start") or (old["period_start"] if old and old["timeframe"] else None) or today(conn).year
+    data["timeframe"], data["period_start"] = timeframe, start
+    old_end = period_end(old["timeframe"], old["period_start"]) if old and old["timeframe"] else None
+    if "target_date" not in data and (old is None or old["target_date"] in (None, old_end)):
+        data["target_date"] = period_end(timeframe, start)
+
+
 def check_hobby(data: dict):
     if data.get("hobby") and data["hobby"] not in MODULE_IDS:
         raise HTTPException(422, f"Unknown hobby: {data['hobby']}.")
@@ -139,7 +168,7 @@ def list_goals(status: Status | None = None):
         rows = conn.execute(GOAL_SELECT + (" WHERE g.status = %s" if status else "") + ORDER,
                             (status,) if status else ()).fetchall()
         goals = [shaped(g) for g in rows]
-        return {"goals": goals, "statuses": STATUSES,
+        return {"goals": goals, "statuses": STATUSES, "this_year": today(conn).year,
                 "counts": {s: sum(1 for g in goals if g["status"] == s) for s in STATUSES}}
 
 
@@ -153,6 +182,9 @@ def add_goal(body: GoalIn):
     with db() as conn:
         if data["status"] == "done":
             data["done_on"] = today(conn)
+        if data["target_date"] is None:
+            data.pop("target_date")
+        tidy_timeframe(conn, data)
         goal_id = insert_row(conn, "goals", data, "goal_id")
         for i, text in enumerate(steps):
             conn.execute("INSERT INTO goal_steps (goal_id, text, sort_order) VALUES (%s, %s, %s)", (goal_id, text, i))
@@ -174,6 +206,7 @@ def update_goal(goal_id: int, body: GoalPatch):
     check_hobby(data)
     with db() as conn:
         goal = fetch(conn, goal_id)
+        tidy_timeframe(conn, data, goal)
         if data.get("status") == "done" and goal["status"] != "done":
             data.setdefault("done_on", today(conn))
         elif "status" in data and data["status"] != "done":
