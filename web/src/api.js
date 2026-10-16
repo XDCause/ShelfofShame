@@ -319,6 +319,9 @@ export const api = {
 
   // Settings
   settings: () => request('/settings'),
+  // The weekly check of the websites the app reads
+  siteChecks: () => request('/site-checks'),
+  runSiteChecks: () => request('/site-checks/run', send('POST')),
   updateSettings: (data) => request('/settings', send('PATCH', data)),
   priceGuide: () => request('/price-guide'),
   addPriceRule: (data) => request('/price-guide', send('POST', data)),

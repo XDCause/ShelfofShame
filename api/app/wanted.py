@@ -13,7 +13,7 @@ from fastapi import APIRouter
 from .boardgames import GAME_SELECT
 from .db import db
 from .settings import get_setting
-from .volleyball import GEAR_SELECT
+from .gear import GEAR_SELECT
 
 router = APIRouter(prefix="/api", tags=["wishlist"])
 

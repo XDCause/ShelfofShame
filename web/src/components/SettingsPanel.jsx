@@ -5,6 +5,7 @@ import Drawer from './Drawer.jsx'
 import Fold from './Fold.jsx'
 import ListsManager from './ListsManager.jsx'
 import PriceGuide from './PriceGuide.jsx'
+import SiteChecks from './SiteChecks.jsx'
 import Spending from './Spending.jsx'
 
 // Settings, opened from the gear: every section is closed until you tap it.
@@ -21,6 +22,7 @@ export default function SettingsPanel({ lookups, settings, onClose, onSettings, 
         <Fold title="Backups"><Backups /></Fold>
         <Fold title="Export to CSV" detail="for Excel"><Exports /></Fold>
         <Fold title="Tamiya catalogue" detail="for Shop Tamiya"><Catalogue /></Fold>
+        <Fold title="Lookup sites" detail="checked weekly"><SiteChecks /></Fold>
         <ListsManager lookups={lookups} onChanged={onListsChanged} />
       </div>
     </Drawer>
@@ -149,6 +151,8 @@ function Catalogue() {
     clearTimeout(poll.current)
     if (i.refresh.running) poll.current = setTimeout(load, 2000) // follow the refresh as it goes
   }).catch((e) => setError(e.message))
+  // Load once when the section opens (load re-polls itself while a refresh runs); stop polling on close.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); return () => clearTimeout(poll.current) }, [])
 
   const refresh = async () => {

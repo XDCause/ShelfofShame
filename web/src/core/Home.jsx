@@ -8,6 +8,7 @@ import { ComingUp } from './calendar/CalendarPage.jsx'
 import GoalsHome from './goals/GoalsHome.jsx'
 import JournalHome from './journal/JournalHome.jsx'
 import { useNewPage } from './journal/JournalList.jsx'
+import { SiteCheckWarning } from '../components/SiteChecks.jsx'
 import { RunningLow, SuppliesTiles } from './SuppliesHome.jsx'
 import { useShared } from './useShared.js'
 
@@ -51,6 +52,7 @@ export default function Home() {
         </div>
       </header>
 
+      <SiteCheckWarning />
       <Glance />
 
       <div className="home-grid">

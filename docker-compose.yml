@@ -2,6 +2,7 @@
 #   prod  this folder (main branch)        names hobby-inventory-*, web on 8080, volume hobby_pgdata
 #   dev   ..\hobby-inventory-dev (dev branch) names hobby-dev-*, web on 8081, volume hobby_dev_pgdata
 # Which one is set by .env (APP_PREFIX, APP_ENV, ports, DB_VOLUME); the defaults are prod's.
+# run_e2e.ps1 starts a third, throwaway copy (hobby-e2e-*) by setting these in its own environment.
 name: ${APP_PREFIX:-hobby-inventory}
 
 services:
@@ -45,11 +46,12 @@ services:
       APP_ENV: ${APP_ENV:-prod}   # "dev" shows a DEV badge in the app
       STEAM_API_KEY: ${STEAM_API_KEY:-}   # Video games hobby (steamcommunity.com/dev/apikey); empty = not set up
       MEDIA_DIR: /media
+      DAILY_SYNCS: ${DAILY_SYNCS:-on}   # "off" = no daily Steam / chess.com syncs (the walk-through's own copy)
     volumes:
       # The same folder backup.ps1 writes to, so Settings can list, make and download backups.
-      - ./backups:/backups
+      - ${BACKUP_PATH:-./backups}:/backups
       # Uploaded videos (volleyball): files too big for the database. Each copy (dev / prod) has its own.
-      - ./media:/media
+      - ${MEDIA_PATH:-./media}:/media
     depends_on:
       db:
         condition: service_healthy  # don't start until Postgres accepts connections

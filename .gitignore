@@ -8,6 +8,7 @@ backups/
 # Test run leftovers (.tested = "passed on this code" stamps + logs, per copy)
 .pytest_cache/
 e2e/out/
+.e2e/
 .tested/
 
 # Python (later stages)

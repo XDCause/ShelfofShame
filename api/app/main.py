@@ -25,26 +25,29 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from . import (activity, boardgames, bookseries, build, calendar, catalog, chess, colours, goals, journal, journal_drawings,
-               gundam, lookups, minis, models, othergames, products, reading, reading_recs, settings, spending, supplies, vbclips, vbcoach, vgfind, vgfriends, videogames, wanted, webphoto,
+from . import (activity, boardgames, bookseries, build, calendar, catalog, chess, colours, gear, goals, journal, journal_drawings,
+               gundam, lookups, minis, vgsync, models, othergames, products, reading, readimport, reading_recs, settings, sitecheck, spending, supplies, vbclips, vbcoach, vgfind, vgfriends, videogames, wanted, webphoto,
                volleyball, warhammer, wishlist)
 from .db import db
 
 @asynccontextmanager
 async def lifespan(_app):
     """While the API runs: the daily Steam sync (videogames.py) - only when a key is set - and the
-    daily chess.com sync (chess.py; it waits until a username is set)."""
+    daily chess.com sync (chess.py; it waits until a username is set). DAILY_SYNCS=off skips both
+    (the walk-through's throwaway copy must not sync on its own)."""
     vbclips.forget_unfinished()            # a highlight video being made when the app stopped
-    if os.environ.get("STEAM_API_KEY"):
-        videogames.start_daily_sync()
-    chess.start_daily_sync()
+    if os.environ.get("DAILY_SYNCS", "on") != "off":
+        if os.environ.get("STEAM_API_KEY"):
+            vgsync.start_daily_sync()
+        chess.start_daily_sync()
+        sitecheck.start_weekly()          # the websites the app reads, once a week
     yield
 
 
 app = FastAPI(title="Off the Clock API", docs_url="/api/docs", openapi_url="/api/openapi.json", lifespan=lifespan)
 
 for part in (activity, goals, journal_drawings, journal, calendar, supplies, wishlist, products, catalog, models, minis, build, colours,
-             boardgames, volleyball, vbclips, vbcoach, othergames, vgfind, vgfriends, videogames, chess, reading, reading_recs, bookseries, warhammer, gundam, spending, settings, lookups, webphoto, wanted):
+             boardgames, volleyball, gear, vbclips, vbcoach, othergames, vgfind, vgfriends, videogames, chess, reading, readimport, reading_recs, bookseries, warhammer, gundam, spending, settings, sitecheck, lookups, webphoto, wanted):
     app.include_router(part.router)
 
 

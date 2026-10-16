@@ -74,7 +74,8 @@ SECTION_TABS = {"Colours": "Models", "Plays": "Board games", "Gear": "Volleyball
 def watch(page, label):
     page.on("console", lambda m: m.type == "error" and errors.append(f"[{label}] console: {m.text}"))
     page.on("pageerror", lambda e: errors.append(f"[{label}] page error: {e}"))
-    page.on("response", lambda r: r.status >= 500 and errors.append(f"[{label}] HTTP {r.status} {r.url}"))
+    # Every failed request names its address (the browser's own "Failed to load resource" line doesn't).
+    page.on("response", lambda r: r.status >= 400 and errors.append(f"[{label}] HTTP {r.status} {r.url}"))
 
 
 # ---------------------------------------------------------------- desktop
@@ -1548,7 +1549,7 @@ def goals(page):
     page.get_by_label("New step").press("Enter")
     expect(page.locator(".goal-steps li")).to_have_count(2)
     page.get_by_label("Done: Finish the Zero").check()
-    expect(page.locator(".goal-percent")).to_have_text("50%")
+    expect(page.locator(".goal-big-percent")).to_have_text("50%")
     page.get_by_role("button", name="Track a number").click()
     page.get_by_label("Counting").fill("kits")
     page.get_by_label("Target").fill("3")
@@ -1556,7 +1557,7 @@ def goals(page):
     page.get_by_label("Number now").fill("1")
     page.get_by_role("button", name="Add note").click()
     expect(page.locator(".goal-notes li")).to_contain_text("1 kits · Zero done")
-    expect(page.locator(".goal-percent")).to_have_text("33%")            # the number wins over the steps
+    expect(page.locator(".goal-big-percent")).to_have_text("33%")            # the number wins over the steps
     shot(page, "d60_goal", full=True)
     page.get_by_role("group", name="Status").get_by_role("button", name="Done").click()
     expect(page.locator(".goal-top .goal-due")).to_contain_text("Reached")
@@ -1679,6 +1680,9 @@ def settings_more(page):
     assert csv.ok and csv.headers["content-type"].startswith("text/csv"), csv.status
     d.locator("summary", has_text="Tamiya catalogue").click()
     expect(d.locator(".settings > .fold", has_text="Tamiya catalogue")).to_contain_text("Tamiya products")
+    d.locator("summary", has_text="Lookup sites").click()             # the weekly site check (no live run here)
+    expect(d.locator(".site-check")).to_have_count(10)
+    expect(d.get_by_role("button", name="Check now")).to_be_visible()
     shot(page, "d22_settings", full=False)
     page.keyboard.press("Escape")
 

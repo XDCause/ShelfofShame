@@ -40,7 +40,7 @@ export function ProgressBar({ goal: g }) {
   if (g.progress == null) return null
   const percent = Math.round(g.progress * 100)
   return (
-    <span className={`goal-bar ${g.status === 'done' || percent >= 100 ? 'ok' : 'tint'}`} role="meter" aria-valuemin={0}
+    <span className={`goal-meter ${g.status === 'done' || percent >= 100 ? 'ok' : 'tint'}`} role="meter" aria-valuemin={0}
       aria-valuemax={100} aria-valuenow={percent} aria-label={`${percent}% of the way`}>
       <span style={{ width: `${Math.max(percent, 2)}%` }} />
     </span>

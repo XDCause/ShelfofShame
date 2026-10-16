@@ -154,7 +154,7 @@ function NumberCard({ goal, save }) {
       <h2 className="home-card-title">How far along</h2>
       {goal.progress != null ? (
         <>
-          <p className="goal-percent">{Math.round(goal.progress * 100)}%</p>
+          <p className="goal-big-percent">{Math.round(goal.progress * 100)}%</p>
           <ProgressBar goal={goal} />
           {text && <p className="muted small">{text}</p>}
         </>

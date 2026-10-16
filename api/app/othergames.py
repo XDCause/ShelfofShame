@@ -3,7 +3,7 @@ shown the same way - every achievement, a picture, SteamHunters' numbers.
 
     account   the Exophase profile (a name or profile address) -> the player id for each linked
               platform, read from the profile page. Setting it reads the games straight away.
-    sync      with every Steam sync (videogames.run_sync), on the Exophase side:
+    sync      with every Steam sync (vgsync.run_sync), on the Exophase side:
               1. the games on each linked platform (exophase.player_games)
               2. per game: its Steam version (steam.find_app, by name, once; or set by you) -> the
                  Steam picture and SteamHunters' numbers (weekly)

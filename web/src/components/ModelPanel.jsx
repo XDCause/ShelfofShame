@@ -53,6 +53,8 @@ export default function ModelPanel({ modelId, lookups, settings, onClose, onChan
 
   useEffect(() => {
     if (modelId != null) run(async () => onModel(await api.getModel(modelId), null, false))
+    // Load once per kit: onModel / run are new functions every render and would reload it endlessly.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modelId])
 
   if (editing) {

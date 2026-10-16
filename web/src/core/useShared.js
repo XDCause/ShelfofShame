@@ -17,6 +17,8 @@ export function useShared(key, load) {
       .then((data) => current && setState({ data, error: '' }))
       .catch((e) => { cache.delete(key); if (current) setState({ data: null, error: e.message }) })
     return () => { current = false }
+    // One request per key: `load` is a new function on every render, so it can't be a dependency.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key])
   return state
 }

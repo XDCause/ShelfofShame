@@ -1,6 +1,7 @@
 import { BallIcon, ShoeIcon, VideoIcon, WhistleIcon } from '../../components/icons.jsx'
 import { CoachNotePanel, CoachView } from './Coach.jsx'
-import { GearPanel, TeamPanel, VideoPanel, VolleyballGamePanel } from './VolleyballPanels.jsx'
+import { GearPanel } from './GearPanel.jsx'
+import { TeamPanel, VideoPanel, VolleyballGamePanel } from './VolleyballPanels.jsx'
 import { GamesView, GearView, VideosView, VolleyballTiles } from './VolleyballViews.jsx'
 
 // Volleyball: games and training (with results), your gear, videos (clips, highlights) and Coach
