@@ -1363,6 +1363,17 @@ DBeaver, psql, and the one-off import script.
    Library...) with first_publish_year >= 2000 (RECENT); sort=rating gave classics; sort=trending was noisy (manga,
    translations) and trending_yearly answered HTTP 500. Translations in Latin script (Cadáver exquisito) still slip
    through - "Not interested" hides them.
+3zzp. **Video games Friends tab** (2026-10-16). Official Steam Web API: steam.friend_ids (GetFriendList; 401 = the user's
+   friends list is PRIVATE - it is, as of today -> FriendsPrivate with how to make it public), steam.summaries
+   (GetPlayerSummaries, 100 a call: name, avatar, public, status, playing). 57_videogame_friends.sql vg_friends (steam_id,
+   from_list / by_hand / hidden, status, compared_at, compare_error, games_owned) + vg_friend_games (their playtime,
+   done / total per shared game). api/app/vgfriends.py (router before videogames): GET /videogames/friends, POST .../refresh
+   (at most every 10 min unless force; people who leave the list and weren't added by hand are forgotten), POST {profile}
+   (steam.resolve; not yourself), DELETE (by hand: removed; from the list: hidden), POST .../{id}/compare (background:
+   their owned games - Game details must be public - then player_achievements per game you both have with achievements;
+   COMPARING progress), GET .../{id} (shared games: you vs them). Web Friends.jsx: Friends tab (cards: avatar, Playing X /
+   Online / Private profile, "N games in common · you lead X, they lead Y"), + Add a friend, FriendPanel (Compare, stat grid,
+   per-game You / them bars). UsersIcon. conftest truncates vg_friends + volleyball_coach. Tests: 374 API, 68 steps.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

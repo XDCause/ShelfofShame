@@ -129,3 +129,7 @@ export const WhistleIcon = (p) => (
 export const SuitcaseIcon = (p) => (
   <Icon {...p}><rect x="3.5" y="7" width="17" height="12.5" rx="2.5" /><path d="M9 7V5.2A1.7 1.7 0 0 1 10.7 3.5h2.6A1.7 1.7 0 0 1 15 5.2V7M8 7v12.5M16 7v12.5" /></Icon>
 )
+export const UsersIcon = (p) => (
+  <Icon {...p}><circle cx="9" cy="8.5" r="3.5" /><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5" />
+    <path d="M15.5 5.2a3.3 3.3 0 0 1 0 6.6M17.5 14.8c2.2.6 3.6 2.4 4 5.2" /></Icon>
+)

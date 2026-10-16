@@ -83,6 +83,37 @@ def persona(steam_id: str) -> str | None:
     return players[0].get("personaname") if players else None
 
 
+class FriendsPrivate(SteamError):
+    """The friends list isn't public (Steam answers 401)."""
+
+
+def friend_ids(steam_id: str) -> list[str]:
+    """The Steam ids of a profile's friends. FriendsPrivate if the friends list isn't public."""
+    code, data = _get("ISteamUser/GetFriendList/v1/", {"steamid": steam_id, "relationship": "friend"})
+    if code in (401, 403):
+        raise FriendsPrivate("Your Steam friends list is private, so it can't be read. Set Friends List to Public "
+                             "(Steam > Profile > Edit Profile > Privacy Settings), or add friends by their profile.")
+    return [f["steamid"] for f in (data.get("friendslist") or {}).get("friends") or [] if f.get("steamid")]
+
+
+PERSONA_STATES = {0: "Offline", 1: "Online", 2: "Busy", 3: "Away", 4: "Snooze", 5: "Looking to trade", 6: "Looking to play"}
+
+
+def summaries(steam_ids: list[str]) -> dict[str, dict]:
+    """{steam id: {name, avatar, profile_url, public, status, playing}} - 100 profiles a call."""
+    found = {}
+    for start in range(0, len(steam_ids), 100):
+        _, data = _get("ISteamUser/GetPlayerSummaries/v2/", {"steamids": ",".join(steam_ids[start:start + 100])})
+        for p in data.get("response", {}).get("players", []) or []:
+            found[p["steamid"]] = {
+                "name": p.get("personaname") or "?", "avatar": p.get("avatarfull") or p.get("avatarmedium"),
+                "profile_url": p.get("profileurl"), "public": p.get("communityvisibilitystate") == 3,
+                "status": PERSONA_STATES.get(p.get("personastate"), "Offline") if p.get("communityvisibilitystate") == 3 else None,
+                "playing": p.get("gameextrainfo")}
+        pause()
+    return found
+
+
 def owned_games(steam_id: str) -> list[dict]:
     """[{appid, name, img_icon_url, playtime_forever, playtime_2weeks, rtime_last_played}]"""
     # skip_unvetted_apps=0: Steam leaves some small games out of the list unless asked (3 of the user's,

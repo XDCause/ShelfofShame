@@ -1530,6 +1530,18 @@ def volleyball_coach(page):
     expect(page.locator(".coach-card .item-title", has_text=re.compile("^Setter$"))).to_be_visible()
 
 
+@step("Video games Friends: the list (or why it's private) and the add form")
+def video_game_friends(page):
+    go(page, "Video games")
+    page.locator(".section-tabs").get_by_role("link", name="Friends").click()
+    # Connected to Steam: friends, or the note that the friends list is private; not connected: an error to connect.
+    expect(page.locator(".friend-card").or_(page.locator(".alert", has_text=re.compile("friends list is private|Connect your Steam")))
+           .or_(page.locator(".empty-state")).first).to_be_visible(timeout=30000)
+    page.get_by_role("button", name="+ Add a friend").first.click()
+    expect(page.get_by_label("Friend's Steam profile")).to_be_visible()
+    shot(page, "d58_friends", full=False)
+
+
 @step("Board games: a play of a friend's game; an abandoned play")
 def board_game_elsewhere(page):
     go(page, "Board games")
@@ -1646,7 +1658,7 @@ def phone(page):
     expect(car.locator(".under-construction")).to_be_visible()     # the spanner: still to be built
     fits("Hobbies")
     for hobby, tabs in (("Models", ("Kits", "Colours")), ("Board games", ("Games", "Plays")),
-                        ("Volleyball", ("Games", "Gear", "Videos", "Coach")), ("Video games", ("Dashboard", "Games", "Stats"))):
+                        ("Volleyball", ("Games", "Gear", "Videos", "Coach")), ("Video games", ("Dashboard", "Games", "Stats", "Friends"))):
         page.locator(".tabbar a", has_text="Hobbies").click()
         page.locator(".hobby-head", has_text=hobby).click()
         for tab in tabs:
@@ -1674,7 +1686,7 @@ with sync_playwright() as p:
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
                matches, used_on, gundam, bandai_lookup, warhammer, journal_write, journal_links, journal_from_model,
                journal_suggestion, journal_todo, global_search, journal_wishlist, appearance,
-               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, warhammer_minis, gundam_range, board_game_kinds, board_game_elsewhere, volleyball_coach, settings_more, no_panel):
+               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, warhammer_minis, gundam_range, board_game_kinds, board_game_elsewhere, volleyball_coach, video_game_friends, settings_more, no_panel):
         fn(desk)
     ctx = browser.new_context(**p.devices["iPhone 13"], timezone_id=zone)
     mob = ctx.new_page()

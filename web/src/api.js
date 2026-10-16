@@ -216,6 +216,12 @@ export const api = {
   videoGameRecap: (month, platforms) => request(`/videogames/recap?${new URLSearchParams({
     ...(month && { month }), ...(platforms && { platforms: platforms.join(',') }) })}`),
   addExtraVideoGame: (game) => request('/videogames/extra', send('POST', { game })),
+  videoGameFriends: () => request('/videogames/friends'),
+  refreshFriends: (force = false) => request(`/videogames/friends/refresh${force ? '?force=true' : ''}`, send('POST')),
+  addFriend: (profile) => request('/videogames/friends', send('POST', { profile })),
+  videoGameFriend: (id) => request(`/videogames/friends/${id}`),
+  compareFriend: (id) => request(`/videogames/friends/${id}/compare`, send('POST')),
+  removeFriend: (id) => request(`/videogames/friends/${id}`, send('DELETE')),
   findSteamGames: (q) => request(`/videogames/find?q=${encodeURIComponent(q)}`),
   scoutVideoGame: (appId) => request(`/videogames/scout/${appId}`),
   findOtherGames: (platform, q) => request(`/videogames/other/find?platform=${platform}&q=${encodeURIComponent(q)}`),
