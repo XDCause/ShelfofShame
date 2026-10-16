@@ -83,6 +83,22 @@ def search_name(name: str) -> str:
     return re.sub(r"\s+", " ", re.sub(r"[™®©]", "", name)).strip()
 
 
+def search(words: str, environment: str) -> list[dict]:
+    """Exophase's games on one platform ("epic" / "uplay") matching some words, best first: master id,
+    name, picture, page, how many achievements (Ubisoft: challenges). Only games with achievements or
+    challenges are on Exophase (Fortnite isn't)."""
+    r = _get(SEARCH, {"q": search_name(words)})
+    if r.status_code != 200 or "json" not in r.headers.get("content-type", ""):
+        raise Unavailable(f"Exophase didn't answer (HTTP {r.status_code}).")
+    games = (r.json().get("games") or {}).get("list") or []
+    picture = lambda g: next((u for u in ((g.get("images") or {}).get(s) for s in ("l", "m", "s"))       # noqa: E731
+                              if u and u.startswith("https://m.exophase.com/")), None)
+    return [{"exo_id": int(g["master_id"]), "name": (g.get("title") or "").replace("\ufffd", "'").strip(),
+             "picture": picture(g), "page_url": g.get("endpoint_awards") if str(g.get("endpoint_awards") or "").startswith(
+                 "https://www.exophase.com/") else None, "awards": g.get("total_awards")}
+            for g in games if g.get("environment_slug") == environment and g.get("master_id") and g.get("title")]
+
+
 def candidates(name: str, total: int | None) -> list[str]:
     """Exophase's Steam pages for a game name, best first: the same name, then the same number of
     achievements, then the rest."""

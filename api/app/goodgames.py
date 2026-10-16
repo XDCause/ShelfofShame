@@ -157,6 +157,33 @@ def _figures(text: str) -> int | None:
     return int(m.group(1)) if m else None
 
 
+# A unit's name: capitalised words, ending before filler words ("... Vanguard All models come unpainted").
+_NOT_NAME = r"(?i:and|which|with|or|this|all|each|every|the|plus|includes?|comes?|supplied|models?|miniatures?)\b"
+_NAME = r"([A-Z][A-Za-z'’/-]*(?:[ \t](?!" + _NOT_NAME + r")[A-Za-z][A-Za-z'’/-]*)*)"
+UNIT = re.compile(r"(?<!\d)(\d{1,3})\s*x\s*" + _NAME)
+UNIT_AFTER_AND = re.compile(r"(?:,|\band)\s+(\d{1,3})\s+" + _NAME)       # "..., 10x Skitarii and 3 Kataphron Servitors"
+# Alternative builds aren't extra minis: "which can alternatively be built as 3x ...", "with an alternate assembly of 1x ...".
+ALTERNATIVE = re.compile(r"(?i)\b(?:which\s+\w+\s+|with\s+an\s+)?alternat\w*.*?(?=[,.;]|\s[-–]\s|-\s*\d|$)")
+
+
+def units_of(text: str | None) -> list[dict]:
+    """What's in the box: "Contains 1x Techpriest Enginseer, 10x Skitarii Rangers/Vanguard" ->
+    [{"unit": "Techpriest Enginseer", "count": 1}, {"unit": "Skitarii Rangers/Vanguard", "count": 10}].
+    Brackets and alternative builds are skipped; a unit named twice is counted once. [] when the
+    shop's text doesn't list the minis like that (then they're added by hand)."""
+    text = ALTERNATIVE.sub(" ", re.sub(r"\([^()]*\)", ", ", text or ""))      # a bracket ends a unit's name
+    text = re.sub(r"[ \t]+", " ", text)
+    found = {}
+    for pattern in (UNIT, UNIT_AFTER_AND):
+        if pattern is UNIT_AFTER_AND and not found:
+            break                                  # "1 Citadel 105mm base, 3 transfer sheets": not a minis list
+        for n, unit in pattern.findall(text):
+            unit = unit.strip(" -–/")
+            if unit and 0 < int(n) <= 100:
+                found.setdefault(unit, int(n))
+    return [{"unit": u, "count": n} for u, n in found.items()]
+
+
 def name_of(title: str, army: str | None) -> str:
     """"Adeptus Mechanicus - Onager Dunecrawler (59-13)" -> "Onager Dunecrawler";
     "Combat Patrol - Adeptus Mechanicus (59-05)" -> "Combat Patrol: Adeptus Mechanicus"."""
@@ -193,8 +220,10 @@ def kit(p: dict) -> dict:
     tags, text = k.pop("tags"), k.pop("text")
     code = GW_CODE.search(k["title"])
     army = next((t.split("_", 1)[1].strip() for t in tags if t.startswith("Faction_")), None)
+    units = units_of(text)
     return {**k, "name": name_of(k["title"], army), "code": code.group(1) if code else None, "army": army,
-            "figures": _figures(text), "contents": text[:600] or None, "is_kit": not NOT_KITS.search(k["title"])}
+            "figures": sum(u["count"] for u in units) or _figures(text), "units": units, "contents": text[:600] or None,
+            "is_kit": not NOT_KITS.search(k["title"])}
 
 
 def _code_order(k: dict):

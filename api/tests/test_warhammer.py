@@ -60,7 +60,9 @@ def test_a_product_becomes_a_kit():
         ("Combat Patrol: Adeptus Mechanicus", "59-05", "Adeptus Mechanicus", 14, "5011921203208", 192.77, True, True)   # alternatives not counted
     old = goodgames.kit(SHOP[1])
     assert old["title"] == "Combat Patrol – Adeptus Mechanicus (59-25)" and not old["available"]
-    assert old["figures"] == 12                         # "3 Kataphron Servitors" has no "x", so it isn't counted
+    assert old["figures"] == 15                         # "... and 3 Kataphron Servitors" counts too (no "x")
+    assert old["units"] == [{"unit": "Techpriest Enginseer", "count": 1}, {"unit": "Onager Dunecrawler", "count": 1},
+                            {"unit": "Skitarii Rangers/Vanguard", "count": 10}, {"unit": "Kataphron Servitors", "count": 3}]
     assert goodgames.kit(SHOP[2])["name"] == "Onager Dunecrawler"
     assert not goodgames.kit(SHOP[3])["is_kit"] and not goodgames.kit(SHOP[6])["is_kit"] and not goodgames.kit(SHOP[7])["is_kit"]
     assert goodgames.kit(SHOP[4])["figures"] == 1 and goodgames.kit(SHOP[6])["barcode"] is None
@@ -135,3 +137,70 @@ def test_odd_ids_and_foreign_links(client, shop):
     assert goodgames.get("12abc") is None
     p = {**SHOP[2], "url": "javascript:alert(1)"}
     assert goodgames.kit(p)["url"] is None and goodgames.kit(SHOP[2])["url"].startswith("https://www.goodgames.com.au/")
+
+
+def test_what_is_in_the_box():
+    assert goodgames.units_of("Christmas Box 2021Builds1x Tech-priest Manipulus5x Pteraxii10x Skitarii") == [
+        {"unit": "Tech-priest Manipulus", "count": 1}, {"unit": "Pteraxii", "count": 5}, {"unit": "Skitarii", "count": 10}]
+    assert goodgames.units_of("This set builds 5x Sicarian Infiltrators, which could alternatively be assembled as "
+                              "5x Sicarian Ruststalkers") == [{"unit": "Sicarian Infiltrators", "count": 5}]
+    assert goodgames.units_of("1x Tech-Priest Dominus- 3x Kataphron Destroyers, which can alternatively be built as "
+                              "Kataphron Breachers- 5x Sicarian Infiltrators") == [
+        {"unit": "Tech-Priest Dominus", "count": 1}, {"unit": "Kataphron Destroyers", "count": 3},
+        {"unit": "Sicarian Infiltrators", "count": 5}]
+    assert goodgames.units_of("10x Skitarii Vanguard (or Rangers) All models come unpainted") == [{"unit": "Skitarii Vanguard", "count": 10}]
+    assert goodgames.units_of("Contents: 73 plastic components 5 Citadel 32mm Round Bases, 1 Transfer Sheet") == []
+
+
+def test_each_mini_has_its_own_step(client, shop):
+    model = client.post("/api/warhammer/want", json={"id": "1"}).json()       # 1 Manipulus, 3 Sulphurhounds, 10 Skitarii
+    mid = model["model_id"]
+    assert model["box_units"][1] == {"unit": "Serberys Sulphurhounds", "count": 3} and model["minis"] == []
+    model = client.post(f"/api/models/{mid}/minis/from-box").json()
+    assert [m["unit"] for m in model["minis"]][:5] == ["Tech-Priest Manipulus"] + ["Serberys Sulphurhounds"] * 3 + ["Skitarii Vanguard"]
+    assert (len(model["minis"]), model["figures"], model["figures_done"], model["stage"], model["status"]) == (14, 14, 0, None, "Wanted")
+    assert client.post(f"/api/models/{mid}/minis/from-box").status_code == 409
+    client.patch(f"/api/models/{mid}", json={"status": "In stash"})
+    # One mini primed: the box is started, but not every mini is built, so the box has no step yet.
+    first = model["minis"][0]["mini_id"]
+    model = client.patch(f"/api/model-minis/{first}", json={"stage": "Primed", "name": "Leader"}).json()
+    assert (model["status"], model["stage"]) == ("In progress", None) and model["minis"][0]["name"] == "Leader"
+    # The whole box built: the box is at Built (every mini has got that far).
+    ids = [m["mini_id"] for m in model["minis"]]
+    model = client.put(f"/api/models/{mid}/minis/stage", json={"mini_ids": ids[1:], "stage": "Built"}).json()
+    assert model["stage"] == "Built" and model["skipped_steps"] == [] and model["minis"][0]["stage"] == "Primed"
+    assert client.put(f"/api/models/{mid}/minis/stage", json={"mini_ids": ids, "stage": "Decals"}).status_code == 422
+    assert client.put(f"/api/models/{mid}/minis/stage", json={"mini_ids": [999999], "stage": "Built"}).status_code == 404
+    # Every mini Complete: the box is Finished, 14 of 14 painted.
+    model = client.put(f"/api/models/{mid}/minis/stage", json={"mini_ids": ids, "stage": "Complete"}).json()
+    assert (model["status"], model["stage"], model["figures_done"]) == ("Finished", "Complete", 14)
+    # Un-finished from the box: the minis go back to the last step, not straight to Finished again.
+    model = client.patch(f"/api/models/{mid}", json={"status": "In progress"}).json()
+    assert model["status"] == "In progress" and model["stage"] != "Complete" and model["figures_done"] == 0
+    # A step ticked for the whole box brings the minis behind it up to it.
+    client.put(f"/api/models/{mid}/minis/stage", json={"mini_ids": ids[:4], "stage": None})
+    model = client.patch(f"/api/models/{mid}", json={"stage": "Primed"}).json()
+    assert {m["stage"] for m in model["minis"][:4]} == {"Primed"} and model["stage"] == "Primed"
+    # Added by hand, renamed, removed.
+    model = client.post(f"/api/models/{mid}/minis", json={"unit": "Skitarii Marshal"}).json()
+    assert (model["figures"], model["stage"]) == (15, None)
+    model = client.put(f"/api/models/{mid}/minis/unit", json={"unit": "Skitarii Marshal", "to": "Marshal"}).json()
+    assert model["minis"][-1]["unit"] == "Marshal"
+    assert client.delete(f"/api/models/{mid}/minis?unit=Marshal").status_code == 204
+    assert client.delete(f"/api/model-minis/{ids[0]}").status_code == 204
+    model = client.get(f"/api/models/{mid}").json()
+    assert (model["figures"], model["stage"]) == (13, "Primed")
+    assert client.post(f"/api/models/{mid}/minis", json={"unit": "Too many", "count": 100}).status_code == 201
+    assert client.post(f"/api/models/{mid}/minis", json={"unit": "Way too many", "count": 100}).status_code == 422
+
+
+def test_minis_from_a_box_read_before_contents_were_kept(client, shop):
+    """A kit added before box contents were stored: the shop is asked again by its GW code."""
+    from app.db import db
+    model = client.post("/api/warhammer/want", json={"id": "1"}).json()
+    with db() as conn:
+        conn.execute("UPDATE product_info SET kit_units = NULL WHERE product_code = '59-05'")
+    model = client.post(f"/api/models/{model['model_id']}/minis/from-box").json()
+    assert len(model["minis"]) == 14
+    other = client.post("/api/models", json={"name": "Kitbash", "hobby": "Warhammer"}).json()
+    assert client.post(f"/api/models/{other['model_id']}/minis/from-box").status_code == 404

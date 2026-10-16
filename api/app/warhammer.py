@@ -16,6 +16,7 @@ import time
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.concurrency import run_in_threadpool
+from psycopg.types.json import Jsonb
 from pydantic import BaseModel, Field
 
 from . import gameology, goodgames
@@ -120,7 +121,12 @@ def _store(k: dict) -> tuple[int, str]:
     code = product_code_for(k)
     description = " · ".join(filter(None, [k["code"] and f"GW {k['code']}", k["army"],
                                            k["figures"] and f"{k['figures']} minis", shop_price(k)]))
-    return store(BRAND, code, k, k["army"], description), code
+    brand_id = store(BRAND, code, k, k["army"], description)
+    if k.get("units"):                     # what's in the box, for setting up its minis (minis.py)
+        with db() as conn:
+            conn.execute("UPDATE product_info SET kit_units = %s WHERE brand_id = %s AND product_code = %s",
+                         (Jsonb(k["units"]), brand_id, code))
+    return brand_id, code
 
 
 def _found(brand_id: int, code: str, k: dict | None, cached: bool) -> dict:

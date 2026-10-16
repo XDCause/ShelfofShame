@@ -4,6 +4,7 @@ import JournalMentions from '../core/journal/JournalMentions.jsx'
 import BuildLog from './BuildLog.jsx'
 import BuildSteps from './BuildSteps.jsx'
 import Drawer from './Drawer.jsx'
+import MinisTracker from './MinisTracker.jsx'
 import ModelForm from './ModelForm.jsx'
 import { modelMeta, statusClass } from './ModelsView.jsx'
 import PaintChecklist from './PaintChecklist.jsx'
@@ -133,7 +134,13 @@ export default function ModelPanel({ modelId, lookups, settings, onClose, onChan
         </div>
       </section>
 
-      {model.status !== 'Wanted' && <BuildSteps model={model} stages={lookups.stages} save={save} />}
+      {/* Warhammer: once each mini is tracked, the box's steps follow them (so only the minis show). */}
+      {model.status !== 'Wanted' && !(model.hobby === 'Warhammer' && model.minis?.length) && (
+        <BuildSteps model={model} stages={lookups.stages} save={save} />
+      )}
+      {model.status !== 'Wanted' && model.hobby === 'Warhammer' && (
+        <MinisTracker model={model} steps={lookups.stages.Warhammer} onModel={onModel} run={run} />
+      )}
       <TimeTracker model={model} onModel={onModel} run={run} />
       <PaintChecklist model={model} onModel={onModel} run={run} flash={flash} onOpenSupply={onOpenSupply} />
       <BuildLog modelId={model.model_id} entries={model.log} reload={reload} run={run} />

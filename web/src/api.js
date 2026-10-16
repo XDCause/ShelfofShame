@@ -119,6 +119,12 @@ export const api = {
   deleteModel: (id) => request(`/models/${id}`, send('DELETE')),
   addModelPaints: (id, text, purpose) => request(`/models/${id}/paints`, send('POST', { text, purpose })),
   updateModelPaint: (id, data) => request(`/model-paints/${id}`, send('PATCH', data)),
+  minisFromBox: (id) => request(`/models/${id}/minis/from-box`, send('POST')),
+  addMinis: (id, unit, count) => request(`/models/${id}/minis`, send('POST', { unit, count })),
+  updateMini: (miniId, data) => request(`/model-minis/${miniId}`, send('PATCH', data)),
+  setMinisStage: (id, miniIds, stage) => request(`/models/${id}/minis/stage`, send('PUT', { mini_ids: miniIds, stage })),
+  renameMiniUnit: (id, unit, to) => request(`/models/${id}/minis/unit`, send('PUT', { unit, to })),
+  deleteMiniUnit: (id, unit) => request(`/models/${id}/minis?unit=${encodeURIComponent(unit)}`, send('DELETE')),
   deleteModelPaint: (id) => request(`/model-paints/${id}`, send('DELETE')),
   // All the missing paints, or one checklist line (paintId = its model_paint_id).
   wishMissingPaints: (id, paintId) => request(`/models/${id}/wishlist${paintId ? `?paint_id=${paintId}` : ''}`, send('POST')),
@@ -194,6 +200,7 @@ export const api = {
   addExtraVideoGame: (game) => request('/videogames/extra', send('POST', { game })),
   findSteamGames: (q) => request(`/videogames/find?q=${encodeURIComponent(q)}`),
   scoutVideoGame: (appId) => request(`/videogames/scout/${appId}`),
+  findOtherGames: (platform, q) => request(`/videogames/other/find?platform=${platform}&q=${encodeURIComponent(q)}`),
   otherGames: () => request('/videogames/other'),
 
   // Chess

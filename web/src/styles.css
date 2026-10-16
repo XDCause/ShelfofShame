@@ -1288,8 +1288,6 @@ body.writing-mode .journal-title { font-size: 2.2rem; }
   .chart-labels span { font-size: 0.62rem; }
 }
 .goal-card p { margin: 0; }
-.add-game { display: flex; flex-direction: column; gap: 8px; }
-.add-game p { margin: 0; }
 
 /* A game compared with other players: your time beside the median and fastest times to 100%. */
 .compared p { margin: 6px 0 0; }
@@ -1872,4 +1870,40 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 /* Find a game (Steam store search): Steam's small capsule pictures are 231 x 87. */
 .find-games .row-button { gap: 12px; }
 .find-thumb { width: 120px; aspect-ratio: 231 / 87; object-fit: cover; border-radius: 6px; flex: none; background: var(--fill); }
+.find-thumb.contain { object-fit: contain; }
+.find-where { margin-bottom: 12px; }
+.find-by-hand { margin-top: 10px; }
+.find-picked { display: block; max-width: 220px; max-height: 120px; object-fit: contain; border-radius: 8px; margin-bottom: 8px; }
 @media (max-width: 700px) { .find-thumb { width: 92px; } }
+
+/* Each mini in a Warhammer box (MinisTracker): units as folds, a row of step pills per mini. */
+.mini-counts { margin: 0 0 10px; }
+.mini-set { display: inline-flex; align-items: center; gap: 8px; }
+.mini-set select { width: auto; min-height: 36px; padding-block: 4px; }
+.mini-units { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+.mini-unit .fold-title .muted { font-weight: 400; }
+.mini-unit-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.mini-list { list-style: none; margin: 0; padding: 0; }
+.mini { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-top: 0.5px solid var(--separator); }
+.mini:first-child { border-top: 0; }
+.mini-name { flex: 1; min-width: 0; text-align: left; color: var(--text); padding: 4px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mini-n { color: var(--muted); font-variant-numeric: tabular-nums; }
+.mini.done .mini-name { color: var(--muted); }
+.mini-steps { display: flex; gap: 4px; flex: none; }
+.mini-steps button {
+  min-height: 32px; padding: 0 10px; border: 0; border-radius: 999px; font-size: 0.8rem;
+  background: var(--fill); color: var(--muted);
+}
+.mini-steps button[aria-pressed='true'] { background: var(--tint); color: var(--on-tint); font-weight: 600; }
+.mini.done .mini-steps button[aria-pressed='true'] { background: var(--ok); }
+.mini-rename { display: flex; gap: 6px; flex: 1; min-width: 0; }
+.mini-rename input { min-width: 0; }
+.mini-add { display: flex; gap: 8px; margin-top: 8px; }
+.mini-add input[type='number'] { width: 72px; flex: none; }
+.mini-add input:not([type='number']) { flex: 1; min-width: 0; }
+.mini-setup { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+@media (max-width: 700px) {
+  .mini { flex-wrap: wrap; row-gap: 4px; }
+  .mini-steps { width: 100%; }
+  .mini-steps button { flex: 1; padding: 0 4px; min-height: 36px; }
+}

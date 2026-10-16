@@ -63,7 +63,8 @@ export default function VideoGamePanel({ id, onClose }) {
         <div className="section-head">
           <strong>{game.achievements_total ? `${game.achievements_done} of ${game.achievements_total} achievements · ${game.percent}%`
             : game.has_achievements === false ? 'This game has no achievements'
-              : other ? (ubisoft ? 'No achievement list yet' : 'No achievements read yet') : 'Not read from Steam yet'}</strong>
+              : other ? (!game.source_id && !game.steam_app_id ? 'Hours only - no achievements tracked'
+                : ubisoft ? 'No achievement list yet' : 'No achievements read yet') : 'Not read from Steam yet'}</strong>
           {other && <span className={`pill ${ubisoft ? 'teal' : 'purple'}`}>{ubisoft ? 'Ubisoft' : 'Epic'}</span>}
           {game.completed_at && <span className="pill ok">100% · {shortDate(game.completed_at)}</span>}
         </div>

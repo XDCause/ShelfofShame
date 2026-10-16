@@ -6,8 +6,8 @@ import { playtime } from './steam.jsx'
 
 // Epic and Ubisoft games, from the user's Exophase profile (api/app/othergames.py). They use the
 // Steam Games table and game panel (shaped like Steam games, ids like "ubisoft-12"); this file has
-// the platform switches (one for the Games page, toggles for the dashboard and stats), the
-// add-a-Ubisoft-game form and the dashboard card.
+// the platform toggles for the dashboard, stats and games, and the dashboard card. (Adding an Epic
+// or Ubisoft game is in Find a game.)
 
 export const PLATFORMS = [['steam', 'Steam'], ['epic', 'Epic'], ['ubisoft', 'Ubisoft']]
 
@@ -61,43 +61,6 @@ export function useOtherGames() {
     api.otherAccount().then(setAccount).catch(() => {})
   }, [refreshKey])
   return { data, account }
-}
-
-// A Ubisoft game Exophase doesn't list: its Steam version is looked for straight away (its list).
-export function AddUbisoftGame({ onDone }) {
-  const { changed, showToast } = useApp()
-  const [f, setF] = useState({ name: '', done: '', total: '', hours: '' })
-  const [error, setError] = useState('')
-  const num = (v) => (v === '' ? null : Number(v))
-  const save = async (e) => {
-    e.preventDefault()
-    setError('')
-    try {
-      const game = await api.addOtherGame({ name: f.name, done: num(f.done), total: num(f.total), hours: num(f.hours) })
-      changed()
-      showToast(`Added ${game.name}`)
-      onDone()
-    } catch (err) {
-      setError(err.message)
-    }
-  }
-  return (
-    <form className="card other-form" onSubmit={save}>
-      <p className="small muted">For a Ubisoft game Exophase doesn't list. If it's on Steam too, its achievement list comes from
-        there and you tick them off; if not, type the numbers (Ubisoft Connect: the game's Achievements page).</p>
-      <div className="other-fields">
-        <label>Game<input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} required autoFocus /></label>
-        <label>Achievements you have<input type="number" min="0" value={f.done} onChange={(e) => setF({ ...f, done: e.target.value })} /></label>
-        <label>Achievements in the game<input type="number" min="0" value={f.total} onChange={(e) => setF({ ...f, total: e.target.value })} /></label>
-        <label>Hours played<input type="number" min="0" step="0.5" value={f.hours} onChange={(e) => setF({ ...f, hours: e.target.value })} /></label>
-      </div>
-      <div className="button-row">
-        <button type="submit" className="primary">Add</button>
-        <button type="button" className="plain" onClick={onDone}>Cancel</button>
-      </div>
-      {error && <p className="alert error small">{error}</p>}
-    </form>
-  )
 }
 
 // The dashboard card: Epic and Ubisoft at a glance - or the form to connect Exophase.

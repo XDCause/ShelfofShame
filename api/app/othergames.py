@@ -17,9 +17,11 @@ The dashboard, stats and recap count all three platforms together by default (?p
 some; Steam alone matches SteamHunters' numbers) - videogames.ALL_GAMES / ALL_ACHIEVEMENTS.
 """
 import logging
+import time
 from datetime import datetime, timedelta, timezone
+from typing import Literal
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel, Field
 
@@ -65,6 +67,8 @@ class AccountIn(BaseModel):
 
 class GameIn(BaseModel):
     name: str = Field(min_length=1, max_length=200)
+    platform: Literal["epic", "ubisoft"] = "ubisoft"
+    exo_id: int | None = None            # picked from Find a game: its picture and Exophase page
     done: int | None = Field(None, ge=0)
     total: int | None = Field(None, ge=0)
     hours: float | None = Field(None, ge=0, le=100000)
@@ -153,7 +157,7 @@ def sync_details(players: dict) -> int:
                     g = conn.execute("SELECT * FROM vg_other_games WHERE game_id = %s", (g["game_id"],)).fetchone()
             if g["steam_app_id"] and (not g["sh_synced_at"] or now - g["sh_synced_at"] > WEEKLY):
                 community(g["game_id"], g["steam_app_id"])
-            if g["platform"] == "epic" and g["page_url"] and players.get("epic") and (
+            if g["platform"] == "epic" and g["page_url"] and g["source_id"] and players.get("epic") and (
                     not g["list_synced_at"] or g["list_done"] != g["exo_done"]):
                 epic_list(g, players["epic"])
                 read += 1
@@ -307,6 +311,39 @@ def _one(conn, game_id: int, with_list: bool = True) -> dict:
     return game
 
 
+ENVIRONMENTS = {v: k for k, v in exophase.PLATFORMS.items()}     # ours -> Exophase's ("ubisoft" -> "uplay")
+KEEP = 3600
+_found: dict[tuple, tuple[float, list]] = {}
+_seen: dict[int, dict] = {}              # every game a search has shown, by Exophase id (for adding it)
+
+
+@router.get("/videogames/other/find")
+def find(platform: Literal["epic", "ubisoft"], q: str = Query(..., min_length=2, max_length=80)):
+    """Epic or Ubisoft games on Exophase matching the words, marked when they're already in your games.
+    (Declared before /videogames/other/{game_id}.)"""
+    words = " ".join(q.casefold().split())
+    hit = _found.get((platform, words))
+    if hit and time.monotonic() - hit[0] < KEEP:
+        results = hit[1]
+    else:
+        try:
+            results = exophase.search(words, ENVIRONMENTS[platform])
+        except exophase.Unavailable as e:
+            raise HTTPException(502, str(e))
+        _found[(platform, words)] = (time.monotonic(), results)
+    for r in results:
+        _seen[r["exo_id"]] = {**r, "platform": platform}
+    with db() as conn:
+        mine = conn.execute("SELECT game_id, name, source_id FROM vg_other_games WHERE platform = %s", (platform,)).fetchall()
+    by_key = {exophase.key(g["name"]): g["game_id"] for g in mine}
+    by_source = {g["source_id"]: g["game_id"] for g in mine if g["source_id"]}
+    out = []
+    for r in results:
+        game_id = by_source.get(str(r["exo_id"])) or by_key.get(exophase.key(r["name"]))
+        out.append({**r, "yours": {"id": f"{platform}-{game_id}"} if game_id else None})
+    return out
+
+
 @router.get("/videogames/other/{game_id}")
 def get_game(game_id: int):
     with db() as conn:
@@ -320,14 +357,25 @@ def _check(done, total):
 
 @router.post("/videogames/other", status_code=201)
 def add_game(body: GameIn):
-    """A Ubisoft game Exophase doesn't list, with its numbers (and hours) typed in. Its Steam
-    version (and so its achievement list) is looked for straight away."""
+    """An Epic or Ubisoft game added by hand: hours played (a game without achievements, like
+    Fortnite, is tracked by its hours), and for Ubisoft the numbers if you like. Picked from Find a
+    game (exo_id): its picture and Exophase page come with it. Its Steam version (picture, other
+    players' numbers; for Ubisoft the achievement list) is looked for straight away."""
     _check(body.done, body.total)
+    picked = _seen.get(body.exo_id) if body.exo_id else None
+    if body.exo_id and (not picked or picked["platform"] != body.platform):
+        raise HTTPException(422, "Search for the game again, then pick it.")
+    name = (picked["name"] if picked else body.name).strip()
     with db() as conn:
+        same = [g for g in conn.execute("SELECT name FROM vg_other_games WHERE platform = %s",
+                                        (body.platform,)).fetchall() if exophase.key(g["name"]) == exophase.key(name)]
+        if same:
+            raise HTTPException(409, f"{same[0]['name']} is already in your {NAMES[body.platform]} games.")
         game_id = conn.execute(
-            "INSERT INTO vg_other_games (platform, name, my_done, my_total, my_minutes) VALUES ('ubisoft', %s, %s, %s, %s) "
-            "RETURNING game_id", (body.name.strip(), body.done, body.total,
-                                  round(body.hours * 60) if body.hours is not None else None)).fetchone()["game_id"]
+            "INSERT INTO vg_other_games (platform, name, my_done, my_total, my_minutes, picture_url, page_url) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING game_id",
+            (body.platform, name, body.done, body.total, round(body.hours * 60) if body.hours is not None else None,
+             picked and picked["picture"], picked and picked["page_url"])).fetchone()["game_id"]
     _find_and_list(game_id)
     with db() as conn:
         return _one(conn, game_id)

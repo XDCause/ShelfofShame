@@ -757,3 +757,29 @@ def test_scouting_a_game_you_dont_own(client, fake, monkeypatch):
     vgfind._scouted.clear()
     g = client.get("/api/videogames/scout/99").json()
     assert g["achievements_total"] == 3 and g["perfect_rate"] is None and "SteamHunters" in g["notes"][0]
+
+
+def test_epic_and_ubisoft_games_found_or_added_by_hand(client, exo, monkeypatch):
+    from app import othergames
+    othergames._found.clear()
+    searched = []
+    monkeypatch.setattr(exophase, "search", lambda words, env: searched.append((words, env)) or [
+        {"exo_id": 471588, "name": "Rainbow Six Siege X", "picture": "https://m.exophase.com/epic/games/l/1.png",
+         "page_url": "https://www.exophase.com/game/r6-epic/achievements/", "awards": 48}] if env == "epic" else [])
+    found = client.get("/api/videogames/other/find?platform=epic&q=Rainbow Six").json()
+    assert searched == [("rainbow six", "epic")] and found[0]["yours"] is None
+    client.get("/api/videogames/other/find?platform=epic&q=rainbow  six")
+    assert len(searched) == 1                                                  # kept: asked once
+    assert client.get("/api/videogames/other/find?platform=steam&q=x").status_code == 422
+    # Picked from the search: its name, picture and page; its Steam version found by name.
+    game = client.post("/api/videogames/other", json={"name": "ignored", "platform": "epic", "exo_id": 471588, "hours": 3}).json()
+    assert (game["platform"], game["name"], game["playtime_minutes"], game["steam_app_id"]) == ("epic", "Rainbow Six Siege X", 180, 359550)
+    assert client.get("/api/videogames/other/find?platform=epic&q=rainbow six").json()[0]["yours"] == {"id": f"epic-{game['game_id']}"}
+    assert client.post("/api/videogames/other", json={"name": "rainbow six siege x", "platform": "epic"}).status_code == 409
+    assert client.post("/api/videogames/other", json={"name": "X", "platform": "epic", "exo_id": 1}).status_code == 422
+    # Fortnite: no achievements anywhere, just hours.
+    fortnite = client.post("/api/videogames/other", json={"name": "Fortnite", "platform": "epic", "hours": 569}).json()
+    assert (fortnite["playtime_minutes"], fortnite["achievements_total"]) == (34140, None) and not fortnite["has_achievements"]
+    epic = next(p for p in client.get("/api/videogames/other").json()["platforms"] if p["platform"] == "epic")
+    assert epic["games"] == 2 and epic["playtime_minutes"] == 34140 + 180
+    assert client.delete(f"/api/videogames/other/{fortnite['game_id']}").status_code == 204

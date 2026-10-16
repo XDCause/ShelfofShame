@@ -1157,12 +1157,8 @@ def video_games(page):
     page.locator(".section-tabs").get_by_role("link", name="Games").click()
     expect(page.get_by_label("Search your games")).to_be_visible()
     expect(page.locator(".game-rows li").first.or_(page.locator(".empty", has_text="No games here"))).to_be_visible()
-    # + Add a game: a link that isn't a Steam game is refused before anything asks Steam.
-    page.get_by_role("button", name=re.compile(r"^\+ Add a (Steam )?game$")).click()   # "Steam" when others show too
-    page.get_by_label("Steam store link or app id").fill("not a game")
-    page.locator(".add-game").get_by_role("button", name="Add", exact=True).click()
-    expect(page.locator(".add-game .alert")).to_contain_text("store link")
-    page.locator(".add-game").get_by_role("button", name="Cancel").click()
+    # The toolbar: Sync now (when connected) and Find a game - adding games is in Find a game.
+    expect(page.locator(".games-pinned .toolbar").get_by_role("button", name=re.compile(r"^\+ Add"))).to_have_count(0)
     # Find a game: scout any Steam game by name (live: Steam's store search + SteamHunters, read only).
     page.get_by_role("button", name="Find a game").click()
     page.get_by_label("Search Steam").fill("hollow knight")
@@ -1178,6 +1174,19 @@ def video_games(page):
         expect(page.get_by_label("Search Steam")).to_have_value("hollow knight")   # the search is kept
     else:
         print("    Steam's store search couldn't be reached - skipped")
+    # Epic: a game without achievements (like Fortnite) added by hand, tracked by its hours.
+    d = drawer(page)
+    d.get_by_role("group", name="Where to search").get_by_role("button", name="Epic Games").click()
+    d.get_by_label("Search Epic Games").fill(f"Hoursgame {MARK}")
+    d.get_by_role("button", name=re.compile("to your Epic Games games by hand")).click(timeout=30000)
+    d = drawer(page)
+    d.get_by_label("Hours played").fill("569")
+    d.get_by_role("button", name="Add game").click()
+    d = drawer(page)
+    expect(d.locator(".section-head")).to_contain_text("Hours only")
+    expect(d.get_by_label("Hours played")).to_have_value("569")
+    d.get_by_role("button", name="Remove").click()
+    expect(page.locator(".drawer")).to_have_count(0)
     page.keyboard.press("Escape")
     # A game's panel: how you compare with other players (when the community numbers are in).
     # The search, filters and headings stay pinned while the list scrolls (on a PC).
@@ -1373,6 +1382,40 @@ def warhammer_range(page):
     page.keyboard.press("Escape")
 
 
+@step("Warhammer minis: each mini its own step, a unit set at once, the box follows")
+def warhammer_minis(page):
+    kit = page.request.post(f"{BASE}/api/models", data={"name": f"Box-{MARK}", "hobby": "Warhammer", "status": "In stash",
+                                                        "brand_name": "Games Workshop"}).json()
+    go(page, "Models")
+    page.locator(".model-card", has_text=f"Box-{MARK}").first.click()
+    d = drawer(page)
+    expect(d.locator(".section-title", has_text="Track each mini")).to_be_visible()
+    d.get_by_role("button", name="Add them by hand").click()
+    d.get_by_label("How many").fill("5")
+    d.get_by_label("Unit", exact=True).fill("Skitarii Rangers")
+    d.locator(".mini-add").get_by_role("button", name="Add").click()
+    expect(d.locator(".mini-unit")).to_have_count(1)
+    d.get_by_role("button", name="+ Add minis").click()                         # the tracker's add form starts closed
+    d.get_by_label("How many").fill("1")
+    d.get_by_label("Unit", exact=True).fill("Skitarii Marshal")
+    d.locator(".mini-add").get_by_role("button", name="Add").click()
+    expect(d.locator(".mini-unit")).to_have_count(2)
+    expect(d.locator(".section-head", has_text="Minis")).to_contain_text("0 of 6 complete")
+    rangers = d.locator(".mini-unit", has_text="Skitarii Rangers")
+    rangers.get_by_label("This unit: set every mini to a step").select_option("Primed")
+    expect(rangers.locator(".fold-detail")).to_have_text("All primed")
+    rangers.get_by_role("group", name="Mini 1 steps").get_by_role("button", name="Complete").click()
+    expect(d.locator(".section-head", has_text="Minis")).to_contain_text("1 of 6 complete")
+    expect(d.locator(".mini-counts")).to_contain_text("Not started 1")
+    model = page.request.get(f"{BASE}/api/models/{kit['model_id']}").json()
+    assert (model["status"], model["figures"], model["figures_done"], model["stage"]) == ("In progress", 6, 1, None), model
+    d.get_by_label("Whole box: set every mini to a step").select_option("Built")
+    expect(d.locator(".mini-counts")).to_have_text("Built 6")
+    shot(page, "d54b_warhammer_minis", full=False)
+    page.keyboard.press("Escape")
+    page.request.delete(f"{BASE}/api/models/{kit['model_id']}")
+
+
 @step("Gundam: in stock now at Good Games (live), a search, grade chips")
 def gundam_range(page):
     go(page, "Models")
@@ -1506,7 +1549,7 @@ with sync_playwright() as p:
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
                matches, used_on, gundam, bandai_lookup, warhammer, journal_write, journal_links, journal_from_model,
                journal_suggestion, journal_todo, global_search, journal_wishlist, appearance,
-               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, gundam_range, board_game_kinds, settings_more, no_panel):
+               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, warhammer_minis, gundam_range, board_game_kinds, settings_more, no_panel):
         fn(desk)
     ctx = browser.new_context(**p.devices["iPhone 13"], timezone_id=zone)
     mob = ctx.new_page()

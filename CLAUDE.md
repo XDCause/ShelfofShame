@@ -1272,6 +1272,29 @@ DBeaver, psql, and the one-off import script.
    the panel's Compared (exported, `hint` prop) and AchievementList (.scout-list un-dims rows); "Open yours" or "I've played
    it - track it" (= + Add a game by app id). conftest refuses steam.store_search. Tests: 344 API, 64 browser steps
    (find step is live; skips if Steam can't be reached).
+3zzh. **Warhammer: each mini its own step; Epic / Ubisoft games by hand** (2026-10-16).
+   - 49_model_minis.sql: model_minis (model_id CASCADE, unit, name, stage NULL = not started, sort_order);
+     product_info.kit_units JSONB = goodgames.units_of(description) ("1x A, 10x B ... and 3 C"; brackets / "which can
+     alternatively be built as" skipped; name stops at filler words "All models come..."; kit figures = sum of units, else
+     _figures). api/app/minis.py: POST /models/{id}/minis {unit, count}, POST .../minis/from-box (kit_units, else asks Good
+     Games by GW code via warhammer._pick + _store; 404 = add by hand), PATCH /model-minis/{id} {stage, name, unit}, PUT
+     .../minis/stage {mini_ids, stage}, PUT .../minis/unit {unit, to}, DELETE /model-minis/{id}, DELETE .../minis?unit=.
+     sync(): the box follows its minis - stage = the step EVERY mini reached (skipped_steps []), figures = count,
+     figures_done = Complete ones, In progress once any mini has a step, Finished when all Complete (tidy_model rules).
+     models.update_model -> minis.after_model_change: a box step brings minis behind it up; un-finishing takes Complete
+     minis back to the box's step. fetch_model returns `minis`; MODEL_SELECT `box_units`. Web MinisTracker.jsx (Warhammer,
+     not Wanted): setup (from the box / by hand), then units as folds ("All primed"), "Set all to..." per unit and whole box,
+     a pill per step per mini (tap last done = back a step), # / name, rename / remove unit, + Add minis. BuildSteps is
+     hidden once minis exist.
+   - Games toolbar = Sync now + Find a game (the + Add forms and AddUbisoftGame are gone). FindGamePanel: Steam / Ubisoft /
+     Epic Games switch; Ubisoft / Epic search Exophase (exophase.search(words, "uplay"|"epic"): master id, name, picture
+     from m.exophase.com, page) via GET /videogames/other/find (cached an hour; `_seen` keeps what was shown; declared
+     before /videogames/other/{game_id}); pick or "+ Add '<words>' by hand" -> AddOtherGame (hours; Ubisoft also numbers)
+     -> POST /videogames/other {platform, name, exo_id?, hours, done, total} (409 if the same name is on that platform;
+     exo_id must have been shown by a search). Hand-added games have no source_id (removable); sync skips their Epic
+     earned list. Panel says "Hours only - no achievements tracked" (Fortnite, 569 h). Gotcha: in a panel that opens
+     another, call onClose() BEFORE openPanel() - the other way round closes the new panel too.
+   - Tests: 349 API, 65 browser steps (warhammer_minis; video_games adds + removes an Epic game by hand).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

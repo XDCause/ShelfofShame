@@ -3,7 +3,8 @@
 Status runs Wanted -> In stash -> In progress / On hold -> Finished (or Gone: sold, given away).
 "Shelf of shame" = kits you own but haven't finished (In stash, In progress, On hold).
 Each model belongs to a hobby (Scale model / Warhammer / Gundam), which has its own build steps
-(`stage` = the last one done). Warhammer boxes count minis (figures, figures_done); Gundam kits
+(`stage` = the last one done). Warhammer boxes count minis (figures, figures_done) - or track each
+mini's own step (minis.py), and then the box follows them; Gundam kits
 have a grade (HG, MG...).
 
 A model's paint list is a checklist. Each paint is matched to your inventory by brand + product
@@ -111,6 +112,7 @@ HAVE = f"(mp.have_it OR {OWNED} OR (mp.mix_id IS NOT NULL AND {colours.MIX_COMPL
 MODEL_SELECT = f"""
 SELECT m.*, b.name AS brand,
        p.product_info_id, (p.image IS NOT NULL) AS has_image, p.fetched_at AS photo_updated, p.source_url,
+       p.kit_units AS box_units,
        (SELECT count(*) FROM model_paints mp WHERE mp.model_id = m.model_id) AS paints_total,
        (SELECT count(*) FROM model_paints mp WHERE mp.model_id = m.model_id AND {HAVE}) AS paints_have,
        (SELECT COALESCE(round(sum(extract(epoch FROM (COALESCE(x.ended_at, now()) - x.started_at))) / 60), 0)
@@ -166,7 +168,9 @@ def fetch_model(conn, model_id):
         "SELECT l.entry_id, l.entry_date, l.text, l.created_at, "
         "COALESCE((SELECT array_agg(p.photo_id ORDER BY p.photo_id) FROM model_log_photos p WHERE p.entry_id = l.entry_id), '{}') AS photos "
         "FROM model_log l WHERE l.model_id = %s ORDER BY l.entry_date DESC, l.entry_id DESC", (model_id,)).fetchall()
-    return {**model, "paints": paints_, "sessions": sessions, "log": log}
+    minis = conn.execute("SELECT mini_id, unit, name, stage FROM model_minis WHERE model_id = %s "
+                         "ORDER BY sort_order, mini_id", (model_id,)).fetchall()
+    return {**model, "paints": paints_, "sessions": sessions, "log": log, "minis": minis}
 
 
 def tamiya_id_of(conn):
@@ -309,6 +313,8 @@ def update_model(model_id: int, body: ModelPatch):
         data = tidy_model(conn, fetch_model(conn, model_id), data)
         update_row(conn, "models", "model_id", model_id, data)
         date_status(conn, model_id, data.get("status"))
+        from . import minis                                  # (minis.py imports this module)
+        minis.after_model_change(conn, model_id, data)       # a box with minis follows them
         return fetch_model(conn, model_id)
 
 
