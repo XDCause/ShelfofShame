@@ -7,7 +7,7 @@ import { useShared } from '../../core/useShared.js'
 import { gameTitle, resultTone, score, youtubeId } from './VolleyballPanels.jsx'
 import EmptyState from '../../core/EmptyState.jsx'
 
-const GEAR_TONE = { New: 'ok', Good: 'ok', Worn: 'low', 'Needs replacing': 'out', Retired: '' }
+const GEAR_TONE = { Wanted: 'purple', New: 'ok', Good: 'ok', Worn: 'low', 'Needs replacing': 'out', Retired: '' }
 
 function useVolleyball() {
   const { refreshKey } = useApp()
@@ -220,7 +220,7 @@ function HeadToHead({ games }) {
   )
 }
 
-// Your gear, worst condition first.
+// Your gear, worst condition first (retired last), then a group of what you want to buy.
 export function GearView() {
   const { refreshKey, openPanel } = useApp()
   const [gear, setGear] = useState(null)
@@ -228,33 +228,49 @@ export function GearView() {
   useEffect(() => { api.listGear().then(setGear).catch((e) => setError(e.message)) }, [refreshKey])
   if (error) return <p className="alert error">{error}</p>
   if (!gear) return <p className="muted loading">Loading...</p>
+  const owned = gear.filter((g) => g.condition !== 'Wanted')
+  const wanted = gear.filter((g) => g.condition === 'Wanted')
+  const count = (c) => gear.filter((g) => g.condition === c).length
+  const cards = (list) => (
+    <div className="model-grid">
+      {list.map((g) => (
+        <button key={g.gear_id} type="button" className="model-card" onClick={() => openPanel('gear', { id: g.gear_id })}>
+          <span className="model-photo cover">
+            {g.photo_url ? <img src={g.photo_url} alt="" loading="lazy" />
+              : <span className="photo-missing big-icon"><ShoeIcon size={44} /></span>}
+            <span className={`status-badge pill ${GEAR_TONE[g.condition]}`}>{g.condition}</span>
+          </span>
+          <span className="model-body">
+            <span className="model-name">{g.name}</span>
+            <span className="model-meta">{[g.kind, g.brand, g.size].filter(Boolean).join(' · ')}</span>
+            {g.purchase_date && g.condition !== 'Wanted' && <span className="muted small">Bought {shortDate(g.purchase_date)}</span>}
+          </span>
+        </button>
+      ))}
+    </div>
+  )
   return (
     <section className="page">
       <div className="toolbar">
-        <p className="summary grow"><strong>{gear.filter((g) => g.condition !== 'Retired').length}</strong> in use
-          {gear.some((g) => g.condition === 'Needs replacing') && <span className="muted"> · {gear.filter((g) => g.condition === 'Needs replacing').length} to replace</span>}</p>
+        <p className="summary grow"><strong>{owned.filter((g) => g.condition !== 'Retired').length}</strong> in use
+          {count('Needs replacing') > 0 && <span className="muted"> · {count('Needs replacing')} to replace</span>}
+          {wanted.length > 0 && <span className="muted"> · {wanted.length} wanted</span>}</p>
+        <button type="button" className="secondary" onClick={() => openPanel('gear', { wanted: true })}>+ Want</button>
         <button type="button" className="primary" onClick={() => openPanel('gear', {})}>+ Add gear</button>
       </div>
       {gear.length === 0 ? (
         <EmptyState Icon={ShoeIcon} title="No gear yet" action="+ Add gear" onAction={() => openPanel('gear', {})}>
           Shoes, knee pads, your own ball - with photos, and when they need replacing.</EmptyState>
       ) : (
-        <div className="model-grid">
-          {gear.map((g) => (
-            <button key={g.gear_id} type="button" className="model-card" onClick={() => openPanel('gear', { id: g.gear_id })}>
-              <span className="model-photo cover">
-                {g.photo_url ? <img src={g.photo_url} alt="" loading="lazy" />
-                  : <span className="photo-missing big-icon"><ShoeIcon size={44} /></span>}
-                <span className={`status-badge pill ${GEAR_TONE[g.condition]}`}>{g.condition}</span>
-              </span>
-              <span className="model-body">
-                <span className="model-name">{g.name}</span>
-                <span className="model-meta">{[g.kind, g.brand, g.size].filter(Boolean).join(' · ')}</span>
-                {g.purchase_date && <span className="muted small">Bought {shortDate(g.purchase_date)}</span>}
-              </span>
-            </button>
-          ))}
-        </div>
+        <>
+          {owned.length > 0 && cards(owned)}
+          {wanted.length > 0 && (
+            <>
+              <h3 className="section-title gear-wanted-title">Wanted</h3>
+              {cards(wanted)}
+            </>
+          )}
+        </>
       )}
     </section>
   )

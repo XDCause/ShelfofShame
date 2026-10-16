@@ -183,10 +183,12 @@ export function VolleyballGamePanel({ id = null, eventId = null, day = null, ven
 }
 
 // One piece of gear: photo, condition (tap to change), details, journal pages about it.
-export function GearPanel({ id = null, onClose }) {
+// wanted: a new piece you'd like to buy (condition Wanted); tapping a condition once you have it
+// dates it bought today (the API), unless Bought on is filled in.
+export function GearPanel({ id = null, wanted = false, onClose }) {
   const { lookups, changed, showToast } = useApp()
   const [gear, setGear] = useState(null)
-  const [condition, setCondition] = useState('Good')
+  const [condition, setCondition] = useState(wanted ? 'Wanted' : 'Good')
   const reload = useCallback(async () => {
     const g = await api.getGear(id)
     setGear(g)
@@ -200,12 +202,12 @@ export function GearPanel({ id = null, onClose }) {
     if (gear) await api.updateGear(gear.gear_id, body)
     else await api.addGear(body)
     changed()
-    showToast(gear ? 'Saved' : `Added ${body.name} to your gear`)
+    showToast(gear ? 'Saved' : condition === 'Wanted' ? `${body.name} is on your wanted list` : `Added ${body.name} to your gear`)
     onClose()
   }
   return (
-    <FormPanel title={gear ? gear.name : 'Add gear'} fields={GEAR_FIELDS} record={gear} onClose={onClose} onSave={save}
-      saveLabel={gear ? 'Save' : 'Add gear'}
+    <FormPanel title={gear ? gear.name : wanted ? 'Gear you want' : 'Add gear'} fields={GEAR_FIELDS} record={gear} onClose={onClose}
+      onSave={save} saveLabel={gear ? 'Save' : wanted ? 'Add to wanted' : 'Add gear'}
       onDelete={gear && (async () => { await api.deleteGear(gear.gear_id); changed(); onClose() })}
       before={gear && (
         <div className="item-hero">
@@ -225,7 +227,8 @@ export function GearPanel({ id = null, onClose }) {
           <p className="field-label">Condition</p>
           <div className="condition-picker" role="group" aria-label="Condition">
             {lookups.gear_conditions.map((c) => (
-              <button key={c} type="button" aria-pressed={condition === c} className={c === 'Needs replacing' ? 'warn' : ''}
+              <button key={c} type="button" aria-pressed={condition === c}
+                className={c === 'Needs replacing' ? 'warn' : c === 'Wanted' ? 'want' : ''}
                 onClick={() => setCondition(c)}>{c}</button>
             ))}
           </div>

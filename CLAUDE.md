@@ -1304,6 +1304,11 @@ DBeaver, psql, and the one-off import script.
    http(s) on 80/443 only, every resolved address must be ipaddress.is_global (no localhost / Docker / LAN), redirects
    followed by hand (<= 4) and each re-checked, streamed with a 5 MB cap, type from the first bytes (JPEG/PNG/WebP/GIF;
    not SVG). Tests: test_webphoto.py (fake DNS + MockTransport); e2e pastes a 1x1 PNG onto new gear.
+3zzj. **Wanted gear** (2026-10-16). 50_gear_wanted.sql: gear condition 'Wanted' (old CHECK found by definition, replaced by
+   gear_condition_check); db.GEAR_CONDITIONS starts with Wanted. /gear order: in use, then Wanted, then Retired; summary
+   gear_wanted. PATCH from Wanted to an owned condition with no purchase date dates it today (DB current_date).
+   Web: "+ Want" (GearPanel wanted=true preselects Wanted, "Add to wanted"), a "Wanted" group below your gear, "N wanted"
+   in the summary, purple badge / picker button. Tests: 362 API, 65 browser steps.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

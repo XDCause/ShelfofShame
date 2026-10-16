@@ -136,3 +136,21 @@ def test_uploading_a_video(client, tmp_path, monkeypatch):
     assert list((tmp_path / "videos").glob("*.part")) == []                 # nothing half-written left
     assert client.delete(f"/api/volleyball/videos/{video['video_id']}").status_code == 204
     assert list((tmp_path / "videos").iterdir()) == []                      # the file goes with it
+
+
+def test_gear_you_want(client):
+    client.post("/api/gear", json={"name": "Old shoes", "condition": "Retired"})
+    client.post("/api/gear", json={"name": "Ball", "condition": "Good"})
+    want = client.post("/api/gear", json={"name": "Mikasa V200W", "kind": "Ball", "condition": "Wanted"}).json()
+    assert [g["name"] for g in client.get("/api/gear").json()] == ["Ball", "Mikasa V200W", "Old shoes"]   # in use, wanted, retired
+    assert client.get("/api/volleyball/summary").json()["gear_wanted"] == 1
+    # Bought: it's dated today (unless a date is given).
+    from app.db import db
+    with db() as conn:
+        today = conn.execute("SELECT current_date AS d").fetchone()["d"].isoformat()
+    got = client.patch(f"/api/gear/{want['gear_id']}", json={"condition": "New", "purchase_date": None}).json()
+    assert (got["condition"], got["purchase_date"]) == ("New", today)
+    other = client.post("/api/gear", json={"name": "Sleeves", "condition": "Wanted"}).json()
+    got = client.patch(f"/api/gear/{other['gear_id']}", json={"condition": "New", "purchase_date": "2026-01-02"}).json()
+    assert got["purchase_date"] == "2026-01-02"
+    assert client.post("/api/gear", json={"name": "X", "condition": "Desired"}).status_code == 422

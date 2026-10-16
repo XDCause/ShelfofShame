@@ -206,6 +206,7 @@ def summary():
                                    "LIMIT 1").fetchone()
         row["gear_to_replace"] = conn.execute("SELECT count(*)::int AS n FROM gear WHERE condition = 'Needs replacing'"
                                               ).fetchone()["n"]
+        row["gear_wanted"] = conn.execute("SELECT count(*)::int AS n FROM gear WHERE condition = 'Wanted'").fetchone()["n"]
         return row
 
 
@@ -336,9 +337,9 @@ def delete_team(team_id: int):
 # ---------------------------------------------------------------------------
 @router.get("/gear")
 def list_gear():
-    """Your gear: in use first (worst condition first), retired last."""
+    """Your gear: in use first (worst condition first), then what you want to buy, retired last."""
     with db() as conn:
-        return conn.execute(GEAR_SELECT + " ORDER BY g.condition = 'Retired', "
+        return conn.execute(GEAR_SELECT + " ORDER BY g.condition = 'Retired', g.condition = 'Wanted', "
                             "array_position(ARRAY['Needs replacing', 'Worn', 'Good', 'New'], g.condition), "
                             "lower(g.name)").fetchall()
 
@@ -361,7 +362,9 @@ def update_gear(gear_id: int, body: GearPatch):
     if "condition" in data and data["condition"] is None:
         raise HTTPException(422, "Condition can't be empty.")
     with db() as conn:
-        fetch_gear(conn, gear_id)
+        current = fetch_gear(conn, gear_id)
+        if current["condition"] == "Wanted" and data.get("condition", "Wanted") != "Wanted"                 and not data.get("purchase_date") and not current["purchase_date"]:
+            data["purchase_date"] = conn.execute("SELECT current_date AS d").fetchone()["d"]   # bought: today (Brisbane)
         update_row(conn, "gear", "gear_id", gear_id, data)
         return fetch_gear(conn, gear_id)
 

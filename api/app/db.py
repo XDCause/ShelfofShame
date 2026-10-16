@@ -47,7 +47,7 @@ MODULE_IDS = ["models", "boardgames", "volleyball"]
 REPEATS = ["never", "weekly", "fortnightly"]
 MOODS = ["great", "good", "okay", "meh", "rough"]                              # 25_mood.sql, best first
 GAME_STATUSES = ["Owned", "To sell", "Wanted", "Borrowed", "Gone"]            # 21 / 47_board_game_to_sell.sql
-GEAR_CONDITIONS = ["New", "Good", "Worn", "Needs replacing", "Retired"]       # 22_volleyball.sql
+GEAR_CONDITIONS = ["Wanted", "New", "Good", "Worn", "Needs replacing", "Retired"]   # 22_volleyball.sql, 50_gear_wanted.sql
 VOLLEYBALL_KINDS = ["Game", "Training", "Social", "Tournament"]
 
 # Friendly messages for database rule violations, keyed by constraint name.

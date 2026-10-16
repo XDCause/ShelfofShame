@@ -465,6 +465,8 @@ th.col-value { width: 96px; }
 .condition-picker button:hover, .status-picker button:hover { background: color-mix(in srgb, var(--text) 14%, transparent); }
 .condition-picker button[aria-pressed='true'] { background: var(--tint); color: var(--on-tint); font-weight: 600; }
 .condition-picker button.warn[aria-pressed='true'] { background: var(--low); color: #fff; }
+.condition-picker button.want[aria-pressed='true'] { background: var(--purple-bg); color: var(--purple); box-shadow: inset 0 0 0 1.5px var(--purple); }
+.gear-wanted-title { margin: 24px 0 10px; }
 .condition-picker + .hint { margin: 8px 0 0; }
 .status-picker button[aria-pressed='true'] { font-weight: 700; }
 /* Selected In stash / Gone need more than their (grey) badge colours to stand out. */
