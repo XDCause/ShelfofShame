@@ -82,7 +82,7 @@ have five tabs: Home, Journal, Calendar, Supplies (with the wishlist) and Hobbie
   now, download), CSV export for Excel, Tamiya catalogue refresh, brands / categories / locations
 - Styled after Apple's Human Interface Guidelines (sidebar on wide screens, tab bar and sheets on
   phones, dark mode)
-- Nightly backups, 221 automated API tests and a 50-step browser walkthrough
+- Nightly backups (also copied to the network drive), 383 automated API tests and a 70-step browser walkthrough
 
 Three Docker containers:
 
@@ -271,7 +271,7 @@ SUP-0001... numbering.
 | Back up now (also runs nightly at 2 am) | Settings > Backups > Back up now, or `.\backup.ps1` (keeps the newest 14 in `backups\`) |
 | Back up and copy elsewhere | `.\backup.ps1 -CopyTo "D:\Backups"` |
 | Run the automated tests (never touches real data) | `.\run_tests.ps1` (or `.\run_tests.ps1 -k wishlist`) |
-| Click through the whole app in a browser (desktop + iPhone) | `.\run_e2e.ps1` (backs up, runs, restores; screenshots in `e2e\out\`) |
+| Click through the whole app in a browser (desktop + iPhone) | `.\run_e2e.ps1` (on its own throwaway copy of the app and data - yours is never touched; screenshots in `e2e\out\`) |
 
 ## Restoring a backup
 
