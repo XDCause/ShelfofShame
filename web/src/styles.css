@@ -2055,3 +2055,56 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .site-check .item-meta { display: block; }
 .site-check-error { color: var(--out); }
 .site-check-warning button { padding: 0; }
+
+/* ---------- Hiking (modules/hiking): the route, the elevation profile, splits, the GPX import ---------- */
+.hike-map-frame { margin: 8px 0 0; padding: 10px; border-radius: 12px; background: var(--fill-2); border: 1px solid var(--border); }
+.hike-map { display: block; width: 100%; max-height: 340px; }
+.hike-route { fill: none; stroke: var(--ok); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+.hike-route-casing { fill: none; stroke: var(--surface); stroke-width: 6; stroke-linejoin: round; stroke-linecap: round; }
+.hike-start { fill: var(--ok); stroke: var(--surface); stroke-width: 0.8; }
+.hike-end { fill: var(--out); stroke: var(--surface); stroke-width: 0.8; }
+.hike-waypoint { fill: var(--purple); stroke: var(--surface); stroke-width: 0.6; }
+.hike-here { fill: var(--tint); stroke: var(--surface); stroke-width: 0.9; }
+.hike-scale line { stroke: var(--muted); stroke-width: 2; }
+.hike-scale text { fill: var(--muted); font-size: 3.2px; }
+.hike-map-key { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; font-size: 0.78rem; }
+.hike-map-key i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; vertical-align: -1px; }
+.hike-key-start { background: var(--ok); }
+.hike-key-end { background: var(--out); }
+.hike-key-waypoint { background: var(--purple); }
+.hike-map-key .muted { margin-left: auto; }
+.hike-profile { margin: 14px 0 0; }
+.hike-profile-plot { position: relative; height: 130px; margin-left: 46px; border-bottom: 1px solid var(--separator); }
+.hike-profile-axis { position: absolute; right: calc(100% + 6px); font-size: 0.7rem; color: var(--muted); white-space: nowrap; }
+.hike-profile-axis.top { top: -4px; }
+.hike-profile-axis.bottom { bottom: -4px; }
+.hike-profile-svg { display: block; width: 100%; height: 100%; cursor: crosshair; }
+.hike-profile-area { fill: var(--ok-bg); }
+.hike-profile-line { fill: none; stroke: var(--ok); stroke-width: 2; stroke-linejoin: round; }
+.hike-profile-cross { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.hike-profile-tip { top: 4px; bottom: auto; }
+.hike-profile-labels { display: flex; justify-content: space-between; margin: 4px 0 0 46px; font-size: 0.72rem; color: var(--muted); }
+.hike-numbers { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0 0; }
+.hike-numbers > div { padding: 10px 12px; border-radius: 10px; background: var(--fill-2); }
+.hike-numbers dt { font-size: 0.75rem; color: var(--muted); }
+.hike-numbers dd { margin: 2px 0 0; font-size: 1.15rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.hike-numbers dd .muted { font-size: 0.85rem; font-weight: 500; }
+.hike-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.hike-facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; margin: 0; font-size: 0.9rem; }
+.hike-facts dt { color: var(--muted); }
+.hike-facts dd { margin: 0; }
+.hike-splits { width: 100%; border-collapse: collapse; font-size: 0.88rem; font-variant-numeric: tabular-nums; }
+.hike-splits th { text-align: left; font-weight: 600; color: var(--muted); font-size: 0.78rem; padding: 4px 6px; }
+.hike-splits td { padding: 5px 6px; border-top: 1px solid var(--separator); }
+.hike-splits tr.fastest td { color: var(--ok); font-weight: 650; }
+.hike-waypoints { margin: 0; padding-left: 18px; font-size: 0.9rem; }
+.hike-thumb { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: 10px; object-fit: cover;
+  background: var(--ok-bg); color: var(--ok); }
+.hike-bests .stat-icon { width: 36px; height: 36px; border-radius: 10px; }
+.hike-list { padding: 4px 12px; }
+.gpx-import { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.gpx-results { list-style: none; margin: 0; padding: 0; font-size: 0.88rem; }
+.gpx-results li { padding: 2px 0; }
+.gpx-results li.added button { color: var(--ok); }
+.gpx-results li.error { color: var(--out); }
+.hike-form .button-row { margin-top: 10px; }

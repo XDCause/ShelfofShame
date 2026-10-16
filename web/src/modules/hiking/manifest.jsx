@@ -1,25 +1,20 @@
-import { BootIcon } from '../../components/icons.jsx'
-import EmptyState from '../../core/EmptyState.jsx'
+import { BootIcon, TrophyIcon } from '../../components/icons.jsx'
+import HikePanel from './HikePanel.jsx'
+import { Dashboard, HikesView, HikingTiles } from './HikingViews.jsx'
 
-// Hiking: a placeholder for now - just the reminder in the sidebar (underConstruction puts a spanner
-// after its name). Hikes, trails and gear come later.
-function HikingPage() {
-  return (
-    <section className="page">
-      <EmptyState Icon={BootIcon} title="Hiking">
-        Under construction. This is where your hiking will live - hikes, trails and gear.
-      </EmptyState>
-    </section>
-  )
-}
-
+// Hiking: your hikes (api/app/hiking.py) - imported from AllTrails as GPX files (or any GPS app's),
+// with distance, climb, times, per-km splits and the route worked out from the track - or logged by
+// hand. Pages live at /hiking/<path>; hikes show in Recent activity and on the calendar.
 export default {
   id: 'hiking',
   name: 'Hiking',
-  what: 'Hikes and trails (under construction)',
+  what: 'Hikes from AllTrails: distance, climb, routes and splits',
   Icon: BootIcon,
-  underConstruction: true,
+  home: { Tiles: HikingTiles },
+  actions: [{ label: 'Log a hike', Icon: BootIcon, run: (app) => app.openPanel('hike', {}) }],
+  panels: { hike: HikePanel },
   pages: [
-    { path: 'hikes', label: 'Hikes', Icon: BootIcon, render: () => <HikingPage /> },
+    { path: 'dashboard', label: 'Dashboard', Icon: TrophyIcon, render: () => <Dashboard /> },
+    { path: 'hikes', label: 'Hikes', Icon: BootIcon, render: () => <HikesView /> },
   ],
 }

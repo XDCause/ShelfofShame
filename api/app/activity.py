@@ -13,6 +13,7 @@
                 over the board: each game                    (chess_games)
     reading     pages read (one entry per book per day), started, finished / stopped   (reading_log, books)
     goals       reached, and each progress note                                     (goals, goal_updates)
+    hiking      a hike: distance, climb, time                                       (hikes)
 
 Each item: {at, day, kind, ref, verb, title, detail, photo_url}; the photo (if any) is the
 product's, the game's or the gear's. Newest first. Part of the core: Home shows the latest, and
@@ -142,6 +143,16 @@ WITH feed AS (
            concat_ws(' · ', CASE WHEN u.value IS NOT NULL THEN trim_scale(u.value) || COALESCE(' ' || g.unit, '') END, left(u.text, 120)),
            NULL, NULL, NULL
     FROM goal_updates u JOIN goals g USING (goal_id)
+  UNION ALL
+    SELECT COALESCE(h.ended_at, h.started_at, {_on_day('h.hiked_on', 'h.created_at')}), 'hike', h.hike_id, 'Hiked', h.name,
+           concat_ws(' · ', trim_scale(round(h.distance_m / 1000, 1)) || ' km', round(h.ascent_m) || ' m up',
+                     CASE WHEN COALESCE(h.moving_s, h.elapsed_s) >= 3600
+                          THEN COALESCE(h.moving_s, h.elapsed_s) / 3600 || ' h ' || mod(COALESCE(h.moving_s, h.elapsed_s), 3600) / 60 || ' min'
+                          WHEN COALESCE(h.moving_s, h.elapsed_s) IS NOT NULL THEN COALESCE(h.moving_s, h.elapsed_s) / 60 || ' min' END),
+           NULL, NULL,
+           CASE WHEN h.photo IS NOT NULL THEN '/api/hiking/hikes/' || h.hike_id || '/photo?v='
+                || (extract(epoch FROM h.photo_updated) * 1000)::bigint END
+    FROM hikes h
 )
 SELECT f.at, (f.at AT TIME ZONE current_setting('TimeZone'))::date AS day,
        f.kind, f.ref, f.verb, f.title, NULLIF(f.detail, '') AS detail,

@@ -7,7 +7,7 @@ import { Field } from './SupplyFields.jsx'
 // Simple forms for the newer parts (calendar events, board games, volleyball): describe the
 // fields once and get the form, its state and what to send to the API.
 //   { name, label, type: text|number|money|date|time|select|textarea|url, options, required, wide,
-//     placeholder, hint }
+//     placeholder, hint, step (a number field's step: 0.1 allows decimals) }
 // The form holds strings (what inputs give); toPayload turns blanks into null and numbers into
 // numbers, the way the API wants them.
 
@@ -46,7 +46,7 @@ export default function RecordFields({ fields, form, set }) {
           ) : (
             <input type={f.type === 'money' ? 'number' : f.type ?? 'text'} value={form[f.name]} onChange={set(f.name)}
               required={f.required} placeholder={f.placeholder} list={f.list}
-              {...(f.type === 'number' ? { min: f.min ?? 0, step: 1, inputMode: 'numeric' } : {})}
+              {...(f.type === 'number' ? { min: f.min ?? 0, step: f.step ?? 1, inputMode: f.step ? 'decimal' : 'numeric' } : {})}
               {...(f.type === 'money' ? { min: 0, step: '0.01', inputMode: 'decimal' } : {})} />
           )}
         </Field>

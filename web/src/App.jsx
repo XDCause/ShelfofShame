@@ -136,6 +136,7 @@ export default function App() {
     else if (kind === 'chess') openPanel('chessgame', { id })
     else if (kind === 'book') openPanel('book', { id })
     else if (kind === 'goal') navigate(`/goals/${id}`)
+    else if (kind === 'hike') openPanel('hike', { id })
   }, [openModel, openItem, navigate, openPanel])
   const app = useMemo(() => ({
     lookups, settings, refreshKey, changed, openItem, openModel, openAdd, openPanel, openThing, adjusted, showToast,

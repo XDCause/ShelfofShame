@@ -27,6 +27,7 @@ MODELS = len(json.load(urllib.request.urlopen(f"{BASE}/api/models")))
 CHESS = bool(json.load(urllib.request.urlopen(f"{BASE}/api/chess/account"))["username"])   # Home gets a rating tile
 _reading = json.load(urllib.request.urlopen(f"{BASE}/api/reading/summary"))
 READING = (any(_reading["counts"].values())) + bool(_reading["reading"])   # Home: books this year (+ reading now)
+HIKING = bool(json.load(urllib.request.urlopen(f"{BASE}/api/hiking/summary"))["all_time"]["hikes"])   # Home: km hiked
 MARK = f"e2e{int(time.time())}"   # a word only this run's journal page contains
 
 
@@ -87,10 +88,10 @@ def home(page):
     expect(stats.filter(has_text="Supplies")).to_contain_text(str(TOTAL))
     for tile in ("Shelf of shame", "Board games", "Volleyball", "Next game"):
         expect(stats.filter(has_text=tile)).to_be_visible()
-    expect(stats).to_have_count(10 + CHESS + READING)
+    expect(stats).to_have_count(10 + CHESS + READING + HIKING)
     expect(page.locator(".home-card", has_text="Recent activity").locator(".pill").first).to_be_visible()
     expect(page.locator(".home-card", has_text="Coming up")).to_be_visible()
-    expect(page.locator(".quick-action")).to_have_count(10)       # + Log a chess game, Add a book
+    expect(page.locator(".quick-action")).to_have_count(11)       # + Log a chess game, Add a book, Log a hike
     shot(page, "d00_home", full=False)
     stats.filter(has_text="To buy").click()
     expect(page).to_have_url(BASE + "/wishlist")
@@ -1578,6 +1579,71 @@ def goals(page):
     expect(page.locator(".goal-tile", has_text=MARK)).to_have_count(0)
 
 
+def gpx_file(name):
+    """A made-up AllTrails-style recording that ended an hour ago: 3 km due north, climbing 300 m, a minute
+    per 100 m, with a lookout waypoint."""
+    start = time.time() - 3 * 3600
+    stamp = lambda s: time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(start + s))
+    pts = "".join(f'<trkpt lat="{-27.5 + i * 0.0009:.6f}" lon="153.0"><ele>{100 + i * 10}</ele><time>{stamp(i * 60)}</time></trkpt>'
+                  for i in range(31))
+    return (f'<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="AllTrails" xmlns="http://www.topografix.com/GPX/1/1">'
+            f'<metadata><name>{name}</name><link href="https://www.alltrails.com/trail/australia/example/ridge"><text>AllTrails</text>'
+            f'</link></metadata><wpt lat="-27.4865" lon="153.0"><ele>250</ele><name>Lookout</name></wpt>'
+            f'<trk><name>{name}</name><trkseg>{pts}</trkseg></trk></gpx>').encode()
+
+
+@step("Hiking: import an AllTrails GPX (numbers, route, profile, splits), edit it, again = skipped, dashboard, Home")
+def hiking(page):
+    name = f"Ridge loop {MARK}"
+    raw = gpx_file(name)
+    upload = {"name": "Ridge_loop.gpx", "mimeType": "application/gpx+xml", "buffer": raw}
+    page.goto(BASE + "/hiking/dashboard")
+    page.locator(".gpx-import input[type=file]").first.set_input_files(files=[upload])
+    d = drawer(page)
+    expect(d.get_by_role("heading", name=name)).to_be_visible()             # one file: its hike opens
+    numbers = d.locator(".hike-numbers")
+    expect(numbers).to_contain_text("3.0 km")
+    expect(numbers).to_contain_text("↑ 300 m")
+    expect(numbers).to_contain_text("30 min")
+    expect(numbers).to_contain_text("10:00 /km")
+    expect(d.locator(".hike-map .hike-route")).to_have_count(1)
+    expect(d.locator(".hike-map .hike-waypoint")).to_have_count(1)
+    expect(d.locator(".hike-pills")).to_contain_text("From GPX")
+    d.locator(".hike-profile-svg").hover()
+    expect(d.locator(".hike-profile-tip")).to_contain_text(" m")
+    expect(d.locator(".hike-map .hike-here")).to_have_count(1)                # the hovered point, on the route
+    d.locator("summary", has_text="Splits").click()
+    expect(d.locator(".hike-splits tbody tr")).to_have_count(3)
+    expect(d.get_by_role("link", name="On AllTrails ↗")).to_have_attribute("href", re.compile("alltrails.com"))
+    d.get_by_role("button", name="Edit details").click()
+    d.get_by_label("Your rating").select_option("5")
+    d.get_by_label("Who with").fill("Sam")
+    d.get_by_label("Difficulty").select_option("Hard")
+    d.get_by_role("button", name="Save", exact=True).click()
+    expect(d.locator(".hike-facts")).to_contain_text("Sam")
+    expect(d.locator(".hike-pills")).to_contain_text("Hard")
+    shot(page, "d70_hike", full=True)
+    page.keyboard.press("Escape")
+    page.locator(".gpx-import input[type=file]").first.set_input_files(files=[upload])    # the same file again
+    expect(d.get_by_role("heading", name=name)).to_be_visible()
+    page.keyboard.press("Escape")
+    expect(page.locator(".gpx-results")).to_contain_text("Already imported")
+    expect(page.locator(".home-stat", has_text="Hikes in")).to_contain_text("1")
+    expect(page.locator(".hike-bests")).to_contain_text(name)
+    shot(page, "d71_hiking_dashboard", full=True)
+    go(page, "Home")
+    expect(page.locator(".home-stat", has_text="Hiked in")).to_contain_text("3.0 km")
+    feed = page.request.get(f"{BASE}/api/activity?limit=100").json()          # Home shows only the latest few
+    assert any(a["kind"] == "hike" and a["title"] == name and a["verb"] == "Hiked" for a in feed), "no Hiked in the feed"
+    page.locator(".sidebar").get_by_role("link", name="Hiking", exact=True).click()
+    page.locator(".section-tabs").get_by_role("link", name="Hikes", exact=True).click()
+    page.locator(".hike-list .row-button", has_text=name).click()
+    page.once("dialog", lambda dlg: dlg.accept())
+    d.get_by_role("button", name="Remove").click()
+    expect(d).to_have_count(0)
+    expect(page.locator(".hike-list .row-button", has_text=name)).to_have_count(0)
+
+
 @step("Wishlist by shop: the default shop first, Good Games for board games; gear from Blue Sky (live)")
 def wishlist_shops(page):
     game = page.request.post(f"{BASE}/api/board-games", data={"name": f"Wantgame {MARK}", "status": "Wanted"}).json()
@@ -1761,7 +1827,7 @@ with sync_playwright() as p:
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
                matches, used_on, gundam, bandai_lookup, warhammer, journal_write, journal_links, journal_from_model,
                journal_suggestion, journal_todo, global_search, journal_wishlist, appearance,
-               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, warhammer_minis, gundam_range, board_game_kinds, board_game_elsewhere, volleyball_coach, video_game_friends, wishlist_shops, goals, settings_more, no_panel):
+               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, warhammer_minis, gundam_range, board_game_kinds, board_game_elsewhere, volleyball_coach, video_game_friends, wishlist_shops, goals, hiking, settings_more, no_panel):
         fn(desk)
     ctx = browser.new_context(**p.devices["iPhone 13"], timezone_id=zone)
     mob = ctx.new_page()

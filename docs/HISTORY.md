@@ -1457,3 +1457,20 @@ DBeaver connection confirmed working (2026-10-11).
      passes -CopyTo "...\Off the Clock backups". Prod's 5 GB of videos seeded by hand once.
 3zzu. **Hiking placeholder** (2026-10-16): modules/hiking (like shooting: underConstruction, BootIcon, one empty Hikes page);
    63_calendar_hiking.sql + MODULE_IDS; calendar tone 'ok'. e2e: 10 hobby cards.
+3zzv. **Hiking: AllTrails import** (2026-10-16; user: "build an exporter for AllTrails with as much information as possible").
+   AllTrails has no public API (partners only) and its site is bot-protected, so the way in is the user's own GPX
+   export, uploaded (like the Goodreads CSV). 64_hikes.sql; api/app/gpx.py (pure: parse + measure) and hiking.py.
+   - From the track: distance (per segment - a pause's gap isn't walked), moving time (faster than 0.3 m/s between
+     points) and total time, climb / descent (elevation smoothed over 5 points with the window narrowing at the ends so
+     the start and summit keep their height, then a 3 m hysteresis - raw GPS elevation wobbles and doubles the climb),
+     highest / lowest point, per-km splits (moving time, up, down), loop or one way (start and end within 250 m),
+     waypoints, the AllTrails link from <link>, the description -> notes. The track is thinned to 1500 points evenly by
+     distance for drawing; the original file is kept (download it back). sha256 = the same file twice is skipped.
+   - Safety: files with <!DOCTYPE / <!ENTITY are refused before parsing (XML bombs); 30 MB cap.
+   - The day hiked = the start time in the database's time zone (GPX times are UTC).
+   - Web (modules/hiking): Dashboard (this year, km per month, personal bests, latest), Hikes (search, year), the hike
+     panel (numbers, route drawn as SVG - longitude scaled by cos(latitude), north up, a scale bar - and the elevation
+     profile: hovering one marks the point on the other; splits; waypoints; details form; notes; photo; links to AllTrails,
+     the GPX, OpenStreetMap). No map tiles (an outside source with its own terms). Log a hike by hand too.
+   - Activity "Hiked" (kind hike), so Home and the calendar show hikes. Home tile: km this year (only once there's a hike).
+   - RecordFields: a number field can take a step (0.1 for km).

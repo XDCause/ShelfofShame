@@ -136,6 +136,9 @@ export const CrosshairIcon = (p) => (
 export const BootIcon = (p) => (
   <Icon {...p}><path d="M3 20.5h18v-2.2c0-1.4-1-2.5-2.4-2.8l-4.6-1-2-5.5V3.5H6v4L4.5 9.5 3 13z" /><path d="M8.5 11.5h2.5M9.5 14.5h2.5" /></Icon>
 )
+export const MountainIcon = (p) => (
+  <Icon {...p}><path d="M2.5 19.5 9 8.5l3.5 5.5 2.5-3.5 6.5 9z" /><path d="m7.2 11.6 1.8 1.4 1.6-1.6" /></Icon>
+)
 export const SuitcaseIcon = (p) => (
   <Icon {...p}><rect x="3.5" y="7" width="17" height="12.5" rx="2.5" /><path d="M9 7V5.2A1.7 1.7 0 0 1 10.7 3.5h2.6A1.7 1.7 0 0 1 15 5.2V7M8 7v12.5M16 7v12.5" /></Icon>
 )

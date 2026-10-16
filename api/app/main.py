@@ -19,13 +19,14 @@ Hobby modules:
     colours    colour matches and mixes
     boardgames your games and every play                  volleyball games, gear and videos
     videogames Steam games and achievements (steam.py = the official Steam Web API)
+    hiking     hikes from GPX files (AllTrails' export; gpx.py works out the numbers) or logged by hand
 """
 import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from . import (activity, boardgames, bookseries, build, calendar, catalog, chess, colours, gear, goals, journal, journal_drawings,
+from . import (activity, boardgames, bookseries, build, calendar, catalog, chess, colours, gear, goals, hiking, journal, journal_drawings,
                gundam, lookups, minis, vgsync, models, othergames, products, reading, readimport, reading_recs, settings, sitecheck, spending, supplies, vbclips, vbcoach, vgfind, vgfriends, videogames, wanted, webphoto,
                volleyball, warhammer, wishlist)
 from .db import db
@@ -47,7 +48,7 @@ async def lifespan(_app):
 app = FastAPI(title="Off the Clock API", docs_url="/api/docs", openapi_url="/api/openapi.json", lifespan=lifespan)
 
 for part in (activity, goals, journal_drawings, journal, calendar, supplies, wishlist, products, catalog, models, minis, build, colours,
-             boardgames, volleyball, gear, vbclips, vbcoach, othergames, vgfind, vgfriends, videogames, chess, reading, readimport, reading_recs, bookseries, warhammer, gundam, spending, settings, sitecheck, lookups, webphoto, wanted):
+             boardgames, volleyball, gear, vbclips, vbcoach, othergames, vgfind, vgfriends, videogames, chess, reading, readimport, hiking, reading_recs, bookseries, warhammer, gundam, spending, settings, sitecheck, lookups, webphoto, wanted):
     app.include_router(part.router)
 
 

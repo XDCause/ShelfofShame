@@ -66,6 +66,9 @@ CONSTRAINT_MESSAGES = {
     "calendar_events_time_check": "The end time must be after the start time.",
     "board_games_players_check": "Most players can't be fewer than fewest players.",
     "volleyball_videos_url_check": "A video link must start with http:// or https://.",
+    "hikes_gpx_hash_uq": "That GPX file has already been imported.",
+    "hikes_time_check": "A hike can't end before it starts.",
+    "hikes_trail_url_check": "A trail link must start with http:// or https://.",
 }
 
 
