@@ -46,7 +46,7 @@ GUNDAM_GRADES = {"EG": "1/144", "HG": "1/144", "RG": "1/144", "FM": "1/100", "MG
 MODULE_IDS = ["models", "boardgames", "volleyball", "videogames", "chess", "reading", "car"]   # 53_calendar_hobbies.sql
 REPEATS = ["never", "weekly", "fortnightly"]
 MOODS = ["great", "good", "okay", "meh", "rough"]                              # 25_mood.sql, best first
-GAME_STATUSES = ["Owned", "To sell", "Wanted", "Borrowed", "Gone"]            # 21 / 47_board_game_to_sell.sql
+GAME_STATUSES = ["Owned", "To sell", "Wanted", "Borrowed", "Played elsewhere", "Gone"]   # 21 / 47 / 54_board_game_elsewhere.sql
 GEAR_CONDITIONS = ["Wanted", "New", "Good", "Worn", "Needs replacing", "Retired"]   # 22_volleyball.sql, 50_gear_wanted.sql
 VOLLEYBALL_KINDS = ["Game", "Training", "Social", "Tournament"]
 

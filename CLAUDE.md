@@ -1342,6 +1342,21 @@ DBeaver, psql, and the one-off import script.
    (text in --surface; phones keep their 4px bars). 53_calendar_hobbies.sql + db.MODULE_IDS: events can be any module
    (the old CHECK only allowed models / boardgames / volleyball, so picking Chess etc. failed). HOBBY_TONE for all.
    Tests: 369 API, 65 browser steps.
+3zzn. **Board games elsewhere + abandoned; volleyball Coach; chess layout** (2026-10-16).
+   - 54_board_game_elsewhere.sql: board game status 'Played elsewhere' (a friend's copy: not counted as owned) and
+     board_game_plays.finished (false = abandoned; the API drops the winner). POST /board-games/plays {game_name, ...play}
+     finds the game by name (any case) or adds it as Played elsewhere. PLAY_SELECT game_status; summary abandoned +
+     played_elsewhere. PlayForm: "Someone else's game (not in my list)..." option + "Their game" box, Played elsewhere
+     optgroup, "Didn't finish (abandoned)" switch (hides Who won); plays show "played elsewhere" / an Abandoned pill.
+   - 55_volleyball_coach.sql + api/app/vbcoach.py: notes kind drill | fix | position (fix status working on | sorted,
+     CHECK), skill / position (suggested lists), body, links TEXT[] (http(s) only), video_ids INT[] (your uploads; NOTE_SELECT
+     joins their titles), pinned, starter. POST /volleyball/coach/starter adds 7 drills + 6 positions written for the app
+     (no video links - each note has a "Find videos on YouTube" search link instead), once (409). Web Coach.jsx: Coach tab
+     (Games, Videos, Coach, Gear) - cards, Show chips (All / Working on / Drills / Positions / Sorted), skill chips,
+     CoachNotePanel (kind + status segmented, links with YouTube pictures, your videos picker, pin). WhistleIcon.
+   - Chess dashboard: rating chart + Over the board stacked in the left column (.home-stack) - it used to start a new
+     grid row below the tall Recent games card.
+   - Tests: 372 API, 67 browser steps (board_game_elsewhere, volleyball_coach).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

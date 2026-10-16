@@ -64,19 +64,22 @@ export function Dashboard() {
             <Stat to="/chess/games" Icon={ChessIcon} tone="teal" value={s.week.games} label="Games this week"
               sub={`${s.week.win} won · ${s.week.loss} lost · ${s.week.draw} drawn`} />
           </div>
+          {/* Left: the rating chart with Over the board under it; right: recent games (the tall one). */}
           <div className="home-grid">
-            <RatingCard classes={s.classes.map((c) => c.time_class)} main={s.main} />
+            <div className="home-stack">
+              <RatingCard classes={s.classes.map((c) => c.time_class)} main={s.main} />
+              <section className="card home-card">
+                <h2 className="home-card-title">Over the board</h2>
+                <p className="muted small">{s.otb_games ? `${s.otb_games} game${s.otb_games === 1 ? '' : 's'} logged.` : 'Club nights and tournaments, logged by hand.'}</p>
+                <button type="button" className="secondary" onClick={() => navigate('/chess/games?add=1')}>+ Log a game</button>
+              </section>
+            </div>
             <section className="card home-card">
               <h2 className="home-card-title">Recent games</h2>
               {s.recent.length === 0 ? <p className="muted small">No games yet.</p> : (
                 <ul className="list plain-list">{s.recent.map((g) => <GameRow key={g.game_id} game={g} />)}</ul>
               )}
               <Link className="button plain small" to="/chess/games">All games →</Link>
-            </section>
-            <section className="card home-card">
-              <h2 className="home-card-title">Over the board</h2>
-              <p className="muted small">{s.otb_games ? `${s.otb_games} game${s.otb_games === 1 ? '' : 's'} logged.` : 'Club nights and tournaments, logged by hand.'}</p>
-              <button type="button" className="secondary" onClick={() => navigate('/chess/games?add=1')}>+ Log a game</button>
             </section>
           </div>
         </>

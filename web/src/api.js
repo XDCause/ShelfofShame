@@ -151,6 +151,12 @@ export const api = {
   updateBoardGame: (id, data) => request(`/board-games/${id}`, send('PATCH', data)),
   deleteBoardGame: (id) => request(`/board-games/${id}`, send('DELETE')),
   listPlays: (limit = 200) => request(`/board-games/plays?limit=${limit}`),
+  coachNotes: () => request('/volleyball/coach'),
+  coachStarter: () => request('/volleyball/coach/starter', send('POST')),
+  addCoachNote: (note) => request('/volleyball/coach', send('POST', note)),
+  updateCoachNote: (id, note) => request(`/volleyball/coach/${id}`, send('PATCH', note)),
+  deleteCoachNote: (id) => request(`/volleyball/coach/${id}`, send('DELETE')),
+  addPlayElsewhere: (play) => request('/board-games/plays', send('POST', play)),
   addPlay: (gameId, data) => request(`/board-games/${gameId}/plays`, send('POST', data)),
   deletePlay: (id) => request(`/board-game-plays/${id}`, send('DELETE')),
 

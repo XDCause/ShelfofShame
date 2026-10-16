@@ -330,3 +330,24 @@ def test_one_shop_down_still_answers(client, both_shops, monkeypatch):
     from app import boardgames
     boardgames._gg_found.clear()
     assert client.get("/api/board-games/lookup?q=arcs").status_code == 502       # both down: an error
+
+
+
+def test_plays_of_friends_games_and_abandoned_ones(client):
+    mine = client.post("/api/board-games", json={"name": "Catan"}).json()
+    # A friend's game: added as Played elsewhere (not counted as yours), with the play.
+    play = client.post("/api/board-games/plays", json={"game_name": " Wingspan ", "players": "Sam, me", "winner": "Sam"}).json()
+    assert (play["game_name"], play["game_status"], play["finished"], play["winner"]) == ("Wingspan", "Played elsewhere", True, "Sam")
+    again = client.post("/api/board-games/plays", json={"game_name": "wingspan"}).json()
+    assert again["game_id"] == play["game_id"]                              # the same game, found any case
+    own = client.post("/api/board-games/plays", json={"game_name": "CATAN"}).json()
+    assert own["game_id"] == mine["game_id"] and own["game_status"] == "Owned"   # one you own: just a play
+    # Abandoned: not finished, so no winner.
+    gave_up = client.post(f"/api/board-games/{mine['game_id']}/plays", json={"finished": False, "winner": "Jo"}).json()
+    assert (gave_up["finished"], gave_up["winner"]) == (False, None)
+    fixed = client.patch(f"/api/board-game-plays/{play['play_id']}", json={"finished": False}).json()
+    assert (fixed["finished"], fixed["winner"]) == (False, None)
+    s = client.get("/api/board-games/summary").json()
+    assert (s["owned"], s["played_elsewhere"], s["abandoned"], s["plays"]) == (1, 1, 2, 4)
+    assert client.patch(f"/api/board-games/{mine['game_id']}", json={"status": "Played elsewhere"}).status_code == 200
+    assert client.post("/api/board-games/plays", json={"game_name": ""}).status_code == 422

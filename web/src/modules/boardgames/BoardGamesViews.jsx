@@ -7,7 +7,7 @@ import { useShared } from '../../core/useShared.js'
 import { KINDS, gameMeta } from './GamePanel.jsx'
 import EmptyState from '../../core/EmptyState.jsx'
 
-const STATUS_TONE = { Owned: 'ok', 'To sell': 'low', Wanted: 'tint', Borrowed: 'purple', Gone: '' }
+const STATUS_TONE = { Owned: 'ok', 'To sell': 'low', Wanted: 'tint', Borrowed: 'purple', 'Played elsewhere': 'teal', Gone: '' }
 const monthOf = (day) => new Date(`${day}T12:00:00`).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })
 
 function useGames() {
@@ -36,8 +36,10 @@ export function GamesView() {
   return (
     <section className="page">
       <div className="stat-grid card">
-        <div><span>Games owned</span><strong>{summary.owned}</strong></div>
-        <div><span>Plays this month</span><strong>{summary.plays_this_month}</strong></div>
+        <div><span>Games owned</span><strong>{summary.owned}</strong>
+          {summary.played_elsewhere > 0 && <small className="muted">+ {summary.played_elsewhere} played elsewhere</small>}</div>
+        <div><span>Plays this month</span><strong>{summary.plays_this_month}</strong>
+          {summary.abandoned > 0 && <small className="muted">{summary.abandoned} abandoned in all</small>}</div>
         <div><span>Most played</span><strong className="ellipsis">{summary.most_played?.name ?? '—'}</strong>
           {summary.most_played && <small className="muted">{summary.most_played.plays} plays</small>}</div>
       </div>
@@ -133,9 +135,11 @@ export function PlaysView() {
                   <span className="thumb thumb-icon purple"><DiceIcon size={20} /></span>
                   <span className="grow">
                     <span className="item-title">{p.game_name}</span>
-                    <span className="item-meta">{[shortDate(p.played_on), p.players, p.minutes && `${p.minutes} min`].filter(Boolean).join(' · ')}</span>
+                    <span className="item-meta">{[shortDate(p.played_on), p.game_status === 'Played elsewhere' && 'played elsewhere', p.players,
+                      p.minutes && `${p.minutes} min`].filter(Boolean).join(' · ')}</span>
                   </span>
-                  {p.winner && <span className="pill ok"><TrophyIcon size={14} /> {p.winner}</span>}
+                  {!p.finished ? <span className="pill low">Abandoned</span>
+                    : p.winner && <span className="pill ok"><TrophyIcon size={14} /> {p.winner}</span>}
                 </button>
               </li>
             ))}

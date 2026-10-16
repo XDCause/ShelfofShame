@@ -230,7 +230,8 @@ export default function GamePanel({ id, onClose }) {
             {game.play_log.map((p) => (
               <li key={p.play_id} className="play-row">
                 <span className="grow">
-                  <span className="item-title">{shortDate(p.played_on)}{p.winner && <span className="pill ok">🏆 {p.winner}</span>}</span>
+                  <span className="item-title">{shortDate(p.played_on)}{!p.finished ? <span className="pill low">Abandoned</span>
+                    : p.winner && <span className="pill ok">🏆 {p.winner}</span>}</span>
                   <span className="item-meta">{[p.players, p.minutes && `${p.minutes} min`, p.notes].filter(Boolean).join(' · ')}</span>
                 </span>
                 <button type="button" className="icon-btn small" aria-label={`Delete the play on ${shortDate(p.played_on)}`}
@@ -322,18 +323,25 @@ function GameForm({ game, onClose, onCancel, onSaved }) {
 }
 
 // Log a play: inside a game's panel (gameId given), or on its own with a game picker (PlayPanel).
+// The picker also offers "Someone else's game": type its name (a friend's copy) - it's added to your
+// games as Played elsewhere. "Didn't finish" marks an abandoned game (no winner).
+const ELSEWHERE = 'elsewhere'
 function PlayForm({ gameId, games, onSaved, onCancel }) {
   const { form, set, payload } = useRecordForm(PLAY_FIELDS, null, { played_on: today() })
   const [pick, setPick] = useState(gameId ?? '')
+  const [otherName, setOtherName] = useState('')
+  const [unfinished, setUnfinished] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const elsewhere = pick === ELSEWHERE
 
   const save = async () => {
-    if (!pick) { setError('Which game?'); return }
+    if (!pick || (elsewhere && !otherName.trim())) { setError(elsewhere ? 'Which game was it?' : 'Which game?'); return }
     setBusy(true)
     setError('')
+    const play = { ...payload(), finished: !unfinished, ...(unfinished ? { winner: null } : {}) }
     try {
-      onSaved(await api.addPlay(pick, payload()))
+      onSaved(elsewhere ? await api.addPlayElsewhere({ ...play, game_name: otherName.trim() }) : await api.addPlay(pick, play))
     } catch (e) {
       setError(e.message)
       setBusy(false)
@@ -349,12 +357,30 @@ function PlayForm({ gameId, games, onSaved, onCancel }) {
             <span className="field-label">Game <span className="req" aria-hidden="true"> *</span></span>
             <select value={pick} onChange={(e) => setPick(e.target.value)} aria-label="Game">
               <option value="">Choose...</option>
-              {games.map((g) => <option key={g.game_id} value={g.game_id}>{g.name}</option>)}
+              {games.filter((g) => g.status !== 'Played elsewhere').map((g) => <option key={g.game_id} value={g.game_id}>{g.name}</option>)}
+              {games.some((g) => g.status === 'Played elsewhere') && (
+                <optgroup label="Played elsewhere">
+                  {games.filter((g) => g.status === 'Played elsewhere').map((g) => <option key={g.game_id} value={g.game_id}>{g.name}</option>)}
+                </optgroup>
+              )}
+              <option value={ELSEWHERE}>Someone else's game (not in my list)...</option>
             </select>
           </label>
+          {elsewhere && (
+            <label className="field wide">
+              <span className="field-label">Their game <span className="req" aria-hidden="true"> *</span></span>
+              <input value={otherName} onChange={(e) => setOtherName(e.target.value)} autoFocus placeholder="e.g. Wingspan"
+                aria-label="Their game" />
+              <span className="hint">Added to your games as "Played elsewhere" - not counted as yours.</span>
+            </label>
+          )}
         </fieldset>
       )}
-      <RecordFields fields={PLAY_FIELDS} form={form} set={set} />
+      <label className="all-day-switch">
+        <input type="checkbox" role="switch" checked={unfinished} onChange={(e) => setUnfinished(e.target.checked)} />
+        <span>Didn't finish (abandoned)</span>
+      </label>
+      <RecordFields fields={unfinished ? PLAY_FIELDS.filter((f) => f.name !== 'winner') : PLAY_FIELDS} form={form} set={set} />
       <div className="button-row">
         <button type="button" className="primary" onClick={save} disabled={busy}>{busy ? 'Saving...' : 'Save play'}</button>
         <button type="button" className="plain" onClick={onCancel}>Cancel</button>

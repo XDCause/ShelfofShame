@@ -123,3 +123,6 @@ export const CarIcon = (p) => (
 export const WrenchIcon = (p) => (
   <Icon {...p}><path d="M14.7 6.3a4 4 0 0 0 4.8 5.2l-8.3 8.3a2 2 0 0 1-2.8-2.8l8.3-8.3a4 4 0 0 0-5.2-4.8l2.6 2.6-.4 2.2-2.2.4z" /></Icon>
 )
+export const WhistleIcon = (p) => (
+  <Icon {...p}><circle cx="9" cy="14" r="5" /><path d="M12.5 10.5 21 7v4l-6.2 1.6" /><path d="M5 4.5 6.5 7M9 3v3M13 4.5 11.5 7" /></Icon>
+)

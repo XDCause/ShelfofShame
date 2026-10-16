@@ -1941,3 +1941,21 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .all-day-switch { display: flex; align-items: center; gap: 10px; margin: 4px 0 12px; font-weight: 500; cursor: pointer; }
 .all-day-switch input { width: 20px; height: 20px; margin: 0; accent-color: var(--tint); }
 @media (min-width: 701px) { .day-event.all-day { background: var(--tone, var(--tint)); color: var(--surface); } }
+
+/* Volleyball Coach: note cards (a few lines of the notes), the note form. */
+.coach-grid { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 12px; }
+.coach-card { display: flex; flex-direction: column; gap: 6px; width: 100%; height: 100%; text-align: left; color: inherit; padding: 14px 16px; }
+.coach-card:hover { border-color: var(--tint); }
+.coach-top { display: flex; justify-content: space-between; align-items: center; }
+.coach-body { color: var(--muted); font-size: 0.9rem; white-space: pre-line; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.coach-form { display: flex; flex-direction: column; gap: 12px; }
+.coach-form .segmented { align-self: flex-start; }
+.coach-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.coach-links { display: flex; flex-direction: column; gap: 8px; }
+.coach-link-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.coach-link-list li { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.coach-link-list img { width: 96px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 6px; flex: none; }
+.coach-link-list a, .coach-link-list .grow { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+
+/* Cards stacked in one column of a .home-grid (so a tall card beside them leaves no gap). */
+.home-stack { display: flex; flex-direction: column; gap: 14px; min-width: 0; }

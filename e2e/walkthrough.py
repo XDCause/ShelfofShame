@@ -1495,6 +1495,69 @@ def gundam_range(page):
     shot(page, "d55_gundam_range", full=False)
 
 
+@step("Volleyball Coach: a thing to fix with a link, Sorted; the starter drills and positions")
+def volleyball_coach(page):
+    go(page, "Volleyball")
+    page.locator(".section-tabs").get_by_role("link", name="Coach").click()
+    expect(page.get_by_role("button", name=re.compile(r"^\+ Add note|^\+ Add the starter")).first).to_be_visible()
+    if page.get_by_role("button", name="+ Add the starter drills & positions").count():
+        page.get_by_role("button", name="+ Add the starter drills & positions").click()
+    elif page.get_by_role("button", name="+ Starter drills & positions").count():
+        page.get_by_role("button", name="+ Starter drills & positions").click()
+    expect(page.locator(".coach-card .item-title", has_text="Butterfly passing")).to_be_visible()
+    expect(page.locator(".coach-card .item-title", has_text=re.compile("^Libero$"))).to_be_visible()
+    page.get_by_role("button", name="+ Add note").click()
+    d = drawer(page)
+    d.get_by_label("Title").fill(f"Serves into the net {MARK}")
+    d.get_by_label("Skill").fill("Serving")
+    d.get_by_label("Notes").fill("- Toss lower\n- Watch the ball onto the hand")
+    d.get_by_label("Add a link").fill("https://example.com/serving-tips")      # (a made-up YouTube link's picture would 404)
+    d.get_by_role("button", name="Add", exact=True).click()
+    expect(d.locator(".coach-link-list a", has_text="example.com/serving-tips")).to_be_visible()
+    expect(d.get_by_role("link", name="Find videos on YouTube ↗")).to_have_attribute("href", re.compile("youtube.com/results"))
+    d.get_by_role("button", name="Add note").click()
+    card = page.locator(".coach-card", has_text=MARK)
+    expect(card.locator(".pill")).to_have_text("Working on")
+    expect(page.locator(".summary")).to_contain_text("you're working on")
+    shot(page, "d57_coach", full=False)
+    card.click()
+    d = drawer(page)
+    d.get_by_role("group", name="Status").get_by_role("button", name="Sorted").click()
+    d.get_by_role("button", name="Save", exact=True).click()
+    expect(card.locator(".pill")).to_have_text("Sorted")
+    page.get_by_role("group", name="Show").get_by_role("button", name="Positions").click()
+    expect(page.locator(".coach-card", has_text=MARK)).to_have_count(0)
+    expect(page.locator(".coach-card .item-title", has_text=re.compile("^Setter$"))).to_be_visible()
+
+
+@step("Board games: a play of a friend's game; an abandoned play")
+def board_game_elsewhere(page):
+    go(page, "Board games")
+    page.locator(".section-tabs").get_by_role("link", name="Plays").click()
+    page.get_by_role("button", name="+ Log a play").first.click()
+    d = drawer(page)
+    d.get_by_label("Game", exact=True).select_option("elsewhere")
+    d.get_by_label("Their game").fill(f"Friendgame {MARK}")
+    d.get_by_label("Who won").fill("Sam")
+    d.get_by_role("button", name="Save play").click()
+    row = page.locator(".list li", has_text=f"Friendgame {MARK}")
+    expect(row).to_contain_text("played elsewhere")
+    expect(row).to_contain_text("Sam")
+    # Abandoned: no winner box, and the play says so.
+    page.get_by_role("button", name="+ Log a play").first.click()
+    d = drawer(page)
+    d.get_by_label("Game", exact=True).select_option(label=f"Friendgame {MARK}")      # now in the list (Played elsewhere)
+    d.get_by_role("switch", name="Didn't finish (abandoned)").check()
+    expect(d.get_by_label("Who won")).to_have_count(0)
+    d.get_by_role("button", name="Save play").click()
+    expect(page.locator(".list li", has_text=f"Friendgame {MARK}").locator(".pill", has_text="Abandoned")).to_have_count(1)
+    shot(page, "d56_plays_elsewhere", full=False)
+    games = page.request.get(f"{BASE}/api/board-games").json()
+    friend = next(g for g in games if g["name"] == f"Friendgame {MARK}")
+    assert friend["status"] == "Played elsewhere", friend
+    page.request.delete(f"{BASE}/api/board-games/{friend['game_id']}")
+
+
 @step("Board games: game / expansion / other groups and filter; To sell")
 def board_game_kinds(page):
     base = page.request.post(f"{BASE}/api/board-games", data={"name": f"Base-{MARK}"}).json()
@@ -1583,7 +1646,7 @@ def phone(page):
     expect(car.locator(".under-construction")).to_be_visible()     # the spanner: still to be built
     fits("Hobbies")
     for hobby, tabs in (("Models", ("Kits", "Colours")), ("Board games", ("Games", "Plays")),
-                        ("Volleyball", ("Games", "Gear", "Videos")), ("Video games", ("Dashboard", "Games", "Stats"))):
+                        ("Volleyball", ("Games", "Gear", "Videos", "Coach")), ("Video games", ("Dashboard", "Games", "Stats"))):
         page.locator(".tabbar a", has_text="Hobbies").click()
         page.locator(".hobby-head", has_text=hobby).click()
         for tab in tabs:
@@ -1611,7 +1674,7 @@ with sync_playwright() as p:
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
                matches, used_on, gundam, bandai_lookup, warhammer, journal_write, journal_links, journal_from_model,
                journal_suggestion, journal_todo, global_search, journal_wishlist, appearance,
-               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, warhammer_minis, gundam_range, board_game_kinds, settings_more, no_panel):
+               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, warhammer_minis, gundam_range, board_game_kinds, board_game_elsewhere, volleyball_coach, settings_more, no_panel):
         fn(desk)
     ctx = browser.new_context(**p.devices["iPhone 13"], timezone_id=zone)
     mob = ctx.new_page()

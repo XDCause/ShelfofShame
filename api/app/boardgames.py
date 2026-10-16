@@ -82,6 +82,13 @@ class PlayIn(BaseModel):
     winner: str | None = None
     minutes: int | None = Field(None, gt=0)
     notes: str | None = None
+    finished: bool = True           # false = abandoned before the end (no winner)
+
+
+class ElsewhereIn(PlayIn):
+    """A play of a game you don't own (a friend's): found by name among your games, else added as
+    'Played elsewhere'."""
+    game_name: str = Field(min_length=1, max_length=200)
 
 
 class PlayPatch(BaseModel):
@@ -90,6 +97,7 @@ class PlayPatch(BaseModel):
     winner: str | None = None
     minutes: int | None = Field(None, gt=0)
     notes: str | None = None
+    finished: bool | None = None
 
 
 GAME_SELECT = """
@@ -106,7 +114,7 @@ SELECT g.game_id, g.name, g.publisher, g.year, g.min_players, g.max_players, g.p
 FROM board_games g LEFT JOIN board_games base ON base.game_id = g.base_game_id"""
 
 PLAY_SELECT = """
-SELECT p.*, g.name AS game_name FROM board_game_plays p JOIN board_games g USING (game_id)"""
+SELECT p.*, g.name AS game_name, g.status AS game_status FROM board_game_plays p JOIN board_games g USING (game_id)"""
 
 
 def fetch_game(conn, game_id: int) -> dict:
@@ -116,9 +124,15 @@ def fetch_game(conn, game_id: int) -> dict:
     return game
 
 
+def unfinished_has_no_winner(data: dict):
+    if data.get("finished") is False:
+        data["winner"] = None
+
+
 def add_play(conn, game_id: int, body: PlayIn) -> dict:
-    data = tidy_text(body.model_dump())
+    data = tidy_text(body.model_dump(exclude={"game_name"}))
     data["played_on"] = data["played_on"] or date.today()
+    unfinished_has_no_winner(data)
     play_id = insert_row(conn, "board_game_plays", {"game_id": game_id, **data}, "play_id")
     return conn.execute(PLAY_SELECT + " WHERE p.play_id = %s", (play_id,)).fetchone()
 
@@ -143,7 +157,9 @@ def summary():
                    (SELECT count(*) FROM board_games WHERE status = 'Wanted')::int AS wanted,
                    count(*) FILTER (WHERE played_on >= date_trunc('month', current_date))::int AS plays_this_month,
                    count(*) FILTER (WHERE played_on >= date_trunc('year', current_date))::int AS plays_this_year,
-                   count(*)::int AS plays
+                   count(*)::int AS plays,
+                   count(*) FILTER (WHERE NOT finished)::int AS abandoned,
+                   (SELECT count(*) FROM board_games WHERE status = 'Played elsewhere')::int AS played_elsewhere
             FROM board_game_plays""").fetchone()
         row["most_played"] = conn.execute("""
             SELECT g.game_id, g.name, count(*)::int AS plays FROM board_game_plays p JOIN board_games g USING (game_id)
@@ -419,11 +435,27 @@ def log_play(game_id: int, body: PlayIn):
         return add_play(conn, game_id, body)
 
 
+@router.post("/board-games/plays", status_code=201)
+def log_play_elsewhere(body: ElsewhereIn):
+    """A play of a game that isn't in your library (at a friend's): the game is found by name (any
+    case) among your games, or added with the status 'Played elsewhere' (not counted as yours)."""
+    name = body.game_name.strip()
+    with db() as conn:
+        game = conn.execute("SELECT game_id FROM board_games WHERE lower(name) = lower(%s) "
+                            "ORDER BY status = 'Gone' LIMIT 1", (name,)).fetchone()
+        game_id = game["game_id"] if game else insert_row(
+            conn, "board_games", {"name": name, "status": "Played elsewhere", "kind": "game"}, "game_id")
+        return add_play(conn, game_id, body)
+
+
 @router.patch("/board-game-plays/{play_id}")
 def update_play(play_id: int, body: PlayPatch):
     data = tidy_text(body.model_dump(exclude_unset=True))
     if "played_on" in data and data["played_on"] is None:
         raise HTTPException(422, "A play needs a day.")
+    if data.get("finished", "x") is None:
+        raise HTTPException(422, "Finished must be true or false.")
+    unfinished_has_no_winner(data)
     with db() as conn:
         found(conn.execute("SELECT play_id FROM board_game_plays WHERE play_id = %s", (play_id,)).fetchone(), "Play")
         update_row(conn, "board_game_plays", "play_id", play_id, data)
