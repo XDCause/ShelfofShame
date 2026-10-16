@@ -1308,7 +1308,8 @@ DBeaver, psql, and the one-off import script.
    gear_condition_check); db.GEAR_CONDITIONS starts with Wanted. /gear order: in use, then Wanted, then Retired; summary
    gear_wanted. PATCH from Wanted to an owned condition with no purchase date dates it today (DB current_date).
    Web: "+ Want" (GearPanel wanted=true preselects Wanted, "Add to wanted"), a "Wanted" group below your gear, "N wanted"
-   in the summary, purple badge / picker button. Tests: 362 API, 65 browser steps.
+   in the summary, purple badge / picker button. Wanted = not bought yet: the form hides Bought on + Price paid
+   (FormPanel `hide`, values still sent) and the API clears both for Wanted (not_bought_yet). Tests: 362 API, 65 browser steps.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

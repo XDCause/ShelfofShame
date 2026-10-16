@@ -961,6 +961,8 @@ def volleyball(page):
     page.get_by_role("button", name="+ Want").click()
     d = drawer(page)
     expect(d.get_by_role("group", name="Condition").get_by_role("button", name="Wanted")).to_have_attribute("aria-pressed", "true")
+    expect(d.get_by_label("Bought on")).to_have_count(0)                      # not bought yet: no date or price
+    expect(d.get_by_label("Price paid")).to_have_count(0)
     d.get_by_label("Name").fill(f"Ball {MARK}")
     d.get_by_role("button", name="Add to wanted").click()
     expect(page.locator(".gear-wanted-title")).to_be_visible()
@@ -970,6 +972,7 @@ def volleyball(page):
     wanted.click()
     d = drawer(page)
     d.get_by_role("group", name="Condition").get_by_role("button", name="New").click()
+    expect(d.get_by_label("Bought on")).to_be_visible()                       # bought: they're back (left empty = today)
     d.get_by_role("button", name="Save", exact=True).click()
     expect(wanted.locator(".status-badge")).to_have_text("New")
     expect(wanted).to_contain_text("Bought")

@@ -154,3 +154,8 @@ def test_gear_you_want(client):
     got = client.patch(f"/api/gear/{other['gear_id']}", json={"condition": "New", "purchase_date": "2026-01-02"}).json()
     assert got["purchase_date"] == "2026-01-02"
     assert client.post("/api/gear", json={"name": "X", "condition": "Desired"}).status_code == 422
+    # Wanted = not bought yet: no date or price, even if sent (or left from before).
+    w = client.post("/api/gear", json={"name": "Shoes", "condition": "Wanted", "purchase_date": "2026-01-01", "price_paid": "99"}).json()
+    assert (w["purchase_date"], w["price_paid"]) == (None, None)
+    back = client.patch(f"/api/gear/{got['gear_id']}", json={"condition": "Wanted"}).json()
+    assert (back["purchase_date"], back["price_paid"]) == (None, None)

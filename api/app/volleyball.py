@@ -344,10 +344,17 @@ def list_gear():
                             "lower(g.name)").fetchall()
 
 
+def not_bought_yet(data: dict) -> dict:
+    """Wanted gear hasn't been bought: no purchase date or price."""
+    if data.get("condition") == "Wanted":
+        data.update(purchase_date=None, price_paid=None)
+    return data
+
+
 @router.post("/gear", status_code=201)
 def add_gear(body: GearIn):
     with db() as conn:
-        return fetch_gear(conn, insert_row(conn, "gear", tidy_text(body.model_dump()), "gear_id"))
+        return fetch_gear(conn, insert_row(conn, "gear", not_bought_yet(tidy_text(body.model_dump())), "gear_id"))
 
 
 @router.get("/gear/{gear_id}")
@@ -365,6 +372,7 @@ def update_gear(gear_id: int, body: GearPatch):
         current = fetch_gear(conn, gear_id)
         if current["condition"] == "Wanted" and data.get("condition", "Wanted") != "Wanted"                 and not data.get("purchase_date") and not current["purchase_date"]:
             data["purchase_date"] = conn.execute("SELECT current_date AS d").fetchone()["d"]   # bought: today (Brisbane)
+        not_bought_yet(data)
         update_row(conn, "gear", "gear_id", gear_id, data)
         return fetch_gear(conn, gear_id)
 

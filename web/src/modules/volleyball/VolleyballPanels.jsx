@@ -49,7 +49,8 @@ export const youtubeId = (url) =>
 
 // A form panel shared by them all: fields + Save, and Delete when editing. onField(name, value,
 // setForm) hears every change (the game form fills Where when the team changes).
-function FormPanel({ title, fields, record, defaults, before, children, onSave, onDelete, onClose, saveLabel, onField, deleteLabel }) {
+// hide: names of fields not shown right now (their values are still sent).
+function FormPanel({ title, fields, record, defaults, before, children, onSave, onDelete, onClose, saveLabel, onField, deleteLabel, hide = [] }) {
   const { form, set: setField, setForm, payload } = useRecordForm(fields, record, defaults)
   const set = (name) => (e) => { setField(name)(e); onField?.(name, e.target.value, setForm) }
   const [busy, setBusy] = useState(false)
@@ -84,7 +85,7 @@ function FormPanel({ title, fields, record, defaults, before, children, onSave, 
     <Drawer title={title} onClose={onClose} footer={footer}>
       {error && <p className="alert error" role="alert">{error}</p>}
       {before}
-      <form id="vb-form" onSubmit={submit}>{children?.({ form, set })}<RecordFields fields={fields} form={form} set={set} /></form>
+      <form id="vb-form" onSubmit={submit}>{children?.({ form, set })}<RecordFields fields={fields.filter((f) => !hide.includes(f.name))} form={form} set={set} /></form>
     </Drawer>
   )
 }
@@ -208,6 +209,7 @@ export function GearPanel({ id = null, wanted = false, onClose }) {
   return (
     <FormPanel title={gear ? gear.name : wanted ? 'Gear you want' : 'Add gear'} fields={GEAR_FIELDS} record={gear} onClose={onClose}
       onSave={save} saveLabel={gear ? 'Save' : wanted ? 'Add to wanted' : 'Add gear'}
+      hide={condition === 'Wanted' ? ['purchase_date', 'price_paid'] : []}   // not bought yet
       onDelete={gear && (async () => { await api.deleteGear(gear.gear_id); changed(); onClose() })}
       before={gear && (
         <div className="item-hero">
