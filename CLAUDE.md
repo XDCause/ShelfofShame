@@ -1294,7 +1294,16 @@ DBeaver, psql, and the one-off import script.
      exo_id must have been shown by a search). Hand-added games have no source_id (removable); sync skips their Epic
      earned list. Panel says "Hours only - no achievements tracked" (Fortnite, 569 h). Gotcha: in a panel that opens
      another, call onClose() BEFORE openPanel() - the other way round closes the new panel too.
-   - Tests: 349 API, 65 browser steps (warhammer_minis; video_games adds + removes an Epic game by hand).
+   - Tests: 348 API, 65 browser steps (warhammer_minis; video_games adds + removes an Epic game by hand).
+3zzi. **Photos pasted or from a web address** (2026-10-16; user: gear has no lookups, wants to copy a picture from the web /
+   paste from the clipboard). PhotoPick (every image picker: gear, board games, kits, build log, product photos) gets
+   "Paste or link" ("Link" on touch screens): a pop-over box (.photo-pick-wrap / .paste-box, absolute - the buttons often
+   sit in a narrow column) that takes Ctrl+V of a picture (clipboardData file), a dropped picture or link, a data:image
+   address (decoded in the browser; CSP connect-src would block fetch), or a web address -> POST /api/photo-from-url
+   (api/app/webphoto.py) which returns the picture's bytes; the browser then shrinks + saves it as usual. SSRF guard:
+   http(s) on 80/443 only, every resolved address must be ipaddress.is_global (no localhost / Docker / LAN), redirects
+   followed by hand (<= 4) and each re-checked, streamed with a 5 MB cap, type from the first bytes (JPEG/PNG/WebP/GIF;
+   not SVG). Tests: test_webphoto.py (fake DNS + MockTransport); e2e pastes a 1x1 PNG onto new gear.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

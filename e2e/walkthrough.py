@@ -944,6 +944,19 @@ def volleyball(page):
     d.get_by_role("button", name="Add gear").click()
     card = page.locator(".model-card", has_text=MARK)
     expect(card).to_contain_text("Worn")
+    # A photo pasted in (Ctrl+V of a picture copied in the browser) instead of picked from a file.
+    card.first.click()
+    d = drawer(page)
+    d.get_by_role("button", name="Paste or link").click()
+    d.get_by_label("Paste a picture or its web address").evaluate("""(box) => {
+        const png = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='),
+                                    (c) => c.charCodeAt(0))
+        const data = new DataTransfer()
+        data.items.add(new File([png], 'copied.png', { type: 'image/png' }))
+        box.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }))
+    }""")
+    expect(d.locator(".row-photo img")).to_be_visible(timeout=15000)
+    page.keyboard.press("Escape")
     go(page, "Videos")
     page.get_by_role("button", name="+ Add video").first.click()
     d = drawer(page)

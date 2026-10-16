@@ -1613,6 +1613,16 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .model-photo > .status-badge.teal { --badge: #0f766e; }
 .model-photo > .status-badge.s-gone { --badge: #52525b; }
 .photo-pick { display: inline-flex; flex-wrap: wrap; gap: 8px; }
+/* The paste / link box pops up under the photo buttons (they often sit in a narrow column). */
+.photo-pick-wrap { position: relative; display: inline-flex; }
+.paste-box {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 20; width: min(440px, calc(100vw - 48px));
+  display: flex; flex-direction: column; gap: 6px; padding: 12px; text-align: left;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+}
+.paste-row { display: flex; gap: 6px; }
+.paste-row input { flex: 1; min-width: 0; }
+.paste-box .alert { margin: 0; }
 
 /* Build-log photos: a grid of squares (one photo shows bigger), each with a ✕; the photos picked
    for a new entry show the same way under the form until it's added. */

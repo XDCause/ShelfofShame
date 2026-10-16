@@ -22,6 +22,13 @@ function errorMessage(body) {
   return detail
 }
 
+// A picture from a web address, fetched by the API (api/app/webphoto.py) and handed back as a Blob.
+export async function photoFromUrl(url) {
+  const res = await fetch('/api/photo-from-url', { ...send('POST', { url }), headers: { 'Content-Type': 'application/json' } })
+  if (!res.ok) throw new Error(errorMessage(await res.json().catch(() => null)) || `${res.status} ${res.statusText}`)
+  return res.blob()
+}
+
 const send = (method, data) => ({ method, body: data === undefined ? undefined : JSON.stringify(data) })
 const enc = encodeURIComponent
 // An image file as the request body (photos are uploaded as-is, not as JSON).
