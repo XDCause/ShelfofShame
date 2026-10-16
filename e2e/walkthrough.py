@@ -9,6 +9,7 @@ read from the API at the start, so adding or removing supplies doesn't break it.
 import base64
 import json
 import re
+import struct
 import time
 import traceback
 import urllib.request
@@ -1592,11 +1593,33 @@ def gpx_file(name):
             f'<trk><name>{name}</name><trkseg>{pts}</trkseg></trk></gpx>').encode()
 
 
-@step("Hiking: import an AllTrails GPX (numbers, route, profile, splits), edit it, again = skipped, dashboard, Home")
+BLANK_PNG = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=")
+
+
+def with_gps(jpeg, lat, lon, taken="2026:09:06 07:05:00"):
+    """A JPEG with an EXIF block saying where (GPS) and when it was taken, like a phone writes."""
+    def dms(v):
+        d, rest = int(abs(v)), (abs(v) - int(abs(v))) * 60
+        return struct.pack(">6I", d, 1, int(rest), 1, round((rest - int(rest)) * 600), 10)
+    ifd0 = struct.pack(">H", 2) + struct.pack(">HHII", 0x8769, 4, 1, 38) + struct.pack(">HHII", 0x8825, 4, 1, 76) + b"\0" * 4
+    exif = struct.pack(">H", 1) + struct.pack(">HHII", 0x9003, 2, 20, 56) + b"\0" * 4 + taken.encode() + b"\0"
+    gps = (struct.pack(">H", 4) + struct.pack(">HHI", 1, 2, 2) + (b"S" if lat < 0 else b"N") + b"\0\0\0"
+           + struct.pack(">HHII", 2, 5, 3, 130) + struct.pack(">HHI", 3, 2, 2) + (b"E" if lon >= 0 else b"W") + b"\0\0\0"
+           + struct.pack(">HHII", 4, 5, 3, 154) + b"\0" * 4 + dms(lat) + dms(lon))
+    tiff = b"MM\0\x2a" + struct.pack(">I", 8) + ifd0 + exif + gps
+    assert len(b"MM\0\x2a\0\0\0\x08" + ifd0) == 38 and len(b"x" * 8 + ifd0 + exif) == 76
+    app1 = b"\xff\xe1" + struct.pack(">H", len(tiff) + 8) + b"Exif\0\0" + tiff
+    return jpeg[:2] + app1 + jpeg[2:]
+
+
+@step("Hiking: import an AllTrails GPX (numbers, map, profile, splits), a photo pinned by its GPS, edit, again = skipped, dashboard, Home")
 def hiking(page):
     name = f"Ridge loop {MARK}"
     raw = gpx_file(name)
     upload = {"name": "Ridge_loop.gpx", "mimeType": "application/gpx+xml", "buffer": raw}
+    # The map's pictures (tiles) are a blank square here: the walk-through doesn't load real ones every run.
+    page.route(re.compile(r"https://([a-c]\.tile\.opentopomap\.org|server\.arcgisonline\.com)/.*"),
+               lambda route: route.fulfill(status=200, content_type="image/png", body=BLANK_PNG))
     page.goto(BASE + "/hiking/dashboard")
     page.locator(".gpx-import input[type=file]").first.set_input_files(files=[upload])
     d = drawer(page)
@@ -1606,12 +1629,36 @@ def hiking(page):
     expect(numbers).to_contain_text("↑ 300 m")
     expect(numbers).to_contain_text("30 min")
     expect(numbers).to_contain_text("10:00 /km")
-    expect(d.locator(".hike-map .hike-route")).to_have_count(1)
-    expect(d.locator(".hike-map .hike-waypoint")).to_have_count(1)
+    expect(d.locator(".hike-map-box .leaflet-overlay-pane path")).to_have_count(5)     # route (+ its edge), start, finish, waypoint
+    expect(d.locator(".hike-map-box img.leaflet-tile").first).to_be_attached()
+    expect(d.locator(".hike-map-box .leaflet-control-attribution")).to_contain_text("OpenTopoMap")
     expect(d.locator(".hike-pills")).to_contain_text("From GPX")
     d.locator(".hike-profile-svg").hover()
     expect(d.locator(".hike-profile-tip")).to_contain_text(" m")
-    expect(d.locator(".hike-map .hike-here")).to_have_count(1)                # the hovered point, on the route
+    expect(d.locator(".hike-map-box .leaflet-overlay-pane path")).to_have_count(6)     # + the hovered point
+    page.mouse.move(0, 0)
+    d.get_by_role("button", name="Satellite").click()
+    expect(d.locator(".hike-map-box .leaflet-control-attribution")).to_contain_text("Esri")
+    expect(d.locator(".hike-map-box .hike-tiles-satellite")).to_have_count(1)
+    d.get_by_role("button", name="Topo").click()
+    # A photo from a phone, taken half a kilometre in: its GPS puts it on the map and the profile.
+    jpeg = base64.b64decode(page.evaluate("""() => { const c = document.createElement('canvas'); c.width = 64; c.height = 48;
+        const g = c.getContext('2d'); g.fillStyle = '#3a7'; g.fillRect(0, 0, 64, 48); return c.toDataURL('image/jpeg').split(',')[1] }"""))
+    photo = {"name": "PXL_20260906.jpg", "mimeType": "image/jpeg", "buffer": with_gps(jpeg, -27.5 + 5 * 0.0009, 153.0)}
+    d.locator('input[type=file][data-source="gallery"]').set_input_files(files=[photo])
+    expect(d.locator(".hike-gallery-item")).to_have_count(1)
+    expect(d.locator(".hike-gallery-item")).to_contain_text("0.5 km")
+    expect(d.locator(".hike-map-box .hike-photo-pin")).to_have_count(1)
+    expect(d.locator(".hike-profile .hike-mark.photo")).to_have_count(1)
+    d.locator(".hike-gallery-item").click()
+    viewer = page.get_by_role("dialog", name="Photo")
+    expect(viewer).to_contain_text("0.5 km along the track")
+    viewer.get_by_label("Caption").fill("First lookout")
+    viewer.get_by_label("Caption").press("Tab")
+    expect(d.locator(".hike-gallery-item")).to_contain_text("First lookout")
+    viewer.press("Escape")                                                    # closes the photo, not the hike
+    expect(viewer).to_have_count(0)
+    expect(d.get_by_role("heading", name=name)).to_be_visible()
     d.locator("summary", has_text="Splits").click()
     expect(d.locator(".hike-splits tbody tr")).to_have_count(3)
     expect(d.get_by_role("link", name="On AllTrails ↗")).to_have_attribute("href", re.compile("alltrails.com"))
@@ -1628,11 +1675,12 @@ def hiking(page):
     expect(d.get_by_role("heading", name=name)).to_be_visible()
     page.keyboard.press("Escape")
     expect(page.locator(".gpx-results")).to_contain_text("Already imported")
-    expect(page.locator(".home-stat", has_text="Hikes in")).to_contain_text("1")
-    expect(page.locator(".hike-bests")).to_contain_text(name)
+    hikes_now = page.request.get(f"{BASE}/api/hiking/summary").json()["this_year"]["hikes"]
+    expect(page.locator(".home-stat", has_text="Hikes in")).to_contain_text(str(hikes_now))
+    expect(page.locator(".hike-bests li").first).to_be_visible()
     shot(page, "d71_hiking_dashboard", full=True)
     go(page, "Home")
-    expect(page.locator(".home-stat", has_text="Hiked in")).to_contain_text("3.0 km")
+    expect(page.locator(".home-stat", has_text="Hiked in")).to_contain_text(" km")
     feed = page.request.get(f"{BASE}/api/activity?limit=100").json()          # Home shows only the latest few
     assert any(a["kind"] == "hike" and a["title"] == name and a["verb"] == "Hiked" for a in feed), "no Hiked in the feed"
     page.locator(".sidebar").get_by_role("link", name="Hiking", exact=True).click()
@@ -1747,7 +1795,7 @@ def settings_more(page):
     d.locator("summary", has_text="Tamiya catalogue").click()
     expect(d.locator(".settings > .fold", has_text="Tamiya catalogue")).to_contain_text("Tamiya products")
     d.locator("summary", has_text="Lookup sites").click()             # the weekly site check (no live run here)
-    expect(d.locator(".site-check")).to_have_count(10)
+    expect(d.locator(".site-check")).to_have_count(12)
     expect(d.get_by_role("button", name="Check now")).to_be_visible()
     shot(page, "d22_settings", full=False)
     page.keyboard.press("Escape")

@@ -1,7 +1,7 @@
 """Hiking: GPX import (the numbers worked out from the track), hikes by hand, the summary, the activity feed."""
 from datetime import datetime, timedelta, timezone
 
-from app import gpx
+from app import gpx, hiking, overpass, wikimedia
 
 STEP = 0.0009            # degrees of latitude: about 100 m
 
@@ -135,3 +135,123 @@ def test_by_hand_summary_and_activity(client):
     assert coastal["verb"] == "Hiked" and coastal["detail"] == "8.5 km · 220 m up · 2 h 30 min"
     cal = client.get("/api/calendar?start=2026-09-06&end=2026-09-06").json()
     assert [a["title"] for a in cal["happened"] if a["kind"] == "hike"] == ["Mt Example Loop"]
+
+
+# A tiny JPEG-ish body is enough: the API stores what the browser sends (it checks the type and size).
+JPEG = b"\xff\xd8\xff\xe0" + b"0" * 200
+
+
+def test_photos_placed_by_gps_or_time(client):
+    hid = client.post("/api/hiking/import", content=track(walk())).json()["hike_id"]
+    # by GPS: next to the 11th point (about 1 km along)
+    p = client.post(f"/api/hiking/hikes/{hid}/photos?lat={-27.5 + 10 * STEP + 0.00001}&lon=153.0001&caption=Lookout",
+                    content=JPEG, headers={"Content-Type": "image/jpeg"}).json()
+    assert p["located"] == "gps" and abs(p["along_m"] - 1000.7) < 2 and p["caption"] == "Lookout"
+    # by time: 20 minutes in (the camera's clock has no zone: Brisbane, so 21:20 UTC = 7:20 am)
+    q = client.post(f"/api/hiking/hikes/{hid}/photos?taken=2026-09-06T07:20:00",
+                    content=JPEG, headers={"Content-Type": "image/jpeg"}).json()
+    assert q["located"] == "time" and abs(q["along_m"] - 2001.4) < 2 and abs(q["lat"] - (-27.5 + 20 * STEP)) < 1e-5
+    # neither: kept, just not on the map
+    r = client.post(f"/api/hiking/hikes/{hid}/photos", content=JPEG, headers={"Content-Type": "image/jpeg"}).json()
+    assert r["located"] is None and r["along_m"] is None
+    assert client.post(f"/api/hiking/hikes/{hid}/photos", content=b"x", headers={"Content-Type": "text/plain"}).status_code == 415
+    h = client.get(f"/api/hiking/hikes/{hid}").json()
+    assert [x["photo_id"] for x in h["photos"]] == [p["photo_id"], q["photo_id"], r["photo_id"]]   # along the way
+    assert h["photo_url"] == p["url"] and h["photos_count"] == 3
+    img = client.get(p["url"])
+    assert img.content == JPEG and "immutable" in img.headers["cache-control"]
+    assert client.patch(f"/api/hiking/photos/{q['photo_id']}", json={"caption": " Summit "}).json()["caption"] == "Summit"
+    assert client.delete(f"/api/hiking/photos/{r['photo_id']}").status_code == 204
+    feed = client.get("/api/activity?since=2026-09-01").json()
+    assert next(a for a in feed if a["kind"] == "hike")["photo_url"] == p["url"]
+    client.delete(f"/api/hiking/hikes/{hid}")
+    assert client.get(p["url"]).status_code == 404                 # a hike's photos go with it
+
+
+OVERPASS = {"elements": [
+    {"type": "node", "id": 1, "lat": -27.4955, "lon": 153.0003, "tags": {"natural": "peak", "name": "Mt Example", "ele": "412 m",
+                                                                        "wikidata": "Q42"}},
+    {"type": "way", "id": 2, "center": {"lat": -27.4910, "lon": 152.9999}, "tags": {"tourism": "viewpoint", "name": "Top Lookout",
+                                                                                    "wikimedia_commons": "File:Lookout.jpg"}},
+    {"type": "node", "id": 3, "lat": -27.4990, "lon": 153.0, "tags": {"amenity": "toilets"}},
+    {"type": "node", "id": 4, "lat": -27.40, "lon": 153.2, "tags": {"natural": "peak", "name": "Far Away"}},   # not near the track
+    {"type": "node", "id": 5, "lat": -27.495, "lon": 153.0, "tags": {"shop": "bakery", "name": "Not a landmark"}},
+]}
+
+
+def fake_wikimedia(url, params):
+    if params.get("action") == "wbgetentities":
+        return {"entities": {"Q42": {"claims": {"P18": [{"mainsnak": {"datavalue": {"value": "Mt Example.jpg"}}}]}}}}
+    if params.get("list") == "geosearch":
+        return {"query": {"geosearch": [{"title": "File:Track.jpg", "lat": -27.4977, "lon": 153.0},
+                                        {"title": "File:Elsewhere.jpg", "lat": -27.49, "lon": 153.05}]}}
+    pages = [{"title": t, "imageinfo": [{"mime": "image/jpeg", "thumburl": f"https://upload.wikimedia.org/{t[5:]}",
+                                         "descriptionurl": f"https://commons.wikimedia.org/wiki/{t}",
+                                         "extmetadata": {"Artist": {"value": "<a href='x'>Jo Walker</a>"},
+                                                         "LicenseShortName": {"value": "CC BY-SA 4.0"}}}]}
+             for t in params["titles"].split("|")]
+    return {"query": {"pages": pages}}
+
+
+def test_landmarks_and_nearby_photos(client, monkeypatch):
+    sent = []
+    monkeypatch.setattr(overpass, "_post", lambda data: sent.append(data) or OVERPASS)
+    monkeypatch.setattr(wikimedia, "_get", fake_wikimedia)
+    h = client.post("/api/hiking/import", content=track(walk())).json()       # looked up in the background
+    assert "natural" in sent[0] and "around:250," in sent[0]
+    h = client.get(f"/api/hiking/hikes/{h['hike_id']}").json()
+    assert h["landmarks_error"] is None and h["landmarks_at"] and h["landmarks_looking"] is False
+    names = [(lm["label"], lm["name"]) for lm in h["landmarks"]]
+    assert names == [("Toilets", None), ("Peak", "Mt Example"), ("Lookout", "Top Lookout")]
+    peak = h["landmarks"][1]
+    assert peak["ele"] == 412 and abs(peak["along_m"] - 500) < 10 and peak["off_m"] < 40
+    assert peak["photo"]["thumb"].endswith("Mt Example.jpg") and peak["photo"]["author"] == "Jo Walker"
+    assert h["landmarks"][2]["photo"]["licence"] == "CC BY-SA 4.0"
+    assert [p["title"] for p in h["nearby_photos"]] == ["File:Track.jpg"]
+
+    # Overpass busy: the photos are still saved, and the hike says what went wrong
+    def busy(data):
+        raise overpass.OverpassError("OpenStreetMap's Overpass is busy (HTTP 504).")
+    monkeypatch.setattr(overpass, "_post", busy)
+    assert client.post(f"/api/hiking/hikes/{h['hike_id']}/landmarks").status_code == 202
+    again = client.get(f"/api/hiking/hikes/{h['hike_id']}").json()
+    assert "busy" in again["landmarks_error"] and len(again["landmarks"]) == 3     # the last ones are kept
+    manual = client.post("/api/hiking/hikes", json={"name": "Walk", "hiked_on": "2026-10-01"}).json()
+    assert client.post(f"/api/hiking/hikes/{manual['hike_id']}/landmarks").status_code == 409
+
+
+def test_overpass_query_and_parsing():
+    q = overpass.query([(-27.5, 153.0), (-27.49, 153.01)], 250)
+    assert q.count("around:250,-27.50000,153.00000,-27.49000,153.01000") == 6 and q.startswith("[out:json]")
+    lms = overpass.landmarks(OVERPASS["elements"])
+    assert [lm["kind"] for lm in lms] == ["peak", "viewpoint", "toilets", "peak"]
+    assert lms[1]["lat"] == -27.4910 and lms[1]["commons"] == "File:Lookout.jpg" and lms[0]["wikidata"] == "Q42"
+
+
+def test_place_by_time_is_between_points():
+    tr = [[-27.5, 153.0, 100, 0, 0.0], [-27.499, 153.0, 110, 100, 111.2]]
+    lat, lon, along = hiking.at_time(tr, 50)
+    assert abs(lat + 27.4995) < 1e-9 and abs(along - 55.6) < 0.01
+    assert hiking.at_time(tr, 5000) is None
+
+
+def test_trailhead_facilities_thinned_and_photos_spread(monkeypatch):
+    tr = [[-27.5 + i * STEP, 153.0, 100, i * 60, i * 100.07] for i in range(31)]
+    els = [{"type": "node", "id": i, "lat": -27.5 + i * 0.00002, "lon": 153.0, "tags": {"leisure": "x", "amenity": "toilets"}}
+           for i in range(5)]                                              # five toilet blocks at the start
+    els += [{"type": "node", "id": 9, "lat": -27.5, "lon": 153.0015, "tags": {"tourism": "picnic_site"}},   # 150 m off
+            {"type": "node", "id": 10, "lat": -27.5 + 15 * STEP, "lon": 153.0, "tags": {"amenity": "toilets"}},
+            {"type": "node", "id": 11, "lat": -27.5, "lon": 153.0002, "tags": {"tourism": "camp_site", "name": "Top Camp"}}]
+    monkeypatch.setattr(overpass, "_post", lambda data: {"elements": els})
+    monkeypatch.setattr(wikimedia, "_get", fake_wikimedia)
+    lms = hiking.find_landmarks(tr)
+    assert [(lm["label"], round(lm["along_m"] / 1000)) for lm in lms] == [("Toilets", 0), ("Campsite", 0), ("Toilets", 2)]
+
+    files = [{"title": f"File:{n}.jpg", "lat": -27.5 + (n % 31) * STEP, "lon": 153.0} for n in range(40)]
+    monkeypatch.setattr(wikimedia, "near", lambda *a, **k: files)
+    monkeypatch.setattr(wikimedia, "images", lambda titles: {
+        t: {"thumb": "https://x/" + t, "page": "p", "author": "Moth fan" if int(t[5:-4]) < 30 else f"Hiker {t}", "licence": "CC0"}
+        for t in titles})
+    picked = hiking.find_nearby_photos(tr)
+    assert len(picked) <= hiking.MAX_NEARBY and sum(p["author"] == "Moth fan" for p in picked) == 2
+    assert picked == sorted(picked, key=lambda p: p["along_m"])

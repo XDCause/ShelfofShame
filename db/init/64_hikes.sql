@@ -33,11 +33,27 @@ CREATE TABLE IF NOT EXISTS hikes (
     gpx_name      text,                    -- the file's name
     gpx_hash      text,                    -- sha256 of the file: the same file isn't imported twice
     gpx           bytea,
-    photo         bytea,
-    photo_type    text,
-    photo_updated timestamptz,
+    landmarks     jsonb,                   -- peaks, lookouts, huts... near the track (OpenStreetMap, overpass.py)
+    nearby_photos jsonb,                   -- photos people took near the track (Wikimedia Commons, wikimedia.py)
+    landmarks_at  timestamptz,             -- when they were last looked up
+    landmarks_error text,
     created_at    timestamptz NOT NULL DEFAULT now(),
     CONSTRAINT hikes_gpx_hash_uq UNIQUE (gpx_hash),
     CONSTRAINT hikes_time_check CHECK (ended_at IS NULL OR started_at IS NULL OR ended_at >= started_at)
 );
 CREATE INDEX IF NOT EXISTS hikes_hiked_on_idx ON hikes (hiked_on DESC);
+
+CREATE TABLE IF NOT EXISTS hike_photos (
+    photo_id   serial PRIMARY KEY,
+    hike_id    integer NOT NULL REFERENCES hikes ON DELETE CASCADE,
+    image      bytea NOT NULL,
+    image_type text NOT NULL,
+    taken_at   timestamptz,                -- from the photo's EXIF (read in the browser)
+    lat        double precision,
+    lon        double precision,
+    along_m    numeric(9, 1),              -- how far along the track it was taken
+    located    text CHECK (located IN ('gps', 'time')),   -- placed by its own GPS, or by its time on the track
+    caption    text,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS hike_photos_hike_idx ON hike_photos (hike_id);

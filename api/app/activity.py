@@ -150,8 +150,8 @@ WITH feed AS (
                           THEN COALESCE(h.moving_s, h.elapsed_s) / 3600 || ' h ' || mod(COALESCE(h.moving_s, h.elapsed_s), 3600) / 60 || ' min'
                           WHEN COALESCE(h.moving_s, h.elapsed_s) IS NOT NULL THEN COALESCE(h.moving_s, h.elapsed_s) / 60 || ' min' END),
            NULL, NULL,
-           CASE WHEN h.photo IS NOT NULL THEN '/api/hiking/hikes/' || h.hike_id || '/photo?v='
-                || (extract(epoch FROM h.photo_updated) * 1000)::bigint END
+           (SELECT '/api/hiking/photos/' || p.photo_id FROM hike_photos p WHERE p.hike_id = h.hike_id
+            ORDER BY p.along_m NULLS LAST, p.taken_at NULLS LAST, p.photo_id LIMIT 1)
     FROM hikes h
 )
 SELECT f.at, (f.at AT TIME ZONE current_setting('TimeZone'))::date AS day,

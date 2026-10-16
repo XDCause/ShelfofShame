@@ -1474,3 +1474,22 @@ DBeaver connection confirmed working (2026-10-11).
      the GPX, OpenStreetMap). No map tiles (an outside source with its own terms). Log a hike by hand too.
    - Activity "Hiked" (kind hike), so Home and the calendar show hikes. Home tile: km this year (only once there's a hike).
    - RecordFields: a number field can take a step (0.1 for km).
+3zzw. **Hiking: maps, your photos, landmarks** (2026-10-16; user picked all four: topo map, satellite, own photos on the
+   track, landmarks). 64_hikes.sql was reworked before it reached prod (dev's hikes table dropped and made again):
+   the single cover photo became hike_photos; hikes gained landmarks / nearby_photos / landmarks_at / landmarks_error.
+   - Map: Leaflet 1.9.4 (plain Leaflet in an effect, no react-leaflet), OpenTopoMap or Esri World Imagery (toggle,
+     remembered in localStorage), route with a white edge, start / finish, waypoints, landmark diamonds with a popup
+     (built as DOM elements - OSM names are never HTML), your photos as thumbnail pins; the profile's hover point shows
+     on the map. Scroll-wheel zoom off (the panel scrolls). Tiles get Referrer-Policy strict-origin-when-cross-origin
+     (the app's own policy is same-origin, which sends none; tile servers ask for one).
+   - Your photos: EXIF read in the browser BEFORE shrinking (canvas re-encoding drops it): GPS + DateTimeOriginal
+     (+ OffsetTimeOriginal). The API places each: by GPS (on the track if within 1 km) or by time (interpolated between
+     track points; a camera time without a zone is read in the database's zone). Gallery, a viewer (caption, prev /
+     next, Escape closes only it - stopPropagation before the drawer's document listener), marks on the profile.
+     1600 px max. A hike's thumbnail = its first photo along the way.
+   - Landmarks: Overpass, one query (6 kinds, `around:250` a 60-point line along the track) in the background after an
+     import, then Wikidata P18 / wikimedia_commons -> Commons thumbnails with author + licence. Nearby photos: Commons
+     geosearch around up to 4 points, kept within 200 m of the track, 12 spread along it. Overpass was slow (38 s
+     queue) and both mirrors returned 500 on the day, so: main server only, retries after 20 s / 60 s, results saved.
+     "Look again" re-runs; an error is shown and the last results kept. DAILY_SYNCS=off (the walk-through copy)
+     skips it; the walk-through also serves the map tiles a blank PNG. Both sources are on the weekly site check.

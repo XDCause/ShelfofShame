@@ -267,6 +267,11 @@ export const api = {
   importHike: (file) => request(`/hiking/import?filename=${enc(file.name)}`,
     { method: 'POST', headers: { 'Content-Type': 'application/gpx+xml' }, body: file }),
   hikingSummary: () => request('/hiking/summary'),
+  addHikePhoto: (id, blob, { lat, lon, taken } = {}) => request(`/hiking/hikes/${id}/photos?${new URLSearchParams(
+    Object.entries({ lat, lon, taken }).filter(([, v]) => v != null))}`, image('POST', blob)),
+  updateHikePhoto: (photoId, caption) => request(`/hiking/photos/${photoId}`, send('PATCH', { caption })),
+  deleteHikePhoto: (photoId) => request(`/hiking/photos/${photoId}`, send('DELETE')),
+  lookAgainHike: (id) => request(`/hiking/hikes/${id}/landmarks`, send('POST')),
   importGoodreads: (file) => request('/reading/import/goodreads', { method: 'POST', headers: { 'Content-Type': 'text/csv' }, body: file }),
   coverStatus: () => request('/reading/covers'),
   bookSeries: (id) => request(`/reading/books/${id}/series`),

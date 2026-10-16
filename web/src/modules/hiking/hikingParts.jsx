@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { api, duration } from '../../api.js'
 import RecordFields, { useRecordForm } from '../../components/RecordFields.jsx'
 import { useApp } from '../../core/app-context.js'
 import { useShared } from '../../core/useShared.js'
 
-// The Hiking hobby's shared pieces: number formats, the route drawn from the GPS track, the
-// elevation profile, the GPX import and the hike form.
+// The Hiking hobby's shared pieces: number formats, the elevation profile, the photo viewer, the
+// GPX import and the hike form. (The map is HikeMap.jsx.)
 
 export const useHikingSummary = () => {
   const { refreshKey } = useApp()
@@ -24,57 +24,10 @@ export const pace = (s, m) => {
 export const hikeMeta = (h) => [km(h.distance_m), h.ascent_m != null && `↑ ${metres(h.ascent_m)}`,
   (h.moving_s ?? h.elapsed_s) != null && hikeTime(h.moving_s ?? h.elapsed_s)].filter((x) => x && x !== '—').join(' · ')
 
-// The route, drawn from the track's points: east-west distances shrink away from the equator, so
-// longitude is scaled by cos(latitude) to keep the shape true. North is up. `at` = a point to mark
-// (where the elevation profile is being hovered).
-export function RouteMap({ track, waypoints = [], at = null, loop = false }) {
-  if (!track || track.length < 2) return null
-  const lat0 = (track.reduce((a, p) => a + p[0], 0) / track.length) * (Math.PI / 180)
-  const xy = ([lat, lon]) => [lon * Math.cos(lat0), -lat]
-  const pts = track.map(xy)
-  const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1])
-  const minX = Math.min(...xs), minY = Math.min(...ys)
-  const span = Math.max(Math.max(...xs) - minX, Math.max(...ys) - minY) || 1e-6
-  const S = ([x, y]) => [((x - minX) / span) * 100, ((y - minY) / span) * 100]
-  const scaled = pts.map(S)
-  const w = Math.max(...scaled.map((p) => p[0])), h = Math.max(...scaled.map((p) => p[1]))
-  const pad = 6
-  // A scale bar: a round distance about a quarter of the way across.
-  const metresAcross = (span * Math.PI / 180) * 6371000
-  const bar = [50, 100, 200, 250, 500, 1000, 2000, 2500, 5000, 10000, 20000].find((m) => m >= metresAcross / 5) ?? 50000
-  const barLen = (bar / metresAcross) * 100
-  const mark = (p, cls, r, title) => {
-    const [x, y] = S(xy(p))
-    return <circle className={cls} cx={x} cy={y} r={r}>{title && <title>{title}</title>}</circle>
-  }
-  return (
-    <figure className="hike-map-frame">
-      <svg className="hike-map" viewBox={`${-pad} ${-pad} ${w + pad * 2} ${h + pad * 2 + 6}`} role="img"
-        aria-label={`The route${loop ? ', a loop' : ''}`}>
-        <polyline className="hike-route-casing" points={scaled.map((p) => p.join(',')).join(' ')} vectorEffect="non-scaling-stroke" />
-        <polyline className="hike-route" points={scaled.map((p) => p.join(',')).join(' ')} vectorEffect="non-scaling-stroke" />
-        {waypoints.map((wp, i) => <g key={i}>{mark([wp.lat, wp.lon], 'hike-waypoint', 1.6, wp.name ?? 'Waypoint')}</g>)}
-        {!loop && mark(track[track.length - 1], 'hike-end', 2.2, 'Finish')}
-        {mark(track[0], 'hike-start', 2.2, loop ? 'Start and finish' : 'Start')}
-        {at != null && track[at] && mark(track[at], 'hike-here', 2.4)}
-        <g className="hike-scale" transform={`translate(0 ${h + pad + 2})`}>
-          <line x1="0" x2={barLen} y1="0" y2="0" vectorEffect="non-scaling-stroke" />
-          <text x={barLen + 1.5} y="1.2">{bar >= 1000 ? `${bar / 1000} km` : `${bar} m`}</text>
-        </g>
-      </svg>
-      <figcaption className="hike-map-key">
-        <span><i className="hike-key-start" /> {loop ? 'Start / finish' : 'Start'}</span>
-        {!loop && <span><i className="hike-key-end" /> Finish</span>}
-        {waypoints.length > 0 && <span><i className="hike-key-waypoint" /> Waypoint</span>}
-        <span className="muted">North is up</span>
-      </figcaption>
-    </figure>
-  )
-}
-
 // Height along the way: distance across, elevation up. Hovering shows the distance, height and
-// time at that point, and marks it on the route (onHover gets the track index).
-export function ElevationProfile({ track, onHover }) {
+// time at that point, and marks it on the map (onHover gets the track index). `marks` = your photos
+// and landmarks at their distance along the track (a photo's mark opens it).
+export function ElevationProfile({ track, onHover, marks = [] }) {
   const [hover, setHover] = useState(null)
   const idx = track ? track.map((p, i) => i).filter((i) => track[i][2] != null) : []
   if (idx.length < 2) return null
@@ -107,6 +60,14 @@ export function ElevationProfile({ track, onHover }) {
           <polyline className="hike-profile-line" points={line} vectorEffect="non-scaling-stroke" />
           {p && <line className="hike-profile-cross" x1={X(p[4])} x2={X(p[4])} y1="0" y2="100" vectorEffect="non-scaling-stroke" />}
         </svg>
+        {marks.filter((m) => m.along != null).map((m) => {
+          let near = idx[0]
+          for (const i of idx) if (Math.abs(track[i][4] - m.along) < Math.abs(track[near][4] - m.along)) near = i
+          const style = { left: `${X(m.along)}%`, top: `${Y(track[near][2])}%` }
+          return m.onOpen
+            ? <button key={m.key} type="button" className="hike-mark photo" style={style} title={m.title} aria-label={m.title} onClick={m.onOpen} />
+            : <span key={m.key} className="hike-mark landmark" style={style} title={m.title} />
+        })}
         {p && (
           <span className="chart-tip hike-profile-tip" role="tooltip" style={{ left: `${Math.min(85, Math.max(15, X(p[4])))}%` }}>
             <strong>{metres(p[2])}</strong> high<br />
@@ -244,5 +205,45 @@ export function HikeForm({ hike, onSaved, onCancel }) {
         {onCancel && <button type="button" className="plain" onClick={onCancel}>Cancel</button>}
       </div>
     </form>
+  )
+}
+
+// One of your photos, big, with what's known about it: its caption (saved when you leave the box),
+// when and where on the track it was taken, and the next / previous ones. Escape closes it (only it).
+export function PhotoViewer({ photos, index, setIndex, onCaption, onDelete, onClose }) {
+  const box = useRef(null)
+  const p = photos[index]
+  const [caption, setCaption] = useState(p?.caption ?? '')
+  useEffect(() => { setCaption(p?.caption ?? '') }, [p?.photo_id, p?.caption])
+  useEffect(() => { box.current?.focus() }, [])
+  if (!p) return null
+  const go = (n) => setIndex((index + n + photos.length) % photos.length)
+  const keys = (e) => {
+    if (e.key === 'Escape') { e.stopPropagation(); onClose() }
+    else if (e.key === 'ArrowRight' && e.target.tagName !== 'INPUT') go(1)
+    else if (e.key === 'ArrowLeft' && e.target.tagName !== 'INPUT') go(-1)
+  }
+  const when = p.taken_at && new Date(p.taken_at).toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
+  const where = p.along_m != null ? `${km(p.along_m)} along the track` : p.lat != null ? 'off the track' : 'no location in the photo'
+  return (
+    <div className="hike-viewer" role="dialog" aria-modal="true" aria-label="Photo" tabIndex={-1} ref={box} onKeyDown={keys}
+      onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="hike-viewer-card">
+        <img src={p.url} alt={p.caption ?? ''} />
+        <div className="hike-viewer-bar">
+          {photos.length > 1 && <button type="button" className="plain" onClick={() => go(-1)} aria-label="Previous photo">‹</button>}
+          <input value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Add a caption"
+            aria-label="Caption" onBlur={() => caption !== (p.caption ?? '') && onCaption(p, caption)} />
+          {photos.length > 1 && <button type="button" className="plain" onClick={() => go(1)} aria-label="Next photo">›</button>}
+        </div>
+        <p className="muted small">{[when, where, p.located === 'time' && 'placed by the time it was taken',
+          `${index + 1} of ${photos.length}`].filter(Boolean).join(' · ')}</p>
+        <div className="button-row">
+          <button type="button" className="plain destructive" onClick={() => onDelete(p)}>Remove photo</button>
+          <span className="spacer" />
+          <button type="button" className="secondary" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
   )
 }

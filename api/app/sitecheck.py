@@ -14,7 +14,7 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, BackgroundTasks
 
-from . import bluesky, exophase, gameology, goodgames, hasegawa, hlj, openlibrary, steam, steamhunters, tamiya
+from . import bluesky, exophase, gameology, goodgames, hasegawa, hlj, openlibrary, overpass, steam, steamhunters, tamiya, wikimedia
 from .db import db
 
 log = logging.getLogger("sitecheck")
@@ -99,6 +99,21 @@ def _exophase():
     return found[0]["name"]
 
 
+def _overpass():
+    found = overpass.landmarks(overpass.near_line([(-27.4791, 152.9515)], 300))      # Constitution Hill, Mt Coot-tha
+    expect(any(lm["kind"] == "peak" and lm["name"] for lm in found), "OpenStreetMap's Overpass found no named peak on Mt Coot-tha")
+    peak = next(lm for lm in found if lm["kind"] == "peak" and lm["name"])
+    return f"{peak['name']} ({peak['ele']} m)" if peak["ele"] else peak["name"]
+
+
+def _commons():
+    files = wikimedia.near(-27.4755, 152.9585, 1000, limit=10)
+    expect(files, "Wikimedia Commons found no photos near the Mt Coot-tha lookout")
+    info = wikimedia.images([f["title"] for f in files])
+    expect(info and all(i["thumb"] for i in info.values()), "Wikimedia Commons' photos have no thumbnails")
+    return f"{len(files)} photos nearby, {len(info)} with thumbnails"
+
+
 # (site, what the app uses it for, the check)
 CHECKS = [
     ("Tamiya", "paint and kit look-ups, photos", _tamiya),
@@ -111,6 +126,8 @@ CHECKS = [
     ("Steam store", "Find a game, Steam versions of Epic / Ubisoft games", _steam_store),
     ("SteamHunters", "time to 100%, unobtainable achievements", _steamhunters),
     ("Exophase", "DLC groups, Epic / Ubisoft games", _exophase),
+    ("OpenStreetMap (Overpass)", "landmarks near a hike's track", _overpass),
+    ("Wikimedia Commons", "photos near a hike's track and of its landmarks", _commons),
 ]
 STATE = {"running": False}
 _lock = threading.Lock()

@@ -2057,22 +2057,25 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .site-check-warning button { padding: 0; }
 
 /* ---------- Hiking (modules/hiking): the route, the elevation profile, splits, the GPX import ---------- */
-.hike-map-frame { margin: 8px 0 0; padding: 10px; border-radius: 12px; background: var(--fill-2); border: 1px solid var(--border); }
-.hike-map { display: block; width: 100%; max-height: 340px; }
-.hike-route { fill: none; stroke: var(--ok); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
-.hike-route-casing { fill: none; stroke: var(--surface); stroke-width: 6; stroke-linejoin: round; stroke-linecap: round; }
-.hike-start { fill: var(--ok); stroke: var(--surface); stroke-width: 0.8; }
-.hike-end { fill: var(--out); stroke: var(--surface); stroke-width: 0.8; }
-.hike-waypoint { fill: var(--purple); stroke: var(--surface); stroke-width: 0.6; }
-.hike-here { fill: var(--tint); stroke: var(--surface); stroke-width: 0.9; }
-.hike-scale line { stroke: var(--muted); stroke-width: 2; }
-.hike-scale text { fill: var(--muted); font-size: 3.2px; }
+.hike-map-frame { margin: 0; }
+.segmented.hike-map-bases { margin-bottom: 8px; }
+.hike-map-box { height: 360px; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); background: var(--fill-2); z-index: 0; }
 .hike-map-key { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; font-size: 0.78rem; }
 .hike-map-key i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; vertical-align: -1px; }
 .hike-key-start { background: var(--ok); }
 .hike-key-end { background: var(--out); }
-.hike-key-waypoint { background: var(--purple); }
+.hike-map-key i.hike-key-landmark { background: var(--purple); border-radius: 2px; transform: rotate(45deg); }
+.hike-map-key i.hike-key-photo { background: var(--tint); border-radius: 3px; }
 .hike-map-key .muted { margin-left: auto; }
+/* On the map: a landmark is a small purple diamond (drawn inside the pin: Leaflet sets the pin's own
+   transform to place it); your photo is a thumbnail with a white frame. */
+.hike-landmark-pin > span { display: block; width: 12px; height: 12px; margin: 2px; background: var(--purple);
+  border: 2px solid #fff; border-radius: 3px; transform: rotate(45deg); box-shadow: 0 1px 4px rgb(0 0 0 / 0.35); }
+.hike-photo-pin { border-radius: 8px; border: 3px solid #fff; overflow: hidden; background: #fff; box-shadow: 0 2px 8px rgb(0 0 0 / 0.4); }
+.hike-photo-pin img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.hike-popup { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; }
+.hike-popup img { display: block; width: 100%; max-height: 160px; object-fit: cover; border-radius: 6px; margin-top: 4px; }
+.hike-credit { display: block; font-size: 0.72rem; color: var(--muted); }
 .hike-profile { margin: 14px 0 0; }
 .hike-profile-plot { position: relative; height: 130px; margin-left: 46px; border-bottom: 1px solid var(--separator); }
 .hike-profile-axis { position: absolute; right: calc(100% + 6px); font-size: 0.7rem; color: var(--muted); white-space: nowrap; }
@@ -2083,6 +2086,9 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .hike-profile-line { fill: none; stroke: var(--ok); stroke-width: 2; stroke-linejoin: round; }
 .hike-profile-cross { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
 .hike-profile-tip { top: 4px; bottom: auto; }
+.hike-mark { position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px; border: 2px solid var(--surface); padding: 0; }
+.hike-mark.photo { background: var(--tint); border-radius: 3px; cursor: pointer; }
+.hike-mark.landmark { background: var(--purple); border-radius: 2px; transform: rotate(45deg); pointer-events: auto; }
 .hike-profile-labels { display: flex; justify-content: space-between; margin: 4px 0 0 46px; font-size: 0.72rem; color: var(--muted); }
 .hike-numbers { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0 0; }
 .hike-numbers > div { padding: 10px 12px; border-radius: 10px; background: var(--fill-2); }
@@ -2097,7 +2103,28 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .hike-splits th { text-align: left; font-weight: 600; color: var(--muted); font-size: 0.78rem; padding: 4px 6px; }
 .hike-splits td { padding: 5px 6px; border-top: 1px solid var(--separator); }
 .hike-splits tr.fastest td { color: var(--ok); font-weight: 650; }
-.hike-waypoints { margin: 0; padding-left: 18px; font-size: 0.9rem; }
+.hike-gallery { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+.hike-gallery-item { position: relative; display: block; width: 100%; aspect-ratio: 1; padding: 0; border: 0; border-radius: 10px;
+  overflow: hidden; background: var(--fill); cursor: pointer; }
+.hike-gallery-item img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.hike-gallery-caption { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 6px 4px; font-size: 0.7rem; color: #fff;
+  text-align: left; background: linear-gradient(transparent, rgb(0 0 0 / 0.65)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hike-landmarks { list-style: none; margin: 6px 0 8px; padding: 0; }
+.hike-landmarks li { display: flex; gap: 10px; align-items: center; padding: 6px 0; border-top: 1px solid var(--separator); }
+.hike-landmarks li:first-child { border-top: 0; }
+.hike-landmarks .grow { display: flex; flex-direction: column; min-width: 0; }
+.hike-landmark-photo img { display: block; width: 56px; height: 56px; border-radius: 8px; object-fit: cover; }
+.hike-landmark-dot { flex: none; width: 14px; height: 14px; margin: 0 21px; border-radius: 3px; transform: rotate(45deg); background: var(--purple); }
+.hike-numbers .hike-down { display: block; font-size: 0.8rem; font-weight: 500; color: var(--muted); }
+/* Your photo, big: over the panel, closed with Escape, Close or a click outside. */
+.hike-viewer { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: rgb(0 0 0 / 0.72); }
+.hike-viewer-card { display: flex; flex-direction: column; gap: 8px; width: min(100%, 900px); max-height: 100%; padding: 12px;
+  border-radius: 14px; background: var(--elevated); box-shadow: var(--shadow); overflow: auto; }
+.hike-viewer-card > img { display: block; max-width: 100%; max-height: 70vh; margin: 0 auto; border-radius: 8px; object-fit: contain; }
+.hike-viewer-bar { display: flex; gap: 6px; align-items: center; }
+.hike-viewer-bar input { flex: 1; min-width: 0; }
+.hike-viewer-bar button { font-size: 1.4rem; padding: 2px 12px; }
 .hike-thumb { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: 10px; object-fit: cover;
   background: var(--ok-bg); color: var(--ok); }
 .hike-bests .stat-icon { width: 36px; height: 36px; border-radius: 10px; }
