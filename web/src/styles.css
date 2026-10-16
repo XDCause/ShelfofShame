@@ -1976,3 +1976,19 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .vs-who { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .vs-num { text-align: right; font-variant-numeric: tabular-nums; }
 @media (max-width: 700px) { .friend-game-pic { width: 72px; } }
+
+/* The Wishlist page: a section per shop. */
+.shop-jump { margin-bottom: 8px; }
+.shop-jump a { text-decoration: none; }
+.shop-heading { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 1.15rem; margin: 8px 0 12px; scroll-margin-top: 70px; }
+.shop-heading .muted { font-weight: 400; }
+.shop-section { margin-top: 32px; }
+.wanted-grid { list-style: none; margin: 0 0 12px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 12px; }
+.wanted-card { display: flex; flex-direction: column; overflow: hidden; padding: 0; }
+.wanted-open { display: flex; flex-direction: column; text-align: left; color: inherit; width: 100%; background: none; border: 0; padding: 0; border-radius: 0; }
+.wanted-open:hover .item-title { color: var(--tint); }
+.wishlist-page .wanted-grid { margin-top: 8px; }
+.wishlist-page > .section-title { margin-top: 24px; }
+.wanted-open img, .wanted-open .photo-missing { width: 100%; aspect-ratio: 4 / 3; object-fit: contain; background: #fff; }
+.wanted-body { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 10px 12px 4px; }
+.wanted-link { padding: 0 12px 12px; }

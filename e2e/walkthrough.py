@@ -1530,6 +1530,30 @@ def volleyball_coach(page):
     expect(page.locator(".coach-card .item-title", has_text=re.compile("^Setter$"))).to_be_visible()
 
 
+@step("Wishlist by shop: the default shop first, Good Games for board games; gear from Blue Sky (live)")
+def wishlist_shops(page):
+    game = page.request.post(f"{BASE}/api/board-games", data={"name": f"Wantgame {MARK}", "status": "Wanted"}).json()
+    go(page, "Wishlist")
+    expect(page.locator(".shop-heading").first).to_contain_text(page.request.get(f"{BASE}/api/settings").json()["default_shop"])
+    section = page.locator(".shop-section", has=page.locator(".shop-heading", has_text="Good Games"))
+    expect(section.locator(".wanted-card", has_text=f"Wantgame {MARK}")).to_be_visible()
+    page.locator(".shop-jump").get_by_role("link", name=re.compile("^Good Games")).click()
+    shot(page, "d59_wishlist_shops", full=False)
+    page.request.delete(f"{BASE}/api/board-games/{game['game_id']}")
+    # Gear you want, found at Blue Sky Athletics (Way of Wade) - live, read-only (nothing is added here).
+    go(page, "Gear")
+    page.get_by_role("button", name="+ Want").click()
+    d = drawer(page)
+    d.get_by_label("Find it at Blue Sky Athletics (Way of Wade)").fill("way of wade")
+    expect(d.locator(".shop-results li").first.or_(d.locator(".alert.error"))).to_be_visible(timeout=60000)
+    if d.locator(".shop-results li").count():
+        expect(d.locator(".shop-results li").first.get_by_role("button", name="Want this")
+               .or_(d.locator(".shop-results li").first.locator(".pill", has_text="In your gear"))).to_be_visible()
+    else:
+        print("    Blue Sky Athletics couldn't be reached - skipped")
+    page.keyboard.press("Escape")
+
+
 @step("Video games Friends: the list (or why it's private) and the add form")
 def video_game_friends(page):
     go(page, "Video games")
@@ -1686,7 +1710,7 @@ with sync_playwright() as p:
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
                matches, used_on, gundam, bandai_lookup, warhammer, journal_write, journal_links, journal_from_model,
                journal_suggestion, journal_todo, global_search, journal_wishlist, appearance,
-               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, warhammer_minis, gundam_range, board_game_kinds, board_game_elsewhere, volleyball_coach, video_game_friends, settings_more, no_panel):
+               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, warhammer_minis, gundam_range, board_game_kinds, board_game_elsewhere, volleyball_coach, video_game_friends, wishlist_shops, settings_more, no_panel):
         fn(desk)
     ctx = browser.new_context(**p.devices["iPhone 13"], timezone_id=zone)
     mob = ctx.new_page()

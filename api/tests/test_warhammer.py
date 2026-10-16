@@ -1,7 +1,7 @@
 """Warhammer kits from Good Games' official UCP interface (faked: made-up products in its layout)."""
 import pytest
 
-from app import gameology, goodgames, warhammer
+from app import gameology, goodgames, ucp, warhammer
 
 REAL_CALL = goodgames._call          # kept when this file loads, before the tests' guard replaces it
 
@@ -125,7 +125,7 @@ def test_slow_down_is_waited_out_once(monkeypatch):
     ok = httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"content": [{"type": "text", "text": '{"products": []}'}]}})
     busy = httpx.Response(429, headers={"Retry-After": "0"})
     answers = [busy, ok]
-    monkeypatch.setattr(goodgames.httpx, "post", lambda *a, **k: answers.pop(0))
+    monkeypatch.setattr(ucp.httpx, "post", lambda *a, **k: answers.pop(0))
     assert REAL_CALL("search_catalog", {"query": "x"}) == {"products": []} and answers == []
     answers[:] = [busy, busy]
     with pytest.raises(goodgames.ShopError, match="slow down"):

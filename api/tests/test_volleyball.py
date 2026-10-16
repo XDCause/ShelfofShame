@@ -1,4 +1,5 @@
 """Volleyball: games and training with results, gear, video links, and the activity feed."""
+import pytest
 
 
 def test_games_results_and_summary(client):
@@ -159,3 +160,56 @@ def test_gear_you_want(client):
     assert (w["purchase_date"], w["price_paid"]) == (None, None)
     back = client.patch(f"/api/gear/{got['gear_id']}", json={"condition": "Wanted"}).json()
     assert (back["purchase_date"], back["price_paid"]) == (None, None)
+
+
+# Blue Sky Athletics' search (made-up products in its UCP layout): sizes are variants with a "Shoe size" option.
+def bs_product(n, title, cents, sizes):
+    return {"id": f"gid://shopify/Product/{n}", "title": title, "url": f"https://blueskyathletics.com.au/products/p{n}",
+            "options": [{"name": "Shoe size", "values": [{"label": s} for s, _ in sizes]}],
+            "media": [{"type": "image", "url": f"https://cdn.shopify.com/s/files/w{n}.jpg?v=1"}],
+            "variants": [{"id": f"gid://shopify/ProductVariant/{n}{i}", "title": s, "price": {"amount": cents, "currency": "AUD"},
+                          "availability": {"available": ok}, "options": [{"name": "Shoe size", "label": s}]}
+                         for i, (s, ok) in enumerate(sizes)]}
+
+
+BS = [bs_product(1, 'Way of Wade 12 "Avocado"', 28999, [("9", True), ("10", False), ("11", True)]),
+      bs_product(2, 'Wade DLO 2 "Canvas"', 17999, [("10", False)])]
+
+
+@pytest.fixture
+def bluesky_shop(monkeypatch):
+    from app import bluesky, gameology
+
+    def call(tool, catalog):
+        if tool == "get_product":
+            n = catalog["id"].rsplit("/", 1)[-1]
+            p = next((p for p in BS if p["id"].endswith("/" + n)), None)
+            if not p:
+                raise bluesky.ShopError("Blue Sky Athletics said no: Product not found.")
+            return {"product": p}
+        words = catalog["query"].lower().split()
+        hits = [p for p in BS if all(w in p["title"].lower() for w in words)
+                and any(v["availability"]["available"] for v in p["variants"]) == catalog["filters"]["available"]]
+        return {"products": hits}
+    monkeypatch.setattr(bluesky, "_call", call)
+    monkeypatch.setattr(gameology, "photo", lambda game: (b"\x89PNG\r\n\x1a\n" + b"0" * 64, "image/png"))
+
+
+def test_way_of_wade_shoes_from_blue_sky(client, bluesky_shop):
+    found = client.get("/api/gear/lookup?q=wade").json()
+    assert [f["name"] for f in found] == ['Way of Wade 12 "Avocado"', 'Wade DLO 2 "Canvas"']      # in stock first
+    avocado = found[0]
+    assert (avocado["price"], avocado["sizes"], avocado["all_sizes"], avocado["kind"], avocado["brand"], avocado["gear_id"]) == \
+        (289.99, ["9", "11"], ["9", "10", "11"], "Shoes", "Li-Ning Way of Wade", None)
+    # Wanted from the shop: its facts, link, price and photo; nothing paid yet.
+    want = client.post("/api/gear", json={"name": "", "condition": "Wanted", "shop_id": avocado["id"], "size": "10"}).json()
+    assert (want["name"], want["kind"], want["brand"], want["shop_name"], float(want["shop_price"]), want["has_photo"], want["size"]) == \
+        ('Way of Wade 12 "Avocado"', "Shoes", "Li-Ning Way of Wade", "Blue Sky Athletics", 289.99, True, "10")
+    assert want["shop_url"] == "https://blueskyathletics.com.au/products/p1" and want["price_paid"] is None
+    assert client.get("/api/gear/lookup?q=avocado").json()[0]["gear_id"] == want["gear_id"]
+    # Gear you already had, linked to its product: your name stays, the link and price come.
+    mine = client.post("/api/gear", json={"name": "My DLOs", "kind": "Shoes"}).json()
+    linked = client.post(f"/api/gear/{mine['gear_id']}/shop", json={"shop_id": "2"}).json()
+    assert (linked["name"], linked["shop_name"], float(linked["shop_price"])) == ("My DLOs", "Blue Sky Athletics", 179.99)
+    assert client.post("/api/gear", json={"name": "X", "shop_id": "999"}).status_code == 404
+    assert client.post("/api/gear", json={"name": "X", "shop_id": "abc"}).status_code == 422

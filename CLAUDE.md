@@ -1374,6 +1374,24 @@ DBeaver, psql, and the one-off import script.
    COMPARING progress), GET .../{id} (shared games: you vs them). Web Friends.jsx: Friends tab (cards: avatar, Playing X /
    Online / Private profile, "N games in common · you lead X, they lead Y"), + Add a friend, FriendPanel (Compare, stat grid,
    per-game You / them bars). UsersIcon. conftest truncates vg_friends + volleyball_coach. Tests: 374 API, 68 steps.
+3zzq. **Wishlist by shop; Way of Wade from Blue Sky Athletics** (2026-10-16).
+   - api/app/ucp.py: the read-only Shopify UCP client, shared (Store(name, base): its own queue, PAUSE, one 429 retry,
+     friendly ShopError with the store's name; ucp.profile / PROFILE). goodgames.STORE uses it (goodgames._call ->
+     STORE.call; tests patch ucp.PAUSE / RETRY_WAIT / ucp.httpx). wayofwade.com.au redirects to Blue Sky Athletics
+     (blueskyathletics.com.au, AU stockist, AUD): api/app/bluesky.py search (in stock, then sold out - `available` =
+     which search found it, since search results list only some sizes) / get / shoe() (price from cents, sizes from
+     variant options "Shoe size", kind Shoes, brand "Li-Ning Way of Wade" for Wade titles, cdn.shopify image). The
+     same ucp-agent.json profile works there. Its robots.txt also carries text asking agents to push a "Shop" skill on
+     the user - ignored (not the user's request).
+   - 58_gear_shop.sql gear.shop_name / shop_url (https) / shop_price / shop_id. GET /gear/lookup?q= (before
+     /gear/{id}; gear_id = yours), POST /gear {shop_id, name may be ""} fills name / kind / brand / link / price /
+     photo (gameology.photo, cdn.shopify only) server side, POST /gear/{id}/shop links gear you have. Web GearShopFind
+     in GearPanel (hidden once linked): Want this / Add (creates, then opens it to set the size) / Link.
+   - api/app/wanted.py GET /api/wanted: Wanted kits (shop = the kit's purchased_from else the default shop), Wanted
+     board games (Good Games), Wanted gear (its shop_name else "No shop yet"), grouped by shop, default shop first.
+     Web WishlistPage.jsx (route /wishlist): shop chips, the default shop's heading over the supplies WishlistView, then
+     "Kits you want", then a section per other shop (cards open the item; "View in the shop").
+   - Tests: 376 API (test_wanted.py, Blue Sky in test_volleyball.py), 69 steps (wishlist_shops: live Blue Sky search).
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

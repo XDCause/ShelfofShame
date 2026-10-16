@@ -10,7 +10,7 @@ import ItemPanel from './components/ItemPanel.jsx'
 import ModelPanel from './components/ModelPanel.jsx'
 import Notice from './components/Notice.jsx'
 import SettingsPanel from './components/SettingsPanel.jsx'
-import WishlistView from './components/WishlistView.jsx'
+import WishlistPage from './components/WishlistPage.jsx'
 import { AppContext } from './core/app-context.js'
 import CalendarPage from './core/calendar/CalendarPage.jsx'
 import EventPanel from './core/calendar/EventPanel.jsx'
@@ -196,7 +196,7 @@ export default function App() {
                   <Route path="/calendar" element={<CalendarPage />} />
                   <Route path="/supplies" element={<InventoryView refreshKey={refreshKey}
                     onAdjusted={adjusted} onOpen={openItem} onAdd={openAdd} />} />
-                  <Route path="/wishlist" element={<WishlistView lookups={lookups} settings={settings}
+                  <Route path="/wishlist" element={<WishlistPage lookups={lookups} settings={settings}
                     refreshKey={refreshKey} onChanged={changed} />} />
                   <Route path="/hobbies" element={<HobbiesPage />} />
                   <Route path="/models/inventory" element={<MovedTo to="/supplies" />} />

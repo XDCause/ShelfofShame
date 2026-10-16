@@ -50,7 +50,7 @@ def clean_database():
 @pytest.fixture(autouse=True)
 def no_real_steam(monkeypatch):
     """Tests never call Steam (and never use the real key): a test that forgets to fake it fails."""
-    from app import bookseries, chess, goodgames, chesscom, exophase, openlibrary, reading, steam, steamhunters, videogames, gameology
+    from app import bluesky, bookseries, chess, goodgames, chesscom, exophase, openlibrary, reading, steam, steamhunters, videogames, gameology, ucp
 
     def refuse(*_a, **_k):
         raise AssertionError("A test tried to call the real Steam API")
@@ -66,8 +66,9 @@ def no_real_steam(monkeypatch):
     monkeypatch.setattr(openlibrary, "_get", refuse)
     monkeypatch.setattr(bookseries, "_wikidata", refuse)
     monkeypatch.setattr(goodgames, "_call", refuse)
-    monkeypatch.setattr(goodgames, "PAUSE", 0)
-    monkeypatch.setattr(goodgames, "RETRY_WAIT", 0)
+    monkeypatch.setattr(bluesky, "_call", refuse)
+    monkeypatch.setattr(ucp, "PAUSE", 0)                  # the shops' product search (Good Games, Blue Sky)
+    monkeypatch.setattr(ucp, "RETRY_WAIT", 0)
     monkeypatch.setattr(gameology, "_get", refuse)
     monkeypatch.setattr(gameology, "photo", refuse)
     monkeypatch.setattr(gameology, "PAUSE", 0)

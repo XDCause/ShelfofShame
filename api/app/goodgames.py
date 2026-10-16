@@ -16,26 +16,16 @@ as JSON by jsDelivr from the git tag ucp-agent-1), which asks only for the read-
 carts or checkouts - buying happens on the shop's own site.
 """
 import html
-import json
-import os
 import re
-import threading
-import time
 
-import httpx
-
+from . import ucp
 from .hlj import grade_of, product_code_for
 
-MCP = "https://www.goodgames.com.au/api/ucp/mcp"
-SHOP_PAGES = "https://www.goodgames.com.au/"
-# A fixed version (git tag) of ucp-agent.json: jsDelivr serves a tag as JSON straight away and for good
-# (a branch address is cached for hours after a change). A new version of the file = a new tag here.
-PROFILE = "https://cdn.jsdelivr.net/gh/XDCause/ShelfofShame@ucp-agent-1/ucp-agent.json"
-HEADERS = {"User-Agent": "OffTheClock/1.0 (personal hobby tracker; https://github.com/XDCause/ShelfofShame)",
-           "Content-Type": "application/json", "Accept": "application/json"}
-TIMEOUT = 30
-PAUSE = 1.0            # between the requests of one search (the shop rate-limits quick bursts)
-RETRY_WAIT = 3         # seconds to wait after a 429 without Retry-After, before the one retry
+STORE = ucp.Store("Good Games", "https://www.goodgames.com.au")     # its official product search (ucp.py)
+MCP = STORE.mcp
+SHOP_PAGES = STORE.pages
+ShopError = ucp.ShopError
+profile = ucp.profile
 PAGE = 50
 GW_CODE = re.compile(r"\(\s*(\d{2,3}-\d{1,3})\s*\)")
 # Things the shop sells for an army that aren't kits to build.
@@ -46,52 +36,11 @@ NOT_KITS = re.compile(
     r"\bprimer\b|brush")
 
 
-# Requests take turns across the whole app (two pages loading at once would otherwise burst):
-# one at a time, PAUSE after the previous one.
-_turn = threading.Lock()
-_last = [0.0]
-
-
-class ShopError(Exception):
-    """A message for the user: Good Games unreachable, or it said no."""
-
-
-def profile() -> str:
-    """The URL of this app's UCP agent profile (UCP_PROFILE overrides it, e.g. to try a new version)."""
-    return os.environ.get("UCP_PROFILE") or PROFILE
 
 
 def _call(tool: str, catalog: dict) -> dict:
-    body = {"jsonrpc": "2.0", "id": 1, "method": "tools/call",
-            "params": {"name": tool, "arguments": {"meta": {"ucp-agent": {"profile": profile()}}, "catalog": catalog}}}
-    for attempt in (1, 2):
-        try:
-            with _turn:
-                time.sleep(max(0.0, _last[0] + PAUSE - time.monotonic()))
-                try:
-                    r = httpx.post(MCP, json=body, headers=HEADERS, timeout=TIMEOUT)
-                finally:
-                    _last[0] = time.monotonic()
-        except httpx.HTTPError as e:
-            raise ShopError(f"Couldn't reach Good Games ({e.__class__.__name__}).") from None
-        if r.status_code != 429:
-            break
-        if attempt == 2:
-            raise ShopError("Good Games asked us to slow down - try again in a minute.")
-        wait = r.headers.get("Retry-After", "")              # "slow down": wait as asked (at most 30 s), once
-        time.sleep(min(int(wait), 30) if wait.isdigit() else RETRY_WAIT)
-    try:
-        reply = r.json()
-    except ValueError:
-        raise ShopError(f"Good Games didn't answer (HTTP {r.status_code}).") from None
-    if "error" in reply:
-        err = reply["error"]
-        detail = (err.get("data") or {}).get("content") if isinstance(err.get("data"), dict) else err.get("data")
-        raise ShopError(f"Good Games said no: {err.get('message')}{f' ({detail})' if detail else ''}.")
-    try:
-        return json.loads(reply["result"]["content"][0]["text"])
-    except (KeyError, IndexError, ValueError):
-        raise ShopError("Good Games sent something unexpected.") from None
+    """One request to Good Games' product search (tests replace this)."""
+    return STORE.call(tool, catalog)
 
 
 def _search(query: str, available: bool, pages: int) -> list[dict]:

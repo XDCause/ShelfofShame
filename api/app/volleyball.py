@@ -22,10 +22,11 @@ from pathlib import Path
 from typing import Literal
 from urllib.parse import unquote
 
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Query, Request, Response
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
+from . import bluesky, gameology
 from .db import GEAR_CONDITIONS, VOLLEYBALL_KINDS, db, found, insert_row, tidy_text, update_row
 from .images import add_photo_routes
 
@@ -78,8 +79,12 @@ class TeamPatch(BaseModel):
     notes: str | None = None
 
 
+ShopId = Field(None, pattern=r"^[0-9]{1,20}$")
+
+
 class GearIn(BaseModel):
-    name: str = Field(min_length=1)
+    name: str = Field("", max_length=200)   # may be empty when shop_id is given (the shop's name is used)
+    shop_id: str | None = ShopId    # picked from the shop search (Blue Sky Athletics): its facts and photo are read
     kind: str | None = None
     brand: str | None = None
     size: str | None = None
@@ -141,6 +146,7 @@ GROUP BY t.team_id"""
 GEAR_SELECT = """
 SELECT g.gear_id, g.hobby, g.name, g.kind, g.brand, g.size, g.condition, g.purchase_date, g.price_paid,
        g.notes, g.created_at, g.updated_at, g.photo IS NOT NULL AS has_photo,
+       g.shop_name, g.shop_url, g.shop_price, g.shop_id,
        CASE WHEN g.photo IS NOT NULL THEN '/api/gear/' || g.gear_id || '/photo?v='
             || (extract(epoch FROM g.photo_updated) * 1000)::bigint END AS photo_url
 FROM gear g"""
@@ -358,10 +364,71 @@ def not_bought_yet(data: dict) -> dict:
     return data
 
 
+class ShopIn(BaseModel):
+    shop_id: str = Field(pattern=r"^[0-9]{1,20}$")
+
+
+def shop_product(shop_id: str) -> dict:
+    """A product from Blue Sky Athletics' search (server side: the browser's word isn't trusted for facts)."""
+    try:
+        product = bluesky.get(shop_id)
+    except bluesky.ShopError as e:
+        raise HTTPException(502, str(e))
+    if not product:
+        raise HTTPException(404, "Blue Sky Athletics doesn't have that product any more.")
+    return product
+
+
+def fill_from_shop(conn, gear_id: int, product: dict):
+    """The shop's facts into the empty fields, the link and price always; its photo if there's none."""
+    conn.execute("""UPDATE gear SET kind = COALESCE(kind, %(kind)s), brand = COALESCE(brand, %(brand)s),
+                    shop_name = %(shop)s, shop_url = %(url)s, shop_price = %(price)s, shop_id = %(id)s WHERE gear_id = %(gear)s""",
+                 {**product, "shop": bluesky.STORE.name, "gear": gear_id})
+    has_photo = conn.execute("SELECT photo IS NOT NULL AS has FROM gear WHERE gear_id = %s", (gear_id,)).fetchone()["has"]
+    if not has_photo and product["image"]:
+        image, image_type = gameology.photo({"image": product["image"] + ("&" if "?" in product["image"] else "?") + "width=600"})
+        if image:
+            conn.execute("UPDATE gear SET photo = %s, photo_type = %s, photo_updated = now() WHERE gear_id = %s",
+                         (image, image_type, gear_id))
+
+
+# Declared before /gear/{gear_id} (else "lookup" would be read as an id).
+@router.get("/gear/lookup")
+def gear_lookup(q: str = Query(..., min_length=2, max_length=100)):
+    """Search Blue Sky Athletics (Way of Wade shoes and more): in stock first; `yours` = gear you have from it."""
+    try:
+        found_ = bluesky.search(q.strip())
+    except bluesky.ShopError as e:
+        raise HTTPException(502, str(e))
+    with db() as conn:
+        mine = {r["shop_id"]: r["gear_id"] for r in conn.execute(
+            "SELECT shop_id, gear_id FROM gear WHERE shop_id IS NOT NULL").fetchall()}
+    return [{**p, "gear_id": mine.get(p["id"])} for p in found_]
+
+
 @router.post("/gear", status_code=201)
 def add_gear(body: GearIn):
+    data = not_bought_yet(tidy_text(body.model_dump(exclude={"shop_id"})))
+    if not data.get("name") and not body.shop_id:
+        raise HTTPException(422, "Give it a name.")
+    product = shop_product(body.shop_id) if body.shop_id else None
+    if product and not data.get("name"):
+        data["name"] = product["name"]
     with db() as conn:
-        return fetch_gear(conn, insert_row(conn, "gear", not_bought_yet(tidy_text(body.model_dump())), "gear_id"))
+        gear_id = insert_row(conn, "gear", data, "gear_id")
+        if product:
+            fill_from_shop(conn, gear_id, product)
+        return fetch_gear(conn, gear_id)
+
+
+@router.post("/gear/{gear_id}/shop")
+def link_gear_to_shop(gear_id: int, body: ShopIn):
+    """Link gear you have to its shop product: the link and price, and its facts / photo where yours are empty."""
+    product = shop_product(body.shop_id)
+    with db() as conn:
+        fetch_gear(conn, gear_id)
+        fill_from_shop(conn, gear_id, product)
+        return fetch_gear(conn, gear_id)
 
 
 @router.get("/gear/{gear_id}")
