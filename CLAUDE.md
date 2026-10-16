@@ -1331,6 +1331,11 @@ DBeaver, psql, and the one-off import script.
    - modules/car: "Building my car" (Modified Toyota 86) placeholder - one page with an EmptyState; manifest
      underConstruction: true -> Navigation's UnderConstruction (amber WrenchIcon) after the name in the sidebar and on the
      Hobbies page. CarIcon, WrenchIcon. Tests: 367 API (test_vbclips.py runs the real ffmpeg on generated videos), 65 steps.
+3zzl. **Raw or edited videos** (2026-10-16). 52_video_edit.sql volleyball_videos.edit raw | edited (NULL = a link); backfill:
+   made_from -> edited, files -> raw. add_video defaults an upload to raw; highlights are edited; VideoIn / VideoPatch
+   `edit`. Web: "Raw or edited" select in the video form, Raw / Edited pill on cards (.edit-pill), All | Raw | Edited
+   segmented filter on Videos (only when both exist). Spanner colour: .side-link svg (tint) needed an override.
+   Tests: 368 API, 65 browser steps.
 4. ~~Excel reads via Power Query~~ - dropped
 5. ~~Excel writes via VBA buttons~~ - dropped
 6. MCP server whose tools call the API (port 8000), so Claude can answer "what am I low on?"

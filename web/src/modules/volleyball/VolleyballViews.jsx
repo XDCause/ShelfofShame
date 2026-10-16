@@ -281,6 +281,7 @@ export function VideosView() {
   const { refreshKey, openPanel, changed } = useApp()
   const [videos, setVideos] = useState(null)
   const [topic, setTopic] = useState('')
+  const [kind, setKind] = useState('')            // '' | 'raw' | 'edited'
   const [error, setError] = useState('')
   useEffect(() => { api.listVideos().then(setVideos).catch((e) => setError(e.message)) }, [refreshKey])
   // While a highlight video is being made, look again every 3 seconds until it's ready.
@@ -293,7 +294,8 @@ export function VideosView() {
   if (error) return <p className="alert error">{error}</p>
   if (!videos) return <p className="muted loading">Loading...</p>
   const topics = [...new Set(videos.map((v) => v.topic).filter(Boolean))]
-  const visible = videos.filter((v) => !topic || v.topic === topic)
+  const visible = videos.filter((v) => (!topic || v.topic === topic) && (!kind || v.edit === kind))
+  const hasBoth = videos.some((v) => v.edit === 'raw') && videos.some((v) => v.edit === 'edited')
   const watched = async (v) => {
     setVideos((vs) => vs.map((x) => (x.video_id === v.video_id ? { ...x, watched: !v.watched } : x)))
     try { await api.updateVideo(v.video_id, { watched: !v.watched }); changed() } catch (e) { setError(e.message) }
@@ -302,6 +304,13 @@ export function VideosView() {
   return (
     <section className="page">
       <div className="toolbar">
+        {hasBoth && (
+          <div className="segmented" role="group" aria-label="Raw or edited">
+            {[['', 'All'], ['raw', 'Raw'], ['edited', 'Edited']].map(([k, label]) => (
+              <button key={k || 'all'} type="button" aria-pressed={kind === k} onClick={() => setKind(k)}>{label}</button>
+            ))}
+          </div>
+        )}
         <div className="chip-row scroll" role="group" aria-label="Topic">
           {topics.length > 1 && ['', ...topics].map((t) => (
             <button key={t || 'all'} type="button" className="chip-filter" aria-pressed={topic === t} onClick={() => setTopic(t)}>
@@ -341,6 +350,8 @@ export function VideosView() {
                   {v.file_url || v.processing ? <button type="button" className="link-title item-title" onClick={open}>{v.title}</button>
                     : v.url ? <a href={v.url} target="_blank" rel="noreferrer" className="item-title">{v.title} ↗</a>
                       : <span className="item-title">{v.title} <span className="muted small">(upload didn't finish)</span></span>}
+                  {v.edit && <span className={v.edit === 'raw' ? 'pill edit-pill' : 'pill purple edit-pill'}
+                    title={v.edit === 'raw' ? 'Raw footage - cut clips from it' : 'Edited'}>{v.edit === 'raw' ? 'Raw' : 'Edited'}</span>}
                   <span className="item-meta">{[v.topic, v.game_day && `${shortDate(v.game_day)}${v.game_opponent ? ` vs ${v.game_opponent}` : ''}`,
                     v.clip_count > 0 && `${v.clip_count} clip${v.clip_count > 1 ? 's' : ''}`].filter(Boolean).join(' · ')}</span>
                   <span className="button-row">

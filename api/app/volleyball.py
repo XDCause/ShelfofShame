@@ -100,9 +100,13 @@ class GearPatch(BaseModel):
     notes: str | None = None
 
 
+Edit = Literal["raw", "edited"]      # 52_video_edit.sql
+
+
 class VideoIn(BaseModel):
     title: str = Field(min_length=1)
     url: str | None = None          # a link; or none, and the file is uploaded next (PUT .../file)
+    edit: Edit | None = None        # raw (the default for an upload) or edited; links have none
     topic: str | None = None
     game_id: int | None = None
     notes: str | None = None
@@ -112,6 +116,7 @@ class VideoIn(BaseModel):
 class VideoPatch(BaseModel):
     title: str | None = Field(None, min_length=1)
     url: str | None = Field(None, min_length=1)
+    edit: Edit | None = None
     topic: str | None = None
     game_id: int | None = None
     notes: str | None = None
@@ -404,6 +409,8 @@ def list_videos():
 def add_video(body: VideoIn):
     data = tidy_text(body.model_dump(), required=("title",))
     check_url(data["url"])
+    if not data["url"] and not data["edit"]:
+        data["edit"] = "raw"                   # an upload: straight off the phone unless you say otherwise
     with db() as conn:
         return fetch_video(conn, insert_row(conn, "volleyball_videos", data, "video_id"))
 

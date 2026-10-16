@@ -987,6 +987,7 @@ def volleyball(page):
     d.get_by_role("button", name="Add video").click()
     card = page.locator(".video-card", has_text=MARK)
     expect(card.locator("video")).to_have_attribute("src", re.compile(r"/api/volleyball/videos/\d+/file"))
+    expect(card.locator(".edit-pill")).to_have_text("Raw")                      # an upload is raw footage
     shot(page, "d32_videos", full=False)
     card.get_by_role("button", name=f"Float serve {MARK}", exact=True).click()   # its panel has the player
     d = drawer(page)

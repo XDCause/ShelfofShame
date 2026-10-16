@@ -69,7 +69,8 @@ def test_a_highlight_video_from_clips_of_two_videos(client, media):
     made = client.post("/api/volleyball/highlights", json={"title": "Best of week 1", "clip_ids": [b["clip_id"], a["clip_id"]]})
     assert made.status_code == 202
     video = made.json()
-    assert (video["topic"], video["made_from"]) == ("Highlights", "2 clips from 2 videos")
+    assert (video["topic"], video["made_from"], video["edit"]) == ("Highlights", "2 clips from 2 videos", "edited")
+    assert client.get("/api/volleyball/videos").json()[-1]["edit"] == "raw"          # uploads are raw
     # (The test client runs the background job before handing the answer back: it's made now.)
     done = client.get(f"/api/volleyball/highlights/{video['video_id']}").json()
     assert (done["processing"], done["progress"]) == (None, 1.0) and done["file_url"]
@@ -110,3 +111,12 @@ def test_the_shape_of_the_result():
     assert vbclips.target_size(3840, 2160) == (1920, 1080)
     assert vbclips.target_size(1080, 1920) == (1080, 1920)
     assert vbclips.target_size(321, 241) == (320, 240)          # even numbers
+
+
+def test_raw_or_edited(client):
+    up = client.post("/api/volleyball/videos", json={"title": "Phone video"}).json()
+    done = client.post("/api/volleyball/videos", json={"title": "Edited on the phone", "edit": "edited"}).json()
+    link = client.post("/api/volleyball/videos", json={"title": "YouTube", "url": "https://youtu.be/x"}).json()
+    assert (up["edit"], done["edit"], link["edit"]) == ("raw", "edited", None)
+    assert client.patch(f"/api/volleyball/videos/{up['video_id']}", json={"edit": "edited"}).json()["edit"] == "edited"
+    assert client.patch(f"/api/volleyball/videos/{up['video_id']}", json={"edit": "polished"}).status_code == 422

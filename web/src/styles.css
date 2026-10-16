@@ -1934,3 +1934,5 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 
 /* A hobby still to be built: a small amber spanner after its name (sidebar, Hobbies page). */
 .under-construction { display: inline-flex; vertical-align: -2px; margin-left: 6px; color: var(--low); }
+.side-link .under-construction svg, .under-construction svg { color: var(--low); stroke: var(--low); }
+.edit-pill { align-self: flex-start; margin: 2px 0; }

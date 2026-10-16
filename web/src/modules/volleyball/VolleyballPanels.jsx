@@ -266,7 +266,9 @@ export function VideoPanel({ id = null, gameId = null, onClose }) {
 
   const fields = [
     { name: 'title', label: 'Title', wide: true, placeholder: file ? file.name.replace(/\.[^.]+$/, '') : 'e.g. Float serve drill' },
-    ...(asLink ? [{ name: 'url', label: 'Link', type: 'url', required: true, wide: true, placeholder: 'https://youtu.be/...' }] : []),
+    ...(asLink ? [{ name: 'url', label: 'Link', type: 'url', required: true, wide: true, placeholder: 'https://youtu.be/...' }]
+      : [{ name: 'edit', label: 'Raw or edited', type: 'select', required: true,
+        options: [['raw', 'Raw - straight off the camera'], ['edited', 'Edited - cut down / finished']] }]),
     { name: 'topic', label: 'Topic', list: 'video-topics' },
     { name: 'game_id', label: 'From the game', type: 'select',
       options: games.filter((g) => g.kind !== 'Training').map((g) => [String(g.game_id), `${shortDate(g.played_on)} ${gameTitle(g)}`]) },
@@ -313,7 +315,7 @@ export function VideoPanel({ id = null, gameId = null, onClose }) {
   )
   return (
     <FormPanel title={video ? video.title : 'Add a video'} fields={fields} record={video} wide={Boolean(video?.file_url)}
-      defaults={{ game_id: gameId ?? '' }} onClose={onClose} onSave={save}
+      defaults={{ game_id: gameId ?? '', edit: 'raw' }} onClose={onClose} onSave={save}
       saveLabel={progress != null ? 'Uploading...' : video ? 'Save' : 'Add video'}
       onDelete={video && (async () => { await api.deleteVideo(video.video_id); changed(); onClose() })}
       before={<>

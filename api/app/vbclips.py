@@ -143,8 +143,8 @@ def make_highlights(body: HighlightIn, background: BackgroundTasks):
         made_from = (f"{len(ordered)} clip{'s' if len(ordered) > 1 else ''} from "
                      + (names[0] if len(names) == 1 else f"{len(names)} videos"))
         video_id = conn.execute(
-            "INSERT INTO volleyball_videos (title, topic, game_id, processing, made_from) "
-            "VALUES (%s, 'Highlights', %s, 'making', %s) RETURNING video_id",
+            "INSERT INTO volleyball_videos (title, topic, game_id, processing, made_from, edit) "
+            "VALUES (%s, 'Highlights', %s, 'making', %s, 'edited') RETURNING video_id",
             (body.title.strip(), games.pop() if len(games) == 1 else None, made_from)).fetchone()["video_id"]
         video = fetch_video(conn, video_id)
     PROGRESS[video_id] = 0.0
