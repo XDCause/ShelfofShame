@@ -13,6 +13,7 @@
 import boardgames from './boardgames/manifest.jsx'
 import car from './car/manifest.jsx'
 import shooting from './shooting/manifest.jsx'
+import hiking from './hiking/manifest.jsx'
 import travel from './travel/manifest.jsx'
 import chess from './chess/manifest.jsx'
 import reading from './reading/manifest.jsx'
@@ -20,7 +21,7 @@ import models from './models/manifest.jsx'
 import videogames from './videogames/manifest.jsx'
 import volleyball from './volleyball/manifest.jsx'
 
-export const MODULES = [models, boardgames, volleyball, videogames, chess, reading, car, travel, shooting]
+export const MODULES = [models, boardgames, volleyball, videogames, chess, reading, car, travel, shooting, hiking]
 
 // Every module's panels in one map, for App to open by type.
 export const MODULE_PANELS = Object.assign({}, ...MODULES.map((m) => m.panels ?? {}))

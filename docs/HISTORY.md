@@ -1455,3 +1455,5 @@ DBeaver connection confirmed working (2026-10-11).
      (guest, ~2 MB/s; big fast writes hung it once - unplug/replug fixed it). backup.ps1 -CopyTo keeps $Keep there,
      checks the copy's hash, and copies videos with robocopy /Z /R:3 /W:30 /IPG:5 for \\ paths. The nightly task
      passes -CopyTo "...\Off the Clock backups". Prod's 5 GB of videos seeded by hand once.
+3zzu. **Hiking placeholder** (2026-10-16): modules/hiking (like shooting: underConstruction, BootIcon, one empty Hikes page);
+   63_calendar_hiking.sql + MODULE_IDS; calendar tone 'ok'. e2e: 10 hobby cards.
