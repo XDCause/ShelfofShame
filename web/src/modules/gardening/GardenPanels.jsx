@@ -139,10 +139,22 @@ export function ContainerPanel({ id, onClose }) {
   const today = new Date().toLocaleDateString('en-CA')
   const current = c.plantings.filter((p) => p.stage !== 'Done' && p.stage !== 'Died')
   const past = c.plantings.filter((p) => p.stage === 'Done' || p.stage === 'Died')
+  // Two the same? A copy (size, kind, mix...) beside it on the layout - not its plants or notes.
+  const copy = async () => {
+    try {
+      const made = await api.copyGardenContainer(c.container_id)
+      changed()
+      showToast(`Added ${made.name}`)
+      open('gcontainer', { id: made.container_id })
+    } catch (e) {
+      showToast(e.message)
+    }
+  }
   const footer = (
     <>
       <button type="button" className="primary" onClick={() => open('planting', { containerId: c.container_id })}>+ Plant here</button>
       <span className="spacer" />
+      <button type="button" className="plain" onClick={copy}>Copy</button>
       <button type="button" className="plain" onClick={() => open('gcontainerform', { id: c.container_id })}>Edit details</button>
     </>
   )

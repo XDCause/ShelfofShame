@@ -365,6 +365,38 @@ def update_container(container_id: int, body: ContainerPatch):
         return fetch_container(conn, container_id)
 
 
+COPIED = ("space_id", "kind", "shape", "width_cm", "depth_cm", "level", "volume_l", "soil", "self_watering", "material")
+
+
+def next_name(conn, name: str) -> str:
+    """"Trough" -> "Trough 2" (or the next number free); a copy of "Trough 2" -> "Trough 3"."""
+    base = re.sub(r"\s+\d+$", "", name).strip() or name
+    taken = [r["name"] for r in conn.execute("SELECT name FROM garden_containers WHERE name = %s OR name ~ %s",
+                                             (base, "^" + re.escape(base) + r" \d+$")).fetchall()]
+    numbers = [int(n.rsplit(" ", 1)[1]) for n in taken if n != base] + [1]
+    return f"{base} {max(numbers) + 1}"[:120]
+
+
+@router.post("/garden/containers/{container_id}/copy", status_code=201)
+def copy_container(container_id: int):
+    """Another container just like this one (when you have two the same): its kind, size, level, mix and material,
+    placed beside it on the layout, named "... 2". Its plants, notes, photo and history stay with the original."""
+    with db() as conn:
+        c = fetch_container(conn, container_id)
+        s = conn.execute("SELECT width_cm, depth_cm FROM garden_spaces WHERE space_id = %s", (c["space_id"],)).fetchone()
+        data = {k: c[k] for k in COPIED if c[k] is not None}
+        gap = 5
+        if c["x_cm"] + 2 * c["width_cm"] + gap <= s["width_cm"]:              # to its right
+            data.update(x_cm=c["x_cm"] + c["width_cm"] + gap, y_cm=c["y_cm"])
+        elif c["y_cm"] + 2 * c["depth_cm"] + gap <= s["depth_cm"]:            # below it
+            data.update(x_cm=c["x_cm"], y_cm=c["y_cm"] + c["depth_cm"] + gap)
+        else:                                                                 # no room: a little offset
+            data.update(x_cm=c["x_cm"] + 10, y_cm=c["y_cm"] + 10)
+        fit_in_space(conn, data, c["space_id"])
+        data["name"] = next_name(conn, c["name"])
+        return fetch_container(conn, insert_row(conn, "garden_containers", data, "container_id"))
+
+
 def space_name(conn, space_id: int) -> str:
     row = conn.execute("SELECT name FROM garden_spaces WHERE space_id = %s", (space_id,)).fetchone()
     return row["name"] if row else "another space"

@@ -291,6 +291,7 @@ export const api = {
   gardenContainer: (id) => request(`/garden/containers/${id}`),
   addGardenContainer: (data) => request('/garden/containers', send('POST', data)),
   updateGardenContainer: (id, data) => request(`/garden/containers/${id}`, send('PATCH', data)),
+  copyGardenContainer: (id) => request(`/garden/containers/${id}/copy`, send('POST')),
   deleteGardenContainer: (id) => request(`/garden/containers/${id}`, send('DELETE')),
   gardenPlantings: (params = {}) => request(`/garden/plantings?${query(params)}`),
   gardenPlanting: (id) => request(`/garden/plantings/${id}`),

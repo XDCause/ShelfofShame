@@ -1791,6 +1791,11 @@ def gardening(page):
         time.sleep(0.2)
     assert moved() > 10, "the trough didn't move"
     expect(drawer(page)).to_have_count(0)                                  # a drag isn't a tap
+    pot.click()                                                            # a tap opens it; two the same: Copy
+    drawer(page).get_by_role("button", name="Copy", exact=True).click()
+    expect(drawer(page).get_by_role("heading", name=f"Trough {MARK} 2")).to_be_visible()
+    page.keyboard.press("Escape")
+    expect(page.locator(".garden-pot")).to_have_count(2)
     shot(page, "d81_garden_layout", full=True)
     page.locator(".section-tabs").get_by_role("link", name="Today", exact=True).click()
     expect(page.locator(".home-card", has_text="Sow in")).to_be_visible()

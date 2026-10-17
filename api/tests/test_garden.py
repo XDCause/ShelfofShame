@@ -43,6 +43,17 @@ def test_spaces_layout_and_plants(client):
     assert [c["name"] for c in layout["containers"]] == ["Long trough"]
     assert [x["name"] for x in layout["containers"][0]["plantings"]] == ["Basil"]
     assert layout["load_kg"] == 40 and layout["plants"] == 1
+    # two the same: a copy beside it, named "... 2", without its plants
+    twin = client.post(f"/api/garden/containers/{trough['container_id']}/copy")
+    assert twin.status_code == 201
+    t = twin.json()
+    assert (t["name"], t["kind"], t["width_cm"], t["plantings"]) == ("Long trough 2", "Trough", trough["width_cm"], [])
+    assert (t["x_cm"], t["y_cm"]) == (220, 35)                           # no room to its right: below it
+    assert client.post(f"/api/garden/containers/{t['container_id']}/copy").json()["name"] == "Long trough 3"
+    assert client.post("/api/garden/containers/999999/copy").status_code == 404
+    for c in client.get(f"/api/garden/spaces/{s['space_id']}").json()["containers"]:
+        if c["container_id"] != trough["container_id"]:
+            client.delete(f"/api/garden/containers/{c['container_id']}")
     moved = client.patch(f"/api/garden/containers/{trough['container_id']}", json={"x_cm": 10, "y_cm": 90}).json()
     assert (moved["x_cm"], moved["y_cm"]) == (10, 90)
     assert client.delete(f"/api/garden/spaces/{s['space_id']}").status_code == 409            # it still has a container
