@@ -139,6 +139,9 @@ export const BootIcon = (p) => (
 export const MountainIcon = (p) => (
   <Icon {...p}><path d="M2.5 19.5 9 8.5l3.5 5.5 2.5-3.5 6.5 9z" /><path d="m7.2 11.6 1.8 1.4 1.6-1.6" /></Icon>
 )
+export const SproutIcon = (p) => (
+  <Icon {...p}><path d="M12 21v-9" /><path d="M12 12c0-4 2.5-6.5 7-6.5 0 4.5-2.5 6.5-7 6.5z" /><path d="M12 14.5c0-3.2-2-5.2-5.8-5.2 0 3.6 2 5.2 5.8 5.2z" /><path d="M7.5 21h9" /></Icon>
+)
 export const SuitcaseIcon = (p) => (
   <Icon {...p}><rect x="3.5" y="7" width="17" height="12.5" rx="2.5" /><path d="M9 7V5.2A1.7 1.7 0 0 1 10.7 3.5h2.6A1.7 1.7 0 0 1 15 5.2V7M8 7v12.5M16 7v12.5" /></Icon>
 )

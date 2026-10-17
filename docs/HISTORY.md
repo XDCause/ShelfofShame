@@ -1499,3 +1499,7 @@ DBeaver connection confirmed working (2026-10-11).
    a hike carries its gear and last_gear_ids ("Same as last hike": the previous hike that had gear, minus retired /
    wanted). Web: GearView / GearPanel take a hobby (kinds list per hobby; the Blue Sky shop search stays volleyball's -
    it's a court-sports shop); Hiking -> Gear tab; "Gear used" on each hike; cards show "N hikes · X km".
+3zzy. **Gardening placeholder** (2026-10-18): modules/gardening (like shooting: underConstruction, SproutIcon, one empty
+   Garden page); 66_calendar_gardening.sql + MODULE_IDS; calendar tone 'ok'. e2e: 11 hobby cards.   The run crossed midnight and found two morning-only problems: the phone calendar's activity icons (4 + "+N")
+   didn't wrap, so a busy day widened the page by 3 px (.day-dots now wraps); and the goals step looked for its goal
+   in Home's top 8, which date-only items (filed at midday) fill in the morning - it checks the feed instead.

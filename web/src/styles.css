@@ -1723,7 +1723,7 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .filters-spacer { flex: 1; }
 
 /* Calendar: an icon per kind of thing that happened that day. */
-.day-dots { display: flex; gap: 2px; margin-top: auto; padding-top: 2px; align-items: center; }
+.day-dots { display: flex; flex-wrap: wrap; gap: 2px; margin-top: auto; padding-top: 2px; align-items: center; min-width: 0; }
 .day-icon { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 4px;
   color: var(--tone, var(--muted)); background: var(--tone-bg, var(--fill)); }
 .day-more-kinds { font-size: 0.65rem; color: var(--muted); }

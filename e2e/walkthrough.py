@@ -1569,8 +1569,9 @@ def goals(page):
     expect(page.locator(".goal-section", has=tile).locator(".goal-section-title")).to_contain_text(re.compile(r"\d{4} goals"))
     expect(tile).to_contain_text("1 of 3 kits")
     expect(tile).to_contain_text("The stash keeps growing.")
-    go(page, "Home")
-    expect(page.locator(".home-card", has_text="Recent activity")).to_contain_text(f"Finish three kits {MARK}")
+    # In the feed (Home shows only the latest few: in the morning, a run's date-only items - filed at midday - fill it)
+    feed = page.request.get(f"{BASE}/api/activity?limit=200").json()
+    assert any(a["kind"] == "goal" and a["title"] == f"Finish three kits {MARK}" for a in feed), "the goal isn't in the feed"
     tile_goal = page.request.get(f"{BASE}/api/goals?status=done").json()["goals"]
     goal_id = next(g["goal_id"] for g in tile_goal if MARK in g["title"])
     page.goto(f"{BASE}/goals/{goal_id}")
@@ -1867,7 +1868,7 @@ def phone(page):
         page.locator(".tabbar a", has_text=tab).click()
         fits(tab)
     page.locator(".tabbar a", has_text="Hobbies").click()
-    expect(page.locator(".hobby-card")).to_have_count(10)         # models, board games, volleyball, video games, chess, reading, car, travel, shooting, hiking
+    expect(page.locator(".hobby-card")).to_have_count(11)         # models, board games, volleyball, video games, chess, reading, car, travel, shooting, hiking, gardening
     car = page.locator(".hobby-card", has_text="Building my car")
     expect(car.locator(".under-construction")).to_be_visible()     # the spanner: still to be built
     fits("Hobbies")
