@@ -2248,6 +2248,7 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .garden-sow-chips .fits { border-color: var(--ok); }
 .garden-weather { list-style: none; margin: 0 0 8px; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .garden-weather li { display: flex; flex-direction: column; padding: 8px 10px; border-radius: 10px; background: var(--fill-2); font-size: 0.88rem; }
+.garden-sky { font-weight: 600; }
 .garden-place { display: flex; gap: 8px; align-items: flex-end; }
 /* Plants as a timeline. */
 .garden-timeline { padding: 14px 16px; margin-top: 12px; }

@@ -487,6 +487,7 @@ export function ItemPanel({ id = null, onClose }) {
               {item.price_checked_at && <span className="muted small"> · checked {shortDate(item.price_checked_at)}</span>}</p>}
             {(item.stock || item.store_name) && <p className={`small ${item.stock === 'In stock' ? 'garden-fits' : 'muted'}`}>
               {[item.stock, item.store_name && `at ${item.store_name}`].filter(Boolean).join(' ')}</p>}
+            {item.store_aisle && <p className="small">📍 {item.store_aisle}{item.store_name && ` at ${item.store_name}`}</p>}
             {item.rating && <p className="small">{'★'.repeat(Math.round(item.rating))}<span className="muted"> {item.rating} ({item.reviews} reviews)</span></p>}
             <p className="small muted">{[item.bunnings_item && `I/N ${item.bunnings_item}`, item.weight_kg && `${item.weight_kg} kg`, item.category]
               .filter(Boolean).join(' · ')}</p>

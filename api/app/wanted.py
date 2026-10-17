@@ -59,7 +59,8 @@ def wanted():
     for i in garden:
         shops.setdefault("Bunnings" if i["bunnings_item"] else NO_SHOP, []).append({
             "kind": "garden", "id": i["item_id"], "name": i["name"], "label": i["kind"],
-            "detail": " · ".join(filter(None, [i["brand"], i["bunnings_item"] and f"I/N {i['bunnings_item']}"])),
+            "detail": " · ".join(filter(None, [i["brand"], i["bunnings_item"] and f"I/N {i['bunnings_item']}",
+                                               i["store_aisle"] and f"{i['store_aisle']}" + (f" at {i['store_name']}" if i["store_name"] else "")])),
             "price": i["price"], "photo_url": i["photo_url"], "url": i["url"]})
     shops.setdefault(default, [])
     order = sorted(shops, key=lambda s: (s != default, s == NO_SHOP, s.lower()))

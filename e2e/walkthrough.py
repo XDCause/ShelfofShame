@@ -1840,6 +1840,8 @@ FAKE_BUNNINGS = """<html><head><title>Leek - Bunnings</title></head><body><h1>10
     "initialState": {"global": {"userData": {"appliedStore": {"name": "4123", "displayName": "Stafford"}}}},
     "dehydratedState": {"queries": [
         {"queryKey": ["product-retail-price", "0999901", "4123"], "state": {"data": {"priceAvailable": True, "value": 4.98}}},
+        {"queryKey": ["product-aisle-item-location", "0999901", "4123"], "state": {"data": [{"inStoreLocations": [
+            {"aisle": "35", "bay": "8", "sequence": "69"}]}]}},
         {"queryKey": ["product-fulfilment", "0999901", "4123"], "state": {"data": {"availableInStore": True,
             "inStorePickUpData": {"inStoreStockColor": "GREEN", "inStoreStockMsg": "inStock"}}}},
         {"queryKey": ["retail-product", "0999901", "4123"], "state": {"data": {"name": "100mm Test Leek", "itemNumber": "0999901",
@@ -1847,7 +1849,7 @@ FAKE_BUNNINGS = """<html><head><title>Leek - Bunnings</title></head><body><h1>10
             "images": [{"imageType": "PRIMARY", "url": "https://media.bunnings.com.au/api/public/content/leek?v=1"}]}}}]}}}})
 
 
-@step("Bunnings button: set up on Supplies; on a (made-up) Bunnings plant page for Stafford it sends the price and stock; saved")
+@step("Bunnings button: set up on Supplies; on a (made-up) Bunnings plant page for Stafford it sends the price, stock and aisle; saved")
 def bunnings_button(page):
     page.goto(BASE + "/gardening/supplies")
     page.get_by_text("Plants and your store's prices: the Bunnings button").click()
@@ -1869,17 +1871,26 @@ def bunnings_button(page):
     expect(card).to_contain_text("100mm Test Leek")
     expect(card).to_contain_text("in stock at Stafford")
     expect(card).to_contain_text("$4.98")
+    expect(card).to_contain_text("Aisle 35, Bay 8 at Stafford")
     card.get_by_label("I", exact=True).select_option("Wanted")
     card.get_by_role("button", name="Save").click()
     d = drawer(page)
     expect(d.get_by_role("heading", name="100mm Test Leek")).to_be_visible()
     expect(d).to_contain_text("In stock at Stafford")
+    expect(d).to_contain_text("Aisle 35, Bay 8 at Stafford")
     expect(page).to_have_url(BASE + "/gardening/supplies")                  # the details are gone from the address
     page.keyboard.press("Escape")
     shops = {s["shop"]: s for s in page.request.get(f"{BASE}/api/wanted").json()["shops"]}
     assert any(i["name"] == "100mm Test Leek" for i in shops["Bunnings"]["items"])
     item_id = next(i["item_id"] for i in page.request.get(f"{BASE}/api/garden/items").json() if i["bunnings_item"] == "0999901")
     page.request.delete(f"{BASE}/api/garden/items/{item_id}")
+    # Today's weather says what kind of day it is (the stand-in forecast: mostly sunny, then rain).
+    was = page.request.get(f"{BASE}/api/garden/settings").json()
+    page.request.put(f"{BASE}/api/garden/settings", data={"place_name": "Brisbane", "lat": -27.47, "lon": 153.03})
+    page.goto(BASE + "/gardening")
+    expect(page.locator(".garden-weather li").first).to_contain_text("Mostly sunny")
+    expect(page.locator(".garden-weather li").nth(1)).to_contain_text("Rain")
+    page.request.put(f"{BASE}/api/garden/settings", data={k: was[k] for k in ("place_name", "lat", "lon")})
 
 
 @step("Wishlist by shop: the default shop first, Good Games for board games; gear from Blue Sky (stand-in)")

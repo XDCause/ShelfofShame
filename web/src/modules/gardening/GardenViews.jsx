@@ -191,6 +191,7 @@ function Weather({ w }) {
           {w.days.map((d, i) => (
             <li key={d.day}>
               <strong>{i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : new Date(`${d.day}T12:00:00`).toLocaleDateString('en-AU', { weekday: 'short' })}</strong>
+              {d.sky && <span className="garden-sky"><span aria-hidden="true">{d.icon}</span> {d.sky}</span>}
               <span>{Math.round(d.max)}° / {Math.round(d.min)}°</span>
               <span className="muted small">{d.rain_mm ? `${d.rain_mm} mm` : 'dry'}{d.gusts != null && ` · gusts ${Math.round(d.gusts)}`}</span>
             </li>

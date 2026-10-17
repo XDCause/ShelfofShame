@@ -777,6 +777,9 @@ def weather_tips(days: list[dict], spaces: list[dict]) -> list[dict]:
     outdoor = any(s["kind"] not in ("Indoor", "Shelf", "Grow tent", "Windowsill") for s in spaces) or not spaces
     for d, when in zip(days[:2], ("Today", "Tomorrow")):
         hot, gusts, rain, low, uv = d.get("max"), d.get("gusts"), d.get("rain_mm"), d.get("min"), d.get("uv")
+        if outdoor and (d.get("code") or 0) >= 95:
+            tips.append({"day": when, "kind": "storm", "text": "Storms" + (" with hail" if d["code"] >= 96 else "") +
+                         " forecast: bring hanging baskets and light pots inside or against the wall, and cover seedlings."})
         if hot is not None and hot >= 35:
             tips.append({"day": when, "kind": "heat", "text": f"Very hot ({hot:.0f}°): water pots early in the morning and again in the "
                          "evening; move seedlings and lettuce into shade."})

@@ -2,7 +2,8 @@
 CC BY 4.0 - credited where the tips show). Used by Gardening for balcony tips: heat, wind, rain, UV.
 
     find_place(name)     -> [{name, region, lat, lon}]   (their geocoding API; to set where you are)
-    forecast(lat, lon)   -> the next 3 days: [{day, max, min, rain_mm, rain_chance, gusts, uv}]
+    forecast(lat, lon)   -> the next 3 days: [{day, max, min, rain_mm, rain_chance, gusts, uv, code, sky, icon}]
+                            (sky / icon: the day's weather code in words - Sunny, Cloudy, Rain...)
 
 The forecast is kept for an hour (one request an hour at most, whatever the page does).
 """
@@ -17,6 +18,21 @@ FORECAST = "https://api.open-meteo.com/v1/forecast"
 TIMEOUT = 20
 KEEP = 3600
 _cache: dict[tuple, tuple[float, list]] = {}
+
+
+# WMO weather codes (what Open-Meteo gives for a day: its worst weather) -> words and a picture.
+SKY = {0: ("Sunny", "☀️"), 1: ("Mostly sunny", "🌤️"), 2: ("Partly cloudy", "⛅"), 3: ("Cloudy", "☁️"),
+       45: ("Fog", "🌫️"), 48: ("Fog", "🌫️"), 51: ("Light drizzle", "🌦️"), 53: ("Drizzle", "🌦️"), 55: ("Heavy drizzle", "🌧️"),
+       56: ("Freezing drizzle", "🌧️"), 57: ("Freezing drizzle", "🌧️"), 61: ("Light rain", "🌦️"), 63: ("Rain", "🌧️"),
+       65: ("Heavy rain", "🌧️"), 66: ("Freezing rain", "🌧️"), 67: ("Freezing rain", "🌧️"), 71: ("Light snow", "🌨️"),
+       73: ("Snow", "🌨️"), 75: ("Heavy snow", "🌨️"), 77: ("Snow", "🌨️"), 80: ("Showers", "🌦️"), 81: ("Showers", "🌧️"),
+       82: ("Heavy showers", "🌧️"), 85: ("Snow showers", "🌨️"), 86: ("Snow showers", "🌨️"), 95: ("Storms", "⛈️"),
+       96: ("Storms with hail", "⛈️"), 99: ("Storms with hail", "⛈️")}
+
+
+def sky(code) -> tuple[str | None, str | None]:
+    """A weather code -> ("Rain", "🌧️"); (None, None) if there isn't one."""
+    return SKY.get(int(code), (None, None)) if isinstance(code, (int, float)) else (None, None)
 
 
 class WeatherError(Exception):
@@ -46,7 +62,7 @@ def forecast(lat: float, lon: float) -> list[dict]:
         return hit[1]
     data = _get(FORECAST, {"latitude": key[0], "longitude": key[1], "timezone": "auto", "forecast_days": 3,
                            "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,"
-                                    "wind_gusts_10m_max,uv_index_max"})
+                                    "wind_gusts_10m_max,uv_index_max,weather_code"})
     d = data.get("daily") or {}
 
     def col(name, i):
@@ -54,6 +70,8 @@ def forecast(lat: float, lon: float) -> list[dict]:
         return values[i] if i < len(values) else None
     days = [{"day": day, "max": col("temperature_2m_max", i), "min": col("temperature_2m_min", i),
              "rain_mm": col("precipitation_sum", i), "rain_chance": col("precipitation_probability_max", i),
-             "gusts": col("wind_gusts_10m_max", i), "uv": col("uv_index_max", i)} for i, day in enumerate(d.get("time") or [])]
+             "gusts": col("wind_gusts_10m_max", i), "uv": col("uv_index_max", i), "code": col("weather_code", i),
+             "sky": sky(col("weather_code", i))[0], "icon": sky(col("weather_code", i))[1]}
+            for i, day in enumerate(d.get("time") or [])]
     _cache[key] = (time.time(), days)
     return days

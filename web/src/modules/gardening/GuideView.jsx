@@ -179,6 +179,8 @@ function SentFromBunnings({ sent, onDone }) {
   const store = sent.store_name || (sent.store_code ? `store ${sent.store_code}` : '')
   const stock = sent.stock?.msg === 'notSoldAtThisStore' ? 'not sold at this store' : sent.stock?.color === 'GREEN' ? 'in stock'
     : ['AMBER', 'ORANGE', 'YELLOW'].includes(sent.stock?.color) ? 'low stock' : sent.stock?.color === 'RED' ? 'out of stock' : ''
+  const where = (Array.isArray(sent.where) ? sent.where : []).filter((w) => w?.aisle)
+    .map((w) => `Aisle ${w.aisle}${w.bay ? `, Bay ${w.bay}` : ''}`).join('; ')
   return (
     <section className="card garden-sent" aria-label="From Bunnings">
       {sent.image?.startsWith('https://media.bunnings.com.au/') && <img src={`${sent.image}&t=w1200`} alt="" referrerPolicy="no-referrer" />}
@@ -187,6 +189,7 @@ function SentFromBunnings({ sent, onDone }) {
         <h2 className="home-card-title">{sent.name}</h2>
         <p className="small">{[sent.price != null && money(sent.price), stock && `${stock}${store ? ` at ${store}` : ''}`, `I/N ${sent.item}`]
           .filter(Boolean).join(' · ')}</p>
+        {where && <p className="small">📍 {where}{store && ` at ${store}`}</p>}
         {error && <p className="alert error small">{error}</p>}
         <div className="button-row">
           <select value={status} onChange={(e) => setStatus(e.target.value)} aria-label="I">
@@ -243,7 +246,7 @@ function ItemRow({ i }) {
         <span className="grow">
           <span className="item-title">{i.name}</span>
           <span className="item-meta">{[i.kind, i.brand, i.qty != null && `${i.qty} left`, i.guide_name,
-            i.sow_by && (i.expired ? `past sow-by (${shortDate(i.sow_by)})` : `sow by ${shortDate(i.sow_by)}`), i.bunnings_item && 'Bunnings'].filter(Boolean).join(' · ')}</span>
+            i.sow_by && (i.expired ? `past sow-by (${shortDate(i.sow_by)})` : `sow by ${shortDate(i.sow_by)}`), i.bunnings_item && (i.store_aisle ? `Bunnings ${i.store_aisle}` : 'Bunnings')].filter(Boolean).join(' · ')}</span>
         </span>
         {i.price != null && <span className="small">{money(i.price)}</span>}
         {i.kind === 'Seeds' && i.status !== 'Have' && <span className="pill">{i.status}</span>}

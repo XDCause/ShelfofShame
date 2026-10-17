@@ -123,6 +123,21 @@ def stock_of(color: str | None, message: str | None, in_store: bool | None) -> s
     return None
 
 
+def aisle_of(where) -> str | None:
+    """Where the store keeps it, as the page had it: [{aisle, bay}] -> "Aisle 35, Bay 8" (a few places at most)."""
+    spots = []
+    for w in where if isinstance(where, list) else []:
+        if not isinstance(w, dict):
+            continue
+        aisle, bay = str(w.get("aisle") or "").strip(), str(w.get("bay") or "").strip()
+        if not re.fullmatch(r"[\w-]{1,10}", aisle):
+            continue
+        spot = f"Aisle {aisle}" + (f", Bay {bay}" if re.fullmatch(r"[\w-]{1,10}", bay) else "")
+        if spot not in spots:
+            spots.append(spot)
+    return "; ".join(spots[:3]) or None
+
+
 def from_page(d: dict) -> dict:
     """What the button sent from a product page in the browser -> the same fields fetch() gives, plus the store
     and its stock. Everything is checked: it's text from a web page, sent through a link."""
@@ -153,6 +168,7 @@ def from_page(d: dict) -> dict:
         "store_code": code if re.fullmatch(r"\d{1,6}", code) else None,
         "store_name": (re.sub(r"[^\w '&().-]", "", str(d.get("store_name") or ""))[:80] or None),
         "stock": stock_of(stock.get("color"), stock.get("msg"), stock.get("in_store")),
+        "aisle": aisle_of(d.get("where")),
     }
 
 

@@ -89,7 +89,7 @@ class SowIn(BaseModel):
 ITEM_SELECT = """
 SELECT i.item_id, i.name, i.kind, i.status, i.qty, i.brand, i.guide_id, i.sow_by, i.notes, i.bunnings_item, i.url,
        i.price::float8 AS price, i.price_checked_at, i.rating::float8 AS rating, i.reviews, i.weight_kg::float8 AS weight_kg,
-       i.category, i.description, i.how_to, i.created_at, g.name AS guide_name, i.store_name, i.store_code, i.stock,
+       i.category, i.description, i.how_to, i.created_at, g.name AS guide_name, i.store_name, i.store_code, i.stock, i.store_aisle,
        i.sow_by IS NOT NULL AND i.sow_by < current_date AS expired,
        CASE WHEN i.photo IS NOT NULL THEN '/api/garden/items/' || i.item_id || '/photo?v='
             || (extract(epoch FROM i.photo_updated) * 1000)::bigint END AS photo_url
@@ -174,7 +174,7 @@ def add_from_bunnings(body: BunningsIn, response: Response):
 @router.post("/garden/items/from-page")
 def add_from_page(body: PageIn, response: Response):
     """What the button sent from a Bunnings product page: a new item, or the one you have (same item number)
-    with today's price, stock and details from your store. Its photo is fetched from Bunnings' image server."""
+    with today's price, stock, aisle and details from your store. Its photo is fetched from Bunnings' image server."""
     if len(json.dumps(body.page)) > 20000:
         raise HTTPException(413, "That's more than a product page sends.")
     try:
@@ -190,8 +190,8 @@ def add_from_page(body: PageIn, response: Response):
             kind = body.kind or pot_kind(product["name"]) or kind_for(product["category"], product["name"])
             item_id = insert_row(conn, "garden_items", {"name": product["name"], "status": body.status, "kind": kind}, "item_id")
         save_from_bunnings(conn, item_id, product, photo=not (old and old["has_photo"]))
-        conn.execute("UPDATE garden_items SET store_name = %s, store_code = %s, stock = %s WHERE item_id = %s",
-                     (product["store_name"], product["store_code"], product["stock"], item_id))
+        conn.execute("UPDATE garden_items SET store_name = %s, store_code = %s, stock = %s, store_aisle = %s WHERE item_id = %s",
+                     (product["store_name"], product["store_code"], product["stock"], product["aisle"], item_id))
         response.status_code = 200 if old else 201
         return {**fetch_item(conn, item_id), "existing": bool(old), "price_before": old["price"] if old else None}
 

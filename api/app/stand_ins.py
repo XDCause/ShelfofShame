@@ -83,7 +83,7 @@ HASEGAWA = {
 }
 FORECAST = {"daily": {"time": ["2026-01-10", "2026-01-11", "2026-01-12"], "temperature_2m_max": [29, 31, 27],
                       "temperature_2m_min": [19, 20, 18], "precipitation_sum": [0, 2, 0], "precipitation_probability_max": [10, 40, 5],
-                      "wind_gusts_10m_max": [25, 30, 20], "uv_index_max": [9, 10, 8]}}
+                      "wind_gusts_10m_max": [25, 30, 20], "uv_index_max": [9, 10, 8], "weather_code": [1, 63, 3]}}
 
 
 def _refuse(error, what):

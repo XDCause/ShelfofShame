@@ -229,12 +229,17 @@ def test_weather_tips(client, monkeypatch):
         "results": [{"name": "Brisbane", "admin1": "Queensland", "country": "Australia", "latitude": -27.46794, "longitude": 153.02809}]}
         if "geocoding" in url else {"daily": {"time": ["2026-01-10"], "temperature_2m_max": [31], "temperature_2m_min": [20],
                                               "precipitation_sum": [0], "precipitation_probability_max": [10],
-                                              "wind_gusts_10m_max": [20], "uv_index_max": [8]}})
+                                              "wind_gusts_10m_max": [20], "uv_index_max": [8], "weather_code": [0]}})
     place = client.get("/api/garden/places?q=Brisbane").json()[0]
     assert place == {"name": "Brisbane", "region": "Queensland, Australia", "lat": -27.4679, "lon": 153.0281}
     client.put("/api/garden/settings", json={"place_name": "Brisbane", "lat": place["lat"], "lon": place["lon"]})
     w = client.get("/api/garden/today").json()["weather"]
     assert w["place"] == "Brisbane" and w["days"][0]["max"] == 31 and w["tips"][0]["kind"] == "heat"
+    assert (w["days"][0]["sky"], w["days"][0]["icon"]) == ("Sunny", "☀️")
+    assert openmeteo.sky(63) == ("Rain", "🌧️") and openmeteo.sky(3)[0] == "Cloudy" and openmeteo.sky(None) == (None, None)
+    storm = garden.weather_tips([{"code": 96}], [{"name": "Balcony", "kind": "Balcony", "covered": False}])
+    assert storm[0]["kind"] == "storm" and "hail" in storm[0]["text"]
+    assert garden.weather_tips([{"code": 95}], [{"name": "Shelf", "kind": "Indoor", "covered": True}]) == []
     assert client.put("/api/garden/settings", json={"climate": "Polar"}).status_code == 422
 
 
@@ -264,7 +269,8 @@ def sent(**kw):
             "name": "100mm Leek Allium", "brand": "Garden Express", "rating": 4.2, "reviews": 9, "weight": "0.30",
             "categories": ["Garden", "Plants", "Vegetable Plants"], "description": "A <b>leek</b>.", "how_to": "Plant<br>deep.",
             "image": "https://media.bunnings.com.au/api/public/content/leek?v=1", "price": 4.98, "store_code": "4123",
-            "store_name": "Stafford", "stock": {"in_store": True, "color": "GREEN", "msg": "inStock"}, **kw}
+            "store_name": "Stafford", "stock": {"in_store": True, "color": "GREEN", "msg": "inStock"},
+            "where": [{"aisle": "35", "bay": "8"}], **kw}
 
 
 def test_items_from_the_bunnings_button(client):
@@ -274,6 +280,9 @@ def test_items_from_the_bunnings_button(client):
     assert (i["name"], i["kind"], i["price"], i["store_name"], i["stock"], i["category"], i["existing"]) == \
         ("100mm Leek Allium", "Seedling", 4.98, "Stafford", "In stock", "Plants › Vegetable Plants", False)
     assert i["description"] == "A leek." and i["how_to"] == "Plant\ndeep." and i["weight_kg"] == 0.3
+    assert i["store_aisle"] == "Aisle 35, Bay 8"
+    assert bunnings.aisle_of([{"aisle": "GC", "bay": ""}, {"aisle": "<b>"}, "x", {"aisle": "GC"}]) == "Aisle GC"
+    assert bunnings.aisle_of(None) is None
     again = client.post("/api/garden/items/from-page", json={"page": sent(price=3.5, stock={"color": "RED", "msg": "notSoldAtThisStore"})})
     assert again.status_code == 200
     a = again.json()

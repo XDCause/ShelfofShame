@@ -1563,3 +1563,12 @@ DBeaver connection confirmed working (2026-10-11).
      houseplants (flower all year: kept out of "sow this month"). A flower's window reads "Flowering" / "In flower".
    - 'Plant' supply kind: a grown, potted plant. Bunnings names start with the pot size: >= 130 mm = Plant, smaller =
      Seedling (pot_kind); "Plant it" starts a planting as a Bought plant.
+4b. **Bunnings aisle and bay; what kind of day the weather is** (2026-10-18).
+   - The Bunnings button also reads "product-aisle-item-location" (data: [{inStoreLocations: [{aisle, bay, sequence}]}],
+     keyed by store like the price) and sends where: [{aisle, bay}]. bunnings.aisle_of() keeps short word-only values
+     -> "Aisle 35, Bay 8" (garden_items.store_aisle, 71_garden_items_aisle.sql), shown on the sent card, the item, the
+     Supplies list and the Wishlist. Only the button sets it (your store); "Check the price" reads Bunnings' default
+     store, so it leaves it alone. A store with no location for an item (often garden-centre plants) clears it.
+   - Weather: Open-Meteo's daily weather_code (a WMO code: the day's worst weather) -> Sunny / Mostly sunny / Partly
+     cloudy / Cloudy / Fog / Drizzle / Rain / Showers / Storms (openmeteo.SKY) with an icon on each day; storms add a tip
+     for outdoor spaces.
