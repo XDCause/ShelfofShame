@@ -34,6 +34,11 @@ from . import (activity, boardgames, bookseries, build, calendar, catalog, chess
                volleyball, warhammer, wishlist)
 from .db import db
 
+# The walk-through's throwaway copy never asks the real outside sites (small shops among them): stand-ins answer.
+if os.environ.get("OUTSIDE_SITES") == "stand-ins":
+    from . import stand_ins
+    stand_ins.install()
+
 @asynccontextmanager
 async def lifespan(_app):
     """While the API runs: the daily Steam sync (videogames.py) - only when a key is set - and the

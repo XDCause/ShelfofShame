@@ -27,6 +27,7 @@ if ($LASTEXITCODE -ne 0) { Write-Host 'Building the walk-through image failed.' 
 $e2eEnv = @{
     APP_PREFIX = $E2E; DB_VOLUME = $E2EVolume; POSTGRES_PORT = '5436'; API_PORT = '8003'; WEB_PORT = '8083'
     MEDIA_PATH = './.e2e/media'; BACKUP_PATH = './.e2e/backups'; DAILY_SYNCS = 'off'; APP_ENV = $AppEnv
+    OUTSIDE_SITES = 'stand-ins'     # no live calls to any outside site (api/app/stand_ins.py)
 }
 function In-E2E([scriptblock]$block) {
     foreach ($k in $e2eEnv.Keys) { Set-Item "Env:$k" $e2eEnv[$k] }

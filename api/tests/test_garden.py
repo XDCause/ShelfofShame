@@ -288,3 +288,16 @@ def test_items_from_the_bunnings_button(client):
     assert client.post("/api/garden/items/from-page", json={"page": sent(description="x" * 30000)}).status_code == 413
     assert bunnings.stock_of("AMBER", None, True) == "Low stock" and bunnings.stock_of(None, None, False) == "Out of stock"
     assert bunnings.stock_of(None, None, None) is None
+
+
+def test_grown_plants_and_flowers(client):
+    from app.garden_items import pot_kind
+    assert (pot_kind("100mm Leek Allium"), pot_kind("140mm Petunia New Wave"), pot_kind("Potting Mix 25L")) == ("Seedling", "Plant", None)
+    r = client.post("/api/garden/items/from-page", json={"page": sent(item="7654321", url="https://www.bunnings.com.au/140mm-petunia-wave_p7654321",
+                                                                      name="140mm Petunia New Wave Yellow")}).json()
+    assert r["kind"] == "Plant"
+    p = client.post(f"/api/garden/items/{r['item_id']}/sow", json={}).json()
+    assert (p["source"], p["stage"], p["item_id"]) == ("Bought plant", "Growing", r["item_id"])
+    names = {g["name"]: g for g in client.get("/api/garden/guides?kind=Flower").json()["guides"]}
+    assert {"Petunia", "Lavender", "Geranium (pelargonium)", "Pansy / viola", "Sunflower (dwarf)"} <= set(names)
+    assert names["Petunia"]["days_min"] == 70

@@ -1,5 +1,8 @@
 """End-to-end walk-through of Off the Clock in a real (headless) browser.
 
+Outside websites (shops, Steam, Bunnings...) are stand-ins in the copy this runs against (OUTSIDE_SITES=stand-ins,
+api/app/stand_ins.py): no step asks a real site. The weekly site check is what looks at the real ones.
+
 Run it with .\\run_e2e.ps1 (backs up first and restores afterwards - this script changes data).
 Runs inside the Playwright container on the app's Docker network, against http://web.
 Prints a PASS/FAIL line per step, all browser errors, and saves screenshots to /out.
@@ -1225,7 +1228,7 @@ def video_games(page):
     expect(page.locator(".game-rows li").first.or_(page.locator(".empty", has_text="No games here"))).to_be_visible()
     # The toolbar: Sync now (when connected) and Find a game - adding games is in Find a game.
     expect(page.locator(".games-pinned .toolbar").get_by_role("button", name=re.compile(r"^\+ Add"))).to_have_count(0)
-    # Find a game: scout any Steam game by name (live: Steam's store search + SteamHunters, read only).
+    # Find a game: scout any Steam game by name (stand-ins for Steam's store search + SteamHunters here).
     page.get_by_role("button", name="Find a game").click()
     page.get_by_label("Search Steam").fill("hollow knight")
     expect(page.locator(".find-games li").first.or_(page.locator(".drawer .alert"))).to_be_visible(timeout=30000)
@@ -1422,7 +1425,7 @@ def reading(page):
     shot(page, "d53_reading_for_you", full=False)
 
 
-@step("Warhammer: an army's range from Good Games (live), + Wanted adds the Combat Patrol to your kits")
+@step("Warhammer: an army's range from Good Games (stand-in), + Wanted adds the Combat Patrol to your kits")
 def warhammer_range(page):
     go(page, "Models")
     # Open straight on the army (one range from the shop, not the remembered one and then this one).
@@ -1482,7 +1485,7 @@ def warhammer_minis(page):
     page.request.delete(f"{BASE}/api/models/{kit['model_id']}")
 
 
-@step("Gundam: in stock now at Good Games (live), a search, grade chips")
+@step("Gundam: in stock now at Good Games (stand-in), a search, grade chips")
 def gundam_range(page):
     go(page, "Models")
     page.locator(".section-tabs").get_by_role("link", name="Gundam").click()
@@ -1879,7 +1882,7 @@ def bunnings_button(page):
     page.request.delete(f"{BASE}/api/garden/items/{item_id}")
 
 
-@step("Wishlist by shop: the default shop first, Good Games for board games; gear from Blue Sky (live)")
+@step("Wishlist by shop: the default shop first, Good Games for board games; gear from Blue Sky (stand-in)")
 def wishlist_shops(page):
     game = page.request.post(f"{BASE}/api/board-games", data={"name": f"Wantgame {MARK}", "status": "Wanted"}).json()
     go(page, "Wishlist")
@@ -1889,7 +1892,7 @@ def wishlist_shops(page):
     page.locator(".shop-jump").get_by_role("link", name=re.compile("^Good Games")).click()
     shot(page, "d59_wishlist_shops", full=False)
     page.request.delete(f"{BASE}/api/board-games/{game['game_id']}")
-    # Gear you want, found at Blue Sky Athletics (Way of Wade) - live, read-only (nothing is added here).
+    # Gear you want, found at Blue Sky Athletics (Way of Wade) - its stand-in in this copy (nothing is added here).
     go(page, "Gear")
     page.get_by_role("button", name="+ Want").click()
     d = drawer(page)
@@ -1982,7 +1985,7 @@ def settings_more(page):
     d.locator("summary", has_text="Tamiya catalogue").click()
     expect(d.locator(".settings > .fold", has_text="Tamiya catalogue")).to_contain_text("Tamiya products")
     d.locator("summary", has_text="Lookup sites").click()             # the weekly site check (no live run here)
-    expect(d.locator(".site-check")).to_have_count(14)
+    expect(d.locator(".site-check")).to_have_count(13)
     expect(d.get_by_role("button", name="Check now")).to_be_visible()
     shot(page, "d22_settings", full=False)
     page.keyboard.press("Escape")

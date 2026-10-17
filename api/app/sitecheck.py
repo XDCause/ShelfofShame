@@ -6,7 +6,9 @@ real, polite look-up per site and checks the answer still has the shape the app 
     POST /site-checks/run    check them all now (in the background; poll GET)
 
 Runs by itself once a week (start_weekly(), from main.py unless DAILY_SYNCS=off). Each site is asked
-once per check, through the same module the app uses (so the same pauses and User-Agent apply).
+once per check, through the same module the app uses (so the same pauses and User-Agent apply). This is the
+only automatic live contact with outside sites: the tests and the walk-through use stand-ins (stand_ins.py);
+"Check now" in Settings looks again when something seems wrong.
 """
 import logging
 import threading
@@ -135,7 +137,9 @@ CHECKS = [
     ("Tamiya", "paint and kit look-ups, photos", _tamiya),
     ("Hasegawa", "kit look-ups", _hasegawa),
     ("HobbyLink Japan", "Gundam (Bandai) kit look-ups", _hlj),
-    ("Good Games", "Warhammer and Gundam kits, board games", _goodgames),
+    # Good Games: paused (2026-10-18) - a small shop; the walk-through's runs got us asked to slow down. Its features
+    # still work when you use them. Put this line back to check it weekly again.
+    # ("Good Games", "Warhammer and Gundam kits, board games", _goodgames),
     ("Gameology", "board game facts", _gameology),
     ("Blue Sky Athletics", "Way of Wade shoes", _bluesky),
     ("Open Library", "books, covers, suggestions", _openlibrary),

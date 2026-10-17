@@ -1550,3 +1550,16 @@ DBeaver connection confirmed working (2026-10-11).
      setAttribute from a callback ref (an effect ran before the fold had rendered the link). Tried live: the script read a
      real product page in headless Chrome (no store chosen: Mentone). Bunnings' CSP uses nonces + strict-dynamic;
      browsers let a user's own bookmarklet run regardless - to confirm on the user's phone / PC.
+4a. **Outside sites: stand-ins for the walk-through; flowers; grown plants** (2026-10-18). User: "leave Good Games off -
+   it's a small store; test small brands' APIs once a week unless called upon for issues".
+   - api/app/stand_ins.py: with OUTSIDE_SITES=stand-ins (only the walk-through's copy; run_e2e.ps1 + docker-compose)
+     main.py swaps every outside module's network function for made-up answers in the real shape (Shopify UCP
+     catalogues for Good Games / Blue Sky, Tamiya / Hasegawa pages, Steam store + schema, SteamHunters, Open Library,
+     Overpass, Commons, Bunnings, Open-Meteo...). The walk-through now never asks a real site (73 steps in ~3 min, not
+     4-6; no more "slow down" failures). The weekly site check is the only automatic live contact; Good Games is
+     paused there (commented out in CHECKS). Using a feature still asks the site, as before.
+   - Flowers (70_garden_flowers_plants.sql): petunia, geranium, lavender, gerbera, pansy / viola, alyssum, salvia,
+     zinnia, dwarf sunflower, impatiens, begonia, cosmos, snapdragon, bougainvillea; moth orchid and African violet as
+     houseplants (flower all year: kept out of "sow this month"). A flower's window reads "Flowering" / "In flower".
+   - 'Plant' supply kind: a grown, potted plant. Bunnings names start with the pot size: >= 130 mm = Plant, smaller =
+     Seedling (pot_kind); "Plant it" starts a planting as a Bought plant.

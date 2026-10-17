@@ -19,7 +19,9 @@ const BY_NAME = [[/tomato/, '🍅'], [/chill?i/, '🌶️'], [/capsicum|pepper/,
   [/blueberr/, '🫐'], [/cucumber|zucchini/, '🥒'], [/carrot/, '🥕'], [/lettuce|spinach|silverbeet|chard|bok|kale|rocket/, '🥬'],
   [/onion|chive|leek/, '🧅'], [/garlic/, '🧄'], [/pea\b|peas|snow pea/, '🫛'], [/bean/, '🫘'], [/ginger|turmeric/, '🫚'],
   [/mushroom/, '🍄'], [/beet|radish/, '🥕'], [/basil|mint|parsley|coriander|thyme|oregano|sage|dill|rosemary|herb/, '🌿'],
-  [/aloe|jade|cact|succulent/, '🌵'], [/lily|marigold|calendula|nasturtium|flower/, '🌼'], [/monstera|pothos|fern|ivy|zz|snake/, '🪴']]
+  [/aloe|jade|cact|succulent/, '🌵'], [/sunflower/, '🌻'], [/hibiscus|bougainvillea/, '🌺'], [/rose\b/, '🌹'], [/tulip/, '🌷'],
+  [/petunia|geranium|pelargonium|gerbera|pansy|viola|alyssum|salvia|zinnia|impatiens|begonia|cosmos|snapdragon|orchid|violet|lavender/, '🌸'],
+  [/lily|marigold|calendula|nasturtium|daisy|flower/, '🌼'], [/monstera|pothos|fern|ivy|zz|snake/, '🪴']]
 const BY_KIND = { Herb: '🌿', 'Leafy green': '🥬', Vegetable: '🥕', Fruit: '🍓', Microgreens: '🌱', Flower: '🌼', Houseplant: '🪴',
   Succulent: '🌵', Native: '🌾' }
 export function plantEmoji(p) {

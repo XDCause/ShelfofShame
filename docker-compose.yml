@@ -47,6 +47,7 @@ services:
       STEAM_API_KEY: ${STEAM_API_KEY:-}   # Video games hobby (steamcommunity.com/dev/apikey); empty = not set up
       MEDIA_DIR: /media
       DAILY_SYNCS: ${DAILY_SYNCS:-on}   # "off" = no daily Steam / chess.com syncs (the walk-through's own copy)
+      OUTSIDE_SITES: ${OUTSIDE_SITES:-live}   # "stand-ins" = made-up answers from every outside site (the walk-through's copy)
     volumes:
       # The same folder backup.ps1 writes to, so Settings can list, make and download backups.
       - ${BACKUP_PATH:-./backups}:/backups

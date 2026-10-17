@@ -263,7 +263,7 @@ export function GuidePanel({ id, onClose }) {
               <dt>Water</dt><dd>{g.water} · about every {g.water_every_days} day{g.water_every_days > 1 ? 's' : ''} in a pot</dd>
               {g.feed_every_days && <><dt>Feed</dt><dd>every {g.feed_every_days} days in the growing season</dd></>}
               {g.pot_min_l && <><dt>Pot</dt><dd>{g.pot_min_l} L or more{g.spacing_cm && ` · ${g.spacing_cm} cm apart`}</dd></>}
-              {g.days_min && <><dt>Harvest</dt><dd>{g.days_min}–{g.days_max} days from seed</dd></>}
+              {g.days_min && <><dt>{g.kind === 'Flower' ? 'Flowers' : 'Harvest'}</dt><dd>{g.days_min}–{g.days_max} days from {g.kind === 'Flower' ? 'planting' : 'seed'}</dd></>}
               <dt>Start from</dt><dd>{g.sow_how === 'Either' ? 'Seed or seedling' : g.sow_how}</dd>
               {g.companions && <><dt>Good with</dt><dd>{g.companions}</dd></>}
               {g.avoid && <><dt>Keep from</dt><dd>{g.avoid}</dd></>}
@@ -377,7 +377,7 @@ function itemFields(lists, guides, kind) {
     { name: 'status', label: 'Status', type: 'select', required: true, options: lists?.item_statuses ?? ['Have'] },
     { name: 'qty', label: kind === 'Seeds' ? 'Packets' : 'How many', type: 'number', min: 0 },
     { name: 'brand', label: 'Brand' },
-    ...(kind === 'Seeds' || kind === 'Seedling' ? [
+    ...(kind === 'Seeds' || kind === 'Seedling' || kind === 'Plant' ? [
       { name: 'guide_id', label: 'Which plant', type: 'select', options: guides.map((g) => [String(g.guide_id), g.name]) },
       ...(kind === 'Seeds' ? [{ name: 'sow_by', label: 'Sow by (on the packet)', type: 'date' }] : []),
     ] : []),
@@ -402,7 +402,7 @@ function ItemForm({ item, onSaved, onCancel }) {
     e.preventDefault()
     try {
       const body = toNumbers(payload(), ['qty', 'guide_id', 'price'])
-      if (!['Seeds', 'Seedling'].includes(body.kind)) { body.guide_id = null; body.sow_by = null }
+      if (!['Seeds', 'Seedling', 'Plant'].includes(body.kind)) { body.guide_id = null; body.sow_by = null }
       onSaved(item ? await api.updateGardenItem(item.item_id, body) : await api.addGardenItem(body))
     } catch (err) {
       setError(err.message)
@@ -507,7 +507,7 @@ export function ItemPanel({ id = null, onClose }) {
           <button type="button" className="secondary small" aria-label="One more" onClick={() => update({ qty: (item.qty ?? 0) + 1 })}>+</button>
         </p>
       </section>
-      {(item.kind === 'Seeds' || item.kind === 'Seedling') && (
+      {['Seeds', 'Seedling', 'Plant'].includes(item.kind) && (
         <section className="panel-section">
           <h3 className="section-title">{item.kind === 'Seeds' ? 'Sow some' : 'Plant it'}</h3>
           <div className="button-row">

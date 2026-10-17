@@ -45,7 +45,7 @@ AI via MCP server (stage 6) ---------------/
 DBeaver, psql, and the one-off import script.
 
 ## Where to look
-- **History, decisions and the reasons behind them: docs/HISTORY.md** (sections 1 - 3zzz; search it before changing
+- **History, decisions and the reasons behind them: docs/HISTORY.md** (sections 1 - 4a; search it before changing
   something old - most odd-looking code has a lesson behind it there). Plans: docs/ROADMAP.md. Caveats for ever going
   public: BEFORE_GOING_PUBLIC.md (**add a row whenever a new data source, scraper, copied content or single-user
   shortcut is added**).
@@ -63,12 +63,14 @@ DBeaver, psql, and the one-off import script.
 - **Web** (`web/src`, React 19 + Vite): App.jsx (routes, panels via openPanel(type), openThing(kind, id)), api.js (every
   fetch, grouped by area), core/ (Home, Navigation, Goals, Journal, Calendar...), modules/<hobby>/manifest.jsx (pages,
   panels, Home tiles / cards, quick actions), components/ (shared), styles.css (one file, sections by comment).
-- **Database**: numbered idempotent files in db/init (01-69); migrate.ps1 applies pending ones.
+- **Database**: numbered idempotent files in db/init (01-70); migrate.ps1 applies pending ones.
 
 ## Quality gates (run them; they're fast)
 - `.\test_all.ps1` in dev = API tests (run_tests.ps1: fresh test DB from db\init, pytest) and the browser walk-through
-  (run_e2e.ps1) side by side, ~3.5 minutes. The walk-through runs on its OWN throwaway copy of the app (hobby-e2e-*)
-  with a copy of the data - dev's data is never touched, so the user can keep using dev while it runs.
+  (run_e2e.ps1) side by side, ~3 minutes. The walk-through runs on its OWN throwaway copy of the app (hobby-e2e-*)
+  with a copy of the data - dev's data is never touched, so the user can keep using dev while it runs. That copy has
+  OUTSIDE_SITES=stand-ins (api/app/stand_ins.py): no outside site is ever asked by the tests or the walk-through
+  (user, 2026-10-18: small shops get one look a week - the weekly site check - unless something needs checking).
 - Passing runs are stamped (.tested\); promote.ps1 skips tests already passed on exactly this code.
 - `npm run build` (every web image build) fails on a CSS class clash (web/scripts/check-css-clashes.js) or ANY
   ESLint warning (--max-warnings 0). A deliberate hooks exception gets an eslint-disable comment saying why.
@@ -96,7 +98,8 @@ DBeaver, psql, and the one-off import script.
 - Every photo URL must change when the photo changes (served with a 1-year cache).
 - Playwright's Chromium can't play H.264; browser tests of playback need WebM.
 - An element with an id is also a window global (`window.__NEXT_DATA__` can be the <script> element): check its shape.
-- Live outside sites (Good Games, Steam) throttle back-to-back walk-through runs: a 502 "slow down" isn't a code fault.
+- A new outside source needs a stand-in in stand_ins.py (and a fake in conftest), or the walk-through would ask it live.
+- Good Games is paused in the weekly site check (a small shop; user's call) - its features still work when used.
 
 ## Data conventions (user decisions, 2026-10-11)
 - Product codes are Tamiya-style **catalogue numbers** (`T81701`), not bottle codes (`XF-1`).

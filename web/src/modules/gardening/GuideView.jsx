@@ -239,7 +239,7 @@ function ItemRow({ i }) {
   return (
     <li>
       <button type="button" className="row-button" onClick={() => openPanel('gitem', { id: i.item_id })}>
-        {i.photo_url ? <img className="thumb" src={i.photo_url} alt="" loading="lazy" /> : <span className="garden-emoji" aria-hidden="true">{i.kind === 'Seeds' ? '🌱' : '🧺'}</span>}
+        {i.photo_url ? <img className="thumb" src={i.photo_url} alt="" loading="lazy" /> : <span className="garden-emoji" aria-hidden="true">{i.kind === 'Seeds' ? '🌱' : i.kind === 'Plant' ? '🪴' : '🧺'}</span>}
         <span className="grow">
           <span className="item-title">{i.name}</span>
           <span className="item-meta">{[i.kind, i.brand, i.qty != null && `${i.qty} left`, i.guide_name,

@@ -159,7 +159,7 @@ export default function PlantingPanel({ id: startId = null, containerId = null, 
             {p.container_id ? <button type="button" className="link-title small" onClick={() => open('gcontainer', { id: p.container_id })}>
               {p.space_name} › {p.container_name}</button> : <span className="muted small">Not in a pot yet</span>}
           </p>
-          {p.harvest_ready && !ended && <p className="pill ok">Ready to pick</p>}
+          {p.harvest_ready && !ended && <p className="pill ok">{p.plant_kind === 'Flower' ? 'In flower' : 'Ready to pick'}</p>}
         </div>
       </section>
       {p.warnings.length > 0 && (
@@ -176,7 +176,7 @@ export default function PlantingPanel({ id: startId = null, containerId = null, 
           <dl className="garden-facts">
             <dt>Started</dt><dd>{shortDate(p.started_on)} <span className="muted">· {p.source.toLowerCase()} · {p.age_days} days ago</span>
               {p.parent && <> · from <button type="button" className="link-title small" onClick={() => setId(p.parent.planting_id)}>{p.parent.name}</button></>}</dd>
-            {p.harvest_from && <><dt>Harvest</dt><dd>{shortDate(p.harvest_from)}{p.harvest_to && ` – ${shortDate(p.harvest_to)}`}</dd></>}
+            {p.harvest_from && <><dt>{p.plant_kind === 'Flower' ? 'Flowering' : 'Harvest'}</dt><dd>{shortDate(p.harvest_from)}{p.harvest_to && ` – ${shortDate(p.harvest_to)}`}</dd></>}
             {p.water_every_days && <><dt>Water</dt><dd>every {p.water_every_days} day{p.water_every_days > 1 ? 's' : ''}{p.self_watering && ' (self-watering pot: half as often)'}
               {p.water_due_on && <span className={isDue(p.water_due_on, today) ? 'garden-due' : 'muted'}> · {isDue(p.water_due_on, today) ? 'due' : 'next'} {dueText(p.water_due_on, today)}</span>}</dd></>}
             {p.feed_every_days && <><dt>Feed</dt><dd>every {p.feed_every_days} days

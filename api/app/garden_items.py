@@ -14,7 +14,8 @@ seed packets and seedlings - what you have, what's running low, and what you wan
     POST /garden/items/{id}/bunnings        read its Bunnings page again (today's price, details); a link can be
                                             given to connect an item you added by hand
     GET / PATCH / DELETE /garden/items/{id}, and its photo
-    POST /garden/items/{id}/sow             sow from a seed packet (or plant a seedling): a new planting, one fewer left
+    POST /garden/items/{id}/sow             sow from a seed packet, or plant a seedling / grown plant: a new planting,
+                                            one fewer left
 """
 import json
 import re
@@ -30,14 +31,14 @@ from .images import add_photo_routes
 router = APIRouter(prefix="/api", tags=["gardening"])
 
 # Must match db/init/67_garden.sql.
-ITEM_KINDS = ["Seeds", "Seedling", "Potting mix", "Fertiliser", "Pot", "Tool", "Pest control", "Grow light", "Hydroponics",
+ITEM_KINDS = ["Seeds", "Seedling", "Plant", "Potting mix", "Fertiliser", "Pot", "Tool", "Pest control", "Grow light", "Hydroponics",
               "Watering", "Other"]
 ITEM_STATUSES = ["Have", "Running low", "Wanted", "Used up"]
 # Bunnings' own category words -> our kind (first match).
 KIND_FROM_CATEGORY = [("seed", "Seeds"), ("potting mix", "Potting mix"), ("soil", "Potting mix"), ("fertiliser", "Fertiliser"),
                       ("plant food", "Fertiliser"), ("pots", "Pot"), ("planter", "Pot"), ("pest", "Pest control"),
                       ("weed", "Pest control"), ("hydroponic", "Hydroponics"), ("grow light", "Grow light"), ("watering", "Watering"),
-                      ("hose", "Watering"), ("hand tools", "Tool"), ("garden tools", "Tool"), ("plants", "Seedling")]
+                      ("hose", "Watering"), ("hand tools", "Tool"), ("garden tools", "Tool"), ("plants", "Plant")]
 
 
 def _lit(values) -> str:
@@ -99,6 +100,12 @@ def fetch_item(conn, item_id: int) -> dict:
     return found(conn.execute(ITEM_SELECT + " WHERE i.item_id = %s", (item_id,)).fetchone(), "Item")
 
 
+def pot_kind(name: str) -> str | None:
+    """A plant sold by pot size ("100mm Leek...", "140mm Petunia..."): small pots are seedlings, bigger ones plants."""
+    m = re.match(r"^(\d+)\s?mm\b", name or "", re.I)
+    return None if not m else "Plant" if int(m.group(1)) >= 130 else "Seedling"
+
+
 def kind_for(category: str | None, name: str) -> str:
     text = f"{category or ''} {name}".lower()
     return next((kind for word, kind in KIND_FROM_CATEGORY if word in text), "Other")
@@ -147,7 +154,7 @@ def add_from_bunnings(body: BunningsIn, response: Response):
         product = bunnings.fetch(url)
     except bunnings.NotAtDefaultStore:
         name = bunnings.name_from_url(url)
-        kind = body.kind or ("Seedling" if re.match(r"^\d+\s?mm\b", name, re.I) else kind_for(None, name))
+        kind = body.kind or pot_kind(name) or kind_for(None, name)
         with db() as conn:
             item_id = insert_row(conn, "garden_items", {
                 "name": name, "status": body.status, "kind": kind, "bunnings_item": item, "url": url,
@@ -158,7 +165,8 @@ def add_from_bunnings(body: BunningsIn, response: Response):
         raise HTTPException(502 if "reach" in str(e) or "answer" in str(e) else 422, str(e))
     with db() as conn:
         item_id = insert_row(conn, "garden_items", {"name": product["name"], "status": body.status,
-                                                    "kind": body.kind or kind_for(product["category"], product["name"])}, "item_id")
+                                                    "kind": body.kind or pot_kind(product["name"])
+                                                    or kind_for(product["category"], product["name"])}, "item_id")
         save_from_bunnings(conn, item_id, product, photo=True)
         return {**fetch_item(conn, item_id), "existing": False, "partial": False}
 
@@ -179,8 +187,7 @@ def add_from_page(body: PageIn, response: Response):
         if old:
             item_id = old["item_id"]
         else:
-            kind = body.kind or ("Seedling" if re.match(r"^\d+\s?mm\b", product["name"], re.I)
-                                 else kind_for(product["category"], product["name"]))
+            kind = body.kind or pot_kind(product["name"]) or kind_for(product["category"], product["name"])
             item_id = insert_row(conn, "garden_items", {"name": product["name"], "status": body.status, "kind": kind}, "item_id")
         save_from_bunnings(conn, item_id, product, photo=not (old and old["has_photo"]))
         conn.execute("UPDATE garden_items SET store_name = %s, store_code = %s, stock = %s WHERE item_id = %s",
@@ -245,15 +252,15 @@ def delete_item(item_id: int):
 
 @router.post("/garden/items/{item_id}/sow", status_code=201)
 def sow_from(item_id: int, body: SowIn):
-    """Sow from a seed packet, or plant a seedling you bought: a new planting linked to the item."""
+    """Sow from a seed packet, or plant a seedling or a grown plant you bought: a new planting linked to the item."""
     from .garden import PlantingIn, add_planting
     with db() as conn:
         item = fetch_item(conn, item_id)
-    if item["kind"] not in ("Seeds", "Seedling"):
-        raise HTTPException(422, "Only seeds and seedlings can be sown.")
+    if item["kind"] not in ("Seeds", "Seedling", "Plant"):
+        raise HTTPException(422, "Only seeds, seedlings and plants can be sown or planted.")
     return add_planting(PlantingIn(name=None if item["guide_id"] else item["name"], guide_id=item["guide_id"], item_id=item_id,
                                    container_id=body.container_id, quantity=body.quantity,
-                                   source="Seed" if item["kind"] == "Seeds" else "Seedling",
+                                   source={"Seeds": "Seed", "Plant": "Bought plant"}.get(item["kind"], "Seedling"),
                                    bought_from="Bunnings" if item["bunnings_item"] else None))
 
 
