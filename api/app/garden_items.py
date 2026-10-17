@@ -5,7 +5,9 @@ seed packets and seedlings - what you have, what's running low, and what you wan
     POST /garden/items                      add one by hand
     POST /garden/items/bunnings {url}       add one from a Bunnings product link (bunnings.py reads that one page:
                                             name, item number, price, brand, rating, weight, category, how to use,
-                                            photo). The same product twice opens the one you have.
+                                            photo). The same product twice opens the one you have. A plant only some
+                                            stores sell (a 404 for Bunnings' default store) is still added, from what
+                                            the link says (name, item number) - partial = true.
     POST /garden/items/{id}/bunnings        read its Bunnings page again (today's price, details); a link can be
                                             given to connect an item you added by hand
     GET / PATCH / DELETE /garden/items/{id}, and its photo
@@ -91,13 +93,6 @@ def kind_for(category: str | None, name: str) -> str:
     return next((kind for word, kind in KIND_FROM_CATEGORY if word in text), "Other")
 
 
-def read_bunnings(url: str) -> dict:
-    try:
-        return bunnings.fetch(url)
-    except bunnings.BunningsError as e:
-        raise HTTPException(502 if "reach" in str(e) or "answer" in str(e) else 422, str(e))
-
-
 def save_from_bunnings(conn, item_id: int, product: dict, photo: bool):
     conn.execute("""UPDATE garden_items SET bunnings_item = %(bunnings_item)s, url = %(url)s, price = %(price)s,
                     price_checked_at = now(), rating = %(rating)s, reviews = %(reviews)s, weight_kg = %(weight_kg)s,
@@ -137,12 +132,24 @@ def add_from_bunnings(body: BunningsIn, response: Response):
         if old:
             response.status_code = 200
             return {**fetch_item(conn, old["item_id"]), "existing": True}
-    product = read_bunnings(url)
+    try:
+        product = bunnings.fetch(url)
+    except bunnings.NotAtDefaultStore:
+        name = bunnings.name_from_url(url)
+        kind = body.kind or ("Seedling" if re.match(r"^\d+\s?mm\b", name, re.I) else kind_for(None, name))
+        with db() as conn:
+            item_id = insert_row(conn, "garden_items", {
+                "name": name, "status": body.status, "kind": kind, "bunnings_item": item, "url": url,
+                "notes": "Bunnings shows this page only for stores that sell it (plants are regional), so its price and photo "
+                         "couldn't be read - open it on Bunnings with your store chosen."}, "item_id")
+            return {**fetch_item(conn, item_id), "existing": False, "partial": True}
+    except bunnings.BunningsError as e:
+        raise HTTPException(502 if "reach" in str(e) or "answer" in str(e) else 422, str(e))
     with db() as conn:
         item_id = insert_row(conn, "garden_items", {"name": product["name"], "status": body.status,
                                                     "kind": body.kind or kind_for(product["category"], product["name"])}, "item_id")
         save_from_bunnings(conn, item_id, product, photo=True)
-        return {**fetch_item(conn, item_id), "existing": False}
+        return {**fetch_item(conn, item_id), "existing": False, "partial": False}
 
 
 @router.post("/garden/items/{item_id}/bunnings")
@@ -155,7 +162,13 @@ def refresh_from_bunnings(item_id: int, body: LinkIn | None = None):
     url = (body.url if body and body.url else None) or current["url"]
     if not url or not bunnings.product_url(url):
         raise HTTPException(422, "Paste its Bunnings product link first.")
-    product = read_bunnings(url)
+    try:
+        product = bunnings.fetch(url)
+    except bunnings.NotAtDefaultStore:
+        raise HTTPException(422, "Bunnings only shows this page to stores that sell it (plants are regional), so its price "
+                                 "can't be checked from here - open it on Bunnings with your store chosen.") from None
+    except bunnings.BunningsError as e:
+        raise HTTPException(502 if "reach" in str(e) or "answer" in str(e) else 422, str(e))
     with db() as conn:
         clash = conn.execute("SELECT item_id FROM garden_items WHERE bunnings_item = %s AND item_id <> %s",
                              (product["bunnings_item"], item_id)).fetchone()

@@ -89,7 +89,9 @@ export function SuppliesView() {
       const item = await api.addGardenItemFromBunnings({ url: link, status })
       setLink('')
       changed()
-      showToast(item.existing ? `You already have ${item.name}` : `Added ${item.name}${item.price != null ? ` (${money(item.price)})` : ''}`)
+      showToast(item.existing ? `You already have ${item.name}`
+        : item.partial ? `Added ${item.name} - Bunnings only shows plants to stores that sell them, so add the price yourself`
+          : `Added ${item.name}${item.price != null ? ` (${money(item.price)})` : ''}`)
       openPanel('gitem', { id: item.item_id })
     } catch (err) {
       setError(err.message)

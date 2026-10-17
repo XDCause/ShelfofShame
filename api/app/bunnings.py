@@ -13,6 +13,9 @@ it's never worked around.
     parse(html)         the same from a page's HTML (the page's own __NEXT_DATA__ JSON)
 
 The price is the one the page shows for Bunnings' default store (prices can differ a little by store).
+Live plants (seedlings, flowers, veg) are sold regionally: their pages are a 404 for the default store
+(Mentone, VIC) even when your store has them - NotAtDefaultStore, and the caller keeps what the link itself
+says (name_from_url). The store a browser picks isn't something this reads or sets.
 """
 import html as htmllib
 import json
@@ -36,6 +39,17 @@ _last = [0.0]
 
 class BunningsError(Exception):
     """A message for the user: the link isn't a Bunnings product, or the page couldn't be read."""
+
+
+class NotAtDefaultStore(BunningsError):
+    """The page is a 404 for Bunnings' default store - usually a plant only some stores sell."""
+
+
+def name_from_url(url: str) -> str:
+    """A readable name from a product link: .../100mm-leek-alllium-..._p0194944 -> "100mm Leek Alllium ..."."""
+    m = LINK.search(url or "")
+    words = (m.group(1) if m else "").split("-")
+    return " ".join(w if w[:1].isdigit() else w.capitalize() for w in words if w)[:200] or "Bunnings product"
 
 
 def product_url(text: str | None) -> str | None:
@@ -108,7 +122,7 @@ def _get(url: str) -> str:
     if not str(r.url).startswith(SITE):
         raise BunningsError("Bunnings sent that link somewhere else.")
     if r.status_code == 404:
-        raise BunningsError("Bunnings doesn't have that product any more.")
+        raise NotAtDefaultStore("Bunnings only shows that product to some stores (often the case for plants), or it's gone.")
     if r.status_code != 200:
         raise BunningsError(f"Bunnings didn't answer (HTTP {r.status_code}).")
     return r.text

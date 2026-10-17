@@ -1530,4 +1530,11 @@ DBeaver connection confirmed working (2026-10-11).
      Noted (not each watering). Wanted supplies go on the Wishlist under Bunnings. Site check: 14 sites.
    - Section tabs now scroll sideways when they don't fit (six Gardening tabs on a phone); max-width 640 px.
    - e2e: rules-of-hooks false positive from a `while` loop in a component - moved into a helper. A label wrapped round a
-     <select> includes every option's text in its name (get_by_label matched the plant list).
+     <select> includes every option's text in its name (get_by_label matched the plant list).   - Regional plants (user, 2026-10-18: "a lot of the flowers and veg don't work", e.g. a 100mm leek in stock at Stafford):
+     live plants are sold by region, and with no store chosen their pages are a 404 for Bunnings' default store (Mentone,
+     VIC). The browser's chosen store isn't anything the app can simply send (no query parameter robots.txt allows; the
+     choice lives in their site code), so a 404 on a valid product link now still adds the item from what the link says:
+     name from the slug, item number, link, kind (a "100mm" pot = Seedling), a note; partial = true. Price and photo the
+     user can fill in; "Check the price" explains why it can't for those.
+   - The walk-through's live steps failed on repeat runs that night: Good Games answered "slow down" (rate limit) and
+     Steam's store search timed out - after ~8 runs in a few hours. Not a code fault; space live runs out.

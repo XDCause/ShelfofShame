@@ -241,3 +241,18 @@ def test_weather_tips(client, monkeypatch):
 def test_lists(client):
     lists = client.get("/api/garden/lists").json()
     assert "Self-watering pot" in lists["container_kinds"] and "Balcony" in lists["space_kinds"] and "Seeds" in lists["item_kinds"]
+
+
+def test_regional_plant_links_still_add(client, monkeypatch):
+    """A plant only some stores sell is a 404 for Bunnings' default store: kept from what its link says."""
+    def not_here(url):
+        raise bunnings.NotAtDefaultStore("Bunnings only shows that product to some stores")
+    monkeypatch.setattr(bunnings, "_get", not_here)
+    r = client.post("/api/garden/items/bunnings", json={"url": "https://www.bunnings.com.au/100mm-leek-alllium-ampeloprasum-var-porrum_p0194944",
+                                                        "status": "Wanted"}).json()
+    assert (r["name"], r["kind"], r["bunnings_item"], r["partial"], r["price"]) == \
+        ("100mm Leek Alllium Ampeloprasum Var Porrum", "Seedling", "0194944", True, None)
+    assert r["url"].endswith("_p0194944") and "plants are regional" in r["notes"]
+    again = client.post(f"/api/garden/items/{r['item_id']}/bunnings")
+    assert again.status_code == 422 and "stores that sell it" in again.json()["detail"]
+    assert bunnings.name_from_url("https://www.bunnings.com.au/scotts-osmocote-10l-premium-mix_p2962117") == "Scotts Osmocote 10l Premium Mix"
