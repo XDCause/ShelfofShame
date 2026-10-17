@@ -1,0 +1,210 @@
+"""Gardening: supplies and the seed bank - potting mix, fertiliser, pots, tools, pest control, grow lights,
+seed packets and seedlings - what you have, what's running low, and what you want (Wishlist > Bunnings).
+
+    GET  /garden/items?kind=&status=        your items
+    POST /garden/items                      add one by hand
+    POST /garden/items/bunnings {url}       add one from a Bunnings product link (bunnings.py reads that one page:
+                                            name, item number, price, brand, rating, weight, category, how to use,
+                                            photo). The same product twice opens the one you have.
+    POST /garden/items/{id}/bunnings        read its Bunnings page again (today's price, details); a link can be
+                                            given to connect an item you added by hand
+    GET / PATCH / DELETE /garden/items/{id}, and its photo
+    POST /garden/items/{id}/sow             sow from a seed packet (or plant a seedling): a new planting, one fewer left
+"""
+import re
+from datetime import date
+
+from fastapi import APIRouter, HTTPException, Response
+from pydantic import BaseModel, Field
+
+from . import bunnings
+from .db import db, found, insert_row, tidy_text, update_row
+from .images import add_photo_routes
+
+router = APIRouter(prefix="/api", tags=["gardening"])
+
+# Must match db/init/67_garden.sql.
+ITEM_KINDS = ["Seeds", "Seedling", "Potting mix", "Fertiliser", "Pot", "Tool", "Pest control", "Grow light", "Hydroponics",
+              "Watering", "Other"]
+ITEM_STATUSES = ["Have", "Running low", "Wanted", "Used up"]
+# Bunnings' own category words -> our kind (first match).
+KIND_FROM_CATEGORY = [("seed", "Seeds"), ("potting mix", "Potting mix"), ("soil", "Potting mix"), ("fertiliser", "Fertiliser"),
+                      ("plant food", "Fertiliser"), ("pots", "Pot"), ("planter", "Pot"), ("pest", "Pest control"),
+                      ("weed", "Pest control"), ("hydroponic", "Hydroponics"), ("grow light", "Grow light"), ("watering", "Watering"),
+                      ("hose", "Watering"), ("hand tools", "Tool"), ("garden tools", "Tool"), ("plants", "Seedling")]
+
+
+def _lit(values) -> str:
+    return "^(" + "|".join(re.escape(v) for v in values) + ")$"
+
+
+class ItemFields(BaseModel):
+    kind: str | None = Field(None, pattern=_lit(ITEM_KINDS))
+    status: str | None = Field(None, pattern=_lit(ITEM_STATUSES))
+    qty: int | None = Field(None, ge=0, le=100000)
+    brand: str | None = Field(None, max_length=120)
+    guide_id: int | None = None
+    sow_by: date | None = None
+    notes: str | None = Field(None, max_length=5000)
+    price: float | None = Field(None, ge=0)
+
+
+class ItemIn(ItemFields):
+    name: str = Field(min_length=1, max_length=200)
+
+
+class ItemPatch(ItemFields):
+    name: str | None = Field(None, min_length=1, max_length=200)
+
+
+class BunningsIn(BaseModel):
+    url: str = Field(min_length=10, max_length=2000)       # a link, or shared text with a link in it
+    status: str = Field("Have", pattern=_lit(ITEM_STATUSES))
+    kind: str | None = Field(None, pattern=_lit(ITEM_KINDS))
+
+
+class LinkIn(BaseModel):
+    url: str | None = Field(None, max_length=2000)
+
+
+class SowIn(BaseModel):
+    container_id: int | None = None
+    quantity: int = Field(1, ge=1, le=10000)
+
+
+ITEM_SELECT = """
+SELECT i.item_id, i.name, i.kind, i.status, i.qty, i.brand, i.guide_id, i.sow_by, i.notes, i.bunnings_item, i.url,
+       i.price::float8 AS price, i.price_checked_at, i.rating::float8 AS rating, i.reviews, i.weight_kg::float8 AS weight_kg,
+       i.category, i.description, i.how_to, i.created_at, g.name AS guide_name,
+       i.sow_by IS NOT NULL AND i.sow_by < current_date AS expired,
+       CASE WHEN i.photo IS NOT NULL THEN '/api/garden/items/' || i.item_id || '/photo?v='
+            || (extract(epoch FROM i.photo_updated) * 1000)::bigint END AS photo_url
+FROM garden_items i LEFT JOIN garden_guides g ON g.guide_id = i.guide_id"""
+
+
+def fetch_item(conn, item_id: int) -> dict:
+    return found(conn.execute(ITEM_SELECT + " WHERE i.item_id = %s", (item_id,)).fetchone(), "Item")
+
+
+def kind_for(category: str | None, name: str) -> str:
+    text = f"{category or ''} {name}".lower()
+    return next((kind for word, kind in KIND_FROM_CATEGORY if word in text), "Other")
+
+
+def read_bunnings(url: str) -> dict:
+    try:
+        return bunnings.fetch(url)
+    except bunnings.BunningsError as e:
+        raise HTTPException(502 if "reach" in str(e) or "answer" in str(e) else 422, str(e))
+
+
+def save_from_bunnings(conn, item_id: int, product: dict, photo: bool):
+    conn.execute("""UPDATE garden_items SET bunnings_item = %(bunnings_item)s, url = %(url)s, price = %(price)s,
+                    price_checked_at = now(), rating = %(rating)s, reviews = %(reviews)s, weight_kg = %(weight_kg)s,
+                    category = %(category)s, description = %(description)s, how_to = %(how_to)s,
+                    brand = COALESCE(brand, %(brand)s) WHERE item_id = %(id)s""", {**product, "id": item_id})
+    if photo and product.get("image"):
+        image, image_type = bunnings.photo(product["image"])
+        if image:
+            conn.execute("UPDATE garden_items SET photo = %s, photo_type = %s, photo_updated = now() WHERE item_id = %s",
+                         (image, image_type, item_id))
+
+
+@router.get("/garden/items")
+def list_items(kind: str | None = None, status: str | None = None):
+    with db() as conn:
+        return conn.execute(ITEM_SELECT + """ WHERE (%(k)s::text IS NULL OR i.kind = %(k)s) AND (%(s)s::text IS NULL OR i.status = %(s)s)
+            ORDER BY array_position(ARRAY['Wanted', 'Running low', 'Have', 'Used up'], i.status), i.kind, lower(i.name)""",
+                            {"k": kind, "s": status}).fetchall()
+
+
+@router.post("/garden/items", status_code=201)
+def add_item(body: ItemIn):
+    data = tidy_text({k: v for k, v in body.model_dump().items() if v is not None}, required=("name",))
+    with db() as conn:
+        return fetch_item(conn, insert_row(conn, "garden_items", data, "item_id"))
+
+
+@router.post("/garden/items/bunnings", status_code=201)
+def add_from_bunnings(body: BunningsIn, response: Response):
+    """Add a product from its Bunnings link. Already have it? That item comes back (existing = true)."""
+    url = bunnings.product_url(body.url)
+    if not url:
+        raise HTTPException(422, "That isn't a Bunnings product link (they look like bunnings.com.au/..._p1234567).")
+    item = url.rsplit("_p", 1)[1]
+    with db() as conn:
+        old = conn.execute("SELECT item_id FROM garden_items WHERE bunnings_item = %s", (item,)).fetchone()
+        if old:
+            response.status_code = 200
+            return {**fetch_item(conn, old["item_id"]), "existing": True}
+    product = read_bunnings(url)
+    with db() as conn:
+        item_id = insert_row(conn, "garden_items", {"name": product["name"], "status": body.status,
+                                                    "kind": body.kind or kind_for(product["category"], product["name"])}, "item_id")
+        save_from_bunnings(conn, item_id, product, photo=True)
+        return {**fetch_item(conn, item_id), "existing": False}
+
+
+@router.post("/garden/items/{item_id}/bunnings")
+def refresh_from_bunnings(item_id: int, body: LinkIn | None = None):
+    """Read the item's Bunnings page again: today's price and details (and its photo if it has none).
+    With a url: connect an item you added by hand to that product first."""
+    with db() as conn:
+        current = fetch_item(conn, item_id)
+        has_photo = current["photo_url"] is not None
+    url = (body.url if body and body.url else None) or current["url"]
+    if not url or not bunnings.product_url(url):
+        raise HTTPException(422, "Paste its Bunnings product link first.")
+    product = read_bunnings(url)
+    with db() as conn:
+        clash = conn.execute("SELECT item_id FROM garden_items WHERE bunnings_item = %s AND item_id <> %s",
+                             (product["bunnings_item"], item_id)).fetchone()
+        if clash:
+            raise HTTPException(409, "Another of your items is already that Bunnings product.")
+        save_from_bunnings(conn, item_id, product, photo=not has_photo)
+        return {**fetch_item(conn, item_id), "price_before": current["price"]}
+
+
+@router.get("/garden/items/{item_id}")
+def get_item(item_id: int):
+    with db() as conn:
+        item = fetch_item(conn, item_id)
+        item["plantings"] = conn.execute("SELECT planting_id, name, stage, started_on FROM garden_plantings WHERE item_id = %s "
+                                         "ORDER BY started_on DESC", (item_id,)).fetchall()
+        return item
+
+
+@router.patch("/garden/items/{item_id}")
+def update_item(item_id: int, body: ItemPatch):
+    data = tidy_text(body.model_dump(exclude_unset=True), required=("name",))
+    for required in ("name", "kind", "status"):
+        if required in data and data[required] is None:
+            raise HTTPException(422, f"{required.capitalize()} can't be empty.")
+    with db() as conn:
+        fetch_item(conn, item_id)
+        update_row(conn, "garden_items", "item_id", item_id, data)
+        return fetch_item(conn, item_id)
+
+
+@router.delete("/garden/items/{item_id}", status_code=204)
+def delete_item(item_id: int):
+    with db() as conn:
+        found(conn.execute("DELETE FROM garden_items WHERE item_id = %s RETURNING item_id", (item_id,)).fetchone(), "Item")
+    return Response(status_code=204)
+
+
+@router.post("/garden/items/{item_id}/sow", status_code=201)
+def sow_from(item_id: int, body: SowIn):
+    """Sow from a seed packet, or plant a seedling you bought: a new planting linked to the item."""
+    from .garden import PlantingIn, add_planting
+    with db() as conn:
+        item = fetch_item(conn, item_id)
+    if item["kind"] not in ("Seeds", "Seedling"):
+        raise HTTPException(422, "Only seeds and seedlings can be sown.")
+    return add_planting(PlantingIn(name=None if item["guide_id"] else item["name"], guide_id=item["guide_id"], item_id=item_id,
+                                   container_id=body.container_id, quantity=body.quantity,
+                                   source="Seed" if item["kind"] == "Seeds" else "Seedling",
+                                   bought_from="Bunnings" if item["bunnings_item"] else None))
+
+
+add_photo_routes(router, "/garden/items", "garden_items", "item_id", "Item")

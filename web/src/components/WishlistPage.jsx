@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { api, imageUrl, money } from '../api.js'
 import { useApp } from '../core/app-context.js'
-import { BoxIcon, DiceIcon, PlaneIcon, ShoeIcon } from './icons.jsx'
+import { BoxIcon, DiceIcon, PlaneIcon, ShoeIcon, SproutIcon } from './icons.jsx'
 import WishlistView from './WishlistView.jsx'
 
 // The Wishlist page: everything you want to buy, a section per shop (api/app/wanted.py). Your default
 // shop (Hobbyrama) comes first, with the supplies wishlist itself (ticks, "Add to inventory") and the
 // kits you want; then Good Games (board games), Blue Sky Athletics (Way of Wade shoes), and so on.
-const KIND_ICON = { model: PlaneIcon, game: DiceIcon, gear: ShoeIcon }
+const KIND_ICON = { model: PlaneIcon, game: DiceIcon, gear: ShoeIcon, garden: SproutIcon }
 
 export default function WishlistPage(props) {
   const { refreshKey, openThing } = useApp()

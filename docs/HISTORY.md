@@ -1503,3 +1503,31 @@ DBeaver connection confirmed working (2026-10-11).
    Garden page); 66_calendar_gardening.sql + MODULE_IDS; calendar tone 'ok'. e2e: 11 hobby cards.   The run crossed midnight and found two morning-only problems: the phone calendar's activity icons (4 + "+N")
    didn't wrap, so a busy day widened the page by 3 px (.day-dots now wraps); and the goals step looked for its goal
    in Home's top 8, which date-only items (filed at midday) fill in the morning - it checks the feed instead.
+3zzz. **Gardening, fully built** (2026-10-18; "everything you could add to a gardening app", Bunnings, a visual layout
+   with what's in each space and timings, notes and photos per item; the user lives in an apartment).
+   - Bunnings: no public API, no official catalogue (not Shopify - no UCP). robots.txt disallows /search and /api/ but
+     ALLOWS product pages (/*_p*), so bunnings.py reads only a product page the user pasted / shared, 2 s apart, honest
+     User-Agent. The page is Next.js: everything is in __NEXT_DATA__ props.pageProps.dehydratedState.queries
+     ("retail-product": name, itemNumber, manufacturer, averageRating, numberOfReviews, weight, allCategories, feature,
+     installationInformation, images; "product-retail-price": value for the default store). Cloudflare's passive
+     "challenge-platform" script is on the page but it's not a wall - a real challenge (no __NEXT_DATA__) is an error.
+     Photos only from media.bunnings.com.au (&t=w600). "Search Bunnings" opens their search in the user's browser.
+     Tests use a made-up page (their page isn't copied into the repo).
+   - Open-Meteo for weather tips (heat >= 30/35, gusts >= 45/60 for outdoor spaces, rain >= 5 mm for uncovered ones,
+     nights <= 5, UV >= 11); forecast cached an hour; place search sets garden_settings (lat / lon in the DB only).
+   - 67_garden.sql: garden_settings (climate zone), spaces (size, open side + facing, sun h, covered, wind, grow light,
+     weight limit), containers (placed in cm, kind, shape, litres, level, self-watering, photo), guides, plantings (stage,
+     dates, rhythm, last watered / fed, harvest window, parent = propagated from, item = seed packet), logs (kinds incl.
+     Harvested amount + unit, problem tags), photos (on logs), tasks (repeat_days moves due_on on), items (supplies, seed
+     bank, Bunnings fields). 68_garden_guides.sql: 51 plants written for pots in an apartment, sowing months for 5 zones.
+   - Due dates in SQL (PLANTING_SELECT): water = last + every (x2 in a self-watering pot), never watered = today; feed =
+     (last fed or started) + every; harvest window from the guide's days minus a head start by source (seedling 21 d).
+     Warnings: too little light (sun + grow light hours vs the guide), pot too small, out of sowing season.
+   - Layout (LayoutView.jsx): the space to scale (min of width / 520 px tall), 50 cm grid, the open side as an amber bar
+     with facing + sun, a compass arrow (side angle - bearing), containers dragged with pointer capture (snap 5 cm, kept
+     inside), corner to resize, arrow keys too; a tap (no move) opens it. Badges: water due, ready, warnings.
+   - Activity: Sowed / Planted, Harvested, Repotted, Spotted (pest / problem), Treated, Sprouted, Flowered, Photographed,
+     Noted (not each watering). Wanted supplies go on the Wishlist under Bunnings. Site check: 14 sites.
+   - Section tabs now scroll sideways when they don't fit (six Gardening tabs on a phone); max-width 640 px.
+   - e2e: rules-of-hooks false positive from a `while` loop in a component - moved into a helper. A label wrapped round a
+     <select> includes every option's text in its name (get_by_label matched the plant list).

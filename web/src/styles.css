@@ -769,7 +769,8 @@ button.mention:disabled { color: var(--muted); background: var(--fill); text-dec
 .home-journal-title { margin-top: 16px; }
 
 /* A hobby's own pages as a segmented control under the nav bar (and on phones, Supplies | Wishlist). */
-.section-tabs { display: flex; margin: 0 0 14px; max-width: 520px; }
+/* Six tabs (Gardening) can be wider than a phone: they scroll sideways rather than squash. */
+.section-tabs { display: flex; margin: 0 0 14px; max-width: 640px; overflow-x: auto; scrollbar-width: none; }
 .section-tabs.phone-only { display: none; }
 .segmented a {
   flex: 1; display: inline-flex; align-items: center; justify-content: center; padding: 6px 10px; border-radius: 7px;
@@ -2139,3 +2140,145 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .hike-gear-pick { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 0; padding: 0; border: 0; }
 .hike-gear-pick .check-row { display: flex; gap: 10px; align-items: center; font-size: 0.92rem; }
 .hike-gear-pick .button-row { margin-top: 6px; }
+
+/* ---------- Gardening (modules/gardening): layout plan, plants, notes and photos, guide, supplies ---------- */
+.garden-care { gap: 6px; }
+.garden-emoji { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 10px; font-size: 1.4rem; background: var(--ok-bg); }
+.garden-due { color: var(--tint); font-weight: 600; }
+.garden-notes { white-space: pre-wrap; }
+.garden-facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; margin: 6px 0 10px; font-size: 0.9rem; }
+.garden-facts dt { color: var(--muted); }
+.garden-facts dd { margin: 0; }
+.garden-facts dd .link-title { margin-right: 8px; }
+.garden-group { margin-top: 12px; }
+.garden-fits { color: var(--ok); }
+/* A plant's panel: its latest photo (or emoji) beside where it is. */
+.garden-plant-head { display: flex; gap: 14px; align-items: flex-start; }
+.garden-plant-photo { flex: none; width: 96px; height: 96px; border-radius: 14px; object-fit: cover; }
+.garden-plant-photo.empty { display: grid; place-items: center; font-size: 3rem; background: var(--ok-bg); }
+.garden-where { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 4px 0; }
+.garden-stages { margin-top: 4px; }
+/* Notes: the form, the timeline, photos. */
+.garden-log-form { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px; background: var(--fill-2); margin-bottom: 12px; }
+.garden-log-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.garden-log-row .field { flex: 1 1 130px; }
+.garden-log-row .garden-amount, .garden-log-row .garden-unit { flex: 0 1 100px; }
+.garden-tags { flex-wrap: wrap; }
+.garden-pending { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; }
+.garden-pending li { position: relative; }
+.garden-pending img { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; display: block; }
+.garden-pending button { position: absolute; top: -6px; right: -6px; background: var(--elevated); border-radius: 50%; min-height: 0; padding: 0 6px; }
+.garden-logs { list-style: none; margin: 0; padding: 0; }
+.garden-logs > li { padding: 8px 0; border-top: 1px solid var(--separator); }
+.garden-logs > li:first-child { border-top: 0; }
+.garden-log-head { display: flex; gap: 8px; align-items: center; }
+.garden-log-head .destructive { min-height: 0; padding: 0 6px; }
+.garden-log-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.garden-log-text { margin: 4px 0 0; font-size: 0.9rem; white-space: pre-wrap; }
+.garden-log-photos { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.garden-thumb { display: block; padding: 0; border: 0; border-radius: 8px; overflow: hidden; width: 72px; height: 72px; background: var(--fill); cursor: pointer; }
+.garden-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.garden-photo-strip { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 6px; }
+.garden-photo-strip .garden-thumb { width: 100%; height: auto; aspect-ratio: 1; }
+.garden-viewer { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px; background: rgb(0 0 0 / 0.75); }
+.garden-viewer-card { display: flex; flex-direction: column; gap: 8px; width: min(100%, 900px); max-height: 100%; overflow: auto; padding: 12px;
+  border-radius: 14px; background: var(--elevated); box-shadow: var(--shadow); }
+.garden-viewer-card > img { display: block; max-width: 100%; max-height: 72vh; margin: 0 auto; border-radius: 8px; object-fit: contain; }
+/* Sowing months: 12 little boxes. */
+.sow-months { display: inline-flex; gap: 2px; margin: 4px 0; }
+.sow-months > span { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 4px; font-size: 0.62rem; color: var(--faint); background: var(--fill-2); }
+.sow-months > span.on { color: #fff; background: var(--ok); }
+.sow-months > span.now { outline: 2px solid var(--text); outline-offset: -1px; }
+.garden-climate-row { display: flex; align-items: center; gap: 10px; margin: 2px 0; }
+.garden-climate-row > span:first-child { width: 90px; }
+.garden-month-pick .chip-filter { min-width: 34px; justify-content: center; }
+/* Reminders. */
+.garden-tasks { list-style: none; margin: 0 0 8px; padding: 0; }
+.garden-task { display: flex; gap: 10px; align-items: center; padding: 6px 0; }
+.garden-task .grow { display: flex; flex-direction: column; min-width: 0; }
+.garden-tick { flex: none; width: 30px; height: 30px; min-height: 0; padding: 0; border-radius: 50%; border: 2px solid var(--ok); color: var(--ok); background: transparent; }
+.garden-tick:hover { background: var(--ok-bg); }
+.garden-task-form { display: flex; flex-wrap: wrap; gap: 6px; }
+.garden-task-form input:first-child { flex: 1 1 180px; }
+/* The layout: the plan to scale (grid every 50 cm), its open side, the compass, containers. */
+.garden-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; margin-top: 12px; }
+.garden-plan-wrap { min-width: 0; }
+.garden-plan { position: relative; margin: 26px 26px 10px; border-radius: 6px; touch-action: none; user-select: none;
+  background-color: var(--surface); border: 2px solid var(--border);
+  background-image: linear-gradient(var(--separator) 1px, transparent 1px), linear-gradient(90deg, var(--separator) 1px, transparent 1px);
+  background-size: var(--grid) var(--grid); }
+.garden-open-side { position: absolute; display: flex; align-items: center; justify-content: center; background: #f59e0b; color: #fff;
+  font-size: 0.72rem; font-weight: 600; border-radius: 4px; pointer-events: none; white-space: nowrap; overflow: hidden; }
+.garden-open-side.side-top { left: 0; right: 0; top: -22px; height: 18px; }
+.garden-open-side.side-bottom { left: 0; right: 0; bottom: -22px; height: 18px; }
+.garden-open-side.side-left, .garden-open-side.side-right { top: 0; bottom: 0; width: 18px; }
+.garden-open-side.side-left { left: -22px; }
+.garden-open-side.side-right { right: -22px; }
+.garden-open-side.side-left > span, .garden-open-side.side-right > span { transform: rotate(-90deg); }
+.garden-compass { position: absolute; right: 6px; bottom: 6px; width: 30px; height: 30px; border-radius: 50%; background: var(--elevated);
+  border: 1px solid var(--border); pointer-events: none; }
+.garden-compass::before { content: ""; position: absolute; left: 50%; top: 4px; margin-left: -4px; border: 4px solid transparent;
+  border-bottom: 10px solid var(--out); border-top: 0; }
+.garden-compass > span { position: absolute; left: 0; right: 0; bottom: 2px; text-align: center; font-size: 0.6rem; font-weight: 700; color: var(--out); }
+.garden-pot { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 2px;
+  min-height: 0; border: 2px solid #8b5e3c; background: rgb(139 94 60 / 0.18); color: var(--text); cursor: grab; overflow: hidden; touch-action: none; }
+.garden-pot.round { border-radius: 50%; }
+.garden-pot.rect { border-radius: 6px; }
+.garden-pot:active { cursor: grabbing; }
+.garden-pot:focus-visible { outline: 3px solid var(--tint); outline-offset: 2px; }
+.garden-pot.thirsty { box-shadow: 0 0 0 3px #38bdf8; }
+.garden-pot.ready { border-color: var(--ok); }
+.garden-pot-plants { font-size: 1rem; line-height: 1; white-space: nowrap; }
+.garden-pot-plants small { font-size: 0.6rem; }
+.garden-pot-name { font-size: 0.62rem; font-weight: 600; line-height: 1.1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.garden-pot-flags { font-size: 0.7rem; line-height: 1; }
+.garden-pot-level { position: absolute; top: 2px; left: 50%; transform: translateX(-50%); font-size: 0.55rem; color: var(--muted); }
+.garden-pot-resize { position: absolute; right: 0; bottom: 0; width: 14px; height: 14px; cursor: nwse-resize; touch-action: none;
+  background: linear-gradient(135deg, transparent 50%, #8b5e3c 50%); border-bottom-right-radius: 4px; }
+.garden-plan-help { margin: 18px 0 0; }
+.garden-layout-side { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.garden-load { display: block; height: 8px; border-radius: 4px; background: var(--fill); overflow: hidden; }
+.garden-load > span { display: block; height: 100%; background: var(--ok); }
+.garden-load.heavy > span { background: var(--low); }
+/* Today. */
+.garden-steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; font-size: 0.92rem; }
+.garden-care-row { display: flex; align-items: center; gap: 8px; }
+.garden-care-row .row-button { flex: 1; min-width: 0; }
+.garden-sow-chips { list-style: none; margin: 6px 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.garden-sow-chips .fits { border-color: var(--ok); }
+.garden-weather { list-style: none; margin: 0 0 8px; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.garden-weather li { display: flex; flex-direction: column; padding: 8px 10px; border-radius: 10px; background: var(--fill-2); font-size: 0.88rem; }
+.garden-place { display: flex; gap: 8px; align-items: flex-end; }
+/* Plants as a timeline. */
+.garden-timeline { padding: 14px 16px; margin-top: 12px; }
+.garden-timeline ul { list-style: none; margin: 0; padding: 0; }
+.garden-timeline li { display: grid; grid-template-columns: 150px minmax(0, 1fr); align-items: center; gap: 10px; min-height: 30px; }
+.garden-timeline-months { position: relative; height: 18px; margin-left: 160px; font-size: 0.7rem; color: var(--muted); }
+.garden-timeline-months span { position: absolute; top: 0; border-left: 1px solid var(--separator); padding-left: 3px; }
+.garden-timeline-name { text-align: left; background: none; border: 0; padding: 0; min-height: 0; color: var(--text); font-size: 0.85rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.garden-timeline-track { position: relative; height: 14px; border-radius: 7px; background: var(--fill-2); }
+.garden-timeline-bar { position: absolute; top: 0; bottom: 0; border-radius: 7px; background: var(--ok-bg); border: 1px solid var(--ok); }
+.garden-timeline-bar.died { background: var(--out-bg); border-color: var(--out); }
+.garden-timeline-harvest { position: absolute; top: 3px; bottom: 3px; border-radius: 4px; background: var(--ok); }
+.garden-timeline-today { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--tint); }
+/* The guide. */
+.garden-guide-grid { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
+.garden-guide-grid > li { display: flex; }
+.garden-guide-card { display: flex; flex-direction: column; gap: 6px; width: 100%; padding: 14px; text-align: left; color: inherit; cursor: pointer; }
+.garden-guide-card:hover { border-color: var(--ok); }
+.garden-guide-top { display: flex; gap: 10px; align-items: center; }
+.garden-guide-top .grow { display: flex; flex-direction: column; min-width: 0; }
+.garden-guide-emoji { font-size: 1.8rem; }
+/* Supplies. */
+.garden-bunnings { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; padding: 14px 16px; margin-bottom: 12px; }
+.garden-bunnings .field { flex: 1 1 280px; }
+.garden-bunnings-help { flex-basis: 100%; margin: 0; }
+.garden-price { font-size: 1.3rem; font-weight: 700; margin: 4px 0; }
+.garden-qty { display: flex; align-items: center; gap: 10px; margin: 10px 0 0; }
+@media (max-width: 820px) {
+  .garden-layout { grid-template-columns: 1fr; }
+  .garden-timeline li { grid-template-columns: 100px minmax(0, 1fr); }
+  .garden-timeline-months { margin-left: 110px; }
+  .garden-weather { gap: 4px; }
+}

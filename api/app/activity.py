@@ -14,6 +14,8 @@
     reading     pages read (one entry per book per day), started, finished / stopped   (reading_log, books)
     goals       reached, and each progress note                                     (goals, goal_updates)
     hiking      a hike: distance, climb, time                                       (hikes)
+    gardening   sowed / planted; harvests, repotting, problems, notes and photos   (garden_plantings, garden_logs)
+                (not every watering - that's what Today is for)
 
 Each item: {at, day, kind, ref, verb, title, detail, photo_url}; the photo (if any) is the
 product's, the game's or the gear's. Newest first. Part of the core: Home shows the latest, and
@@ -153,6 +155,28 @@ WITH feed AS (
            (SELECT '/api/hiking/photos/' || p.photo_id FROM hike_photos p WHERE p.hike_id = h.hike_id
             ORDER BY p.along_m NULLS LAST, p.taken_at NULLS LAST, p.photo_id LIMIT 1)
     FROM hikes h
+  UNION ALL
+    SELECT {_on_day('p.started_on', 'p.created_at')}, 'planting', p.planting_id,
+           CASE WHEN p.source = 'Seed' THEN 'Sowed' ELSE 'Planted' END, p.name || COALESCE(' (' || p.variety || ')', ''),
+           c.name, NULL, NULL, NULL
+    FROM garden_plantings p LEFT JOIN garden_containers c ON c.container_id = p.container_id WHERE p.stage <> 'Planned'
+  UNION ALL
+    SELECT {_on_day('l.happened_on', 'l.created_at')},
+           CASE WHEN l.planting_id IS NOT NULL THEN 'planting' WHEN l.container_id IS NOT NULL THEN 'gcontainer' ELSE 'gspace' END,
+           COALESCE(l.planting_id, l.container_id, l.space_id),
+           CASE l.kind WHEN 'Harvested' THEN 'Harvested' WHEN 'Repotted' THEN 'Repotted' WHEN 'Pest' THEN 'Spotted'
+                WHEN 'Problem' THEN 'Spotted' WHEN 'Treated' THEN 'Treated' WHEN 'Sprouted' THEN 'Sprouted'
+                WHEN 'Flowered' THEN 'Flowered' WHEN 'Photo' THEN 'Photographed' ELSE 'Noted' END,
+           COALESCE(gp.name, gc.name, gs.name),
+           concat_ws(' · ', CASE WHEN l.amount IS NOT NULL THEN trim_scale(l.amount) || COALESCE(' ' || l.unit, '') END,
+                     NULLIF(array_to_string(l.tags, ', '), ''), left(l.text, 120)),
+           NULL, NULL,
+           (SELECT '/api/garden/photos/' || min(ph.photo_id) FROM garden_photos ph WHERE ph.log_id = l.log_id)
+    FROM garden_logs l
+    LEFT JOIN garden_plantings gp ON gp.planting_id = l.planting_id
+    LEFT JOIN garden_containers gc ON gc.container_id = l.container_id
+    LEFT JOIN garden_spaces gs ON gs.space_id = l.space_id
+    WHERE l.kind IN ('Note', 'Photo', 'Harvested', 'Repotted', 'Pest', 'Problem', 'Treated', 'Sprouted', 'Flowered')
 )
 SELECT f.at, (f.at AT TIME ZONE current_setting('TimeZone'))::date AS day,
        f.kind, f.ref, f.verb, f.title, NULLIF(f.detail, '') AS detail,

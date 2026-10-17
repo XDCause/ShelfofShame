@@ -14,7 +14,8 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, BackgroundTasks
 
-from . import bluesky, exophase, gameology, goodgames, hasegawa, hlj, openlibrary, overpass, steam, steamhunters, tamiya, wikimedia
+from . import (bluesky, bunnings, exophase, gameology, goodgames, hasegawa, hlj, openlibrary, openmeteo, overpass, steam,
+               steamhunters, tamiya, wikimedia)
 from .db import db
 
 log = logging.getLogger("sitecheck")
@@ -114,6 +115,21 @@ def _commons():
     return f"{len(files)} photos nearby, {len(info)} with thumbnails"
 
 
+def _bunnings():
+    p = bunnings.fetch("https://www.bunnings.com.au/scotts-osmocote-10l-premium-plus-superior-potting-mix_p2962117")
+    expect(p["bunnings_item"] == "2962117", f"Bunnings' page says item {p['bunnings_item']!r}, not 2962117")
+    expect(p["price"] is not None, "Bunnings' product page has no price")
+    expect(p["image"], "Bunnings' product page has no photo")
+    return f"{p['name']}: ${p['price']:.2f}"
+
+
+def _openmeteo():
+    days = openmeteo.forecast(-27.47, 153.03)
+    expect(days and days[0].get("max") is not None, "Open-Meteo's forecast has no temperatures")
+    expect(openmeteo.find_place("Brisbane"), "Open-Meteo couldn't find Brisbane")
+    return f"Brisbane today: {days[0]['max']:.0f}° max"
+
+
 # (site, what the app uses it for, the check)
 CHECKS = [
     ("Tamiya", "paint and kit look-ups, photos", _tamiya),
@@ -128,6 +144,8 @@ CHECKS = [
     ("Exophase", "DLC groups, Epic / Ubisoft games", _exophase),
     ("OpenStreetMap (Overpass)", "landmarks near a hike's track", _overpass),
     ("Wikimedia Commons", "photos near a hike's track and of its landmarks", _commons),
+    ("Bunnings", "garden supplies and seeds from a product link", _bunnings),
+    ("Open-Meteo", "weather tips for the balcony garden", _openmeteo),
 ]
 STATE = {"running": False}
 _lock = threading.Lock()

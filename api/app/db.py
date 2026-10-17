@@ -72,6 +72,9 @@ CONSTRAINT_MESSAGES = {
     "hikes_time_check": "A hike can't end before it starts.",
     "hikes_trail_url_check": "A trail link must start with http:// or https://.",
     "gear_hobby_check": "Gear can only be for volleyball or hiking.",
+    "garden_items_bunnings_uq": "That Bunnings product is already in your garden supplies.",
+    "garden_logs_about_check": "Say what it's about: a plant, a container or a space.",
+    "garden_plantings_harvest_check": "The harvest can't end before it starts.",
 }
 
 

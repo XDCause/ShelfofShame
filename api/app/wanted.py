@@ -4,6 +4,7 @@
     kits         Wanted models (Tamiya, Gundam, Warhammer...): the shop typed on the kit, else the default shop
     board games  Wanted games: Good Games
     gear         Wanted gear: the shop it was found at (Blue Sky Athletics for Way of Wade), else "No shop yet"
+    garden       Wanted garden supplies / seeds: Bunnings when it came from a Bunnings link, else "No shop yet"
 
 GET /api/wanted -> {default_shop, supplies (how many on the wishlist), shops: [{shop, items, total}]}; the
 default shop comes first (the wishlist's own list sits under it on the page), "No shop yet" last.
@@ -13,6 +14,7 @@ from fastapi import APIRouter
 from .boardgames import GAME_SELECT
 from .db import db
 from .settings import get_setting
+from .garden_items import ITEM_SELECT
 from .gear import GEAR_SELECT
 
 router = APIRouter(prefix="/api", tags=["wishlist"])
@@ -35,6 +37,7 @@ def wanted():
             WHERE m.status = 'Wanted' ORDER BY lower(m.name)""").fetchall()
         games = conn.execute(GAME_SELECT + " WHERE g.status = 'Wanted' ORDER BY lower(g.name)").fetchall()
         gear = conn.execute(GEAR_SELECT + " WHERE g.condition = 'Wanted' ORDER BY lower(g.name)").fetchall()
+        garden = conn.execute(ITEM_SELECT + " WHERE i.status = 'Wanted' ORDER BY lower(i.name)").fetchall()
 
     shops: dict[str, list] = {}
     for m in kits:
@@ -53,6 +56,11 @@ def wanted():
             "kind": "gear", "id": g["gear_id"], "name": g["name"], "label": g["kind"] or "Gear",
             "detail": " · ".join(filter(None, [g["brand"], g["size"] and f"size {g['size']}"])),
             "price": g["shop_price"], "photo_url": g["photo_url"], "url": g["shop_url"]})
+    for i in garden:
+        shops.setdefault("Bunnings" if i["bunnings_item"] else NO_SHOP, []).append({
+            "kind": "garden", "id": i["item_id"], "name": i["name"], "label": i["kind"],
+            "detail": " · ".join(filter(None, [i["brand"], i["bunnings_item"] and f"I/N {i['bunnings_item']}"])),
+            "price": i["price"], "photo_url": i["photo_url"], "url": i["url"]})
     shops.setdefault(default, [])
     order = sorted(shops, key=lambda s: (s != default, s == NO_SHOP, s.lower()))
     return {"default_shop": default, "supplies": supplies,

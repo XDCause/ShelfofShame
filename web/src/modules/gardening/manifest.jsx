@@ -1,25 +1,31 @@
-import { SproutIcon } from '../../components/icons.jsx'
-import EmptyState from '../../core/EmptyState.jsx'
+import { BoxIcon, GridIcon, SproutIcon, TrophyIcon } from '../../components/icons.jsx'
+import { ContainerFormPanel, ContainerPanel, GuidePanel, ItemPanel, NewGuidePanel, SpacePanel } from './GardenPanels.jsx'
+import { GardenTiles, HarvestsView, PlantsView, TodayView } from './GardenViews.jsx'
+import { GuideView, SuppliesView } from './GuideView.jsx'
+import { LayoutView } from './LayoutView.jsx'
+import PlantingPanel from './PlantingPanel.jsx'
 
-// Gardening: a placeholder for now - just the reminder in the sidebar (underConstruction puts a spanner
-// after its name). Plants, beds, sowing and harvests come later.
-function GardeningPage() {
-  return (
-    <section className="page">
-      <EmptyState Icon={SproutIcon} title="Gardening">
-        Under construction. This is where your garden will live - plants, beds, what to sow and when, and harvests.
-      </EmptyState>
-    </section>
-  )
-}
-
+// Gardening, for an apartment (api/app/garden.py, garden_guide.py, garden_items.py): your balcony,
+// windowsills and shelves drawn to scale with your pots on them; each plant's stage, watering, feeding,
+// harvest window, notes and photos; Today's jobs and weather tips; a plant guide with what to sow now;
+// harvests; supplies and seeds, with Bunnings links. Pages live at /gardening/<path>.
 export default {
   id: 'gardening',
   name: 'Gardening',
-  what: 'Plants, beds and harvests (under construction)',
+  what: 'Balcony and windowsill garden: layout, plants, watering, photos, harvests, Bunnings',
   Icon: SproutIcon,
-  underConstruction: true,
+  home: { Tiles: GardenTiles },
+  actions: [{ label: 'Add a plant', Icon: SproutIcon, run: (app) => app.openPanel('planting', {}) }],
+  panels: {
+    planting: PlantingPanel, gcontainer: ContainerPanel, gcontainerform: ContainerFormPanel, gspace: SpacePanel,
+    gguide: GuidePanel, gguidenew: NewGuidePanel, gitem: ItemPanel,
+  },
   pages: [
-    { path: 'garden', label: 'Garden', Icon: SproutIcon, render: () => <GardeningPage /> },
+    { path: 'today', label: 'Today', Icon: SproutIcon, render: () => <TodayView /> },
+    { path: 'layout', label: 'Layout', Icon: GridIcon, render: () => <LayoutView /> },
+    { path: 'plants', label: 'Plants', Icon: SproutIcon, render: () => <PlantsView /> },
+    { path: 'guide', label: 'Guide', Icon: SproutIcon, render: () => <GuideView /> },
+    { path: 'harvests', label: 'Harvests', Icon: TrophyIcon, render: () => <HarvestsView /> },
+    { path: 'supplies', label: 'Supplies', Icon: BoxIcon, render: () => <SuppliesView /> },
   ],
 }

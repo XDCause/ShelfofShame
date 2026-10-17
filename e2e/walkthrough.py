@@ -29,6 +29,8 @@ CHESS = bool(json.load(urllib.request.urlopen(f"{BASE}/api/chess/account"))["use
 _reading = json.load(urllib.request.urlopen(f"{BASE}/api/reading/summary"))
 READING = (any(_reading["counts"].values())) + bool(_reading["reading"])   # Home: books this year (+ reading now)
 HIKING = bool(json.load(urllib.request.urlopen(f"{BASE}/api/hiking/summary"))["all_time"]["hikes"])   # Home: km hiked
+_garden = json.load(urllib.request.urlopen(f"{BASE}/api/garden/summary"))
+GARDEN = bool(_garden["growing"] or _garden["spaces"])                                  # Home: plants growing
 MARK = f"e2e{int(time.time())}"   # a word only this run's journal page contains
 
 
@@ -89,10 +91,10 @@ def home(page):
     expect(stats.filter(has_text="Supplies")).to_contain_text(str(TOTAL))
     for tile in ("Shelf of shame", "Board games", "Volleyball", "Next game"):
         expect(stats.filter(has_text=tile)).to_be_visible()
-    expect(stats).to_have_count(10 + CHESS + READING + HIKING)
+    expect(stats).to_have_count(10 + CHESS + READING + HIKING + GARDEN)
     expect(page.locator(".home-card", has_text="Recent activity").locator(".pill").first).to_be_visible()
     expect(page.locator(".home-card", has_text="Coming up")).to_be_visible()
-    expect(page.locator(".quick-action")).to_have_count(11)       # + Log a chess game, Add a book, Log a hike
+    expect(page.locator(".quick-action")).to_have_count(12)       # + Log a chess game, Add a book, Log a hike, Add a plant
     shot(page, "d00_home", full=False)
     stats.filter(has_text="To buy").click()
     expect(page).to_have_url(BASE + "/wishlist")
@@ -1718,6 +1720,117 @@ def hiking(page):
     expect(page.locator(".hike-list .row-button", has_text=name)).to_have_count(0)
 
 
+@step("Gardening: a balcony to scale, a trough placed and dragged, basil from the guide (too little sun), watered, a harvest with a photo, Today, timeline, harvests, guide, supplies, sowing from a packet")
+def gardening(page):
+    page.goto(BASE + "/gardening/layout")
+    page.get_by_role("button", name=re.compile(r"^\+ (Add a space|Space)$")).first.click()     # the first space, or another
+    d = drawer(page)
+    d.get_by_label("Name").fill(f"Balcony {MARK}")
+    d.get_by_label("Width (cm)").fill("300")
+    d.get_by_label("Depth (cm)").fill("120")
+    d.get_by_label("That side faces").select_option("N")
+    d.get_by_label("Hours of direct sun").fill("3")
+    d.get_by_label("Covered (rain doesn't reach it)?").select_option("false")
+    d.get_by_role("button", name="Add space").click()
+    expect(d).to_have_count(0)
+    page.locator(".chip-filter", has_text=f"Balcony {MARK}").click()
+    expect(page.locator(".garden-open-side")).to_contain_text("faces north")
+    expect(page.locator(".garden-compass")).to_have_count(1)
+    page.get_by_role("button", name="+ Container").click()
+    d.get_by_label("Name").fill(f"Trough {MARK}")
+    d.get_by_label("Kind").select_option("Trough")                         # a trough: 80 x 25 cm, 30 L
+    expect(d.get_by_label("Width (cm)")).to_have_value("80")
+    d.get_by_role("button", name="Add container").click()
+    expect(d.get_by_role("heading", name=f"Trough {MARK}")).to_be_visible()  # opens it
+    d.get_by_role("button", name="+ Plant here").click()
+    basil = next(g for g in page.request.get(f"{BASE}/api/garden/guides?q=Basil").json()["guides"] if g["name"] == "Basil")
+    d.get_by_label("Plant (from the guide)").select_option(str(basil["guide_id"]))
+    expect(d.get_by_label("Water every (days)")).to_have_value("2")         # from the guide
+    d.get_by_label("Started from").select_option("Seedling")
+    d.get_by_role("button", name="Add plant").click()
+    expect(d.get_by_role("heading", name=re.compile("Basil"))).to_be_visible()
+    expect(d.locator(".alert.low")).to_contain_text("5 h of sun")           # the balcony gets 3
+    d.get_by_role("button", name="💧 Watered").click()
+    expect(d.locator(".garden-facts")).to_contain_text("next in 2 days")
+    d.get_by_label("What").select_option("Harvested")
+    d.get_by_label("How much").fill("25")
+    d.locator(".garden-log-form textarea").fill("First pesto")
+    jpeg = base64.b64decode(page.evaluate("""() => { const c = document.createElement('canvas'); c.width = 80; c.height = 60;
+        const g = c.getContext('2d'); g.fillStyle = '#2a7'; g.fillRect(0, 0, 80, 60); return c.toDataURL('image/jpeg').split(',')[1] }"""))
+    d.locator('.garden-log-form input[type=file][data-source="gallery"]').set_input_files(
+        files=[{"name": "basil.jpg", "mimeType": "image/jpeg", "buffer": jpeg}])
+    expect(d.locator(".garden-pending img")).to_have_count(1)
+    d.get_by_role("button", name="Save note").click()
+    expect(d.locator(".garden-logs")).to_contain_text("25 g")
+    expect(d.locator(".garden-log-photos img")).to_have_count(1)
+    expect(d.locator(".garden-where .pill")).to_have_text("Harvesting")      # a harvest moves it on
+    d.locator(".garden-log-photos button").click()
+    viewer = page.get_by_role("dialog", name="Photo")
+    expect(viewer).to_contain_text("First pesto")
+    viewer.press("Escape")                                                 # closes the photo, not the plant
+    expect(viewer).to_have_count(0)
+    expect(d.get_by_role("heading", name=re.compile("Basil"))).to_be_visible()
+    shot(page, "d80_garden_plant", full=True)
+    page.keyboard.press("Escape")
+    pot = page.locator(".garden-pot", has_text=f"Trough {MARK}")
+    expect(pot).to_contain_text("🌿")
+    box = pot.bounding_box()
+    page.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+    page.mouse.down()
+    page.mouse.move(box["x"] + box["width"] / 2 + 120, box["y"] + box["height"] / 2 + 40, steps=6)
+    page.mouse.up()
+    space_id = next(s["space_id"] for s in page.request.get(f"{BASE}/api/garden/spaces").json() if s["name"] == f"Balcony {MARK}")
+    moved = lambda: page.request.get(f"{BASE}/api/garden/spaces/{space_id}").json()["containers"][0]["x_cm"]  # noqa: E731
+    for _ in range(20):
+        if moved() > 10:
+            break
+        time.sleep(0.2)
+    assert moved() > 10, "the trough didn't move"
+    expect(drawer(page)).to_have_count(0)                                  # a drag isn't a tap
+    shot(page, "d81_garden_layout", full=True)
+    page.locator(".section-tabs").get_by_role("link", name="Today", exact=True).click()
+    expect(page.locator(".home-card", has_text="Sow in")).to_be_visible()
+    expect(page.locator(".garden-photo-strip img").first).to_be_visible()
+    shot(page, "d82_garden_today", full=True)
+    page.locator(".section-tabs").get_by_role("link", name="Plants", exact=True).click()
+    expect(page.locator(".garden-group", has_text=f"Balcony {MARK}")).to_contain_text("Basil")
+    page.get_by_role("button", name="Timeline").click()
+    expect(page.locator(".garden-timeline-bar").first).to_be_visible()
+    page.locator(".section-tabs").get_by_role("link", name="Harvests", exact=True).click()
+    expect(page.locator(".home-card", has_text="Every harvest")).to_contain_text("Basil")
+    page.locator(".section-tabs").get_by_role("link", name="Guide", exact=True).click()
+    page.get_by_role("button", name="All", exact=True).click()
+    page.locator(".garden-guide-card", has_text="Cherry tomato").click()
+    expect(d.get_by_role("button", name="Make my own copy")).to_be_visible()
+    expect(d.locator(".sow-months").first).to_be_visible()
+    page.keyboard.press("Escape")
+    page.locator(".section-tabs").get_by_role("link", name="Supplies", exact=True).click()
+    page.get_by_label("Bunnings link - or words to search Bunnings for").fill("potting mix")
+    expect(page.get_by_role("button", name="Search Bunnings ↗")).to_be_visible()   # words: opens their search (not clicked here)
+    page.get_by_label("Bunnings link - or words to search Bunnings for").fill("https://www.bunnings.com.au/x-mix_p1234567")
+    expect(page.get_by_role("button", name="Add from Bunnings")).to_be_visible()    # a link: read that page (not clicked: no live read)
+    page.get_by_role("button", name="+ Add by hand").click()
+    d.get_by_label(re.compile(r"^Name")).fill(f"Basil seeds {MARK}")     # (the plant list's options mention "name" too)
+    d.get_by_label("Which plant").select_option(str(basil["guide_id"]))
+    d.get_by_label("Packets").fill("2")
+    d.get_by_role("button", name="Add", exact=True).click()
+    expect(d.get_by_role("heading", name=f"Basil seeds {MARK}")).to_be_visible()
+    d.get_by_role("button", name="Sow", exact=True).click()
+    expect(d.get_by_role("heading", name=re.compile("Basil"))).to_be_visible()      # the new planting opens
+    expect(d.locator(".garden-where .pill")).to_have_text("Sown")
+    page.keyboard.press("Escape")
+    # tidy up through the API (the steps above went through the screens)
+    for p in page.request.get(f"{BASE}/api/garden/plantings?status=all&q=Basil").json():
+        if p["space_name"] == f"Balcony {MARK}" or p["container_name"] is None:
+            page.request.delete(f"{BASE}/api/garden/plantings/{p['planting_id']}")
+    for i in page.request.get(f"{BASE}/api/garden/items").json():
+        if MARK in i["name"]:
+            page.request.delete(f"{BASE}/api/garden/items/{i['item_id']}")
+    for c in page.request.get(f"{BASE}/api/garden/spaces/{space_id}").json()["containers"]:
+        page.request.delete(f"{BASE}/api/garden/containers/{c['container_id']}")
+    page.request.delete(f"{BASE}/api/garden/spaces/{space_id}")
+
+
 @step("Wishlist by shop: the default shop first, Good Games for board games; gear from Blue Sky (live)")
 def wishlist_shops(page):
     game = page.request.post(f"{BASE}/api/board-games", data={"name": f"Wantgame {MARK}", "status": "Wanted"}).json()
@@ -1821,7 +1934,7 @@ def settings_more(page):
     d.locator("summary", has_text="Tamiya catalogue").click()
     expect(d.locator(".settings > .fold", has_text="Tamiya catalogue")).to_contain_text("Tamiya products")
     d.locator("summary", has_text="Lookup sites").click()             # the weekly site check (no live run here)
-    expect(d.locator(".site-check")).to_have_count(12)
+    expect(d.locator(".site-check")).to_have_count(14)
     expect(d.get_by_role("button", name="Check now")).to_be_visible()
     shot(page, "d22_settings", full=False)
     page.keyboard.press("Escape")
@@ -1873,7 +1986,9 @@ def phone(page):
     expect(car.locator(".under-construction")).to_be_visible()     # the spanner: still to be built
     fits("Hobbies")
     for hobby, tabs in (("Models", ("Kits", "Colours")), ("Board games", ("Games", "Plays")),
-                        ("Volleyball", ("Games", "Gear", "Videos", "Coach")), ("Video games", ("Dashboard", "Games", "Stats", "Friends"))):
+                        ("Volleyball", ("Games", "Gear", "Videos", "Coach")), ("Video games", ("Dashboard", "Games", "Stats", "Friends")),
+                        ("Hiking", ("Dashboard", "Hikes", "Gear")),
+                        ("Gardening", ("Today", "Layout", "Plants", "Guide", "Harvests", "Supplies"))):   # six tabs: they scroll
         page.locator(".tabbar a", has_text="Hobbies").click()
         page.locator(".hobby-head", has_text=hobby).click()
         for tab in tabs:
@@ -1901,7 +2016,7 @@ with sync_playwright() as p:
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
                matches, used_on, gundam, bandai_lookup, warhammer, journal_write, journal_links, journal_from_model,
                journal_suggestion, journal_todo, global_search, journal_wishlist, appearance,
-               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, warhammer_minis, gundam_range, board_game_kinds, board_game_elsewhere, volleyball_coach, video_game_friends, wishlist_shops, goals, hiking, settings_more, no_panel):
+               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, warhammer_minis, gundam_range, board_game_kinds, board_game_elsewhere, volleyball_coach, video_game_friends, wishlist_shops, goals, hiking, gardening, settings_more, no_panel):
         fn(desk)
     ctx = browser.new_context(**p.devices["iPhone 13"], timezone_id=zone)
     mob = ctx.new_page()

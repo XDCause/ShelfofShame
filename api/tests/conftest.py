@@ -28,9 +28,11 @@ def clean_database():
                      "colour_group_members, mixes, mix_parts, price_guide, journal_pages, tags, page_tags, "
                      "journal_links, journal_images, journal_drawings, calendar_events, board_games, board_game_plays, gear, "
                      "volleyball_games, volleyball_teams, volleyball_videos, vg_achievements, vg_games, vg_other_games, "
-                     "chess_games, chess_archives, books, reading_log, book_quotes, vg_friends, volleyball_coach, goals, site_checks, hikes, hike_photos, hike_gear "
+                     "chess_games, chess_archives, books, reading_log, book_quotes, vg_friends, volleyball_coach, goals, site_checks, hikes, hike_photos, hike_gear, garden_spaces, garden_containers, garden_plantings, garden_logs, garden_photos, garden_tasks, garden_items "
                      "RESTART IDENTITY CASCADE")
         conn.execute("DELETE FROM settings WHERE key LIKE 'reading_goal_%%'")
+        conn.execute("DELETE FROM garden_guides WHERE custom")
+        conn.execute("UPDATE garden_settings SET climate = 'Subtropical', place_name = NULL, lat = NULL, lon = NULL")
         conn.execute("UPDATE chess_account SET username = NULL, profile = NULL, stats = NULL, last_sync_at = NULL, "
                      "last_error = NULL")
         conn.execute("UPDATE vg_sync SET profile = NULL, steam_id = NULL, persona_name = NULL, last_sync_at = NULL, "
@@ -50,7 +52,8 @@ def clean_database():
 @pytest.fixture(autouse=True)
 def no_real_steam(monkeypatch):
     """Tests never call Steam (and never use the real key): a test that forgets to fake it fails."""
-    from app import (bluesky, bookseries, chess, goodgames, chesscom, exophase, hiking, openlibrary, overpass, reading, steam,
+    from app import (bluesky, bookseries, bunnings, chess, goodgames, chesscom, exophase, hiking, openlibrary, openmeteo, overpass,
+                     reading, steam,
                      steamhunters, videogames, gameology, ucp, wikimedia)
 
     def refuse(*_a, **_k):
@@ -77,6 +80,11 @@ def no_real_steam(monkeypatch):
     monkeypatch.setattr(overpass, "_post", refuse)
     monkeypatch.setattr(overpass, "RETRY_WAITS", ())
     monkeypatch.setattr(wikimedia, "_get", refuse)
+    monkeypatch.setattr(bunnings, "_get", refuse)
+    monkeypatch.setattr(bunnings, "photo", lambda image: (None, None))
+    monkeypatch.setattr(bunnings, "PAUSE", 0)
+    monkeypatch.setattr(openmeteo, "_get", refuse)
+    openmeteo._cache.clear()
     hiking.LOOKING.clear()
     reading.COVERS.update(running=False, done=0, total=0, found=0, error=None)
     chess.SYNC.update(running=False, done=0, total=0, message=None, error=None, finished_at=None)

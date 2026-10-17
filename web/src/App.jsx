@@ -137,6 +137,10 @@ export default function App() {
     else if (kind === 'book') openPanel('book', { id })
     else if (kind === 'goal') navigate(`/goals/${id}`)
     else if (kind === 'hike') openPanel('hike', { id })
+    else if (kind === 'planting') openPanel('planting', { id })
+    else if (kind === 'gcontainer') openPanel('gcontainer', { id })
+    else if (kind === 'gspace') navigate(`/gardening/layout?space=${id}`)
+    else if (kind === 'garden') openPanel('gitem', { id })
   }, [openModel, openItem, navigate, openPanel])
   const app = useMemo(() => ({
     lookups, settings, refreshKey, changed, openItem, openModel, openAdd, openPanel, openThing, adjusted, showToast,
