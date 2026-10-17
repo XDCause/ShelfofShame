@@ -48,6 +48,7 @@ REPEATS = ["never", "weekly", "fortnightly"]
 MOODS = ["great", "good", "okay", "meh", "rough"]                              # 25_mood.sql, best first
 GAME_STATUSES = ["Owned", "To sell", "Wanted", "Borrowed", "Played elsewhere", "Gone"]   # 21 / 47 / 54_board_game_elsewhere.sql
 GEAR_CONDITIONS = ["Wanted", "New", "Good", "Worn", "Needs replacing", "Retired"]   # 22_volleyball.sql, 50_gear_wanted.sql
+GEAR_HOBBIES = ["volleyball", "hiking"]                                          # 65_hiking_gear.sql
 VOLLEYBALL_KINDS = ["Game", "Training", "Social", "Tournament"]
 
 # Friendly messages for database rule violations, keyed by constraint name.
@@ -69,6 +70,7 @@ CONSTRAINT_MESSAGES = {
     "hikes_gpx_hash_uq": "That GPX file has already been imported.",
     "hikes_time_check": "A hike can't end before it starts.",
     "hikes_trail_url_check": "A trail link must start with http:// or https://.",
+    "gear_hobby_check": "Gear can only be for volleyball or hiking.",
 }
 
 

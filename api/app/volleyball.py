@@ -175,9 +175,9 @@ def summary():
             FROM volleyball_games v WHERE v.played_on >= date_trunc('year', current_date)""").fetchone()
         row["last"] = conn.execute(GAME_SELECT + " WHERE v.kind <> 'Training' ORDER BY v.played_on DESC, v.game_id DESC "
                                    "LIMIT 1").fetchone()
-        row["gear_to_replace"] = conn.execute("SELECT count(*)::int AS n FROM gear WHERE condition = 'Needs replacing'"
+        row["gear_to_replace"] = conn.execute("SELECT count(*)::int AS n FROM gear WHERE condition = 'Needs replacing' AND hobby = 'volleyball'"
                                               ).fetchone()["n"]
-        row["gear_wanted"] = conn.execute("SELECT count(*)::int AS n FROM gear WHERE condition = 'Wanted'").fetchone()["n"]
+        row["gear_wanted"] = conn.execute("SELECT count(*)::int AS n FROM gear WHERE condition = 'Wanted' AND hobby = 'volleyball'").fetchone()["n"]
         return row
 
 

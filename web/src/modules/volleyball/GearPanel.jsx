@@ -6,17 +6,23 @@ import { useApp } from '../../core/app-context.js'
 import JournalMentions from '../../core/journal/JournalMentions.jsx'
 import { FormPanel } from './VolleyballPanels.jsx'
 
-// Gear (shoes, knee pads, balls...): one piece's panel, and finding it at a shop (api/app/gear.py).
-const GEAR_FIELDS = [
-  { name: 'name', label: 'Name', required: true, wide: true, placeholder: 'e.g. Court shoes' },
-  { name: 'kind', label: 'Kind', list: 'gear-kinds', placeholder: 'Shoes, Knee pads, Ball...' },
+// Gear (shoes, knee pads, balls; boots, packs, poles...): one piece's panel, and finding it at a shop
+// (api/app/gear.py). Shared by the hobbies with gear: volleyball and hiking (gear.hobby).
+const gearFields = (hobby) => [
+  { name: 'name', label: 'Name', required: true, wide: true, placeholder: hobby === 'hiking' ? 'e.g. Hiking boots' : 'e.g. Court shoes' },
+  { name: 'kind', label: 'Kind', list: 'gear-kinds', placeholder: hobby === 'hiking' ? 'Boots, Backpack, Poles...' : 'Shoes, Knee pads, Ball...' },
   { name: 'brand', label: 'Brand' },
   { name: 'size', label: 'Size' },
   { name: 'purchase_date', label: 'Bought on', type: 'date' },
   { name: 'price_paid', label: 'Price paid', type: 'money' },
   { name: 'notes', label: 'Notes', type: 'textarea' },
 ]
-const GEAR_KINDS = ['Shoes', 'Knee pads', 'Ball', 'Clothing', 'Bag', 'Ankle brace', 'Water bottle']
+export const GEAR_KINDS = {
+  volleyball: ['Shoes', 'Knee pads', 'Ball', 'Clothing', 'Bag', 'Ankle brace', 'Water bottle'],
+  hiking: ['Boots', 'Trail shoes', 'Socks', 'Backpack', 'Poles', 'Jacket', 'Clothing', 'Hat', 'Hydration', 'Headlamp',
+    'Navigation', 'First aid', 'Tent', 'Sleeping bag', 'Sleeping mat', 'Stove'],
+}
+const hikedKm = (g) => `${g.hikes} hike${g.hikes === 1 ? '' : 's'} · ${(g.hiked_m / 1000).toFixed(1)} km`
 
 // Find gear at Blue Sky Athletics (Way of Wade shoes; api/app/bluesky.py): search as you type, a row
 // per product with its price, sizes in stock and picture; onPick(product).
@@ -69,9 +75,10 @@ function GearShopFind({ onPick, pickLabel }) {
 // One piece of gear: photo, condition (tap to change), details, journal pages about it.
 // wanted: a new piece you'd like to buy (condition Wanted); tapping a condition once you have it
 // dates it bought today (the API), unless Bought on is filled in.
-export function GearPanel({ id = null, wanted = false, onClose }) {
+export function GearPanel({ id = null, wanted = false, hobby: newHobby = 'volleyball', onClose }) {
   const { lookups, changed, showToast, openPanel } = useApp()
   const [gear, setGear] = useState(null)
+  const hobby = gear?.hobby ?? newHobby
   const [condition, setCondition] = useState(wanted ? 'Wanted' : 'Good')
   // From the shop: a new piece is added straight away (then opened, to set your size); one you have is linked.
   const fromShop = async (product) => {
@@ -102,13 +109,13 @@ export function GearPanel({ id = null, wanted = false, onClose }) {
   const save = async (data) => {
     const body = { ...data, condition }
     if (gear) await api.updateGear(gear.gear_id, body)
-    else await api.addGear(body)
+    else await api.addGear({ ...body, hobby })
     changed()
     showToast(gear ? 'Saved' : condition === 'Wanted' ? `${body.name} is on your wanted list` : `Added ${body.name} to your gear`)
     onClose()
   }
   return (
-    <FormPanel title={gear ? gear.name : wanted ? 'Gear you want' : 'Add gear'} fields={GEAR_FIELDS} record={gear} onClose={onClose}
+    <FormPanel title={gear ? gear.name : wanted ? 'Gear you want' : 'Add gear'} fields={gearFields(hobby)} record={gear} onClose={onClose}
       onSave={save} saveLabel={gear ? 'Save' : wanted ? 'Add to wanted' : 'Add gear'}
       hide={condition === 'Wanted' ? ['purchase_date', 'price_paid'] : []}   // not bought yet
       onDelete={gear && (async () => { await api.deleteGear(gear.gear_id); changed(); onClose() })}
@@ -121,16 +128,17 @@ export function GearPanel({ id = null, wanted = false, onClose }) {
             <p className="item-sub">{[gear.kind, gear.brand, gear.size].filter(Boolean).join(' · ')}</p>
             {gear.price_paid != null && <span className="chip">{money(gear.price_paid)}</span>}
             {gear.purchase_date && <span className="muted small"> Bought {shortDate(gear.purchase_date)}</span>}
+            {hobby === 'hiking' && gear.hikes > 0 && <p className="small">Taken on {hikedKm(gear)}</p>}
             {gear.shop_url && <p className="small"><a href={gear.shop_url} target="_blank" rel="noreferrer">
               {gear.shop_name}{gear.shop_price != null && ` ${money(gear.shop_price)}`} ↗</a></p>}
           </div>
         </div>
       )}
-      {!gear?.shop_id && <GearShopFind onPick={fromShop} pickLabel={gear ? 'Link' : condition === 'Wanted' ? 'Want this' : 'Add'} />}
+      {hobby === 'volleyball' && !gear?.shop_id && <GearShopFind onPick={fromShop} pickLabel={gear ? 'Link' : condition === 'Wanted' ? 'Want this' : 'Add'} />}
       </>}>
       {() => (
         <>
-          <datalist id="gear-kinds">{GEAR_KINDS.map((k) => <option key={k} value={k} />)}</datalist>
+          <datalist id="gear-kinds">{GEAR_KINDS[hobby].map((k) => <option key={k} value={k} />)}</datalist>
           <p className="field-label">Condition</p>
           <div className="condition-picker" role="group" aria-label="Condition">
             {lookups.gear_conditions.map((c) => (

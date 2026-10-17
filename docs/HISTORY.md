@@ -1493,3 +1493,9 @@ DBeaver connection confirmed working (2026-10-11).
      queue) and both mirrors returned 500 on the day, so: main server only, retries after 20 s / 60 s, results saved.
      "Look again" re-runs; an error is shown and the last results kept. DAILY_SYNCS=off (the walk-through copy)
      skips it; the walk-through also serves the map tiles a blank PNG. Both sources are on the weekly site check.
+3zzx. **Hiking gear** (2026-10-17; "equipment like volleyball for hiking"). gear.hobby existed from the start for this;
+   65_hiking_gear.sql allows 'hiking' and adds hike_gear (which gear went on which hike). GET /gear?hobby=; GEAR_SELECT
+   adds hikes + hiked_m; volleyball's summary counts only its own gear. PUT /hiking/hikes/{id}/gear (hiking gear only);
+   a hike carries its gear and last_gear_ids ("Same as last hike": the previous hike that had gear, minus retired /
+   wanted). Web: GearView / GearPanel take a hobby (kinds list per hobby; the Blue Sky shop search stays volleyball's -
+   it's a court-sports shop); Hiking -> Gear tab; "Gear used" on each hike; cards show "N hikes · X km".

@@ -1,8 +1,9 @@
-"""Gear (shared by every hobby; volleyball's for now): shoes, knee pads, balls... with condition, photo,
-and where to buy it. Wanted gear (not bought yet) has no purchase date or price paid. Gear can be found at
-Blue Sky Athletics (Way of Wade shoes; bluesky.py) and filled in from there.
+"""Gear (shared by the hobbies that have it: volleyball and hiking - gear.hobby): shoes, knee pads, boots,
+packs... with condition, photo, and where to buy it. Wanted gear (not bought yet) has no purchase date or
+price paid. Volleyball gear can be found at Blue Sky Athletics (Way of Wade shoes; bluesky.py) and filled
+in from there. Hiking gear says how many hikes and km it's done (hike_gear, set on each hike in hiking.py).
 
-    GET    /gear                  your gear: in use, then Wanted, then Retired
+    GET    /gear?hobby=           your gear (one hobby's, or all): in use, then Wanted, then Retired
     GET    /gear/lookup?q=        Blue Sky Athletics products (gear_id = the one you have)
     POST   /gear                  add (shop_id: name / kind / brand / link / price / photo from the shop)
     POST   /gear/{id}/shop        link gear you have to a shop product
@@ -16,12 +17,13 @@ from fastapi import APIRouter, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 
 from . import bluesky, gameology
-from .db import GEAR_CONDITIONS, db, found, insert_row, tidy_text, update_row
+from .db import GEAR_CONDITIONS, GEAR_HOBBIES, db, found, insert_row, tidy_text, update_row
 from .images import add_photo_routes
 
 router = APIRouter(prefix="/api", tags=["volleyball"])
 
 Condition = Literal[tuple(GEAR_CONDITIONS)]
+Hobby = Literal[tuple(GEAR_HOBBIES)]
 
 
 ShopId = Field(None, pattern=r"^[0-9]{1,20}$")
@@ -30,6 +32,7 @@ ShopId = Field(None, pattern=r"^[0-9]{1,20}$")
 class GearIn(BaseModel):
     name: str = Field("", max_length=200)   # may be empty when shop_id is given (the shop's name is used)
     shop_id: str | None = ShopId    # picked from the shop search (Blue Sky Athletics): its facts and photo are read
+    hobby: Hobby = "volleyball"
     kind: str | None = None
     brand: str | None = None
     size: str | None = None
@@ -54,6 +57,9 @@ GEAR_SELECT = """
 SELECT g.gear_id, g.hobby, g.name, g.kind, g.brand, g.size, g.condition, g.purchase_date, g.price_paid,
        g.notes, g.created_at, g.updated_at, g.photo IS NOT NULL AS has_photo,
        g.shop_name, g.shop_url, g.shop_price, g.shop_id,
+       (SELECT count(*) FROM hike_gear hg WHERE hg.gear_id = g.gear_id) AS hikes,
+       (SELECT COALESCE(sum(h.distance_m), 0)::float8 FROM hike_gear hg JOIN hikes h USING (hike_id)
+        WHERE hg.gear_id = g.gear_id) AS hiked_m,
        CASE WHEN g.photo IS NOT NULL THEN '/api/gear/' || g.gear_id || '/photo?v='
             || (extract(epoch FROM g.photo_updated) * 1000)::bigint END AS photo_url
 FROM gear g"""
@@ -67,12 +73,13 @@ def fetch_gear(conn, gear_id: int) -> dict:
 # Gear
 # ---------------------------------------------------------------------------
 @router.get("/gear")
-def list_gear():
-    """Your gear: in use first (worst condition first), then what you want to buy, retired last."""
+def list_gear(hobby: Hobby | None = None):
+    """Your gear (one hobby's, or all): in use first (worst condition first), then what you want to buy, retired last."""
     with db() as conn:
-        return conn.execute(GEAR_SELECT + " ORDER BY g.condition = 'Retired', g.condition = 'Wanted', "
+        return conn.execute(GEAR_SELECT + " WHERE %(hobby)s::text IS NULL OR g.hobby = %(hobby)s "
+                            "ORDER BY g.condition = 'Retired', g.condition = 'Wanted', "
                             "array_position(ARRAY['Needs replacing', 'Worn', 'Good', 'New'], g.condition), "
-                            "lower(g.name)").fetchall()
+                            "lower(g.name)", {"hobby": hobby}).fetchall()
 
 
 def not_bought_yet(data: dict) -> dict:

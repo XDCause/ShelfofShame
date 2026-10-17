@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router'
 import { api, shortDate } from '../../api.js'
 import Drawer from '../../components/Drawer.jsx'
 import Fold from '../../components/Fold.jsx'
@@ -210,6 +211,8 @@ export default function HikePanel({ id: startId, onClose }) {
         </section>
       )}
 
+      <HikeGear hike={h} onSaved={(x) => { setHike(x); changed() }} onLeave={onClose} />
+
       {h.splits?.length > 0 && (
         <section className="panel-section">
           <Fold title="Splits" detail={`${h.splits.length} km`}><Splits splits={h.splits} /></Fold>
@@ -243,5 +246,67 @@ export default function HikePanel({ id: startId, onClose }) {
           onClose={() => setViewing(null)} />
       )}
     </Drawer>
+  )
+}
+
+// The gear you took: tick it from your hiking gear (in use, plus anything already on this hike), or
+// "Same as last hike". Each piece then counts this hike's km (Hiking → Gear).
+function HikeGear({ hike: h, onSaved, onLeave }) {
+  const [all, setAll] = useState(null)
+  const [picking, setPicking] = useState(false)
+  const [picked, setPicked] = useState([])
+  const [error, setError] = useState('')
+  useEffect(() => { api.listGear('hiking').then(setAll).catch((e) => setError(e.message)) }, [h.hike_id])
+  const save = async (ids) => {
+    try {
+      onSaved(await api.setHikeGear(h.hike_id, ids))
+      setPicking(false)
+      setError('')
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+  const on = new Set(h.gear.map((g) => g.gear_id))
+  const choices = (all ?? []).filter((g) => on.has(g.gear_id) || !['Wanted', 'Retired'].includes(g.condition))
+  const start = () => { setPicked([...on]); setPicking(true) }
+  return (
+    <section className="panel-section">
+      <div className="section-head">
+        <h3 className="section-title">Gear used</h3>
+        {!picking && choices.length > 0 && (
+          <span className="button-row">
+            {h.gear.length === 0 && h.last_gear_ids.length > 0 && (
+              <button type="button" className="plain small" onClick={() => save(h.last_gear_ids)}>Same as last hike</button>
+            )}
+            <button type="button" className="plain small" onClick={start}>{h.gear.length ? 'Change' : 'Choose gear'}</button>
+          </span>
+        )}
+      </div>
+      {all && choices.length === 0 && (
+        <p className="muted small">Add your boots, pack and poles on <Link to="/hiking/gear" onClick={onLeave}>Hiking → Gear</Link>, then
+          tick what you took - each piece adds up its hikes and kilometres.</p>
+      )}
+      {!picking && h.gear.length > 0 && (
+        <ul className="hike-gear-chips">
+          {h.gear.map((g) => <li key={g.gear_id} className="chip">{g.name}{g.kind && <span className="muted"> · {g.kind}</span>}</li>)}
+        </ul>
+      )}
+      {picking && (
+        <fieldset className="hike-gear-pick" aria-label="Gear used on this hike">
+          {choices.map((g) => (
+            <label key={g.gear_id} className="check-row">
+              <input type="checkbox" checked={picked.includes(g.gear_id)}
+                onChange={(e) => setPicked((p) => (e.target.checked ? [...p, g.gear_id] : p.filter((x) => x !== g.gear_id)))} />
+              <span>{g.name}<span className="muted small">{[g.kind, g.condition !== 'Good' && g.condition].filter(Boolean).map((x) => ` · ${x}`).join('')}</span></span>
+            </label>
+          ))}
+          <div className="button-row">
+            <button type="button" className="primary small" onClick={() => save(picked)}>Save gear</button>
+            <button type="button" className="plain small" onClick={() => setPicking(false)}>Cancel</button>
+          </div>
+        </fieldset>
+      )}
+      {error && <p className="alert error small">{error}</p>}
+    </section>
   )
 }

@@ -12,6 +12,7 @@ logged by hand.
     photos    your own photos of a hike: each is placed on the track by its GPS position, or by the time
               it was taken (both read from the photo's EXIF in the browser, before it's shrunk)
     landmarks POST /hiking/hikes/{id}/landmarks   look them up again
+    gear      PUT /hiking/hikes/{id}/gear   which of your hiking gear went (gear.py: each piece's hikes and km)
     summary   this year and all time, km per month (last 12), personal bests, the latest hikes
 """
 import logging
@@ -25,6 +26,7 @@ from psycopg.types.json import Jsonb
 from pydantic import BaseModel, Field
 
 from . import gpx, overpass, wikimedia
+from .gear import GEAR_SELECT
 from .db import db, found, insert_row, tidy_text, update_row
 from .images import photo_response, read_photo
 
@@ -92,6 +94,15 @@ def fetch(conn, hike_id: int) -> dict:
     hike["photos"] = conn.execute(PHOTOS + " WHERE hike_id = %s ORDER BY along_m NULLS LAST, taken_at NULLS LAST, photo_id",
                                   (hike_id,)).fetchall()
     hike["landmarks_looking"] = hike_id in LOOKING
+    hike["gear"] = conn.execute(GEAR_SELECT + " JOIN hike_gear hg ON hg.gear_id = g.gear_id WHERE hg.hike_id = %s "
+                                "ORDER BY lower(g.kind), lower(g.name)", (hike_id,)).fetchall()
+    # What you took on the hike before this one that had gear ("Same as last time").
+    hike["last_gear_ids"] = [r["gear_id"] for r in conn.execute("""
+        SELECT hg.gear_id FROM hike_gear hg JOIN gear g USING (gear_id)
+        WHERE g.condition NOT IN ('Retired', 'Wanted') AND hg.hike_id = (
+            SELECT h.hike_id FROM hikes h JOIN hike_gear x USING (hike_id)
+            WHERE h.hike_id <> %(id)s AND (h.hiked_on, h.hike_id) < (%(on)s, %(id)s)
+            ORDER BY h.hiked_on DESC, h.hike_id DESC LIMIT 1)""", {"id": hike_id, "on": hike["hiked_on"]}).fetchall()]
     return hike
 
 
@@ -256,6 +267,26 @@ def place(track, started_at, lat, lon, taken_at):
 # ---------------------------------------------------------------------------------------------
 # Your photos
 # ---------------------------------------------------------------------------------------------
+class GearIds(BaseModel):
+    gear_ids: list[int] = Field(max_length=100)
+
+
+@router.put("/hiking/hikes/{hike_id}/gear")
+def set_hike_gear(hike_id: int, body: GearIds):
+    """The hiking gear that went on this hike (replaces the list)."""
+    ids = sorted(set(body.gear_ids))
+    with db() as conn:
+        found(conn.execute("SELECT 1 FROM hikes WHERE hike_id = %s", (hike_id,)).fetchone(), "Hike")
+        ok = {r["gear_id"] for r in conn.execute("SELECT gear_id FROM gear WHERE gear_id = ANY(%s) AND hobby = 'hiking'",
+                                                 (ids,)).fetchall()}
+        if set(ids) - ok:
+            raise HTTPException(422, "That isn't your hiking gear.")
+        conn.execute("DELETE FROM hike_gear WHERE hike_id = %s", (hike_id,))
+        for gear_id in ids:
+            conn.execute("INSERT INTO hike_gear (hike_id, gear_id) VALUES (%s, %s)", (hike_id, gear_id))
+        return fetch(conn, hike_id)
+
+
 class PhotoPatch(BaseModel):
     caption: str | None = Field(None, max_length=500)
 

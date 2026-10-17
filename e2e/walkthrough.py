@@ -1671,6 +1671,31 @@ def hiking(page):
     expect(d.locator(".hike-pills")).to_contain_text("Hard")
     shot(page, "d70_hike", full=True)
     page.keyboard.press("Escape")
+    # Gear: boots on Hiking → Gear, ticked on the hike; they then count its kilometres.
+    page.locator(".sidebar").get_by_role("link", name="Hiking", exact=True).click()
+    page.locator(".section-tabs").get_by_role("link", name="Gear", exact=True).click()
+    page.get_by_role("button", name="+ Add gear").first.click()
+    expect(d.locator("#gear-kinds option[value='Backpack']")).to_have_count(1)        # hiking's kinds, not volleyball's
+    expect(d.get_by_text("Find it at Blue Sky Athletics")).to_have_count(0)            # the court-sports shop is volleyball's
+    d.get_by_label("Name").fill(f"Boots {MARK}")
+    d.get_by_label("Kind").fill("Boots")
+    d.get_by_role("button", name="Add gear").click()
+    expect(page.locator(".model-card", has_text=f"Boots {MARK}")).to_be_visible()
+    page.locator(".section-tabs").get_by_role("link", name="Hikes", exact=True).click()
+    page.locator(".hike-list .row-button", has_text=name).click()
+    d.get_by_role("button", name="Choose gear").click()
+    d.get_by_label(re.compile(f"Boots {MARK}")).check()
+    d.get_by_role("button", name="Save gear").click()
+    expect(d.locator(".hike-gear-chips")).to_contain_text(f"Boots {MARK}")
+    page.keyboard.press("Escape")
+    page.locator(".section-tabs").get_by_role("link", name="Gear", exact=True).click()
+    boots = page.locator(".model-card", has_text=f"Boots {MARK}")
+    expect(boots).to_contain_text("1 hike · 3.0 km")
+    boots.click()
+    d.get_by_role("button", name="Delete", exact=True).click()
+    d.locator(".confirm button.danger").click()                                # "Delete it?" - Delete
+    expect(page.locator(".model-card", has_text=f"Boots {MARK}")).to_have_count(0)
+    page.goto(BASE + "/hiking/dashboard")
     page.locator(".gpx-import input[type=file]").first.set_input_files(files=[upload])    # the same file again
     expect(d.get_by_role("heading", name=name)).to_be_visible()
     page.keyboard.press("Escape")

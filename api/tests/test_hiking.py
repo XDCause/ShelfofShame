@@ -255,3 +255,29 @@ def test_trailhead_facilities_thinned_and_photos_spread(monkeypatch):
     picked = hiking.find_nearby_photos(tr)
     assert len(picked) <= hiking.MAX_NEARBY and sum(p["author"] == "Moth fan" for p in picked) == 2
     assert picked == sorted(picked, key=lambda p: p["along_m"])
+
+
+def test_hiking_gear_hikes_and_km(client):
+    boots = client.post("/api/gear", json={"name": "Merrell boots", "kind": "Boots", "hobby": "hiking"}).json()
+    pack = client.post("/api/gear", json={"name": "Day pack", "kind": "Backpack", "hobby": "hiking"}).json()
+    ball = client.post("/api/gear", json={"name": "Ball"}).json()                       # volleyball's (the default)
+    assert boots["hobby"] == "hiking" and ball["hobby"] == "volleyball"
+    assert [g["name"] for g in client.get("/api/gear?hobby=hiking").json()] == ["Day pack", "Merrell boots"]
+    assert [g["name"] for g in client.get("/api/gear?hobby=volleyball").json()] == ["Ball"]
+    assert len(client.get("/api/gear").json()) == 3
+    assert client.post("/api/gear", json={"name": "Kayak", "hobby": "kayaking"}).status_code == 422
+
+    one = client.post("/api/hiking/hikes", json={"name": "Walk 1", "hiked_on": "2026-10-01", "distance_km": 8.5}).json()
+    two = client.post("/api/hiking/hikes", json={"name": "Walk 2", "hiked_on": "2026-10-08", "distance_km": 12}).json()
+    h = client.put(f"/api/hiking/hikes/{one['hike_id']}/gear", json={"gear_ids": [boots["gear_id"], pack["gear_id"]]}).json()
+    assert [g["name"] for g in h["gear"]] == ["Day pack", "Merrell boots"]
+    assert client.put(f"/api/hiking/hikes/{one['hike_id']}/gear", json={"gear_ids": [ball["gear_id"]]}).status_code == 422
+    assert sorted(client.get(f"/api/hiking/hikes/{two['hike_id']}").json()["last_gear_ids"]) == sorted([boots["gear_id"], pack["gear_id"]])
+    assert client.get(f"/api/hiking/hikes/{one['hike_id']}").json()["last_gear_ids"] == []      # nothing before it
+    client.put(f"/api/hiking/hikes/{two['hike_id']}/gear", json={"gear_ids": [boots["gear_id"]]})
+    b = client.get(f"/api/gear/{boots['gear_id']}").json()
+    assert (b["hikes"], b["hiked_m"]) == (2, 20500)
+    client.delete(f"/api/hiking/hikes/{two['hike_id']}")
+    assert client.get(f"/api/gear/{boots['gear_id']}").json()["hiked_m"] == 8500
+    client.patch(f"/api/gear/{pack['gear_id']}", json={"condition": "Needs replacing"})
+    assert client.get("/api/volleyball/summary").json()["gear_to_replace"] == 0              # hiking gear isn't volleyball's

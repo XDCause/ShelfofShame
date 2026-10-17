@@ -2135,3 +2135,7 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .gpx-results li.added button { color: var(--ok); }
 .gpx-results li.error { color: var(--out); }
 .hike-form .button-row { margin-top: 10px; }
+.hike-gear-chips { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.hike-gear-pick { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 0; padding: 0; border: 0; }
+.hike-gear-pick .check-row { display: flex; gap: 10px; align-items: center; font-size: 0.92rem; }
+.hike-gear-pick .button-row { margin-top: 6px; }

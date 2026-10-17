@@ -220,12 +220,13 @@ function HeadToHead({ games }) {
   )
 }
 
-// Your gear, worst condition first (retired last), then a group of what you want to buy.
-export function GearView() {
+// Your gear (one hobby's: volleyball or hiking), worst condition first (retired last), then a group of
+// what you want to buy. Hiking gear says how many hikes and km it's been on.
+export function GearView({ hobby = 'volleyball', Icon = ShoeIcon }) {
   const { refreshKey, openPanel } = useApp()
   const [gear, setGear] = useState(null)
   const [error, setError] = useState('')
-  useEffect(() => { api.listGear().then(setGear).catch((e) => setError(e.message)) }, [refreshKey])
+  useEffect(() => { api.listGear(hobby).then(setGear).catch((e) => setError(e.message)) }, [refreshKey, hobby])
   if (error) return <p className="alert error">{error}</p>
   if (!gear) return <p className="muted loading">Loading...</p>
   const owned = gear.filter((g) => g.condition !== 'Wanted')
@@ -237,13 +238,14 @@ export function GearView() {
         <button key={g.gear_id} type="button" className="model-card" onClick={() => openPanel('gear', { id: g.gear_id })}>
           <span className="model-photo cover">
             {g.photo_url ? <img src={g.photo_url} alt="" loading="lazy" />
-              : <span className="photo-missing big-icon"><ShoeIcon size={44} /></span>}
+              : <span className="photo-missing big-icon"><Icon size={44} /></span>}
             <span className={`status-badge pill ${GEAR_TONE[g.condition]}`}>{g.condition}</span>
           </span>
           <span className="model-body">
             <span className="model-name">{g.name}</span>
             <span className="model-meta">{[g.kind, g.brand, g.size].filter(Boolean).join(' · ')}</span>
             {g.purchase_date && g.condition !== 'Wanted' && <span className="muted small">Bought {shortDate(g.purchase_date)}</span>}
+            {hobby === 'hiking' && g.hikes > 0 && <span className="muted small">{g.hikes} hike{g.hikes === 1 ? '' : 's'} · {(g.hiked_m / 1000).toFixed(1)} km</span>}
           </span>
         </button>
       ))}
@@ -255,12 +257,13 @@ export function GearView() {
         <p className="summary grow"><strong>{owned.filter((g) => g.condition !== 'Retired').length}</strong> in use
           {count('Needs replacing') > 0 && <span className="muted"> · {count('Needs replacing')} to replace</span>}
           {wanted.length > 0 && <span className="muted"> · {wanted.length} wanted</span>}</p>
-        <button type="button" className="secondary" onClick={() => openPanel('gear', { wanted: true })}>+ Want</button>
-        <button type="button" className="primary" onClick={() => openPanel('gear', {})}>+ Add gear</button>
+        <button type="button" className="secondary" onClick={() => openPanel('gear', { wanted: true, hobby })}>+ Want</button>
+        <button type="button" className="primary" onClick={() => openPanel('gear', { hobby })}>+ Add gear</button>
       </div>
       {gear.length === 0 ? (
-        <EmptyState Icon={ShoeIcon} title="No gear yet" action="+ Add gear" onAction={() => openPanel('gear', {})}>
-          Shoes, knee pads, your own ball - with photos, and when they need replacing.</EmptyState>
+        <EmptyState Icon={Icon} title="No gear yet" action="+ Add gear" onAction={() => openPanel('gear', { hobby })}>
+          {hobby === 'hiking' ? 'Boots, packs, poles, jackets - with photos, the hikes and kilometres they\'ve done, and when they need replacing.'
+            : 'Shoes, knee pads, your own ball - with photos, and when they need replacing.'}</EmptyState>
       ) : (
         <>
           {owned.length > 0 && cards(owned)}
