@@ -176,7 +176,7 @@ def test_bunnings_parse_and_links():
     assert bunnings.product_url("Check this out https://www.bunnings.com.au/Test-Mix-10l_p1234567?utm_source=x") == \
         "https://www.bunnings.com.au/test-mix-10l_p1234567"
     assert bunnings.product_url("https://www.bunnings.com.au/search/products?q=mix") is None
-    assert bunnings.photo_url("https://media.bunnings.com.au/x?v=1") == "https://media.bunnings.com.au/x?v=1&t=w600"
+    assert bunnings.photo_url("https://media.bunnings.com.au/x?v=1") == "https://media.bunnings.com.au/x?v=1&t=w1200"
     assert bunnings.photo_url("https://evil.example/x") is None
     for page in ("<html>Checking your browser</html>", '<script id="__NEXT_DATA__" type="application/json">{}</script>'):
         try:

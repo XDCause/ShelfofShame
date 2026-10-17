@@ -1511,7 +1511,7 @@ DBeaver connection confirmed working (2026-10-11).
      ("retail-product": name, itemNumber, manufacturer, averageRating, numberOfReviews, weight, allCategories, feature,
      installationInformation, images; "product-retail-price": value for the default store). Cloudflare's passive
      "challenge-platform" script is on the page but it's not a wall - a real challenge (no __NEXT_DATA__) is an error.
-     Photos only from media.bunnings.com.au (&t=w600). "Search Bunnings" opens their search in the user's browser.
+     Photos only from media.bunnings.com.au at &t=w1200 (the size their page uses; w600 is a 404). "Search Bunnings" opens their search in the user's browser.
      Tests use a made-up page (their page isn't copied into the repo).
    - Open-Meteo for weather tips (heat >= 30/35, gusts >= 45/60 for outdoor spaces, rain >= 5 mm for uncovered ones,
      nights <= 5, UV >= 11); forecast cached an hour; place search sets garden_settings (lat / lon in the DB only).

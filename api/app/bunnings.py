@@ -121,15 +121,16 @@ def fetch(url: str) -> dict:
     return {**parse(_get(clean)), "url": clean}
 
 
-def photo_url(image: str | None, width: int = 600) -> str | None:
-    """Bunnings' image service resizes with &t=w<width>."""
+def photo_url(image: str | None, width: int = 1200) -> str | None:
+    """Bunnings' image service resizes with &t=w<width> - only to the sizes its own pages use (w600 is a 404;
+    w1200, the product page's own, works: a PNG of about 1 MB)."""
     if not image or not image.startswith("https://media.bunnings.com.au/"):
         return None
     return image + ("&" if "?" in image else "?") + f"t=w{width}"
 
 
 def photo(image: str | None) -> tuple[bytes | None, str | None]:
-    """The product's picture, 600 px wide - only from Bunnings' own image server."""
+    """The product's picture, 1200 px wide - only from Bunnings' own image server."""
     url = photo_url(image)
     if not url:
         return None, None
