@@ -16,6 +16,10 @@ The price is the one the page shows for Bunnings' default store (prices can diff
 Live plants (seedlings, flowers, veg) are sold regionally: their pages are a 404 for the default store
 (Mentone, VIC) even when your store has them - NotAtDefaultStore, and the caller keeps what the link itself
 says (name_from_url). The store a browser picks isn't something this reads or sets.
+
+The better way for those: the "Send to Off the Clock" button (a bookmarklet, web/src/modules/gardening/
+bunningsButton.js) runs in YOUR browser on a Bunnings page you opened, with your store chosen, and sends
+what that page already holds - your store's price and stock too. from_page() checks and tidies it here.
 """
 import html as htmllib
 import json
@@ -102,6 +106,53 @@ def parse(page: str) -> dict:
         "description": _plain(feature.get("description"), 1500),
         "how_to": _plain(p.get("installationInformation")),
         "image": (primary.get("url") or primary.get("thumbnailUrl") or None),
+    }
+
+
+STOCK = {"GREEN": "In stock", "AMBER": "Low stock", "ORANGE": "Low stock", "YELLOW": "Low stock"}
+
+
+def stock_of(color: str | None, message: str | None, in_store: bool | None) -> str | None:
+    """Bunnings' in-store stock colour / message -> In stock, Low stock, Out of stock, Not sold at this store."""
+    if (message or "").lower() == "notsoldatthisstore":
+        return "Not sold at this store"
+    if color in STOCK:
+        return STOCK[color]
+    if color == "RED" or in_store is False:
+        return "Out of stock"
+    return None
+
+
+def from_page(d: dict) -> dict:
+    """What the button sent from a product page in the browser -> the same fields fetch() gives, plus the store
+    and its stock. Everything is checked: it's text from a web page, sent through a link."""
+    url = product_url(d.get("url"))
+    item = str(d.get("item") or "")
+    if not url or not re.fullmatch(r"\d{4,10}", item) or not url.endswith(f"_p{item}"):
+        raise BunningsError("That didn't come from a Bunnings product page.")
+    name = re.sub(r"\s+", " ", str(d.get("name") or "")).strip()[:200]
+    if not name:
+        raise BunningsError("The page had no product name.")
+    price = _number(d.get("price"))
+    weight = _number(d.get("weight"))
+    cats = [str(c)[:80] for c in d.get("categories") or [] if c][:6]
+    image = str(d.get("image") or "")
+    code = str(d.get("store_code") or "")
+    stock = d.get("stock") if isinstance(d.get("stock"), dict) else {}
+    return {
+        "name": name, "bunnings_item": item, "url": url,
+        "price": round(price, 2) if price is not None and price < 100000 else None,
+        "brand": (str(d.get("brand") or "").strip()[:120] or None),
+        "rating": round(float(d["rating"]), 2) if isinstance(d.get("rating"), (int, float)) and 0 < d["rating"] <= 5 else None,
+        "reviews": int(d["reviews"]) if isinstance(d.get("reviews"), int) and d["reviews"] >= 0 else None,
+        "weight_kg": weight if weight and weight < 10000 else None,
+        "category": " › ".join(cats[-2:]) or None,
+        "description": _plain(str(d.get("description") or ""), 1500),
+        "how_to": _plain(str(d.get("how_to") or "")),
+        "image": image if image.startswith("https://media.bunnings.com.au/") else None,
+        "store_code": code if re.fullmatch(r"\d{1,6}", code) else None,
+        "store_name": (re.sub(r"[^\w '&().-]", "", str(d.get("store_name") or ""))[:80] or None),
+        "stock": stock_of(stock.get("color"), stock.get("msg"), stock.get("in_store")),
     }
 
 

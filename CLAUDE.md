@@ -63,7 +63,7 @@ DBeaver, psql, and the one-off import script.
 - **Web** (`web/src`, React 19 + Vite): App.jsx (routes, panels via openPanel(type), openThing(kind, id)), api.js (every
   fetch, grouped by area), core/ (Home, Navigation, Goals, Journal, Calendar...), modules/<hobby>/manifest.jsx (pages,
   panels, Home tiles / cards, quick actions), components/ (shared), styles.css (one file, sections by comment).
-- **Database**: numbered idempotent files in db/init (01-68); migrate.ps1 applies pending ones.
+- **Database**: numbered idempotent files in db/init (01-69); migrate.ps1 applies pending ones.
 
 ## Quality gates (run them; they're fast)
 - `.\test_all.ps1` in dev = API tests (run_tests.ps1: fresh test DB from db\init, pytest) and the browser walk-through
@@ -95,6 +95,8 @@ DBeaver, psql, and the one-off import script.
   robocopy (or anything with /SWITCHES) through Git Bash - it rewrites them as paths. Use PowerShell.
 - Every photo URL must change when the photo changes (served with a 1-year cache).
 - Playwright's Chromium can't play H.264; browser tests of playback need WebM.
+- An element with an id is also a window global (`window.__NEXT_DATA__` can be the <script> element): check its shape.
+- Live outside sites (Good Games, Steam) throttle back-to-back walk-through runs: a 502 "slow down" isn't a code fault.
 
 ## Data conventions (user decisions, 2026-10-11)
 - Product codes are Tamiya-style **catalogue numbers** (`T81701`), not bottle codes (`XF-1`).

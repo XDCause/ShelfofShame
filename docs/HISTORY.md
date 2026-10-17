@@ -1537,4 +1537,16 @@ DBeaver connection confirmed working (2026-10-11).
      name from the slug, item number, link, kind (a "100mm" pot = Seedling), a note; partial = true. Price and photo the
      user can fill in; "Check the price" explains why it can't for those.
    - The walk-through's live steps failed on repeat runs that night: Good Games answered "slow down" (rate limit) and
-     Steam's store search timed out - after ~8 runs in a few hours. Not a code fault; space live runs out.
+     Steam's store search timed out - after ~8 runs in a few hours. Not a code fault; space live runs out.   - The better fix (user: "otherwise the integration isn't much point"): a "Send to Off the Clock" bookmarklet
+     (web/src/modules/gardening/bunningsButton.js), set up from Gardening > Supplies (drag to the bookmarks bar, or copy
+     into an Android Chrome bookmark). It runs in the user's browser on a Bunnings product page with their store chosen
+     and reads that page's own data: the router's current pageProps first (moving around their site without reloading
+     leaves __NEXT_DATA__ stale), else __NEXT_DATA__ - the global only if it has .props (an element with that id is ALSO
+     a window global: named access), else the script tag's JSON. Item number must match the address. It opens
+     <app>/gardening/supplies#bunnings=<json> (after #: never sent to a server; http navigation from https is allowed);
+     the page shows a card and saves only on Save: POST /garden/items/from-page, bunnings.from_page() checks every field
+     (link + item number, image host, numbers, store text), adds or updates by item number, fetches the photo, keeps
+     store_name / store_code / stock (69_garden_items_store.sql). React 19 won't render a javascript: href: it's set with
+     setAttribute from a callback ref (an effect ran before the fold had rendered the link). Tried live: the script read a
+     real product page in headless Chrome (no store chosen: Mentone). Bunnings' CSP uses nonces + strict-dynamic;
+     browsers let a user's own bookmarklet run regardless - to confirm on the user's phone / PC.

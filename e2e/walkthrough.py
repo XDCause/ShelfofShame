@@ -12,6 +12,7 @@ import re
 import struct
 import time
 import traceback
+import urllib.parse
 import urllib.request
 
 from playwright.sync_api import expect, sync_playwright
@@ -1831,6 +1832,53 @@ def gardening(page):
     page.request.delete(f"{BASE}/api/garden/spaces/{space_id}")
 
 
+FAKE_BUNNINGS = """<html><head><title>Leek - Bunnings</title></head><body><h1>100mm Leek</h1>
+<script id="__NEXT_DATA__" type="application/json">%s</script></body></html>""" % json.dumps({"props": {"pageProps": {
+    "initialState": {"global": {"userData": {"appliedStore": {"name": "4123", "displayName": "Stafford"}}}},
+    "dehydratedState": {"queries": [
+        {"queryKey": ["product-retail-price", "0999901", "4123"], "state": {"data": {"priceAvailable": True, "value": 4.98}}},
+        {"queryKey": ["product-fulfilment", "0999901", "4123"], "state": {"data": {"availableInStore": True,
+            "inStorePickUpData": {"inStoreStockColor": "GREEN", "inStoreStockMsg": "inStock"}}}},
+        {"queryKey": ["retail-product", "0999901", "4123"], "state": {"data": {"name": "100mm Test Leek", "itemNumber": "0999901",
+            "manufacturer": "Garden Express", "allCategories": [{"displayName": "Garden"}, {"displayName": "Vegetable Plants"}],
+            "images": [{"imageType": "PRIMARY", "url": "https://media.bunnings.com.au/api/public/content/leek?v=1"}]}}}]}}}})
+
+
+@step("Bunnings button: set up on Supplies; on a (made-up) Bunnings plant page for Stafford it sends the price and stock; saved")
+def bunnings_button(page):
+    page.goto(BASE + "/gardening/supplies")
+    page.get_by_text("Plants and your store's prices: the Bunnings button").click()
+    link = page.get_by_role("link", name="Send to Off the Clock")
+    href = link.get_attribute("href")
+    assert href.startswith("javascript:"), href[:40]
+    script = urllib.parse.unquote(href[len("javascript:"):])
+    assert BASE in script                                   # it knows this app's address
+    # A Bunnings product page as your browser has it with Stafford chosen (made up, served by the test).
+    page.route("https://www.bunnings.com.au/**", lambda route: route.fulfill(status=200, content_type="text/html", body=FAKE_BUNNINGS))
+    page.route("https://media.bunnings.com.au/**", lambda route: route.fulfill(status=200, content_type="image/png", body=BLANK_PNG))
+    page.goto("https://www.bunnings.com.au/100mm-test-leek_p0999901")
+    page.evaluate("window.open = (u) => { window.__sent = u }")          # where the button would go
+    page.evaluate(script)
+    sent = page.evaluate("window.__sent")
+    assert sent and sent.startswith(BASE + "/gardening/supplies#bunnings="), sent
+    page.goto(sent)
+    card = page.locator(".garden-sent")
+    expect(card).to_contain_text("100mm Test Leek")
+    expect(card).to_contain_text("in stock at Stafford")
+    expect(card).to_contain_text("$4.98")
+    card.get_by_label("I", exact=True).select_option("Wanted")
+    card.get_by_role("button", name="Save").click()
+    d = drawer(page)
+    expect(d.get_by_role("heading", name="100mm Test Leek")).to_be_visible()
+    expect(d).to_contain_text("In stock at Stafford")
+    expect(page).to_have_url(BASE + "/gardening/supplies")                  # the details are gone from the address
+    page.keyboard.press("Escape")
+    shops = {s["shop"]: s for s in page.request.get(f"{BASE}/api/wanted").json()["shops"]}
+    assert any(i["name"] == "100mm Test Leek" for i in shops["Bunnings"]["items"])
+    item_id = next(i["item_id"] for i in page.request.get(f"{BASE}/api/garden/items").json() if i["bunnings_item"] == "0999901")
+    page.request.delete(f"{BASE}/api/garden/items/{item_id}")
+
+
 @step("Wishlist by shop: the default shop first, Good Games for board games; gear from Blue Sky (live)")
 def wishlist_shops(page):
     game = page.request.post(f"{BASE}/api/board-games", data={"name": f"Wantgame {MARK}", "status": "Wanted"}).json()
@@ -2016,7 +2064,7 @@ with sync_playwright() as p:
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
                matches, used_on, gundam, bandai_lookup, warhammer, journal_write, journal_links, journal_from_model,
                journal_suggestion, journal_todo, global_search, journal_wishlist, appearance,
-               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, warhammer_minis, gundam_range, board_game_kinds, board_game_elsewhere, volleyball_coach, video_game_friends, wishlist_shops, goals, hiking, gardening, settings_more, no_panel):
+               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, warhammer_minis, gundam_range, board_game_kinds, board_game_elsewhere, volleyball_coach, video_game_friends, wishlist_shops, goals, hiking, gardening, bunnings_button, settings_more, no_panel):
         fn(desk)
     ctx = browser.new_context(**p.devices["iPhone 13"], timezone_id=zone)
     mob = ctx.new_page()

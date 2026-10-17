@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api, money, shortDate } from '../../api.js'
+import Fold from '../../components/Fold.jsx'
+import { buttonHref, readSent } from './bunningsButton.js'
 import { useApp } from '../../core/app-context.js'
 import EmptyState from '../../core/EmptyState.jsx'
 import { SproutIcon } from '../../components/icons.jsx'
@@ -99,11 +101,13 @@ export function SuppliesView() {
       setBusy(false)
     }
   }
+  const [sent, setSent] = useState(() => readSent(window.location.hash))
   const seeds = items?.filter((i) => i.kind === 'Seeds') ?? []
   const others = items?.filter((i) => i.kind !== 'Seeds') ?? []
   const wantedTotal = others.concat(seeds).filter((i) => i.status === 'Wanted').reduce((a, i) => a + (i.price ?? 0), 0)
   return (
     <section className="page">
+      {sent && <SentFromBunnings sent={sent} onDone={() => { setSent(null); window.history.replaceState(null, '', window.location.pathname) }} />}
       <form className="card garden-bunnings" onSubmit={add}>
         <label className="field grow">Bunnings link - or words to search Bunnings for
           <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://www.bunnings.com.au/..._p1234567  or  'potting mix'" />
@@ -118,6 +122,7 @@ export function SuppliesView() {
         <p className="muted small garden-bunnings-help">Find it on Bunnings (the search opens their site), copy the product's link - or Share it from
           their app - and paste it here: the name, price, photo, weight and how-to come across. Only that one page is read.</p>
         {error && <p className="alert error small">{error}</p>}
+        <BunningsButton />
       </form>
       <div className="toolbar">
         <p className="summary grow">{items ? <><strong>{items.length}</strong> item{items.length === 1 ? '' : 's'}</> : ''}
@@ -149,6 +154,85 @@ export function SuppliesView() {
     </section>
   )
 }
+
+// What the "Send to Off the Clock" button brought from a Bunnings page: a look before it's saved.
+function SentFromBunnings({ sent, onDone }) {
+  const { changed, openPanel, showToast } = useApp()
+  const [status, setStatus] = useState('Have')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const save = async () => {
+    setBusy(true)
+    setError('')
+    try {
+      const item = await api.addGardenItemFromPage({ page: sent, status })
+      changed()
+      showToast(item.existing ? `Updated ${item.name}${item.price_before != null && item.price !== item.price_before
+        ? ` (${money(item.price_before)} → ${money(item.price)})` : ''}` : `Added ${item.name}`)
+      onDone()
+      openPanel('gitem', { id: item.item_id })
+    } catch (e) {
+      setError(e.message)
+      setBusy(false)
+    }
+  }
+  const store = sent.store_name || (sent.store_code ? `store ${sent.store_code}` : '')
+  const stock = sent.stock?.msg === 'notSoldAtThisStore' ? 'not sold at this store' : sent.stock?.color === 'GREEN' ? 'in stock'
+    : ['AMBER', 'ORANGE', 'YELLOW'].includes(sent.stock?.color) ? 'low stock' : sent.stock?.color === 'RED' ? 'out of stock' : ''
+  return (
+    <section className="card garden-sent" aria-label="From Bunnings">
+      {sent.image?.startsWith('https://media.bunnings.com.au/') && <img src={`${sent.image}&t=w1200`} alt="" referrerPolicy="no-referrer" />}
+      <div className="grow">
+        <p className="muted small">From Bunnings{store && ` · ${store}`}</p>
+        <h2 className="home-card-title">{sent.name}</h2>
+        <p className="small">{[sent.price != null && money(sent.price), stock && `${stock}${store ? ` at ${store}` : ''}`, `I/N ${sent.item}`]
+          .filter(Boolean).join(' · ')}</p>
+        {error && <p className="alert error small">{error}</p>}
+        <div className="button-row">
+          <select value={status} onChange={(e) => setStatus(e.target.value)} aria-label="I">
+            <option value="Have">I have it</option>
+            <option value="Wanted">I want it</option>
+          </select>
+          <button type="button" className="primary" disabled={busy} onClick={save}>{busy ? 'Saving...' : 'Save'}</button>
+          <button type="button" className="plain" onClick={onDone}>Not now</button>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// Setting the button up: drag it to the bookmarks bar (a computer), or copy it into a bookmark (a phone).
+function BunningsButton() {
+  const href = buttonHref(window.location.origin)
+  const [copied, setCopied] = useState(false)
+  // React won't render a javascript: address (a safety rule), so it's set on the link directly - as the link
+  // appears (it's inside a fold, so it isn't there when this first runs).
+  const link = (el) => el?.setAttribute('href', href)
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(href)
+      setCopied(true)
+    } catch {
+      window.prompt('Copy this, then paste it as the bookmark\'s address:', href)
+    }
+  }
+  return (
+    <Fold title="Plants and your store's prices: the Bunnings button" className="garden-button-fold">
+      <p className="small">Bunnings shows plants (and each store's price and stock) only for the store you've chosen - which the app
+        can't see. This button runs in your own browser on a Bunnings product page and sends what you're looking at here.</p>
+      <p className="small"><strong>On a computer:</strong> drag this to your bookmarks bar →{' '}
+        <a ref={link} className="button secondary small garden-button-link" onClick={(e) => { e.preventDefault(); showHow() }}
+          draggable="true">Send to Off the Clock</a></p>
+      <p className="small"><strong>On an Android phone (Chrome):</strong> <button type="button" className="secondary small" onClick={copy}>
+        {copied ? 'Copied ✓' : 'Copy the button'}</button> then bookmark any page, edit the bookmark: name it <em>Send to Off the Clock</em> and paste
+        over its address. To use it: on a Bunnings product page, tap the address bar, type <em>Send to</em> and tap the bookmark (the one with
+        the star).</p>
+      <p className="muted small">Make it on each device you use (it remembers this app's address as that device sees it:
+        {' '}{window.location.origin}). Choose your store on Bunnings first.</p>
+    </Fold>
+  )
+}
+const showHow = () => window.alert('Drag this button to your bookmarks bar (it does nothing here). Then, on a Bunnings product page, click the bookmark.')
 
 function ItemRow({ i }) {
   const { openPanel } = useApp()

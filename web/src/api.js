@@ -319,6 +319,7 @@ export const api = {
   gardenItems: (params = {}) => request(`/garden/items?${query(params)}`),
   gardenItem: (id) => request(`/garden/items/${id}`),
   addGardenItem: (data) => request('/garden/items', send('POST', data)),
+  addGardenItemFromPage: (data) => request('/garden/items/from-page', send('POST', data)),
   addGardenItemFromBunnings: (data) => request('/garden/items/bunnings', send('POST', data)),
   refreshGardenItem: (id, url) => request(`/garden/items/${id}/bunnings`, send('POST', url ? { url } : {})),
   updateGardenItem: (id, data) => request(`/garden/items/${id}`, send('PATCH', data)),

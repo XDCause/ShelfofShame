@@ -256,3 +256,35 @@ def test_regional_plant_links_still_add(client, monkeypatch):
     again = client.post(f"/api/garden/items/{r['item_id']}/bunnings")
     assert again.status_code == 422 and "stores that sell it" in again.json()["detail"]
     assert bunnings.name_from_url("https://www.bunnings.com.au/scotts-osmocote-10l-premium-mix_p2962117") == "Scotts Osmocote 10l Premium Mix"
+
+
+def sent(**kw):
+    """What the Bunnings button sends from a product page (made up)."""
+    return {"v": 1, "url": "https://www.bunnings.com.au/100mm-leek-allium_p0194944", "item": "0194944",
+            "name": "100mm Leek Allium", "brand": "Garden Express", "rating": 4.2, "reviews": 9, "weight": "0.30",
+            "categories": ["Garden", "Plants", "Vegetable Plants"], "description": "A <b>leek</b>.", "how_to": "Plant<br>deep.",
+            "image": "https://media.bunnings.com.au/api/public/content/leek?v=1", "price": 4.98, "store_code": "4123",
+            "store_name": "Stafford", "stock": {"in_store": True, "color": "GREEN", "msg": "inStock"}, **kw}
+
+
+def test_items_from_the_bunnings_button(client):
+    r = client.post("/api/garden/items/from-page", json={"page": sent(), "status": "Wanted"})
+    assert r.status_code == 201
+    i = r.json()
+    assert (i["name"], i["kind"], i["price"], i["store_name"], i["stock"], i["category"], i["existing"]) == \
+        ("100mm Leek Allium", "Seedling", 4.98, "Stafford", "In stock", "Plants › Vegetable Plants", False)
+    assert i["description"] == "A leek." and i["how_to"] == "Plant\ndeep." and i["weight_kg"] == 0.3
+    again = client.post("/api/garden/items/from-page", json={"page": sent(price=3.5, stock={"color": "RED", "msg": "notSoldAtThisStore"})})
+    assert again.status_code == 200
+    a = again.json()
+    assert (a["item_id"], a["existing"], a["price"], a["price_before"], a["stock"], a["status"]) == \
+        (i["item_id"], True, 3.5, 4.98, "Not sold at this store", "Wanted")
+    for bad in (sent(url="https://example.com/x_p0194944"), sent(item="999"), sent(name=" "),
+                sent(url="https://www.bunnings.com.au/other_p1111111")):
+        assert client.post("/api/garden/items/from-page", json={"page": bad}).status_code == 422
+    odd = client.post("/api/garden/items/from-page", json={"page": sent(item="1234567", url="https://www.bunnings.com.au/test-mix_p1234567",
+        image="https://evil.example/x.png", store_code="<b>", store_name="<script>Staff", price="lots")}).json()
+    assert (odd.get("store_code"), odd.get("store_name"), odd.get("price")) == (None, "scriptStaff", None), odd
+    assert client.post("/api/garden/items/from-page", json={"page": sent(description="x" * 30000)}).status_code == 413
+    assert bunnings.stock_of("AMBER", None, True) == "Low stock" and bunnings.stock_of(None, None, False) == "Out of stock"
+    assert bunnings.stock_of(None, None, None) is None
