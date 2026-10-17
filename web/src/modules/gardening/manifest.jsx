@@ -1,6 +1,7 @@
 import { BoxIcon, GridIcon, SproutIcon, TrophyIcon } from '../../components/icons.jsx'
 import { ContainerFormPanel, ContainerPanel, GuidePanel, ItemPanel, NewGuidePanel, SpacePanel } from './GardenPanels.jsx'
 import { GardenTiles, HarvestsView, PlantsView, TodayView } from './GardenViews.jsx'
+import DoctorView from './DoctorView.jsx'
 import { GuideView, SuppliesView } from './GuideView.jsx'
 import { LayoutView } from './LayoutView.jsx'
 import PlantingPanel from './PlantingPanel.jsx'
@@ -8,7 +9,8 @@ import PlantingPanel from './PlantingPanel.jsx'
 // Gardening, for an apartment (api/app/garden.py, garden_guide.py, garden_items.py): your balcony,
 // windowsills and shelves drawn to scale with your pots on them; each plant's stage, watering, feeding,
 // harvest window, notes and photos; Today's jobs and weather tips; a plant guide with what to sow now;
-// harvests; supplies and seeds, with Bunnings links. Pages live at /gardening/<path>.
+// harvests; supplies and seeds, with Bunnings links; a plant doctor (signs -> what to do). Pages live at
+// /gardening/<path>.
 export default {
   id: 'gardening',
   name: 'Gardening',
@@ -25,6 +27,7 @@ export default {
     { path: 'layout', label: 'Layout', Icon: GridIcon, render: () => <LayoutView /> },
     { path: 'plants', label: 'Plants', Icon: SproutIcon, render: () => <PlantsView /> },
     { path: 'guide', label: 'Guide', Icon: SproutIcon, render: () => <GuideView /> },
+    { path: 'doctor', label: 'Doctor', Icon: SproutIcon, render: () => <DoctorView /> },
     { path: 'harvests', label: 'Harvests', Icon: TrophyIcon, render: () => <HarvestsView /> },
     { path: 'supplies', label: 'Supplies', Icon: BoxIcon, render: () => <SuppliesView /> },
   ],

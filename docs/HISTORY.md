@@ -1572,3 +1572,16 @@ DBeaver connection confirmed working (2026-10-11).
    - Weather: Open-Meteo's daily weather_code (a WMO code: the day's worst weather) -> Sunny / Mostly sunny / Partly
      cloudy / Cloudy / Fog / Drizzle / Rain / Showers / Storms (openmeteo.SKY) with an icon on each day; storms add a tip
      for outdoor spaces.
+4c. **Copy a container; bought plants in Plants; the plant doctor** (2026-10-18).
+   - Copy on a container (POST /garden/containers/{id}/copy): kind, shape, size, level, volume, mix, material; placed
+     to its right, else below, else offset 10 cm (then fit_in_space); named "<name> 2" (next free number). Plants,
+     notes, photo and potted date stay with the original.
+   - Plants: "Bought, not planted yet" - Seedling / Plant items you Have (or Running low) with some left (qty) or,
+     with no qty, none planted from them (ITEM_SELECT's planted count). "Add to my plants" = the item's sow, no pot.
+   - Plant doctor (Gardening > Doctor; garden_doctor.py, 72_garden_problems.sql from scratchpad problems_gen.py):
+     45 problems (bugs, diseases, feeding, watering, sun and weather) written for this app, each with signs (keys of
+     garden_doctor.SIGNS - a test checks), why, steps, prevention, usual plants, aliases, recheck days, what to buy
+     (opens Bunnings' own search in the browser, like Supplies). Chips rank problems by signs matched; a plant
+     (?plant=id, or "Something wrong?" on a plant) puts its usual problems first (its names in the problem's plant
+     list, the guide's pests naming an alias, seedlings / indoor / houseplants). "I've got this" = a Pest / Problem
+     log tagged with the problem, and a reminder to check again in recheck_days with the steps as its notes.

@@ -262,11 +262,18 @@ export function PlantsView() {
   const [view, setView] = useState('list')
   const [q, setQ] = useState('')
   const [plants, setPlants] = useState(null)
+  const [bought, setBought] = useState([])
   const [error, setError] = useState('')
   useEffect(() => {
     const t = setTimeout(() => api.gardenPlantings({ status, q }).then(setPlants).catch((e) => setError(e.message)), q ? 250 : 0)
     return () => clearTimeout(t)
   }, [status, q, refreshKey])
+  // Seedlings and plants you have (Supplies) that aren't planted yet: some left (qty), or none planted from it.
+  useEffect(() => {
+    api.gardenItems().then((items) => setBought(items.filter((i) => ['Seedling', 'Plant'].includes(i.kind)
+      && ['Have', 'Running low'].includes(i.status) && (i.qty == null ? i.planted === 0 : i.qty > 0)))).catch(() => {})
+  }, [refreshKey])
+  const waiting = status === 'past' ? [] : bought.filter((i) => !q || i.name.toLowerCase().includes(q.toLowerCase()))
   if (error) return <p className="alert error">{error}</p>
   const today = new Date().toLocaleDateString('en-CA')
   const groups = []
@@ -290,7 +297,9 @@ export function PlantsView() {
           <button key={v} type="button" className="chip-filter" aria-pressed={status === v} onClick={() => setStatus(v)}>{l}</button>
         ))}
       </div>
+      {waiting.length > 0 && <BoughtPlants items={waiting} />}
       {!plants ? <p className="muted loading">Loading...</p> : plants.length === 0 ? (
+        waiting.length > 0 ? null :
         q || status !== 'current' ? <p className="empty card">No plants match that.</p> : (
           <EmptyState Icon={SproutIcon} title="Nothing growing yet" action="+ Add a plant" onAction={() => openPanel('planting', {})}>
             Pick from the guide (watering, feeding and when to pick fill in) or add your own.</EmptyState>
@@ -301,6 +310,39 @@ export function PlantsView() {
           <ul className="list plain-list">{g.plants.map((p) => <PlantRow key={p.planting_id} p={p} today={today} />)}</ul>
         </section>
       ))}
+    </section>
+  )
+}
+
+// Bought, not planted yet: Have items from Supplies. "Add to my plants" makes it a plant now (not in a pot yet -
+// choose one later); tapping the row opens the item, where "Plant it" picks the pot.
+function BoughtPlants({ items }) {
+  const { changed, openPanel, showToast } = useApp()
+  const add = async (i) => {
+    try {
+      const p = await api.sowGardenItem(i.item_id, { container_id: null })
+      changed()
+      openPanel('planting', { id: p.planting_id })
+    } catch (e) {
+      showToast(e.message)
+    }
+  }
+  return (
+    <section className="card home-card garden-group" aria-label="Bought, not planted yet">
+      <h2 className="home-card-title">Bought, not planted yet</h2>
+      <ul className="list plain-list">{items.map((i) => (
+        <li key={i.item_id} className="garden-bought">
+          <button type="button" className="row-button" onClick={() => openPanel('gitem', { id: i.item_id })}>
+            {i.photo_url ? <img className="thumb" src={i.photo_url} alt="" loading="lazy" />
+              : <span className="garden-emoji" aria-hidden="true">{i.kind === 'Plant' ? '🪴' : '🌱'}</span>}
+            <span className="grow">
+              <span className="item-title">{i.name}</span>
+              <span className="item-meta">{[i.kind, i.qty != null && `${i.qty} to plant`, i.guide_name].filter(Boolean).join(' · ')}</span>
+            </span>
+          </button>
+          <button type="button" className="small" onClick={() => add(i)}>Add to my plants</button>
+        </li>
+      ))}</ul>
     </section>
   )
 }

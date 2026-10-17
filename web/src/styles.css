@@ -2249,6 +2249,21 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .garden-weather { list-style: none; margin: 0 0 8px; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .garden-weather li { display: flex; flex-direction: column; padding: 8px 10px; border-radius: 10px; background: var(--fill-2); font-size: 0.88rem; }
 .garden-sky { font-weight: 600; }
+.garden-bought { display: flex; align-items: center; gap: 8px; }
+.garden-bought .row-button { flex: 1; min-width: 0; }
+/* Plant doctor */
+.garden-doc-signs h3 { margin: 10px 0 4px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.garden-doc-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.garden-doc-head { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: none; border: 0; padding: 0;
+  color: inherit; font: inherit; cursor: pointer; }
+.garden-doc-head .grow { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.garden-doc-icon { font-size: 1.5rem; }
+.garden-doc-pills { display: flex; flex-wrap: wrap; gap: 4px; }
+.garden-doc-body { margin-top: 10px; display: grid; gap: 8px; }
+.garden-doc-body h4 { margin: 4px 0 0; font-size: 0.9rem; }
+.garden-doc-body ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.garden-doc-body p { margin: 0; }
+.garden-doc-seen { font-weight: 600; }
 .garden-place { display: flex; gap: 8px; align-items: flex-end; }
 /* Plants as a timeline. */
 .garden-timeline { padding: 14px 16px; margin-top: 12px; }

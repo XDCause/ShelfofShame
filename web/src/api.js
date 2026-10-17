@@ -326,6 +326,8 @@ export const api = {
   updateGardenItem: (id, data) => request(`/garden/items/${id}`, send('PATCH', data)),
   deleteGardenItem: (id) => request(`/garden/items/${id}`, send('DELETE')),
   sowGardenItem: (id, data) => request(`/garden/items/${id}/sow`, send('POST', data)),
+  gardenProblems: (params = {}) => request(`/garden/problems?${query(params)}`),
+  gardenProblemFound: (id, data) => request(`/garden/problems/${id}/found`, send('POST', data)),
   importGoodreads: (file) => request('/reading/import/goodreads', { method: 'POST', headers: { 'Content-Type': 'text/csv' }, body: file }),
   coverStatus: () => request('/reading/covers'),
   bookSeries: (id) => request(`/reading/books/${id}/series`),

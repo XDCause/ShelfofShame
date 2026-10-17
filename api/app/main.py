@@ -21,14 +21,16 @@ Hobby modules:
     videogames Steam games and achievements (steam.py = the official Steam Web API)
     hiking     hikes from GPX files (AllTrails' export; gpx.py works out the numbers) or logged by hand
     garden     an apartment garden: spaces + layout, containers, plants, care, photos, reminders, today
-               (+ garden_guide: the plant guide, what to sow now; garden_items: supplies, seeds, Bunnings links)
+               (+ garden_guide: the plant guide, what to sow now; garden_items: supplies, seeds, Bunnings links;
+               garden_doctor: what's wrong with a plant - signs, causes, what to do)
 """
 import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from . import (activity, boardgames, bookseries, build, calendar, catalog, chess, colours, garden, garden_guide, garden_items,
+from . import (activity, boardgames, bookseries, build, calendar, catalog, chess, colours, garden, garden_doctor, garden_guide,
+               garden_items,
                gear, goals, hiking, journal, journal_drawings,
                gundam, lookups, minis, vgsync, models, othergames, products, reading, readimport, reading_recs, settings, sitecheck, spending, supplies, vbclips, vbcoach, vgfind, vgfriends, videogames, wanted, webphoto,
                volleyball, warhammer, wishlist)
@@ -56,7 +58,7 @@ async def lifespan(_app):
 app = FastAPI(title="Off the Clock API", docs_url="/api/docs", openapi_url="/api/openapi.json", lifespan=lifespan)
 
 for part in (activity, goals, journal_drawings, journal, calendar, supplies, wishlist, products, catalog, models, minis, build, colours,
-             boardgames, volleyball, gear, vbclips, vbcoach, othergames, vgfind, vgfriends, videogames, chess, reading, readimport, hiking, garden, garden_guide, garden_items, reading_recs, bookseries, warhammer, gundam, spending, settings, sitecheck, lookups, webphoto, wanted):
+             boardgames, volleyball, gear, vbclips, vbcoach, othergames, vgfind, vgfriends, videogames, chess, reading, readimport, hiking, garden, garden_doctor, garden_guide, garden_items, reading_recs, bookseries, warhammer, gundam, spending, settings, sitecheck, lookups, webphoto, wanted):
     app.include_router(part.router)
 
 

@@ -91,6 +91,7 @@ SELECT i.item_id, i.name, i.kind, i.status, i.qty, i.brand, i.guide_id, i.sow_by
        i.price::float8 AS price, i.price_checked_at, i.rating::float8 AS rating, i.reviews, i.weight_kg::float8 AS weight_kg,
        i.category, i.description, i.how_to, i.created_at, g.name AS guide_name, i.store_name, i.store_code, i.stock, i.store_aisle,
        i.sow_by IS NOT NULL AND i.sow_by < current_date AS expired,
+       (SELECT count(*) FROM garden_plantings gp WHERE gp.item_id = i.item_id)::int AS planted,
        CASE WHEN i.photo IS NOT NULL THEN '/api/garden/items/' || i.item_id || '/photo?v='
             || (extract(epoch FROM i.photo_updated) * 1000)::bigint END AS photo_url
 FROM garden_items i LEFT JOIN garden_guides g ON g.guide_id = i.guide_id"""

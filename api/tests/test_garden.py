@@ -321,3 +321,37 @@ def test_grown_plants_and_flowers(client):
     names = {g["name"]: g for g in client.get("/api/garden/guides?kind=Flower").json()["guides"]}
     assert {"Petunia", "Lavender", "Geranium (pelargonium)", "Pansy / viola", "Sunflower (dwarf)"} <= set(names)
     assert names["Petunia"]["days_min"] == 70
+
+
+def test_plant_doctor(client):
+    from app import garden_doctor
+    d = client.get("/api/garden/problems").json()
+    assert len(d["problems"]) >= 40 and d["plant"] is None and not any(p["common"] for p in d["problems"])
+    for p in d["problems"]:                                   # every sign is a chip, every problem says what to do
+        assert set(p["signs"]) <= garden_doctor.SIGN_KEYS and p["fix"] and p["looks"], p["slug"]
+    assert {s["key"] for g in d["signs"] for s in g["signs"]} == garden_doctor.SIGN_KEYS
+    s = balcony(client)
+    pot = client.post("/api/garden/containers", json={"name": "Pot", "space_id": s["space_id"]}).json()
+    tom = client.post("/api/garden/plantings", json={"guide_id": guide(client, "Cherry tomato")["guide_id"],
+                                                     "container_id": pot["container_id"]}).json()
+    d = client.get(f"/api/garden/problems?planting_id={tom['planting_id']}").json()
+    common = {p["slug"] for p in d["problems"] if p["common"]}
+    assert {"blossom-end-rot", "fruit-fly", "whitefly"} <= common and "bolting" not in common
+    assert d["plant"]["name"] == tom["name"]
+    aphids = next(p for p in d["problems"] if p["slug"] == "aphids")
+    r = client.post(f"/api/garden/problems/{aphids['problem_id']}/found", json={"planting_id": tom["planting_id"], "note": "on the tips"})
+    assert r.status_code == 201 and r.json()["recheck_days"] == 5
+    log = client.get(f"/api/garden/plantings/{tom['planting_id']}").json()["logs"][0]
+    assert (log["kind"], log["text"], log["tags"]) == ("Pest", "Aphids: on the tips", ["Aphids"])
+    task = next(t for t in client.get("/api/garden/tasks").json() if t["task_id"] == r.json()["task_id"])
+    assert task["title"] == f"Check {tom['name']} for aphids again" and task["notes"].startswith("1. Squash")
+    assert client.post("/api/garden/problems/999999/found", json={"planting_id": tom["planting_id"]}).status_code == 404
+    assert client.post(f"/api/garden/problems/{aphids['problem_id']}/found", json={"planting_id": 999999}).status_code == 404
+    assert garden_doctor._stems("Strawberry") == {"strawberr"}
+
+
+def test_bought_plants_waiting(client):
+    item = client.post("/api/garden/items", json={"name": "140mm Petunia", "kind": "Plant", "status": "Have"}).json()
+    assert item["planted"] == 0
+    client.post(f"/api/garden/items/{item['item_id']}/sow", json={})
+    assert client.get(f"/api/garden/items/{item['item_id']}").json()["planted"] == 1

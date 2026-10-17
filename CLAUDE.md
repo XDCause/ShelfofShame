@@ -45,7 +45,7 @@ AI via MCP server (stage 6) ---------------/
 DBeaver, psql, and the one-off import script.
 
 ## Where to look
-- **History, decisions and the reasons behind them: docs/HISTORY.md** (sections 1 - 4b; search it before changing
+- **History, decisions and the reasons behind them: docs/HISTORY.md** (sections 1 - 4c; search it before changing
   something old - most odd-looking code has a lesson behind it there). Plans: docs/ROADMAP.md. Caveats for ever going
   public: BEFORE_GOING_PUBLIC.md (**add a row whenever a new data source, scraper, copied content or single-user
   shortcut is added**).
@@ -56,14 +56,14 @@ DBeaver, psql, and the one-off import script.
   paints, colours. Models - models, minis, build, warhammer, gundam. Board games - boardgames. Volleyball -
   volleyball, gear (volleyball's and hiking's: gear.hobby), vbclips, vbcoach. Video games - videogames, vgsync, othergames, vgfind, vgfriends. Chess - chess.
   Reading - reading, readimport, reading_recs, bookseries. Hiking - hiking (+ gpx: a GPX file's numbers; HikeMap.jsx = Leaflet). Gardening - garden (spaces, layout, plants,
-  care, logs + photos, tasks, today), garden_guide (plant guide, sow now), garden_items (supplies, seeds, Bunnings). Outside sources (one module each, all polite, all faked in
+  care, logs + photos, tasks, today), garden_guide (plant guide, sow now), garden_doctor (problems: signs -> what to do), garden_items (supplies, seeds, Bunnings). Outside sources (one module each, all polite, all faked in
   tests by conftest): tamiya, hasegawa, hlj, ucp (+ goodgames, bluesky), gameology, steam, steamhunters, exophase,
   chesscom, openlibrary, overpass (OpenStreetMap landmarks), wikimedia (Commons photos), bunnings (one product page from
   a pasted link - never their search or API, robots.txt), openmeteo (weather tips).
 - **Web** (`web/src`, React 19 + Vite): App.jsx (routes, panels via openPanel(type), openThing(kind, id)), api.js (every
   fetch, grouped by area), core/ (Home, Navigation, Goals, Journal, Calendar...), modules/<hobby>/manifest.jsx (pages,
   panels, Home tiles / cards, quick actions), components/ (shared), styles.css (one file, sections by comment).
-- **Database**: numbered idempotent files in db/init (01-71); migrate.ps1 applies pending ones.
+- **Database**: numbered idempotent files in db/init (01-72); migrate.ps1 applies pending ones.
 
 ## Quality gates (run them; they're fast)
 - `.\test_all.ps1` in dev = API tests (run_tests.ps1: fresh test DB from db\init, pytest) and the browser walk-through

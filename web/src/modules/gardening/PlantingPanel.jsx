@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router'
 import { api, money, shortDate } from '../../api.js'
 import Drawer from '../../components/Drawer.jsx'
 import Fold from '../../components/Fold.jsx'
@@ -98,6 +99,7 @@ function PlantForm({ planting, defaults, onSaved, onCancel }) {
 
 export default function PlantingPanel({ id: startId = null, containerId = null, guideId = null, onClose }) {
   const { changed, openPanel, showToast } = useApp()
+  const navigate = useNavigate()
   const [id, setId] = useState(startId)
   const [p, setP] = useState(null)
   const [error, setError] = useState('')
@@ -138,10 +140,12 @@ export default function PlantingPanel({ id: startId = null, containerId = null, 
     setId(kid.planting_id)
   }
   const open = (type, props) => { onClose(); openPanel(type, props) }
+  const doctor = () => { onClose(); navigate(`/gardening/doctor?plant=${p.planting_id}`) }
   const ended = p.stage === 'Done' || p.stage === 'Died'
   const footer = (
     <>
       {!ended && <button type="button" className="secondary" onClick={propagate}>Take cuttings</button>}
+      {!ended && <button type="button" className="secondary" onClick={doctor}>Something wrong?</button>}
       <span className="spacer" />
       {!editing && <button type="button" className="plain" onClick={() => setEditing(true)}>Edit details</button>}
       <button type="button" className="plain destructive" onClick={remove}>Remove</button>
