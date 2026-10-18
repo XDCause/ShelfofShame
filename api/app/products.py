@@ -1,4 +1,4 @@
-"""Products: looking things up (Tamiya, Hasegawa, Bandai via HLJ), barcodes, and product photos.
+"""Products: looking things up (Tamiya, Hasegawa, Trumpeter, Bandai via HLJ), barcodes, and product photos.
 
 product_info is the cache: one row per brand + product code with the manufacturer's title,
 description and photo (or your own photo), a barcode once you've linked one, and for Tamiya
@@ -12,7 +12,7 @@ from fastapi.concurrency import run_in_threadpool
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel, Field
 
-from . import hasegawa, hlj, tamiya
+from . import hasegawa, hlj, tamiya, trumpeter
 from .db import brand_id as brand_named, db, ensure_brand
 from .images import photo_response, read_photo
 from .settings import price_for
@@ -194,6 +194,44 @@ async def lookup_hasegawa(code: str, refresh: bool = False):
     return {**p, "brand_id": hasegawa_id, "product_code": product_code, "series_code": p["series"],
             "name": tamiya.nice_name(p["title"]), "scale": scale.group(1) if scale else None,
             "from_cache": bool(cached) and not refresh}
+
+
+@router.get("/lookup/trumpeter/{code}")
+async def lookup_trumpeter(code: str, refresh: bool = False):
+    """A Trumpeter kit or tool by the 5-digit item number on the box (00968, TRU00968): name, scale, kind, parts,
+    box photo and barcode from trumpeter-china.com. Cached in product_info under product code TRU<item>; the
+    box's barcode (from their page) is remembered so scanning it finds the product."""
+    item = trumpeter.normalise(code)
+    if item is None:
+        raise HTTPException(422, "Enter the 5-digit item number from the box (e.g. 00968).")
+    product_code = f"TRU{item}"
+    with db() as conn:
+        trumpeter_id = ensure_brand(conn, "Trumpeter")       # added to your brands the first time
+        cached = conn.execute("SELECT title FROM product_info WHERE brand_id = %s AND product_code = %s AND title IS NOT NULL",
+                              (trumpeter_id, product_code)).fetchone()
+    if not cached or refresh:
+        try:
+            info = await run_in_threadpool(trumpeter.fetch, item)
+        except tamiya.NotFound as e:
+            raise HTTPException(404, str(e))
+        except tamiya.LookupFailed as e:
+            raise HTTPException(502, str(e))
+        with db() as conn:
+            conn.execute(UPSERT_INFO, {"brand_id": trumpeter_id, "code": product_code, "title": info["title"],
+                                       "series": info["item_type"], "description": trumpeter.describe(info),
+                                       "source_url": info["source_url"], "image": info["image"],
+                                       "image_type": info["image_type"], "kit_paints": None})
+            if info["barcode"]:                               # theirs, from the page - unless another product has it
+                conn.execute("""UPDATE product_info SET barcode = %s WHERE brand_id = %s AND product_code = %s AND barcode IS NULL
+                                AND NOT EXISTS (SELECT 1 FROM product_info WHERE barcode = %s)""",
+                             (info["barcode"], trumpeter_id, product_code, info["barcode"]))
+    with db() as conn:
+        p = describe_product(conn, trumpeter_id, product_code)
+    scale = re.search(r"Scale (1/\d+)", p["description"] or "")
+    kind = p["series"] or ""
+    return {**p, "brand_id": trumpeter_id, "product_code": product_code, "name": p["title"],
+            "scale": scale.group(1) if scale else None, "item_type": kind or None,
+            "is_tool": any(w in kind.lower() for w in trumpeter.TOOL_TYPES), "from_cache": bool(cached) and not refresh}
 
 
 def _bandai_cached(conn, bandai_id, kind, value):

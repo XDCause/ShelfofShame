@@ -15,6 +15,7 @@ import TimeTracker from './TimeTracker.jsx'
 const SOURCES = {
   Tamiya: { site: 'tamiya.com', lookup: api.lookupTamiya },
   Hasegawa: { site: 'hasegawa-model.co.jp', lookup: api.lookupHasegawa },
+  Trumpeter: { site: 'trumpeter-china.com', lookup: api.lookupTrumpeter },
   Bandai: { site: 'hlj.com', lookup: api.lookupBandai },
   'Games Workshop': { site: 'goodgames.com.au', lookup: api.lookupWarhammer },
 }

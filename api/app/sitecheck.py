@@ -16,7 +16,7 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, BackgroundTasks
 
-from . import (bluesky, bunnings, exophase, gameology, goodgames, hasegawa, hlj, openlibrary, openmeteo, overpass, steam,
+from . import (bluesky, bunnings, exophase, gameology, goodgames, hasegawa, hlj, trumpeter, openlibrary, openmeteo, overpass, steam,
                steamhunters, tamiya, wikimedia)
 from .db import db
 
@@ -47,6 +47,13 @@ def _hasegawa():
     expect(p.get("item") == "09086", f"Hasegawa's JT86 page doesn't say item 09086 ({p.get('item')!r})")
     expect(p.get("image"), "Hasegawa's page has no box photo")
     return f"{p['title']} ({p.get('scale')})"
+
+
+def _trumpeter():
+    p = trumpeter.fetch("00968", photo=False)          # their search, then the page (no photo: two requests)
+    expect(p.get("scale") == "1/16", f"Trumpeter's 00968 page doesn't say 1:16 ({p.get('scale')!r})")
+    expect(p.get("barcode"), "Trumpeter's 00968 page has no barcode")
+    return f"{p['title']} ({p['scale']})"
 
 
 def _hlj():
@@ -136,6 +143,7 @@ def _openmeteo():
 CHECKS = [
     ("Tamiya", "paint and kit look-ups, photos", _tamiya),
     ("Hasegawa", "kit look-ups", _hasegawa),
+    ("Trumpeter", "kit and tool look-ups", _trumpeter),
     ("HobbyLink Japan", "Gundam (Bandai) kit look-ups", _hlj),
     # Good Games: paused (2026-10-18) - a small shop; the walk-through's runs got us asked to slow down. Its features
     # still work when you use them. Put this line back to check it weekly again.

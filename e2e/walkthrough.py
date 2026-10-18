@@ -352,6 +352,18 @@ def model_paste(page):
     page.keyboard.press("Escape")
 
 
+@step("Add model: Trumpeter lookup by item number (stand-in)")
+def add_model_trumpeter(page):
+    page.get_by_role("button", name="+ Add model").click()
+    d = drawer(page)
+    d.get_by_role("button", name="Trumpeter", exact=True).click()
+    d.get_by_placeholder("e.g. 00968").fill("00968")
+    d.get_by_role("button", name="Look up").click()
+    expect(d.get_by_label("Model name")).to_have_value("German Leopard2A6 MBT")
+    expect(d.get_by_label("Scale", exact=True)).to_have_value("1/16")
+    page.keyboard.press("Escape")
+
+
 @step("Add model: Hasegawa lookup by series code")
 def add_model_hasegawa(page):
     page.get_by_role("button", name="+ Add model").click()
@@ -2028,7 +2040,7 @@ def settings_more(page):
     d.locator("summary", has_text="Tamiya catalogue").click()
     expect(d.locator(".settings > .fold", has_text="Tamiya catalogue")).to_contain_text("Tamiya products")
     d.locator("summary", has_text="Lookup sites").click()             # the weekly site check (no live run here)
-    expect(d.locator(".site-check")).to_have_count(13)
+    expect(d.locator(".site-check")).to_have_count(14)
     expect(d.get_by_role("button", name="Check now")).to_be_visible()
     shot(page, "d22_settings", full=False)
     page.keyboard.press("Escape")
@@ -2106,7 +2118,7 @@ with sync_playwright() as p:
     watch(desk, "desktop")
     for fn in (home, inventory_loads, search, chip, groups, condition_low, plus_minus, notes, edit_details, settings,
                add_lookup, add_to_wishlist, wishlist_buy, delete_bought, scan_owned, scan_unknown,
-               models, model_paste, add_model_hasegawa, undo, add_to_wishlist_button, duplicate_check, wishlist_panel, shop_tamiya, used_up,
+               models, model_paste, add_model_hasegawa, add_model_trumpeter, undo, add_to_wishlist_button, duplicate_check, wishlist_panel, shop_tamiya, used_up,
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
                matches, used_on, gundam, bandai_lookup, warhammer, journal_write, journal_links, journal_from_model,
                journal_suggestion, journal_todo, global_search, journal_wishlist, appearance,

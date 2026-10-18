@@ -27,6 +27,7 @@ export default function AddPanel({ lookups, settings, scanned: initialScan, onCl
     return applyResult(r.match === 'unknown' && r.brand_id == null ? { ...start, brand_id: '' } : start, r)
   })
   const [code, setCode] = useState('')
+  const [maker, setMaker] = useState('Tamiya') // whose item number it is
   const [busy, setBusy] = useState('')
   const [message, setMessage] = useState(null)
   const [supplies, setSupplies] = useState([]) // for "Already in your inventory"
@@ -53,10 +54,13 @@ export default function AddPanel({ lookups, settings, scanned: initialScan, onCl
     setBusy('lookup')
     setMessage(null)
     try {
-      const r = await api.lookupTamiya(code.trim())
+      const r = await (maker === 'Trumpeter' ? api.lookupTrumpeter : api.lookupTamiya)(code.trim())
       setFound(r)
       setForm((f) => applyResult(f, r))
       if (r.warning) setMessage({ tone: 'error', text: r.warning })
+      else if (maker === 'Trumpeter' && r.is_tool === false) {
+        setMessage({ tone: 'low', text: `That's a Trumpeter kit (${r.item_type ?? 'a model'}) - kits usually go in Models.` })
+      }
     } catch (e) {
       setMessage({ tone: 'error', text: e.message })
     } finally {
@@ -141,10 +145,15 @@ export default function AddPanel({ lookups, settings, scanned: initialScan, onCl
     <Drawer title="Add a supply" onClose={onClose} footer={footer}>
       <section className="panel-section add-start">
         <ScanButton onBarcode={onBarcode} label={scan ? 'Use another barcode' : 'Use barcode'} />
+        <div className="segmented maker" role="group" aria-label="Whose item number">
+          {['Tamiya', 'Trumpeter'].map((m) => (
+            <button key={m} type="button" aria-pressed={maker === m} onClick={() => setMaker(m)}>{m}</button>
+          ))}
+        </div>
         <div className="lookup-row">
           <label className="field">
-            <span className="field-label">or Tamiya paint code / item number</span>
-            <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. XF-76 or 81776"
+            <span className="field-label">{maker === 'Tamiya' ? 'or Tamiya paint code / item number' : 'or Trumpeter item number (tools too)'}</span>
+            <input value={code} onChange={(e) => setCode(e.target.value)} placeholder={maker === 'Tamiya' ? 'e.g. XF-76 or 81776' : 'e.g. 08005'}
               autoCapitalize="characters"
               onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); lookup() } }} />
           </label>

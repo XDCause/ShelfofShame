@@ -1585,3 +1585,16 @@ DBeaver connection confirmed working (2026-10-11).
      (?plant=id, or "Something wrong?" on a plant) puts its usual problems first (its names in the problem's plant
      list, the guide's pests naming an alias, seedlings / indoor / houseplants). "I've got this" = a Pest / Problem
      log tagged with the problem, and a reminder to check again in recheck_days with the steps as its notes.
+4d. **Trumpeter look-ups** (2026-10-18). User: "an API for Trumpeter like Tamiya, for their models and equipment".
+   - trumpeter-china.com (official; no robots.txt - a 404). Pages are by the site's own id, so a look-up is their
+     search (?l=en&m=Search&keyword=<item>) -> the link whose name ends in the item number (the search also lists
+     "hot products") -> that page (h3 title, img#bigpicimg, a label | value table: Item No, Item Name, Bar Code,
+     Scale 1:16, Item Type, Model Brief, Total Parts, Photo Etched Parts, Released Date, More Features) -> photo.
+     Its Item No must match. 2 s between requests (_get), cached in product_info as TRU<item> (series = Item Type,
+     description = the facts line + features + introduction).
+   - Kits and tools share 5-digit item numbers (00968 Leopard 2A6, 08005 Masking Tape Cutter); is_tool from the Item
+     Type. Models: Trumpeter is a maker beside Tamiya and Hasegawa. Supplies' Add: Tamiya | Trumpeter for the look-up
+     (a kit there gets a "usually goes in Models" note). The page's barcode is saved on product_info (unless another
+     product has it), so scanning the box finds it.
+   - Stand-in (00968, 08005) for the walk-through, refused in tests (made-up pages in test_trumpeter.py), weekly
+     site check (search + page, no photo).

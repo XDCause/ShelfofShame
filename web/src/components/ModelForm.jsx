@@ -11,10 +11,11 @@ const ONLY_FOR = { grade: 'Gundam', faction: 'Warhammer', figures: 'Warhammer' }
 const NEW_BRAND = 'new:' // brand_id value for a brand you haven't used yet, e.g. "new:Bandai"
 
 // Whose kits each hobby can look up, and what to type for each.
-const MAKERS = { 'Scale model': ['Tamiya', 'Hasegawa'], Gundam: ['Bandai'], Warhammer: ['Games Workshop'] }
+const MAKERS = { 'Scale model': ['Tamiya', 'Hasegawa', 'Trumpeter'], Gundam: ['Bandai'], Warhammer: ['Games Workshop'] }
 const LOOKUP_HELP = {
   Tamiya: { label: 'Kit number', example: 'e.g. 32595' },
   Hasegawa: { label: 'Series code or item number from the box', example: 'e.g. JT86 or 09086' },
+  Trumpeter: { label: 'Item number from the box', example: 'e.g. 00968' },
   Bandai: { label: 'Code from the box, its barcode, or the name', example: 'e.g. G5057403 or rx-78-2 revive' },
   'Games Workshop': { label: 'Kit name, Games Workshop code or box barcode', example: 'e.g. combat patrol adeptus mechanicus or 59-05' },
 }
@@ -108,6 +109,10 @@ export default function ModelForm({ model, lookups, settings, onClose, onCancel,
         name = r.name
         scale = r.scale
         grade = r.grade
+      } else if (maker === 'Trumpeter') {
+        r = await api.lookupTrumpeter(code.trim()) // the 5-digit item number (00968)
+        name = r.name
+        scale = r.scale ?? ''
       } else if (maker === 'Hasegawa') {
         r = await api.lookupHasegawa(code.trim()) // series code (JT86) or item number (09086)
         name = r.name

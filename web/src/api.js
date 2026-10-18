@@ -111,6 +111,9 @@ export const api = {
   lookupTamiya: (code, refresh = false) => request(`/lookup/tamiya/${enc(code)}${refresh ? '?refresh=true' : ''}`),
   lookupHasegawa: (code, refresh = false) =>
     request(`/lookup/hasegawa/${enc(code)}${refresh ? '?refresh=true' : ''}`),
+  // A Trumpeter kit or tool by the 5-digit item number on the box (00968)
+  lookupTrumpeter: (code, refresh = false) =>
+    request(`/lookup/trumpeter/${enc(code)}${refresh ? '?refresh=true' : ''}`),
   // A Bandai kit via hlj.com: your code (G5057403), barcode, HLJ code or a name ({choices} if several)
   lookupBandai: (code, refresh = false) => request(`/lookup/bandai/${enc(code)}${refresh ? '?refresh=true' : ''}`),
   // Warhammer kits from Good Games: a name ({choices}), GW code (59-05), box barcode or id:<product>

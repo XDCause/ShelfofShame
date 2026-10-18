@@ -11,7 +11,7 @@ same shape the real site gives. Only main.py calls it, and only with OUTSIDE_SIT
 import logging
 
 from . import (bluesky, bookseries, bunnings, chesscom, exophase, gameology, goodgames, hasegawa, hlj, openlibrary,
-               openmeteo, overpass, steam, steamhunters, tamiya, webphoto, wikimedia)
+               openmeteo, overpass, steam, steamhunters, tamiya, trumpeter, webphoto, wikimedia)
 
 log = logging.getLogger("stand_ins")
 PNG = (b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
@@ -81,6 +81,13 @@ HASEGAWA = {
     "JT86": {"title": "P-40E WARHAWK", "series": "JT86", "item": "09086", "scale": "1/48", "category": None},
     "PT29": {"title": "MITSUBISHI F-2B", "series": "PT29", "item": "07229", "scale": "1/48", "category": None},
 }
+TRUMPETER = {
+    "00968": {"title": "German Leopard2A6 MBT", "item": "00968", "barcode": "9580208009681", "scale": "1/16",
+              "item_type": "Plastic Model Armor Kit", "is_tool": False, "size": "Length 705.8mm", "parts": "1700+",
+              "etched": "4 pcs", "released": "2026-09", "features": None, "intro": None},
+    "08005": {"title": "Masking Tape Cutter", "item": "08005", "barcode": None, "scale": None, "item_type": "Modeling Tools",
+              "is_tool": True, "size": None, "parts": None, "etched": None, "released": "2021-01", "features": None, "intro": None},
+}
 FORECAST = {"daily": {"time": ["2026-01-10", "2026-01-11", "2026-01-12"], "temperature_2m_max": [29, 31, 27],
                       "temperature_2m_min": [19, 20, 18], "precipitation_sum": [0, 2, 0], "precipitation_probability_max": [10, 40, 5],
                       "wind_gusts_10m_max": [25, 30, 20], "uv_index_max": [9, 10, 8], "weather_code": [1, 63, 3]}}
@@ -108,6 +115,12 @@ def install():
         return {**HASEGAWA[series], "source_url": f"http://www.hasegawa-model.co.jp/product_g/{series.lower()}/",
                 "image": PNG, "image_type": "image/png"}
     hasegawa.fetch = hasegawa_fetch
+    def trumpeter_fetch(item, photo=True):
+        if item not in TRUMPETER:
+            raise tamiya.NotFound(f"Trumpeter's site has nothing for item {item}.")
+        return {**TRUMPETER[item], "source_url": f"https://www.trumpeter-china.com/index.php?g=home&m=product&a=show&id={item}&l=en",
+                "image": PNG if photo else None, "image_type": "image/png" if photo else None}
+    trumpeter.fetch = trumpeter_fetch
     hlj.search = lambda query: []
     hlj.fetch = _refuse(tamiya.NotFound, "HobbyLink Japan")
     # Shops (Shopify catalogues) and their photos
