@@ -76,6 +76,7 @@ TAMIYA = {
     "81701": {"title": "ACRYLIC PAINT MINI XF-1 FLAT BLACK", "series": "Tamiya Color Acrylic Paint Mini", "description": "Contents: 10ml"},
     "81776": {"title": "ACRYLIC PAINT MINI XF-76 GRAY GREEN (IJN)", "series": "Tamiya Color Acrylic Paint Mini", "description": "Contents: 10ml"},
     "87038": {"title": "TAMIYA EXTRA-THIN CEMENT (40ml)", "series": "Cement & Putty No.38", "description": None},
+    "08888": {"title": "STAND-IN TAMIYA TOOL", "series": "Craft Tools", "description": None},   # both makers (made up)
 }
 HASEGAWA = {
     "JT86": {"title": "P-40E WARHAWK", "series": "JT86", "item": "09086", "scale": "1/48", "category": None},
@@ -87,6 +88,8 @@ TRUMPETER = {
               "etched": "4 pcs", "released": "2026-09", "features": None, "intro": None},
     "08005": {"title": "Masking Tape Cutter", "item": "08005", "barcode": None, "scale": None, "item_type": "Modeling Tools",
               "is_tool": True, "size": None, "parts": None, "etched": None, "released": "2021-01", "features": None, "intro": None},
+    "08888": {"title": "Stand-in Trumpeter Tool", "item": "08888", "barcode": None, "scale": None, "item_type": "Modeling Tools",
+              "is_tool": True, "size": None, "parts": None, "etched": None, "released": None, "features": None, "intro": None},
 }
 FORECAST = {"daily": {"time": ["2026-01-10", "2026-01-11", "2026-01-12"], "temperature_2m_max": [29, 31, 27],
                       "temperature_2m_min": [19, 20, 18], "precipitation_sum": [0, 2, 0], "precipitation_probability_max": [10, 40, 5],

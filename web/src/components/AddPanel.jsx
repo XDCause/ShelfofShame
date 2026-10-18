@@ -27,7 +27,7 @@ export default function AddPanel({ lookups, settings, scanned: initialScan, onCl
     return applyResult(r.match === 'unknown' && r.brand_id == null ? { ...start, brand_id: '' } : start, r)
   })
   const [code, setCode] = useState('')
-  const [maker, setMaker] = useState('Tamiya') // whose item number it is
+  const [choices, setChoices] = useState(null) // both makers have this number: their results, to pick from
   const [busy, setBusy] = useState('')
   const [message, setMessage] = useState(null)
   const [supplies, setSupplies] = useState([]) // for "Already in your inventory"
@@ -54,18 +54,32 @@ export default function AddPanel({ lookups, settings, scanned: initialScan, onCl
     setBusy('lookup')
     setMessage(null)
     try {
-      const r = await (maker === 'Trumpeter' ? api.lookupTrumpeter : api.lookupTamiya)(code.trim())
-      setFound(r)
-      setForm((f) => applyResult(f, r))
-      if (r.warning) setMessage({ tone: 'error', text: r.warning })
-      else if (maker === 'Trumpeter' && r.is_tool === false) {
-        setMessage({ tone: 'low', text: `That's a Trumpeter kit (${r.item_type ?? 'a model'}) - kits usually go in Models.` })
+      // The API asks Tamiya and / or Trumpeter (a plain number could be either's); both found = you pick.
+      const { found: hits, missed } = await api.lookupItem(code.trim())
+      const unsure = missed.filter((m) => ![404, 409, 422].includes(m.status)).map((m) => `${m.maker}: ${m.message}`)
+      if (hits.length > 1) {
+        setChoices(hits)
+        setFound(null)
+      } else {
+        pick(hits[0], hits.length + missed.length > 1, unsure)
       }
     } catch (e) {
       setMessage({ tone: 'error', text: e.message })
     } finally {
       setBusy('')
     }
+  }
+
+  const pick = (r, say = false, unsure = []) => {
+    const { maker } = r
+    setChoices(null)
+    setFound(r)
+    setForm((f) => applyResult(f, r))
+    if (r.warning) setMessage({ tone: 'error', text: r.warning })
+    else if (maker === 'Trumpeter' && r.is_tool === false) {
+      setMessage({ tone: 'low', text: `That's a Trumpeter kit (${r.item_type ?? 'a model'}) - kits usually go in Models.` })
+    } else if (unsure.length) setMessage({ tone: 'low', text: `Found at ${maker}. Couldn't check the other site (${unsure.join('; ')}).` })
+    else if (say) setMessage({ tone: 'ok', text: `Found at ${maker}.` })
   }
 
   // After saving: remember the scanned barcode and keep your photo if there's no other.
@@ -145,15 +159,10 @@ export default function AddPanel({ lookups, settings, scanned: initialScan, onCl
     <Drawer title="Add a supply" onClose={onClose} footer={footer}>
       <section className="panel-section add-start">
         <ScanButton onBarcode={onBarcode} label={scan ? 'Use another barcode' : 'Use barcode'} />
-        <div className="segmented maker" role="group" aria-label="Whose item number">
-          {['Tamiya', 'Trumpeter'].map((m) => (
-            <button key={m} type="button" aria-pressed={maker === m} onClick={() => setMaker(m)}>{m}</button>
-          ))}
-        </div>
         <div className="lookup-row">
           <label className="field">
-            <span className="field-label">{maker === 'Tamiya' ? 'or Tamiya paint code / item number' : 'or Trumpeter item number (tools too)'}</span>
-            <input value={code} onChange={(e) => setCode(e.target.value)} placeholder={maker === 'Tamiya' ? 'e.g. XF-76 or 81776' : 'e.g. 08005'}
+            <span className="field-label">or item number / Tamiya paint code</span>
+            <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. XF-76, 81776 or 08005"
               autoCapitalize="characters"
               onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); lookup() } }} />
           </label>
@@ -175,6 +184,22 @@ export default function AddPanel({ lookups, settings, scanned: initialScan, onCl
         </p>
       )}
       {message && <p className={`alert ${message.tone} small`} role="alert">{message.text}</p>}
+      {choices && (
+        <section className="panel-section" aria-label="Which one">
+          <p className="hint">Tamiya and Trumpeter both have item {code.trim()}. Which is yours?</p>
+          <ul className="list kit-choices">
+            {choices.map((c) => (
+              <li key={c.maker}>
+                <button type="button" className="row-button" onClick={() => pick(c)}>
+                  {c.has_image ? <img className="thumb" src={imageUrl(c)} alt="" loading="lazy" />
+                    : <span className="thumb thumb-empty" aria-hidden="true" />}
+                  <span><strong>{c.maker}</strong> · {c.name ?? c.title}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {(photo || yourPhotoUrl || found?.title) && (
         <div className="preview">

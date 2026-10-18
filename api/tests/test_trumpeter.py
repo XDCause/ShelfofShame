@@ -72,3 +72,24 @@ def test_lookup_route(client, fake_trumpeter):
     assert client.get("/api/scan/9580208009681").json()["product_code"] == "TRU00968"   # its box barcode now scans
     assert client.get("/api/lookup/trumpeter/01234").status_code == 404
     assert client.get("/api/lookup/trumpeter/XF-1").status_code == 422
+
+
+def test_one_box_asks_both_makers(client, fake_trumpeter, monkeypatch):
+    from app import products
+    assert products.who_to_ask("XF-76") == ["Tamiya"] and products.who_to_ask("T81776") == ["Tamiya"]
+    assert products.who_to_ask("TRU00968") == ["Trumpeter"] and products.who_to_ask("00968") == ["Tamiya", "Trumpeter"]
+    asked = []
+
+    def tamiya_fetch(item):
+        asked.append(item)
+        if item == "00968":       # made up: both makers have it
+            return {"title": "TEST TAMIYA THING", "series": "Craft Tools", "description": None, "source_url": "x",
+                    "image": None, "image_type": None, "kit_paints": []}
+        raise tamiya.NotFound(f"Tamiya has no product page for item {item}.")
+    monkeypatch.setattr(tamiya, "fetch", tamiya_fetch)
+    both = client.get("/api/lookup/item/00968").json()
+    assert [f["maker"] for f in both["found"]] == ["Tamiya", "Trumpeter"] and both["missed"] == []
+    assert {f["product_code"] for f in both["found"]} == {"T00968", "TRU00968"}
+    one = client.get("/api/lookup/item/968").json()          # Tamiya has no 968; Trumpeter's is 00968
+    assert [f["maker"] for f in one["found"]] == ["Trumpeter"] and one["missed"][0]["status"] == 404
+    assert client.get("/api/lookup/item/01234").status_code == 404

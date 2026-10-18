@@ -241,11 +241,24 @@ def settings(page):
     page.keyboard.press("Escape")
 
 
-@step("Add panel: Tamiya code lookup fills the form")
+@step("Add panel: one box for Tamiya and Trumpeter - asked which when both have the number; a Tamiya code fills the form")
 def add_lookup(page):
     page.get_by_role("button", name="+ Add", exact=True).click()
     d = drawer(page)
-    d.get_by_placeholder("e.g. XF-76 or 81776").fill("XF-2")
+    box = d.get_by_placeholder("e.g. XF-76, 81776 or 08005")
+    # a number both makers use (stand-ins): you're asked which; then one only Trumpeter has: filled straight in
+    box.fill("08888")
+    d.get_by_role("button", name="Look up").click()
+    which = d.get_by_role("region", name="Which one")
+    expect(which).to_contain_text("Tamiya and Trumpeter both have item 08888")
+    which.get_by_role("button", name=re.compile("^Trumpeter")).click()
+    expect(d.get_by_label("Name / colour")).to_have_value(re.compile("Stand-in Trumpeter Tool", re.I))   # (names are tidied)
+    expect(which).to_have_count(0)
+    box.fill("08005")
+    d.get_by_role("button", name="Look up").click()
+    expect(d.get_by_label("Name / colour")).to_have_value("Masking Tape Cutter")
+    expect(d.get_by_role("alert")).to_contain_text("Found at Trumpeter")
+    box.fill("XF-2")
     d.get_by_role("button", name="Look up").click()
     expect(d.get_by_label("Name / colour")).to_have_value(re.compile("XF-?2"), timeout=45000)
     shot(page, "d06_add_panel_filled")

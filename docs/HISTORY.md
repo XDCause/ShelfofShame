@@ -1598,3 +1598,10 @@ DBeaver connection confirmed working (2026-10-11).
      product has it), so scanning the box finds it.
    - Stand-in (00968, 08005) for the walk-through, refused in tests (made-up pages in test_trumpeter.py), weekly
      site check (search + page, no photo).
+   - (Same day) Add a supply has ONE look-up box again. A paint code (XF-76) or T81776 goes to Tamiya, TRU00968 to
+     Trumpeter; a plain 3-5 digit number asks both - both use 5-digit numbers and a clash can't be ruled out
+     (Trumpeter seems to use 00xxx-09xxx, Tamiya 1xxxx-9xxxx, unproven). GET /lookup/item/{code} (products.who_to_ask)
+     asks them at the same time and answers {found, missed}: two found = you're shown both (photo, maker, name) to
+     pick; one = filled in with "Found at <maker>"; a site that couldn't be reached (not 404 / 409 / 422) is
+     mentioned. In the API, not two browser requests, because the browser logs the expected "not at Tamiya" 404 as an
+     error (the walk-through fails on any). API errors in api.js now carry .status.

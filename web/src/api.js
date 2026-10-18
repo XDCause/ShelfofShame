@@ -8,7 +8,7 @@ async function request(path, options = {}) {
   })
   if (res.status === 204) return null
   const body = await res.json().catch(() => null)
-  if (!res.ok) throw new Error(errorMessage(body) || `${res.status} ${res.statusText}`)
+  if (!res.ok) throw Object.assign(new Error(errorMessage(body) || `${res.status} ${res.statusText}`), { status: res.status })
   return body
 }
 
@@ -111,6 +111,8 @@ export const api = {
   lookupTamiya: (code, refresh = false) => request(`/lookup/tamiya/${enc(code)}${refresh ? '?refresh=true' : ''}`),
   lookupHasegawa: (code, refresh = false) =>
     request(`/lookup/hasegawa/${enc(code)}${refresh ? '?refresh=true' : ''}`),
+  // Add a supply's look-up: Tamiya and / or Trumpeter by what you typed -> {found: [{maker, ...}], missed}
+  lookupItem: (code) => request(`/lookup/item/${enc(code)}`),
   // A Trumpeter kit or tool by the 5-digit item number on the box (00968)
   lookupTrumpeter: (code, refresh = false) =>
     request(`/lookup/trumpeter/${enc(code)}${refresh ? '?refresh=true' : ''}`),

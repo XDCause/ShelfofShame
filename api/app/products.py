@@ -4,6 +4,7 @@ product_info is the cache: one row per brand + product code with the manufacture
 description and photo (or your own photo), a barcode once you've linked one, and for Tamiya
 kits the paint list from the kit's page.
 """
+import asyncio
 import re
 import time
 
@@ -232,6 +233,38 @@ async def lookup_trumpeter(code: str, refresh: bool = False):
     return {**p, "brand_id": trumpeter_id, "product_code": product_code, "name": p["title"],
             "scale": scale.group(1) if scale else None, "item_type": kind or None,
             "is_tool": any(w in kind.lower() for w in trumpeter.TOOL_TYPES), "from_cache": bool(cached) and not refresh}
+
+
+def who_to_ask(code: str) -> list[str]:
+    """Whose site to ask for what was typed in Add a supply: a paint code (XF-76) or T81776 is Tamiya's, TRU00968
+    Trumpeter's; a plain 3-5 digit number could be either's (both use 5-digit numbers), so both."""
+    c = code.strip().upper()
+    if re.match(r"TR(U|UMPETER)?[\s-]?\d", c):
+        return ["Trumpeter"]
+    if re.fullmatch(r"\d{3,5}", c):
+        return ["Tamiya", "Trumpeter"]
+    return ["Tamiya"]
+
+
+@router.get("/lookup/item/{code}")
+async def lookup_item(code: str):
+    """Add a supply's one look-up box: asks each maker it could be (at the same time) and gives back what each
+    found - two when both makers have the number, for you to pick - and why the others didn't. A 404 only when
+    nobody has it (so a "not at Tamiya" isn't an error in the browser when Trumpeter has it)."""
+    async def ask(maker):
+        try:
+            r = await (lookup_trumpeter(code) if maker == "Trumpeter" else lookup_tamiya(code))
+            return {"maker": maker, **r}
+        except HTTPException as e:
+            return {"maker": maker, "status": e.status_code, "message": e.detail}
+    answers = await asyncio.gather(*(ask(m) for m in who_to_ask(code)))
+    found = [a for a in answers if "status" not in a]
+    missed = [a for a in answers if "status" in a]
+    if not found:
+        unreachable = [a for a in missed if a["status"] not in (404, 409, 422)]
+        raise HTTPException(unreachable[0]["status"] if unreachable else max(a["status"] for a in missed),
+                            " ".join(dict.fromkeys(a["message"] for a in missed)))
+    return {"found": found, "missed": missed}
 
 
 def _bandai_cached(conn, bandai_id, kind, value):
