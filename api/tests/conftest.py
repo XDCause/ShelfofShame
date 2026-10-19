@@ -28,10 +28,11 @@ def clean_database():
                      "colour_group_members, mixes, mix_parts, price_guide, journal_pages, tags, page_tags, "
                      "journal_links, journal_images, journal_drawings, calendar_events, board_games, board_game_plays, gear, "
                      "volleyball_games, volleyball_teams, volleyball_videos, vg_achievements, vg_games, vg_other_games, "
-                     "chess_games, chess_archives, books, reading_log, book_quotes, vg_friends, volleyball_coach, goals, site_checks, hikes, hike_photos, hike_gear, garden_spaces, garden_containers, garden_plantings, garden_logs, garden_photos, garden_tasks, garden_items "
+                     "chess_games, chess_archives, books, reading_log, book_quotes, vg_friends, volleyball_coach, goals, site_checks, hikes, hike_photos, hike_gear, garden_spaces, garden_containers, garden_plantings, garden_logs, garden_photos, garden_tasks, garden_items, shooting_ranges, rifles, ammo, shooting_sessions, shooting_groups, rifle_logs, dope_rows "
                      "RESTART IDENTITY CASCADE")
         conn.execute("DELETE FROM settings WHERE key LIKE 'reading_goal_%%'")
         conn.execute("DELETE FROM garden_guides WHERE custom")
+        conn.execute("UPDATE shooting_settings SET licence_expires = NULL, licence_note = NULL, club_shoots_needed = NULL, clean_every = 200")
         conn.execute("UPDATE garden_settings SET climate = 'Subtropical', place_name = NULL, lat = NULL, lon = NULL")
         conn.execute("UPDATE chess_account SET username = NULL, profile = NULL, stats = NULL, last_sync_at = NULL, "
                      "last_error = NULL")

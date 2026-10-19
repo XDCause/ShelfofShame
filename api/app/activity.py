@@ -14,6 +14,7 @@
     reading     pages read (one entry per book per day), started, finished / stopped   (reading_log, books)
     goals       reached, and each progress note                                     (goals, goal_updates)
     hiking      a hike: distance, climb, time                                       (hikes)
+    shooting    a range session: where, rifle, rounds, best group, score            (shooting_sessions)
     gardening   sowed / planted; harvests, repotting, problems, notes and photos   (garden_plantings, garden_logs)
                 (not every watering - that's what Today is for)
 
@@ -155,6 +156,21 @@ WITH feed AS (
            (SELECT '/api/hiking/photos/' || p.photo_id FROM hike_photos p WHERE p.hike_id = h.hike_id
             ORDER BY p.along_m NULLS LAST, p.taken_at NULLS LAST, p.photo_id LIMIT 1)
     FROM hikes h
+  UNION ALL
+    SELECT {_on_day('s.shot_on', 's.created_at')}, 'shoot', s.session_id,
+           CASE s.kind WHEN 'Match' THEN 'Shot a match' WHEN 'Zeroing' THEN 'Zeroed' ELSE 'Shot' END,
+           COALESCE(NULLIF(s.match_name, ''), rg.name, r.name, 'Range session'),
+           concat_ws(' · ', CASE WHEN s.match_name IS NOT NULL OR rg.name IS NOT NULL THEN r.name END,
+                     (SELECT COALESCE(s.rounds, sum(g.shots)) || ' rounds' FROM shooting_groups g WHERE g.session_id = s.session_id),
+                     (SELECT 'best ' || round(min(g.size_mm / (CASE g.unit WHEN 'yd' THEN g.distance * 0.9144 ELSE g.distance END * 0.290888)), 2)
+                             || ' MOA' FROM shooting_groups g WHERE g.session_id = s.session_id AND COALESCE(g.shots, 3) >= 3),
+                     (SELECT 'scored ' || trim_scale(sum(g.score)) || COALESCE('-' || sum(g.x_count) || 'X', '')
+                      FROM shooting_groups g WHERE g.session_id = s.session_id HAVING sum(g.score) IS NOT NULL),
+                     s.finish),
+           NULL, NULL,
+           (SELECT '/api/shooting/groups/' || g.group_id || '/photo?v=' || (extract(epoch FROM g.photo_updated) * 1000)::bigint
+            FROM shooting_groups g WHERE g.session_id = s.session_id AND g.photo IS NOT NULL ORDER BY g.group_id LIMIT 1)
+    FROM shooting_sessions s LEFT JOIN shooting_ranges rg ON rg.range_id = s.range_id LEFT JOIN rifles r ON r.rifle_id = s.rifle_id
   UNION ALL
     SELECT {_on_day('p.started_on', 'p.created_at')}, 'planting', p.planting_id,
            CASE WHEN p.source = 'Seed' THEN 'Sowed' ELSE 'Planted' END, p.name || COALESCE(' (' || p.variety || ')', ''),

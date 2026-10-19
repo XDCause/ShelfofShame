@@ -49,7 +49,7 @@ REPEATS = ["never", "weekly", "fortnightly"]
 MOODS = ["great", "good", "okay", "meh", "rough"]                              # 25_mood.sql, best first
 GAME_STATUSES = ["Owned", "To sell", "Wanted", "Borrowed", "Played elsewhere", "Gone"]   # 21 / 47 / 54_board_game_elsewhere.sql
 GEAR_CONDITIONS = ["Wanted", "New", "Good", "Worn", "Needs replacing", "Retired"]   # 22_volleyball.sql, 50_gear_wanted.sql
-GEAR_HOBBIES = ["volleyball", "hiking"]                                          # 65_hiking_gear.sql
+GEAR_HOBBIES = ["volleyball", "hiking", "shooting"]                              # 65 / 73
 VOLLEYBALL_KINDS = ["Game", "Training", "Social", "Tournament"]
 
 # Friendly messages for database rule violations, keyed by constraint name.

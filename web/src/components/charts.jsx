@@ -11,7 +11,8 @@ function niceScale(max, ticks = 4) {
   const power = 10 ** Math.floor(Math.log10(raw))
   const step = [1, 2, 5, 10].map((m) => m * power).find((s) => s >= raw)
   const top = Math.ceil(max / step) * step
-  return { top, steps: Array.from({ length: Math.round(top / step) + 1 }, (_, i) => i * step) }
+  // (rounded: 3 x 0.2 is 0.6000000000000001 in floating point)
+  return { top, steps: Array.from({ length: Math.round(top / step) + 1 }, (_, i) => Number((i * step).toPrecision(12))) }
 }
 const compact = (n) => (n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}K` : String(n))
 

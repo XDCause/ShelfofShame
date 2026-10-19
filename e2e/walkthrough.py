@@ -98,7 +98,7 @@ def home(page):
     expect(stats).to_have_count(10 + CHESS + READING + HIKING + GARDEN)
     expect(page.locator(".home-card", has_text="Recent activity").locator(".pill").first).to_be_visible()
     expect(page.locator(".home-card", has_text="Coming up")).to_be_visible()
-    expect(page.locator(".quick-action")).to_have_count(12)       # + Log a chess game, Add a book, Log a hike, Add a plant
+    expect(page.locator(".quick-action")).to_have_count(13)       # + Log a chess game, Add a book, Log a hike, Add a plant, Log a shoot
     shot(page, "d00_home", full=False)
     stats.filter(has_text="To buy").click()
     expect(page).to_have_url(BASE + "/wishlist")
@@ -1906,6 +1906,67 @@ FAKE_BUNNINGS = """<html><head><title>Leek - Bunnings</title></head><body><h1>10
             "images": [{"imageType": "PRIMARY", "url": "https://media.bunnings.com.au/api/public/content/leek?v=1"}]}}}]}}}})
 
 
+@step("Precision shooting: a rifle (MIL scope) and ammo, a session with a group (MOA / MIL, what to dial), DOPE card, dashboard")
+def shooting(page):
+    page.goto(BASE + "/shooting/rifles")
+    page.get_by_role("button", name="+ Add a rifle").first.click()
+    d = drawer(page)
+    d.get_by_label(re.compile(r"^Name")).fill(f"Rifle {MARK}")
+    d.get_by_label(re.compile(r"^Kind")).select_option("Rimfire")
+    d.get_by_label("Scope turrets").select_option("MIL")
+    d.get_by_role("button", name="Add rifle").click()
+    expect(d.get_by_role("heading", name=f"Rifle {MARK}")).to_be_visible()     # opens it
+    expect(d).to_contain_text("0.1 a click")                                   # MIL turrets: 0.1 a click
+    page.keyboard.press("Escape")
+    page.goto(BASE + "/shooting/ammo")
+    page.get_by_role("button", name="+ Add ammo").first.click()
+    d.get_by_label(re.compile(r"^Name")).fill(f"Ammo {MARK}")
+    d.get_by_label("Rounds in a box").fill("50")
+    d.get_by_label("Price a box").fill("12.50")
+    d.get_by_label("Rounds bought (all up)").fill("500")
+    d.get_by_role("button", name="Add ammo").click()
+    expect(d).to_contain_text("$0.25 a round")
+    page.keyboard.press("Escape")
+    # a session: the rifle and ammo picked, then a group - its size in MOA / MIL as you type, what to dial
+    page.goto(BASE + "/shooting/sessions")
+    page.get_by_role("button", name="+ Log a session").first.click()
+    d.get_by_label(re.compile(r"^Rifle")).select_option(label=f"Rifle {MARK}")   # (a select's label holds its options too)
+    d.get_by_label(re.compile(r"^Ammo")).select_option(label=f"Ammo {MARK}")
+    d.get_by_role("button", name="Start logging").click()
+    d.get_by_role("button", name="+ Add a group").click()
+    form = d.get_by_role("form", name="New group")
+    form.get_by_label("Distance", exact=True).fill("50")
+    form.get_by_label("Shots", exact=True).fill("5")
+    form.get_by_label("Group size (mm)").fill("10")
+    expect(form.locator(".shoot-live")).to_contain_text("0.69 MOA · 0.20 MIL")
+    form.get_by_label("Hit high by (mm)").fill("15")
+    form.get_by_label("Elevation dialled (MIL)").fill("0.5")
+    form.get_by_label("Chronograph speeds (m/s)").fill("325 328 326")
+    form.get_by_label("This confirms my elevation at this distance (DOPE)").check()
+    form.get_by_role("button", name="Add group").click()
+    group = d.locator(".shoot-group").first
+    expect(group).to_contain_text("0.69 MOA")
+    expect(group).to_contain_text("Dial 0.30 MIL down (3 clicks)")
+    expect(group).to_contain_text("SD 1.5")
+    shot(page, "d90_shooting_session", full=True)
+    page.keyboard.press("Escape")
+    rifle_id = next(r["rifle_id"] for r in page.request.get(f"{BASE}/api/shooting/rifles").json() if r["name"] == f"Rifle {MARK}")
+    page.goto(f"{BASE}/shooting/dope?rifle={rifle_id}")
+    expect(page.locator(".shoot-dope tbody tr").first).to_contain_text("0.5 MIL")
+    expect(page.locator(".shoot-dope tbody tr").first).to_contain_text("Confirmed")
+    page.locator(".section-tabs").get_by_role("link", name="Dashboard", exact=True).click()
+    expect(page.locator(".home-card", has_text="Best groups")).to_contain_text("50 m")
+    shot(page, "d91_shooting_dashboard", full=True)
+    assert any(f["kind"] == "shoot" for f in page.request.get(f"{BASE}/api/activity").json())
+    # tidy up through the API
+    for s in page.request.get(f"{BASE}/api/shooting/sessions?rifle_id={rifle_id}").json():
+        page.request.delete(f"{BASE}/api/shooting/sessions/{s['session_id']}")
+    page.request.delete(f"{BASE}/api/shooting/rifles/{rifle_id}")
+    for a in page.request.get(f"{BASE}/api/shooting/ammo").json():
+        if a["name"] == f"Ammo {MARK}":
+            page.request.delete(f"{BASE}/api/shooting/ammo/{a['ammo_id']}")
+
+
 @step("Bunnings button: set up on Supplies; on a (made-up) Bunnings plant page for Stafford it sends the price, stock and aisle; saved")
 def bunnings_button(page):
     page.goto(BASE + "/gardening/supplies")
@@ -2135,7 +2196,7 @@ with sync_playwright() as p:
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
                matches, used_on, gundam, bandai_lookup, warhammer, journal_write, journal_links, journal_from_model,
                journal_suggestion, journal_todo, global_search, journal_wishlist, appearance,
-               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, warhammer_minis, gundam_range, board_game_kinds, board_game_elsewhere, volleyball_coach, video_game_friends, wishlist_shops, goals, hiking, gardening, bunnings_button, settings_more, no_panel):
+               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, warhammer_minis, gundam_range, board_game_kinds, board_game_elsewhere, volleyball_coach, video_game_friends, wishlist_shops, goals, hiking, gardening, shooting, bunnings_button, settings_more, no_panel):
         fn(desk)
     ctx = browser.new_context(**p.devices["iPhone 13"], timezone_id=zone)
     mob = ctx.new_page()

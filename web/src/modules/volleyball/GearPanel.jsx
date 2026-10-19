@@ -7,20 +7,26 @@ import JournalMentions from '../../core/journal/JournalMentions.jsx'
 import { FormPanel } from './VolleyballPanels.jsx'
 
 // Gear (shoes, knee pads, balls; boots, packs, poles...): one piece's panel, and finding it at a shop
-// (api/app/gear.py). Shared by the hobbies with gear: volleyball and hiking (gear.hobby).
+// (api/app/gear.py). Shared by the hobbies with gear: volleyball, hiking and shooting (gear.hobby).
 const gearFields = (hobby) => [
-  { name: 'name', label: 'Name', required: true, wide: true, placeholder: hobby === 'hiking' ? 'e.g. Hiking boots' : 'e.g. Court shoes' },
-  { name: 'kind', label: 'Kind', list: 'gear-kinds', placeholder: hobby === 'hiking' ? 'Boots, Backpack, Poles...' : 'Shoes, Knee pads, Ball...' },
+  { name: 'name', label: 'Name', required: true, wide: true, placeholder: GEAR_EXAMPLE[hobby][0] },
+  { name: 'kind', label: 'Kind', list: 'gear-kinds', placeholder: GEAR_EXAMPLE[hobby][1] },
   { name: 'brand', label: 'Brand' },
   { name: 'size', label: 'Size' },
   { name: 'purchase_date', label: 'Bought on', type: 'date' },
   { name: 'price_paid', label: 'Price paid', type: 'money' },
   { name: 'notes', label: 'Notes', type: 'textarea' },
 ]
+const GEAR_EXAMPLE = {
+  volleyball: ['e.g. Court shoes', 'Shoes, Knee pads, Ball...'], hiking: ['e.g. Hiking boots', 'Boots, Backpack, Poles...'],
+  shooting: ['e.g. Harris bipod', 'Bipod, Rear bag, Chronograph...'],
+}
 export const GEAR_KINDS = {
   volleyball: ['Shoes', 'Knee pads', 'Ball', 'Clothing', 'Bag', 'Ankle brace', 'Water bottle'],
   hiking: ['Boots', 'Trail shoes', 'Socks', 'Backpack', 'Poles', 'Jacket', 'Clothing', 'Hat', 'Hydration', 'Headlamp',
     'Navigation', 'First aid', 'Tent', 'Sleeping bag', 'Sleeping mat', 'Stove'],
+  shooting: ['Bipod', 'Rear bag', 'Shooting mat', 'Spotting scope', 'Chronograph', 'Wind meter', 'Rangefinder', 'Ear protection',
+    'Eye protection', 'Sling', 'Rifle case', 'Cleaning kit', 'Bore guide', 'Targets', 'Data book'],
 }
 const hikedKm = (g) => `${g.hikes} hike${g.hikes === 1 ? '' : 's'} · ${(g.hiked_m / 1000).toFixed(1)} km`
 

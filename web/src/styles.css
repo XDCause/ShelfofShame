@@ -2302,3 +2302,37 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
   .garden-timeline-months { margin-left: 110px; }
   .garden-weather { gap: 4px; }
 }
+
+/* ---------- Precision shooting ---------- */
+.shoot-numbers { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin: 8px 0; }
+.shoot-numbers > div { background: var(--fill-2); border-radius: 10px; padding: 8px 10px; }
+.shoot-numbers dt { font-size: 0.78rem; color: var(--muted); }
+.shoot-numbers dd { margin: 0; font-size: 1.15rem; font-weight: 600; }
+.shoot-facts { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 6px 0; font-size: 0.9rem; }
+.shoot-facts dt { color: var(--muted); }
+.shoot-facts dd { margin: 0; }
+.shoot-notes { white-space: pre-wrap; }
+.shoot-groups { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 10px; }
+.shoot-group { padding: 12px; }
+.shoot-group-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.shoot-group-body { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; }
+.shoot-group-body .shoot-facts { flex: 1 1 260px; }
+.shoot-group-form { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; }
+.shoot-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.shoot-dist { display: flex; gap: 4px; }
+.shoot-dist input { flex: 1; min-width: 0; }
+.shoot-dist select { width: auto; }
+.shoot-live { font-weight: 600; color: var(--tint); }
+.shoot-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.shoot-table th, .shoot-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--separator); }
+.shoot-table th { color: var(--muted); font-weight: 600; }
+.shoot-estimate td { color: var(--muted); font-style: italic; }
+.shoot-dope { overflow-x: auto; }
+.shoot-dope-add { display: grid; gap: 8px; }
+.shoot-log { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+.shoot-settings { display: grid; gap: 8px; margin-bottom: 12px; }
+.shoot-subhead { margin: 12px 0 4px; font-size: 0.85rem; color: var(--muted); }
+@media print {
+  .shoot-noprint, nav, header, .section-tabs { display: none !important; }
+  .shoot-dope { box-shadow: none; border: 1px solid #999; }
+}

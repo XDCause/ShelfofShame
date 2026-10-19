@@ -1611,3 +1611,22 @@ DBeaver connection confirmed working (2026-10-11).
    Home, goal / calendar pickers and the routes never see them there. Dev (and the walk-through, which runs dev's
    images) still shows them. Taking the flag off a manifest is what "ships" a hobby. Prod had no goals or calendar
    events for car / travel / shooting, so nothing points at a hidden hobby.
+4f. **Precision shooting, built** (2026-10-19). User: smallbore / rimfire and long-range rifle, factory ammo only; a local
+   club; Queensland. Still underConstruction (dev only) until the user says it's done.
+   - 73_shooting.sql: shooting_settings (licence expiry + note, club shoots needed a year, cleaning interval),
+     shooting_ranges (counts_for_club), rifles (scope MOA / MIL + click, zero, rounds_before, clean_every, status,
+     Queensland Permit to Acquire applied / approved / expires - NO serial or registration numbers: no login),
+     ammo (bullet, BC + G1 / G7, box velocity, lot, box size / price, rounds_bought - left = bought - fired),
+     shooting_sessions (kind, conditions, rounds - blank = the groups' shots; "finish", because PLACING is a
+     reserved word in PostgreSQL), shooting_groups (distance m / yd, shots, size mm, where it hit, dialled, score
+     + X, velocities[], confirms_dope, target photo), rifle_logs (at the rifle's round count), dope_rows; gear.hobby
+     takes 'shooting'.
+   - shotmath.py: MOA (29.0888 mm at 100 m), MIL (1 mm per m), velocity avg / SD (sample) / ES, DOPE estimate =
+     straight line between the two confirmed distances around it, never outside them. A group with where it hit
+     gives "Dial x up/down, left/right (n clicks)" in the rifle's unit.
+   - Dashboard: sessions / rounds / club shoots against your number / ammo spend this year, needs doing (clean due,
+     ammo low, PTA waiting), latest sessions, best group per distance (3+ shots), rounds and average group per
+     month, match scores, rifles, licence + ranges card. DOPE page prints. Activity feed kind 'shoot'.
+   - Session form waits for its rifle / ammo / range lists before it shows (a form rebuilt when they arrived could
+     drop a choice made in that moment - the walk-through's slower copy did). Chart axis steps are rounded (3 x 0.2).
+   - The user's club is a row in dev's database, not in the repo.
