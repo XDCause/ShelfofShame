@@ -7,7 +7,10 @@
 //   home      its parts of Home: {Tiles (stat tiles, in Home's shared row), Cards (a card or two)}
 //   actions   Home's quick actions: [{label, Icon, run(app)}]
 //   panels    side panels it adds: {type: Component}; any page opens one with app.openPanel(type, props)
-//   underConstruction  true = a placeholder for a hobby still to build (a spanner after its name)
+//   underConstruction  true = a placeholder for a hobby still to build (a spanner after its name). Only dev
+//                      (and its walk-through copy) shows it: prod's build leaves it out - the sidebar, Hobbies,
+//                      Home, pickers and its pages - until the flag comes off. Same code in both; the web image is
+//                      built with APP_ENV (docker-compose.yml -> web/Dockerfile -> VITE_APP_ENV).
 // Supplies, the wishlist, the journal and the calendar are the core, shared by every hobby.
 // Adding a hobby = adding a folder here and one line below. See docs/ROADMAP.md.
 import boardgames from './boardgames/manifest.jsx'
@@ -22,7 +25,9 @@ import models from './models/manifest.jsx'
 import videogames from './videogames/manifest.jsx'
 import volleyball from './volleyball/manifest.jsx'
 
-export const MODULES = [models, boardgames, volleyball, videogames, chess, reading, car, travel, shooting, hiking, gardening]
+const ALL = [models, boardgames, volleyball, videogames, chess, reading, car, travel, shooting, hiking, gardening]
+export const SHOW_UNFINISHED = import.meta.env.VITE_APP_ENV !== 'prod'
+export const MODULES = ALL.filter((m) => SHOW_UNFINISHED || !m.underConstruction)
 
 // Every module's panels in one map, for App to open by type.
 export const MODULE_PANELS = Object.assign({}, ...MODULES.map((m) => m.panels ?? {}))

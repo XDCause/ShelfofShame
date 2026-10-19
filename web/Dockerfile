@@ -5,6 +5,9 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
+# Which copy this build is for: "prod" leaves out hobbies still under construction (src/modules/index.js).
+ARG APP_ENV=prod
+ENV VITE_APP_ENV=$APP_ENV
 RUN npm run build
 
 # Stage 2: serve the built files with nginx (no Node.js in the final image)

@@ -1605,3 +1605,9 @@ DBeaver connection confirmed working (2026-10-11).
      pick; one = filled in with "Found at <maker>"; a site that couldn't be reached (not 404 / 409 / 422) is
      mentioned. In the API, not two browser requests, because the browser logs the expected "not at Tamiya" 404 as an
      error (the walk-through fails on any). API errors in api.js now carry .status.
+4e. **Unfinished hobbies only in dev** (2026-10-19). User: "only completely built hobbies go to prod; keep the others
+   in dev, even after later promotes". Same code in both: docker-compose passes APP_ENV to the web build (an ARG ->
+   VITE_APP_ENV), and modules/index.js drops underConstruction modules when it's "prod" - so the sidebar, Hobbies,
+   Home, goal / calendar pickers and the routes never see them there. Dev (and the walk-through, which runs dev's
+   images) still shows them. Taking the flag off a manifest is what "ships" a hobby. Prod had no goals or calendar
+   events for car / travel / shooting, so nothing points at a hidden hobby.

@@ -70,7 +70,10 @@ services:
 
   # React front end, served by nginx, which also forwards /api/* to the api service.
   web:
-    build: ./web
+    build:
+      context: ./web
+      args:
+        APP_ENV: ${APP_ENV:-prod}   # prod builds leave out unfinished hobbies (modules/index.js)
     image: ${APP_PREFIX:-hobby-inventory}-web:1.0
     container_name: ${APP_PREFIX:-hobby-inventory}-web
     restart: unless-stopped
