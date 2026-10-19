@@ -2303,6 +2303,12 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
   .garden-weather { gap: 4px; }
 }
 
+/* ---------- Supplies: kits and their parts ---------- */
+.kit-of { margin: 6px 0 0; }
+.kit-suggest { display: grid; gap: 4px; margin-top: 8px; justify-items: start; }
+.kit-add { display: flex; gap: 6px; margin-top: 8px; }
+.kit-add input { flex: 1; min-width: 0; }
+
 /* ---------- Precision shooting ---------- */
 .shoot-numbers { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin: 8px 0; }
 .shoot-numbers > div { background: var(--fill-2); border-radius: 10px; padding: 8px 10px; }

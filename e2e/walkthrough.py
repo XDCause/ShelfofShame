@@ -2080,6 +2080,41 @@ def bunnings_button(page):
     page.request.put(f"{BASE}/api/garden/settings", data={k: was[k] for k in ("place_name", "lat", "lon")})
 
 
+@step("Supplies: a kit's parts - the ones its name says it comes with, added in one go; a part says its kit; searching finds both")
+def supply_kit(page):
+    lists = page.request.get(f"{BASE}/api/lookups").json()
+    tools = next(c["id"] for c in lists["categories"] if c["name"] == "Tools")
+    kit = page.request.post(f"{BASE}/api/supplies", data={
+        "name": f"Kit {MARK} Includes Nipper, Hobby Knife, Tweezers & Sanding Sticks", "category_id": tools, "qty_on_hand": 1,
+        "purchased_from": "Amazon"}).json()
+    go(page, "Supplies")
+    page.get_by_placeholder("Search name, code, brand, notes, barcode...").fill(f"Kit {MARK}")
+    page.locator("tr.row", has_text=f"Kit {MARK}").click()
+    d = drawer(page)
+    parts = d.get_by_role("region", name="In this kit")
+    for name in ("Nipper", "Hobby Knife", "Tweezers", "Sanding Sticks"):
+        expect(parts.get_by_label(name)).to_be_checked()
+    parts.get_by_label("Tweezers").uncheck()
+    parts.get_by_role("button", name="Add 3 parts").click()
+    expect(parts.locator(".kit-list li")).to_have_count(3)
+    expect(parts.get_by_label("Tweezers")).to_be_visible()                    # still on offer
+    parts.get_by_label("Part name").fill("Sanding Stick #400")
+    parts.get_by_role("button", name="+ Add a part").click()
+    expect(parts.locator(".kit-list li")).to_have_count(4)
+    parts.locator(".kit-list li", has_text="Nipper").click()
+    expect(d.get_by_role("heading", name="Nipper")).to_be_visible()
+    expect(d.locator(".kit-of")).to_contain_text(f"Kit {MARK}")
+    page.keyboard.press("Escape")
+    page.get_by_placeholder("Search name, code, brand, notes, barcode...").fill("Nipper")
+    rows = page.locator("tr.row")
+    expect(rows.filter(has_text=f"in Kit {MARK}")).to_have_count(1)            # the nipper, in its kit
+    expect(rows.filter(has_text="kit · 4 parts")).to_have_count(1)            # and the kit, which has one
+    shot(page, "d40_supply_kit", full=False)
+    for s in page.request.get(f"{BASE}/api/supplies/{kit['supply_id']}").json()["parts"]:
+        page.request.delete(f"{BASE}/api/supplies/{s['supply_id']}")
+    page.request.delete(f"{BASE}/api/supplies/{kit['supply_id']}")
+
+
 @step("Wishlist by shop: the default shop first, Good Games for board games; gear from Blue Sky (stand-in)")
 def wishlist_shops(page):
     game = page.request.post(f"{BASE}/api/board-games", data={"name": f"Wantgame {MARK}", "status": "Wanted"}).json()
@@ -2265,7 +2300,7 @@ with sync_playwright() as p:
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
                matches, used_on, gundam, bandai_lookup, warhammer, journal_write, journal_links, journal_from_model,
                journal_suggestion, journal_todo, global_search, journal_wishlist, appearance,
-               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, warhammer_minis, gundam_range, board_game_kinds, board_game_elsewhere, volleyball_coach, video_game_friends, wishlist_shops, goals, hiking, gardening, shooting, bunnings_button, settings_more, no_panel):
+               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, warhammer_minis, gundam_range, board_game_kinds, board_game_elsewhere, volleyball_coach, video_game_friends, wishlist_shops, goals, supply_kit, hiking, gardening, shooting, bunnings_button, settings_more, no_panel):
         fn(desk)
     ctx = browser.new_context(**p.devices["iPhone 13"], timezone_id=zone)
     mob = ctx.new_page()

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api, imageUrl, money } from '../api.js'
 import JournalMentions from '../core/journal/JournalMentions.jsx'
+import KitParts from './KitParts.jsx'
 import { FillBar, fillOf } from '../modules/models/fill.jsx'
 import ColourMatches from './ColourMatches.jsx'
 import Drawer from './Drawer.jsx'
@@ -26,7 +27,8 @@ export default function ItemPanel({ supplyId, lookups, reloadKey, onClose, onCha
   const [text, setText] = useState({ notes: '', purchased_from: '', purchase_date: '' })
 
   const show = (supply) => {
-    setItem(supply)
+    // (a save answers without the kit's parts: keep the ones we have)
+    setItem((prev) => ({ ...supply, parts: supply.parts ?? prev?.parts, suggested_parts: supply.suggested_parts ?? prev?.suggested_parts }))
     setText({ notes: supply.notes ?? '', purchased_from: supply.purchased_from ?? '',
       purchase_date: supply.purchase_date ?? '' })
   }
@@ -192,8 +194,10 @@ export default function ItemPanel({ supplyId, lookups, reloadKey, onClose, onCha
                 {[item.category, item.paint_type, item.finish, item.size]
                   .filter((v) => v && v !== 'N/A').map((v) => <span key={v} className="chip">{v}</span>)}
               </div>
+              {item.part_of && <KitParts item={item} onOpenItem={onOpenItem} onChanged={onChanged} setItem={show} />}
             </div>
           </div>
+          {!item.part_of && <KitParts key={item.supply_id} item={item} onOpenItem={onOpenItem} onChanged={onChanged} setItem={show} />}
 
           <section className="panel-section">
             <div className="stock-row">

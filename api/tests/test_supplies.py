@@ -137,3 +137,36 @@ def test_taking_an_item_back_off_the_wishlist(client, make_supply):
     assert r.status_code == 200 and r.json()["on_wishlist"] is False
     assert client.get("/api/wishlist").json() == []
     assert client.delete(f"/api/supplies/{xf1['supply_id']}/wishlist").status_code == 409
+
+
+def test_kits_and_their_parts(client, make_supply, ids):
+    from app.db import db
+    from app.supplies import kit_parts
+    assert kit_parts("stedi Beginner's Model tool Kit TZ-01 Includes Nipper, Hobby Knife, Tweezers & Sanding Sticks") == \
+        ["Nipper", "Hobby Knife", "Tweezers", "Sanding Sticks"]
+    assert kit_parts("Extra Thin Cement") == []
+    with db() as conn:                                     # the kit's photo, as a lookup would have saved it
+        conn.execute("INSERT INTO product_info (brand_id, product_code, title, image, image_type) VALUES (%s, 'TZ-01', %s, %s, 'image/png')",
+                     (ids["milliput"], "Kit TZ-01 Includes Nipper, Hobby Knife & Sanding Sticks", b"\x89PNG"))
+    kit = make_supply(brand_id=ids["milliput"], product_code="TZ-01", name="Beginner's Tool Kit", category_id=ids["glue"],
+                      paint_type="N/A", finish=None, purchased_from="Amazon", purchase_date="2026-10-01", condition="Opened")
+    k = client.get(f"/api/supplies/{kit['supply_id']}").json()
+    assert (k["parts"], k["suggested_parts"]) == ([], ["Nipper", "Hobby Knife", "Sanding Sticks"])
+    k = client.post(f"/api/supplies/{kit['supply_id']}/parts", json={"parts": [{"name": "Single-Blade Nipper"},
+                                                                             {"name": "Sanding Stick #400"}]}).json()
+    assert [p["name"] for p in k["parts"]] == ["Single-Blade Nipper", "Sanding Stick #400"]
+    assert [p["category"] for p in k["parts"]] == ["Tools", "Sanding / Abrasives"]          # guessed from the names
+    assert k["suggested_parts"] == ["Hobby Knife"] and k["part_count"] == 2
+    nipper = client.get(f"/api/supplies/{k['parts'][0]['supply_id']}").json()
+    assert (nipper["kit_name"], nipper["brand_id"], nipper["purchased_from"], nipper["condition"], nipper["product_code"]) == \
+        ("Beginner's Tool Kit", ids["milliput"], "Amazon", "Opened", None)
+    assert nipper["has_image"] and nipper["product_info_id"] == kit["product_info_id"]     # its kit's photo
+    found = {s["name"] for s in client.get("/api/supplies?q=nipper").json()}
+    assert found == {"Single-Blade Nipper", "Beginner's Tool Kit"}                        # the kit, by its part
+    # one level only
+    assert client.post(f"/api/supplies/{nipper['supply_id']}/parts", json={"parts": [{"name": "Spring"}]}).status_code == 422
+    assert client.patch(f"/api/supplies/{kit['supply_id']}", json={"part_of": nipper["supply_id"]}).status_code == 422
+    assert client.patch(f"/api/supplies/{kit['supply_id']}", json={"part_of": kit["supply_id"]}).status_code == 422
+    # a supply you already had can join the kit
+    loose = make_supply(product_code="T74035", name="Side cutter")
+    assert client.patch(f"/api/supplies/{loose['supply_id']}", json={"part_of": kit["supply_id"]}).json()["kit_name"] == "Beginner's Tool Kit"

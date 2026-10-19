@@ -19,7 +19,10 @@ function findSimilar(supplies, { name, productCode, brandId }) {
     if (code && s.product_code?.toUpperCase() === code && (!brandId || String(s.brand_id) === String(brandId))) return true
     if (!typed.length) return false
     const have = new Set(words(`${s.name} ${s.product_code ?? ''}`))
-    return typed.every((w) => have.has(w))
+    const own = words(s.name)
+    // every word typed is in its name - or its (shorter) name is all in what's typed: owning "Single-Blade
+    // Nipper" while adding "Stedi MS-106 Precision Single Blade Nipper"
+    return typed.every((w) => have.has(w)) || (own.length >= 2 && own.every((w) => typed.includes(w)))
   }).slice(0, 3)
 }
 
@@ -32,7 +35,7 @@ export default function SimilarItems({ supplies, name, productCode, brandId, onO
       <ul>
         {matches.map((s) => (
           <li key={s.supply_id}>
-            {s.item_ref} · {s.name} ({s.qty_on_hand} on hand)
+            {s.item_ref} · {s.name} ({s.qty_on_hand} on hand){s.kit_name && <span className="muted"> · in {s.kit_name}</span>}
             {onOpen && <> <button type="button" className="plain" onClick={() => onOpen(s.supply_id)}>Open</button></>}
           </li>
         ))}

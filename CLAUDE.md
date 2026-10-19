@@ -45,14 +45,14 @@ AI via MCP server (stage 6) ---------------/
 DBeaver, psql, and the one-off import script.
 
 ## Where to look
-- **History, decisions and the reasons behind them: docs/HISTORY.md** (sections 1 - 4i; search it before changing
+- **History, decisions and the reasons behind them: docs/HISTORY.md** (sections 1 - 4j; search it before changing
   something old - most odd-looking code has a lesson behind it there). Plans: docs/ROADMAP.md. Caveats for ever going
   public: BEFORE_GOING_PUBLIC.md (**add a row whenever a new data source, scraper, copied content or single-user
   shortcut is added**).
 - **API** (`api/app`, FastAPI; routes all start `/api`; main.py only wires routers - ORDER MATTERS where a fixed path
   shares a prefix with `/{id}`): core - db (pool, enum lists that must match SQL CHECKs, insert_row / update_row /
   found / tidy_text), activity, calendar, journal (+ journal_text, journal_actions, journal_drawings), goals, settings,
-  spending, sitecheck, images, webphoto, lookups, wanted. Supplies hobby - supplies, wishlist, products, catalog,
+  spending, sitecheck, images, webphoto, lookups, wanted. Supplies hobby - supplies (+ kits: part_of), wishlist, products, catalog,
   paints, colours. Models - models, minis, build, warhammer, gundam. Board games - boardgames. Volleyball -
   volleyball, gear (volleyball's and hiking's: gear.hobby), vbclips, vbcoach. Video games - videogames, vgsync, othergames, vgfind, vgfriends. Chess - chess.
   Reading - reading, readimport, reading_recs, bookseries. Hiking - hiking (+ gpx: a GPX file's numbers; HikeMap.jsx = Leaflet). Gardening - garden (spaces, layout, plants,

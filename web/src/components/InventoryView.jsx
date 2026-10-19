@@ -325,7 +325,7 @@ function SupplyTable({ rows, showHead = false, showCategory = false, onOpen, adj
             <td className="item-cell">
               <span className="item-title">{r.name}</span>
               <span className="item-meta">
-                {[r.brand, r.product_code, r.size].filter(Boolean).join(' · ')}
+                {[r.brand, r.product_code, r.size, r.kit_name && `in ${r.kit_name}`, r.part_count > 0 && `kit · ${r.part_count} parts`].filter(Boolean).join(' · ')}
                 {/* On phones the Condition column is hidden, so show it here instead */}
                 <span className="show-xs"><Condition row={r} /></span>
               </span>

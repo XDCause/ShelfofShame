@@ -296,6 +296,8 @@ export const api = {
   updateShootingGroup: (id, data) => request(`/shooting/groups/${id}`, send('PATCH', data)),
   deleteShootingGroup: (id) => request(`/shooting/groups/${id}`, send('DELETE')),
   // Shot by shot, and a session's photos and videos (api/app/shooting_shots.py) - each answers with the whole session
+  // A kit's parts, each a supply of its own (part_of the kit): [{name, category_id?, qty_on_hand?, notes?}]
+  addSupplyParts: (id, parts) => request(`/supplies/${id}/parts`, send('POST', { parts })),
   addShot: (groupId, data) => request(`/shooting/groups/${groupId}/shots`, send('POST', data)),
   updateShot: (id, data) => request(`/shooting/shots/${id}`, send('PATCH', data)),
   deleteShot: (id) => request(`/shooting/shots/${id}`, send('DELETE')),

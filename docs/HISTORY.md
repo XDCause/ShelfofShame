@@ -1673,3 +1673,18 @@ DBeaver connection confirmed working (2026-10-11).
      Stedi and answer {choices}, shown with their photos (straight from cdn.shopify.com) to pick - picking looks the
      SKU up. Paint codes are checked first (XF-76 is Tamiya's), then TRU..., then codes, then numbers.
    - Stand-in catalogue (MS-106, TZ-01) for the walk-through, refused in tests; weekly site check (15 sites).
+4j. **Supplies: kits and their parts** (2026-10-20). User, about the Stedi TZ-01 kit: "a good way to separate them, or to know
+   I have nippers even though they're part of a bundle". (Their CSV of 15 parts all coded TZ-01 would have hit
+   supplies_brand_code_uq after the first row.)
+   - 76_supply_kits.sql: supplies.part_of (ON DELETE SET NULL; not itself); one level, checked by the API
+     (check_kit): a part can't have parts, a kit can't be a part.
+   - SUPPLY_SELECT: kit_name / kit_code and the kit's photo for a part with none of its own (a LEFT JOIN LATERAL
+     sub-select - a plain join to supplies made "supply_id" ambiguous in every WHERE added to the select), part_count.
+     Search also matches a kit by its parts' names.
+   - GET /supplies/{id} adds parts and suggested_parts: what the title (product_info's, else its name) says it
+     comes with - kit_parts("... Includes Nipper, Hobby Knife, Tweezers & Sanding Sticks") - less those added.
+     POST /supplies/{id}/parts adds parts as supplies: no code (so no clash), the kit's brand, purchase date /
+     place, condition, location; the category guessed from the name (nipper -> Tools, sanding -> Sanding /
+     Abrasives), else the kit's.
+   - KitParts.jsx in the supply panel ("Part of ..." / "In this kit": ticks, + Add a part); the list shows
+     "in <kit>" / "kit · N parts"; SimilarItems also matches an item whose (shorter) name is all in what's typed.
