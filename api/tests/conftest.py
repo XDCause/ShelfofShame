@@ -55,7 +55,7 @@ def no_real_steam(monkeypatch):
     """Tests never call Steam (and never use the real key): a test that forgets to fake it fails."""
     from app import (bluesky, bookseries, bunnings, chess, goodgames, chesscom, exophase, hiking, openlibrary, openmeteo, overpass,
                      reading, steam,
-                     steamhunters, trumpeter, videogames, gameology, ucp, wikimedia)
+                     stedi, steamhunters, trumpeter, videogames, gameology, ucp, wikimedia)
 
     def refuse(*_a, **_k):
         raise AssertionError("A test tried to call the real Steam API")
@@ -72,6 +72,7 @@ def no_real_steam(monkeypatch):
     monkeypatch.setattr(bookseries, "_wikidata", refuse)
     monkeypatch.setattr(goodgames, "_call", refuse)
     monkeypatch.setattr(bluesky, "_call", refuse)
+    monkeypatch.setattr(stedi, "_call", refuse)
     monkeypatch.setattr(ucp, "PAUSE", 0)                  # the shops' product search (Good Games, Blue Sky)
     monkeypatch.setattr(ucp, "RETRY_WAIT", 0)
     monkeypatch.setattr(gameology, "_get", refuse)

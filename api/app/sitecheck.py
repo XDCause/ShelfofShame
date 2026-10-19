@@ -16,7 +16,7 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, BackgroundTasks
 
-from . import (bluesky, bunnings, exophase, gameology, goodgames, hasegawa, hlj, trumpeter, openlibrary, openmeteo, overpass, steam,
+from . import (bluesky, bunnings, exophase, gameology, goodgames, hasegawa, hlj, stedi, trumpeter, openlibrary, openmeteo, overpass, steam,
                steamhunters, tamiya, wikimedia)
 from .db import db
 
@@ -54,6 +54,13 @@ def _trumpeter():
     expect(p.get("scale") == "1/16", f"Trumpeter's 00968 page doesn't say 1:16 ({p.get('scale')!r})")
     expect(p.get("barcode"), "Trumpeter's 00968 page has no barcode")
     return f"{p['title']} ({p['scale']})"
+
+
+def _stedi():
+    t = stedi.by_sku("MS-106")
+    expect(t is not None, "Stedi's catalogue has no MS-106 nipper")
+    expect(t["price_usd"], "Stedi's MS-106 has no price")
+    return f"{t['name'][:60]} (US${t['price_usd']:.2f})"
 
 
 def _hlj():
@@ -144,6 +151,7 @@ CHECKS = [
     ("Tamiya", "paint and kit look-ups, photos", _tamiya),
     ("Hasegawa", "kit look-ups", _hasegawa),
     ("Trumpeter", "kit and tool look-ups", _trumpeter),
+    ("Stedi", "model tool look-ups", _stedi),
     ("HobbyLink Japan", "Gundam (Bandai) kit look-ups", _hlj),
     # Good Games: paused (2026-10-18) - a small shop; the walk-through's runs got us asked to slow down. Its features
     # still work when you use them. Put this line back to check it weekly again.

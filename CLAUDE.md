@@ -45,7 +45,7 @@ AI via MCP server (stage 6) ---------------/
 DBeaver, psql, and the one-off import script.
 
 ## Where to look
-- **History, decisions and the reasons behind them: docs/HISTORY.md** (sections 1 - 4h; search it before changing
+- **History, decisions and the reasons behind them: docs/HISTORY.md** (sections 1 - 4i; search it before changing
   something old - most odd-looking code has a lesson behind it there). Plans: docs/ROADMAP.md. Caveats for ever going
   public: BEFORE_GOING_PUBLIC.md (**add a row whenever a new data source, scraper, copied content or single-user
   shortcut is added**).
@@ -59,7 +59,7 @@ DBeaver, psql, and the one-off import script.
   care, logs + photos, tasks, today), garden_guide (plant guide, sow now), garden_doctor (problems: signs -> what to do), garden_items (supplies, seeds, Bunnings). Precision shooting - shooting (rifles, ammo, ranges, licence settings),
   shooting_sessions (sessions, groups, DOPE, summary), shooting_shots (each shot, photos and videos), shotmath (MOA / MIL, velocity SD / ES, DOPE estimates). Outside sources (one module each, all polite, all faked in
   tests by conftest): tamiya, hasegawa, hlj, ucp (+ goodgames, bluesky), gameology, steam, steamhunters, exophase,
-  trumpeter (kits and tools by item number: their search, then that page), chesscom, openlibrary, overpass (OpenStreetMap landmarks), wikimedia (Commons photos), bunnings (one product page from
+  trumpeter (kits and tools by item number: their search, then that page), stedi (model tools: Shopify UCP catalogue), chesscom, openlibrary, overpass (OpenStreetMap landmarks), wikimedia (Commons photos), bunnings (one product page from
   a pasted link - never their search or API, robots.txt), openmeteo (weather tips).
 - **Web** (`web/src`, React 19 + Vite): App.jsx (routes, panels via openPanel(type), openThing(kind, id)), api.js (every
   fetch, grouped by area), core/ (Home, Navigation, Goals, Journal, Calendar...), modules/<hobby>/manifest.jsx (pages,

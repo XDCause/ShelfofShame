@@ -11,7 +11,7 @@ same shape the real site gives. Only main.py calls it, and only with OUTSIDE_SIT
 import logging
 
 from . import (bluesky, bookseries, bunnings, chesscom, exophase, gameology, goodgames, hasegawa, hlj, openlibrary,
-               openmeteo, overpass, steam, steamhunters, tamiya, trumpeter, webphoto, wikimedia)
+               openmeteo, overpass, stedi, steam, steamhunters, tamiya, trumpeter, webphoto, wikimedia)
 
 log = logging.getLogger("stand_ins")
 PNG = (b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
@@ -42,6 +42,9 @@ GOOD_GAMES = [
     _shopify(21, "Catan", "029877030712", 6995, GG, tags=("Board Games", "Players_3-4")),
 ]
 BS = "https://blueskyathletics.com.au"
+SD = "https://www.steditools.com"
+STEDI = [_shopify(41, "stedi MS-106 Precision Single Blade Nipper for Plastic Model Building", "MS-106", 2599, SD),
+         _shopify(42, "stedi Beginner's Model tool Kit TZ-01 Includes Nipper, Hobby Knife, Tweezers & Sanding Sticks", "TZ-01", 2799, SD)]
 
 
 def _shoe(n, title, cents, sizes):
@@ -129,6 +132,7 @@ def install():
     # Shops (Shopify catalogues) and their photos
     goodgames._call = _ucp(GOOD_GAMES, goodgames.ShopError)
     bluesky._call = _ucp(BLUE_SKY, bluesky.ShopError)
+    stedi._call = _ucp(STEDI, stedi.ShopError)
     gameology._get = _refuse(gameology.ShopError, "Gameology")
     gameology.photo = lambda game: (PNG, "image/png")
     # Video games

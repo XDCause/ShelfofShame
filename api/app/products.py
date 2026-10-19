@@ -1,4 +1,4 @@
-"""Products: looking things up (Tamiya, Hasegawa, Trumpeter, Bandai via HLJ), barcodes, and product photos.
+"""Products: looking things up (Tamiya, Hasegawa, Trumpeter, Stedi tools, Bandai via HLJ), barcodes, and product photos.
 
 product_info is the cache: one row per brand + product code with the manufacturer's title,
 description and photo (or your own photo), a barcode once you've linked one, and for Tamiya
@@ -13,7 +13,7 @@ from fastapi.concurrency import run_in_threadpool
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel, Field
 
-from . import hasegawa, hlj, tamiya, trumpeter
+from . import hasegawa, hlj, stedi, tamiya, trumpeter, webphoto
 from .db import brand_id as brand_named, db, ensure_brand
 from .images import photo_response, read_photo
 from .settings import price_for
@@ -237,13 +237,58 @@ async def lookup_trumpeter(code: str, refresh: bool = False):
 
 def who_to_ask(code: str) -> list[str]:
     """Whose site to ask for what was typed in Add a supply: a paint code (XF-76) or T81776 is Tamiya's, TRU00968
-    Trumpeter's; a plain 3-5 digit number could be either's (both use 5-digit numbers), so both."""
+    Trumpeter's, a tool code like MS-106 Stedi's; a plain 3-5 digit number could be Tamiya's or Trumpeter's (both
+    use 5-digit numbers), so both; words ("nipper") search Stedi's catalogue."""
     c = code.strip().upper()
+    if tamiya.paint_code(c):
+        return ["Tamiya"]
     if re.match(r"TR(U|UMPETER)?[\s-]?\d", c):
         return ["Trumpeter"]
+    if re.fullmatch(r"[A-Z]{2,3}[\s-]?\d{2,4}", c):
+        return ["Stedi"]
     if re.fullmatch(r"\d{3,5}", c):
         return ["Tamiya", "Trumpeter"]
+    if " " in c.strip() or re.fullmatch(r"[A-Z]{3,}", c) or c.startswith(stedi.STORE.pages.upper()):
+        return ["Stedi search"]
     return ["Tamiya"]
+
+
+@router.get("/lookup/stedi/{code}")
+async def lookup_stedi(code: str, refresh: bool = False):
+    """A Stedi tool by its model code (MS-106; or a steditools.com product link): name, version, their price (US$),
+    description and photo, from Stedi's official catalogue search. Cached in product_info under the code itself."""
+    sku = stedi.sku_in(code)
+    if sku is None:
+        raise HTTPException(422, "Enter the Stedi model code (e.g. MS-106) or paste the product's link.")
+    with db() as conn:
+        stedi_id = ensure_brand(conn, "Stedi")              # added to your brands the first time
+        cached = conn.execute("SELECT title FROM product_info WHERE brand_id = %s AND product_code = %s AND title IS NOT NULL",
+                              (stedi_id, sku)).fetchone()
+    tool = None
+    if not cached or refresh:
+        try:
+            tool = await run_in_threadpool(stedi.by_sku, sku)
+        except stedi.ShopError as e:
+            raise HTTPException(502, str(e))
+        if tool is None:
+            raise HTTPException(404, f"Stedi's catalogue has nothing with the code {sku}.")
+        image = image_type = None
+        if tool["image"]:
+            try:
+                image, image_type = await run_in_threadpool(webphoto.fetch, tool["image"])
+            except HTTPException:
+                pass                                    # no photo is fine
+        facts = " · ".join(filter(None, [f"Model {sku}", tool["version"],
+                                         tool["price_usd"] is not None and f"US${tool['price_usd']:.2f} at steditools.com"]))
+        with db() as conn:
+            conn.execute(UPSERT_INFO, {"brand_id": stedi_id, "code": sku, "title": tool["name"], "series": tool["version"],
+                                       "description": facts + (f"\n\n{tool['description']}" if tool["description"] else ""),
+                                       "source_url": tool["url"], "image": image, "image_type": image_type, "kit_paints": None})
+    with db() as conn:
+        p = describe_product(conn, stedi_id, sku)
+    usd = re.search(r"US\$([\d.]+)", p["description"] or "")
+    return {**p, "brand_id": stedi_id, "product_code": sku, "name": p["title"], "price_usd": float(usd.group(1)) if usd else None,
+            "from_cache": bool(cached) and not refresh}
 
 
 @router.get("/lookup/item/{code}")
@@ -251,13 +296,23 @@ async def lookup_item(code: str):
     """Add a supply's one look-up box: asks each maker it could be (at the same time) and gives back what each
     found - two when both makers have the number, for you to pick - and why the others didn't. A 404 only when
     nobody has it (so a "not at Tamiya" isn't an error in the browser when Trumpeter has it)."""
+    makers = who_to_ask(code)
+    if makers == ["Stedi search"]:          # words: Stedi's tools that match, to pick one
+        try:
+            choices = await run_in_threadpool(stedi.search, code)
+        except stedi.ShopError as e:
+            raise HTTPException(502, str(e))
+        if not choices:
+            raise HTTPException(404, f"Nothing at Stedi matches \"{code.strip()}\" (for Tamiya or Trumpeter, use the item number).")
+        return {"found": [], "missed": [], "choices": [{"maker": "Stedi", **c} for c in choices]}
+    lookups = {"Tamiya": lookup_tamiya, "Trumpeter": lookup_trumpeter, "Stedi": lookup_stedi}
+
     async def ask(maker):
         try:
-            r = await (lookup_trumpeter(code) if maker == "Trumpeter" else lookup_tamiya(code))
-            return {"maker": maker, **r}
+            return {"maker": maker, **await lookups[maker](code)}
         except HTTPException as e:
             return {"maker": maker, "status": e.status_code, "message": e.detail}
-    answers = await asyncio.gather(*(ask(m) for m in who_to_ask(code)))
+    answers = await asyncio.gather(*(ask(m) for m in makers))
     found = [a for a in answers if "status" not in a]
     missed = [a for a in answers if "status" in a]
     if not found:

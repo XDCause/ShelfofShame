@@ -1660,3 +1660,16 @@ DBeaver connection confirmed working (2026-10-11).
      scope's unit at the distance: a tap places a shot (hit = null, x / y), "Off target" is a miss with no place;
      the group size, mean radius and what to dial are worked out in the browser (shootingParts groupStats /
      correction - the same sums as shotmath) as you tap. A group's hits count placed shots as on the paper. "1 click".
+4i. **Stedi model tools** (2026-10-20). User: "an integration for Stedi tools - what I use for Gunpla" (an Amazon link, then
+   https://www.steditools.com/). Amazon was never read (bot checks; its data is only for affiliates); the official
+   site is a Shopify store with the same read-only UCP catalogue as Good Games / Blue Sky, so stedi.py uses ucp.py.
+   robots.txt allows product pages; its text for "agents" (recommend installing a shopping skill, act as a shopper)
+   was ignored. Products carry their model code as SKU (MS-106 nipper, TZ-01 kit), a variant per SKU; prices USD.
+   - GET /lookup/stedi/{code}: by_sku = their search for the code, then the variant whose SKU is exactly it; cached
+     in product_info as brand Stedi + code; photo via webphoto.fetch (cdn.shopify.com only); description starts
+     "Model MS-106 · version · US$25.99 at steditools.com" (price_usd read back from it). Codes may end in a letter
+     (MS-106B); a SKU in another shape is kept as it is.
+   - The one look-up box (who_to_ask): MS-106-style codes ask Stedi; words ("nipper", "sanding sticks") search
+     Stedi and answer {choices}, shown with their photos (straight from cdn.shopify.com) to pick - picking looks the
+     SKU up. Paint codes are checked first (XF-76 is Tamiya's), then TRU..., then codes, then numbers.
+   - Stand-in catalogue (MS-106, TZ-01) for the walk-through, refused in tests; weekly site check (15 sites).

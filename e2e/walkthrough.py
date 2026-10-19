@@ -246,7 +246,7 @@ def settings(page):
 def add_lookup(page):
     page.get_by_role("button", name="+ Add", exact=True).click()
     d = drawer(page)
-    box = d.get_by_placeholder("e.g. XF-76, 81776 or 08005")
+    box = d.get_by_placeholder("e.g. XF-76, 81776, 08005, MS-106 or nipper")
     # a number both makers use (stand-ins): you're asked which; then one only Trumpeter has: filled straight in
     box.fill("08888")
     d.get_by_role("button", name="Look up").click()
@@ -259,6 +259,13 @@ def add_lookup(page):
     d.get_by_role("button", name="Look up").click()
     expect(d.get_by_label("Name / colour")).to_have_value("Masking Tape Cutter")
     expect(d.get_by_role("alert")).to_contain_text("Found at Trumpeter")
+    # Stedi tools: words list their matches (stand-ins); picking one fills it in, with their US$ price as a guide
+    box.fill("nipper")
+    d.get_by_role("button", name="Look up").click()
+    expect(d).to_contain_text("2 Stedi tools match")                        # the nipper, and the kit that has one
+    d.get_by_role("button", name=re.compile("^MS-106")).click()
+    expect(d.get_by_label("Name / colour")).to_have_value(re.compile("MS-106"))
+    expect(d.get_by_role("alert")).to_contain_text("US$25.99")
     box.fill("XF-2")
     d.get_by_role("button", name="Look up").click()
     expect(d.get_by_label("Name / colour")).to_have_value(re.compile("XF-?2"), timeout=45000)
@@ -2176,7 +2183,7 @@ def settings_more(page):
     d.locator("summary", has_text="Tamiya catalogue").click()
     expect(d.locator(".settings > .fold", has_text="Tamiya catalogue")).to_contain_text("Tamiya products")
     d.locator("summary", has_text="Lookup sites").click()             # the weekly site check (no live run here)
-    expect(d.locator(".site-check")).to_have_count(14)
+    expect(d.locator(".site-check")).to_have_count(15)
     expect(d.get_by_role("button", name="Check now")).to_be_visible()
     shot(page, "d22_settings", full=False)
     page.keyboard.press("Escape")

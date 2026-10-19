@@ -55,7 +55,12 @@ export default function AddPanel({ lookups, settings, scanned: initialScan, onCl
     setMessage(null)
     try {
       // The API asks Tamiya and / or Trumpeter (a plain number could be either's); both found = you pick.
-      const { found: hits, missed } = await api.lookupItem(code.trim())
+      const { found: hits, missed, choices: matches } = await api.lookupItem(code.trim())
+      if (matches) {                           // words: Stedi's tools that match - you pick one
+        setChoices(matches)
+        setFound(null)
+        return
+      }
       const unsure = missed.filter((m) => ![404, 409, 422].includes(m.status)).map((m) => `${m.maker}: ${m.message}`)
       if (hits.length > 1) {
         setChoices(hits)
@@ -70,7 +75,19 @@ export default function AddPanel({ lookups, settings, scanned: initialScan, onCl
     }
   }
 
-  const pick = (r, say = false, unsure = []) => {
+  const pick = async (r, say = false, unsure = []) => {
+    if (r.sku && !r.product_code) {            // a Stedi search result: look that tool up properly first
+      setBusy('lookup')
+      try {
+        r = (await api.lookupItem(r.sku)).found[0]
+      } catch (e) {
+        setMessage({ tone: 'error', text: e.message })
+        return
+      } finally {
+        setBusy('')
+      }
+      say = true
+    }
     const { maker } = r
     setChoices(null)
     setFound(r)
@@ -79,6 +96,7 @@ export default function AddPanel({ lookups, settings, scanned: initialScan, onCl
     else if (maker === 'Trumpeter' && r.is_tool === false) {
       setMessage({ tone: 'low', text: `That's a Trumpeter kit (${r.item_type ?? 'a model'}) - kits usually go in Models.` })
     } else if (unsure.length) setMessage({ tone: 'low', text: `Found at ${maker}. Couldn't check the other site (${unsure.join('; ')}).` })
+    else if (r.price_usd != null) setMessage({ tone: 'ok', text: `Found at Stedi: US$${r.price_usd.toFixed(2)} on steditools.com (US dollars - put in what you paid).` })
     else if (say) setMessage({ tone: 'ok', text: `Found at ${maker}.` })
   }
 
@@ -161,8 +179,8 @@ export default function AddPanel({ lookups, settings, scanned: initialScan, onCl
         <ScanButton onBarcode={onBarcode} label={scan ? 'Use another barcode' : 'Use barcode'} />
         <div className="lookup-row">
           <label className="field">
-            <span className="field-label">or item number / Tamiya paint code</span>
-            <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. XF-76, 81776 or 08005"
+            <span className="field-label">or item number, paint code - or a Stedi tool</span>
+            <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. XF-76, 81776, 08005, MS-106 or nipper"
               autoCapitalize="characters"
               onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); lookup() } }} />
           </label>
@@ -186,14 +204,18 @@ export default function AddPanel({ lookups, settings, scanned: initialScan, onCl
       {message && <p className={`alert ${message.tone} small`} role="alert">{message.text}</p>}
       {choices && (
         <section className="panel-section" aria-label="Which one">
-          <p className="hint">Tamiya and Trumpeter both have item {code.trim()}. Which is yours?</p>
+          <p className="hint">{choices[0]?.sku ? `${choices.length} Stedi tool${choices.length > 1 ? 's' : ''} match. Which is yours?`
+            : `Tamiya and Trumpeter both have item ${code.trim()}. Which is yours?`}</p>
           <ul className="list kit-choices">
             {choices.map((c) => (
-              <li key={c.maker}>
+              <li key={c.sku ?? c.maker}>
                 <button type="button" className="row-button" onClick={() => pick(c)}>
                   {c.has_image ? <img className="thumb" src={imageUrl(c)} alt="" loading="lazy" />
-                    : <span className="thumb thumb-empty" aria-hidden="true" />}
-                  <span><strong>{c.maker}</strong> · {c.name ?? c.title}</span>
+                    : c.image ? <img className="thumb" src={c.image} alt="" loading="lazy" referrerPolicy="no-referrer" />
+                      : <span className="thumb thumb-empty" aria-hidden="true" />}
+                  <span><strong>{c.sku ?? c.maker}</strong> · {c.name ?? c.title}{c.version && <span className="muted"> · {c.version}</span>}
+                    {c.price_usd != null && <span className="muted small"> · US${c.price_usd.toFixed(2)}</span>}
+                    {c.available === false && <span className="muted small"> · sold out</span>}</span>
                 </button>
               </li>
             ))}
