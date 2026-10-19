@@ -2383,6 +2383,15 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .shoot-board-miss { background: var(--out); }
 .shoot-board-buttons button:active { transform: scale(0.98); filter: brightness(0.9); }
 .shoot-board-foot { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.shoot-board-mode { justify-self: center; }
+.shoot-board-counts span.shoot-board-small { font-size: 1.35rem; padding: 0.35rem 0; }
+.shoot-plot.shoot-board-target { max-width: min(100%, 62vh); width: 100%; margin: 0 auto; }
+.shoot-plot.shoot-board-target.small { max-width: 240px; }
+.shoot-plot-ring { fill: none; stroke: var(--text); stroke-width: 1; opacity: 0.45; vector-effect: non-scaling-stroke; }
+.shoot-plot-bull { fill: var(--text); opacity: 0.85; }
+.shoot-plot.rings .shoot-plot-shot circle { fill: var(--tint); stroke: var(--surface); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.shoot-plot.rings .shoot-plot-shot text { fill: #fff; }
+.shoot-plot.rings .shoot-plot-aim { stroke: var(--surface); }
 .shoot-board-done { display: grid; gap: 12px; justify-items: center; text-align: center; margin: auto 0; }
 .shoot-board-result { margin: 0; font-size: 3.5rem; font-weight: 800; }
 .shoot-board-result span { font-size: 1.2rem; font-weight: 600; color: var(--muted); }

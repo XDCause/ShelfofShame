@@ -1656,3 +1656,7 @@ DBeaver connection confirmed working (2026-10-11).
      lost if the phone sleeps. Finish group -> the result, then Next group (same), Change distance, or Done. A group
      finished with no shots is removed. Keys: H, M, Backspace. Phones that can, buzz.
    - The walk-through's Home tile count includes shooting when there are sessions (dev had the user's first one).
+   - (Same day) The board's second way: **Target** (remembered per device). A bullseye face (ShotPlot rings) in the
+     scope's unit at the distance: a tap places a shot (hit = null, x / y), "Off target" is a miss with no place;
+     the group size, mean radius and what to dial are worked out in the browser (shootingParts groupStats /
+     correction - the same sums as shotmath) as you tap. A group's hits count placed shots as on the paper. "1 click".

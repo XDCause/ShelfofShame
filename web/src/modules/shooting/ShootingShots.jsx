@@ -12,7 +12,8 @@ const mmPerUnit = (g) => (g.scope_unit === 'MIL' ? g.metres : g.metres * 0.29088
 
 // The target: the aim point in the middle, a grid in the scope's unit at this group's distance, each shot numbered
 // where it landed (flyers hollow), the group's centre as a +. While plotting, a tap adds a shot there.
-export function ShotPlot({ g, plotting, selected, onAdd, onPick }) {
+// rings: a bullseye face (rings every grid step, the middle two dark) for the live board; className sizes it.
+export function ShotPlot({ g, plotting, selected, onAdd, onPick, rings = false, className = '' }) {
   const svg = useRef(null)
   const unit = g.scope_unit
   const per = mmPerUnit(g)
@@ -35,10 +36,12 @@ export function ShotPlot({ g, plotting, selected, onAdd, onPick }) {
   }
   const centre = g.spread ?? (shots.length === 1 ? { right_mm: shots[0].x_mm, up_mm: shots[0].y_mm } : null)
   return (
-    <figure className={`shoot-plot${plotting ? ' plotting' : ''}`}>
+    <figure className={`shoot-plot${plotting ? ' plotting' : ''}${rings ? ' rings' : ''} ${className}`}>
       <svg ref={svg} viewBox={`${-top} ${-top} ${top * 2} ${top * 2}`} role="img" onClick={tap}
         aria-label={`Target at ${g.distance} ${g.unit}: ${shots.length} shots plotted${plotting ? '. Tap where each shot hit.' : ''}`}>
         <rect x={-top} y={-top} width={top * 2} height={top * 2} className="shoot-plot-bg" />
+        {rings && lines.filter((v) => v > 0).reverse().map((v, i, all) => (
+          <circle key={`r${v}`} cx="0" cy="0" r={v} className={i >= all.length - 2 ? 'shoot-plot-bull' : 'shoot-plot-ring'} />))}
         {lines.map((v) => <g key={v} className={v === 0 ? 'shoot-plot-axis' : 'shoot-plot-grid'}>
           <line x1={v} y1={-top} x2={v} y2={top} /><line x1={-top} y1={v} x2={top} y2={v} /></g>)}
         <circle cx="0" cy="0" r={dot * 1.6} className="shoot-plot-aim" />
@@ -50,7 +53,7 @@ export function ShotPlot({ g, plotting, selected, onAdd, onPick }) {
         {shots.map((s) => (
           <g key={s.shot_id} className={`shoot-plot-shot${s.flyer ? ' flyer' : ''}${selected === s.shot_id ? ' picked' : ''}`}
             transform={`translate(${s.x_mm / per} ${-s.y_mm / per})`}
-            onClick={(e) => { if (!plotting) { e.stopPropagation(); onPick(s) } }}>
+            onClick={(e) => { if (!plotting) { e.stopPropagation(); onPick?.(s) } }}>
             <circle r={dot} />
             <text y={dot * 0.38} fontSize={dot * 1.1}>{s.n}</text>
           </g>

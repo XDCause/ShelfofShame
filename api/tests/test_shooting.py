@@ -33,7 +33,7 @@ def test_rifles_ammo_sessions_and_the_dashboard(client):
     s = s.json()
     g = s["groups_list"][0]
     assert (g["mil"], g["angle"], g["velocity"]["avg"]) == (0.2, 0.2, 326.3)
-    assert g["correction"] == "Dial 0.30 MIL down (3 clicks) and 0.10 MIL right (1 clicks)"
+    assert g["correction"] == "Dial 0.30 MIL down (3 clicks) and 0.10 MIL right (1 click)"
     assert (s["rounds"], s["groups"], s["range_name"], s["best_moa"]) == (260, 2, "Club range", 0.69)
 
     # rounds fired: the rifle's count, cleaning due (260 since it started logging >= nothing cleaned... clean_every 300)
@@ -156,3 +156,14 @@ def test_live_board_hits_and_misses(client):
     assert rates == [{"label": "300 m", "m": 300.0, "hits": 3, "shots": 4, "rate": 75}]
     feed = client.get("/api/activity").json()
     assert "hit 3/4" in next(f for f in feed if f["kind"] == "shoot" and f["ref"] == s["session_id"])["detail"]
+
+
+
+def test_live_target_mode(client):
+    s = client.post("/api/shooting/sessions", json={"groups": [{"distance": 50}]}).json()
+    gid = s["groups_list"][0]["group_id"]
+    for shot in ({"x_mm": 2, "y_mm": 1}, {"x_mm": -3, "y_mm": 4}, {"hit": False}, {"x_mm": 1, "y_mm": -2}):
+        s = client.post(f"/api/shooting/groups/{gid}/shots", json=shot).json()
+    g = s["groups_list"][0]
+    assert (g["shots"], g["hits"], g["hit_rate"]) == (4, 3, 75)           # on the paper: 3 of 4
+    assert g["size_mm"] == 7.2 and g["spread"]["flyers"] == 0

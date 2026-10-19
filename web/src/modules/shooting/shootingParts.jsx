@@ -43,6 +43,32 @@ export const KIND_TONE = { Practice: 'teal', Match: 'purple', Zeroing: 'low', 'A
 // "325 328 326" or "325, 328" -> [325, 328, 326]
 export const parseVelocities = (text) => (text ?? '').split(/[\s,;]+/).map(Number).filter((v) => v > 0 && v < 3000)
 
+// A group from shot positions [{x_mm, y_mm}] (right / up of the aim): size (the two furthest apart), centre,
+// mean radius - the same sums as the API's shotmath.group_stats, for the live board.
+export function groupStats(points) {
+  if (!points.length) return null
+  const cx = points.reduce((a, p) => a + p.x_mm, 0) / points.length
+  const cy = points.reduce((a, p) => a + p.y_mm, 0) / points.length
+  let size = 0
+  points.forEach((a, i) => points.slice(i + 1).forEach((b) => { size = Math.max(size, Math.hypot(a.x_mm - b.x_mm, a.y_mm - b.y_mm)) }))
+  const mr = points.reduce((a, p) => a + Math.hypot(p.x_mm - cx, p.y_mm - cy), 0) / points.length
+  return { size_mm: size, right_mm: cx, up_mm: cy, mean_radius_mm: mr }
+}
+
+// mm at a distance (metres) as the scope's unit
+export const toAngle = (mm, metres, unit) => (unit === 'MIL' ? mm / metres : mm / (0.290888 * metres))
+
+// "Dial 0.30 MIL down (3 clicks) and 0.10 MIL right (1 clicks)" - to bring a centre (mm) back to the aim point.
+export function correction(upMm, rightMm, metres, unit, click) {
+  const c = click || (unit === 'MIL' ? 0.1 : 0.25)
+  const up = toAngle(upMm, metres, unit)
+  const right = toAngle(rightMm, metres, unit)
+  const clicks = (v) => { const n = Math.round(Math.abs(v) / c); return `${n} click${n === 1 ? '' : 's'}` }
+  const moves = [Math.abs(up) >= c / 2 && `${Math.abs(up).toFixed(2)} ${unit} ${up > 0 ? 'down' : 'up'} (${clicks(up)})`,
+    Math.abs(right) >= c / 2 && `${Math.abs(right).toFixed(2)} ${unit} ${right > 0 ? 'left' : 'right'} (${clicks(right)})`]
+  return moves.some(Boolean) ? `Dial ${moves.filter(Boolean).join(' and ')}` : 'On the aim point'
+}
+
 // Live MOA / MIL for a size at a distance, in the form while you type.
 export function sizeAngles(sizeMm, distance, unit) {
   const m = unit === 'yd' ? distance * 0.9144 : distance

@@ -74,8 +74,8 @@ def recompute(conn, group_id: int):
     scored = [s for s in shots if s["score"] is not None]
     if scored:
         data.update(score=sum(s["score"] for s in scored), x_count=sum(1 for s in scored if s["is_x"]))
-    if any(s["hit"] is not None for s in shots):
-        data["hits"] = sum(1 for s in shots if s["hit"])
+    if any(s["hit"] is not None for s in shots):      # the live board; on its target, a placed shot is on the paper
+        data["hits"] = sum(1 for s in shots if s["hit"] or (s["hit"] is None and s["x_mm"] is not None))
     update_row(conn, "shooting_groups", "group_id", group_id, data)
 
 

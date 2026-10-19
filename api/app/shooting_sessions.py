@@ -123,9 +123,12 @@ def decorate(g: dict) -> dict:
         up = shotmath.angle(g["up_mm"] or 0, m, unit)
         right = shotmath.angle(g["right_mm"] or 0, m, unit)
         click = g["click"] or (0.1 if unit == "MIL" else 0.25)
-        moves = [f"{abs(up):.2f} {unit} {'down' if up > 0 else 'up'} ({round(abs(up) / click)} clicks)" if abs(up) >= click / 2 else None,
-                 f"{abs(right):.2f} {unit} {'left' if right > 0 else 'right'} ({round(abs(right) / click)} clicks)"
-                 if abs(right) >= click / 2 else None]
+
+        def clicks(v):
+            n = round(abs(v) / click)
+            return f"{n} click{'' if n == 1 else 's'}"
+        moves = [f"{abs(up):.2f} {unit} {'down' if up > 0 else 'up'} ({clicks(up)})" if abs(up) >= click / 2 else None,
+                 f"{abs(right):.2f} {unit} {'left' if right > 0 else 'right'} ({clicks(right)})" if abs(right) >= click / 2 else None]
         g["correction"] = "Dial " + " and ".join(x for x in moves if x) if any(moves) else "On the aim point"
     return g
 
