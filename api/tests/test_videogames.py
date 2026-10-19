@@ -783,3 +783,39 @@ def test_epic_and_ubisoft_games_found_or_added_by_hand(client, exo, monkeypatch)
     epic = next(p for p in client.get("/api/videogames/other").json()["platforms"] if p["platform"] == "epic")
     assert epic["games"] == 2 and epic["playtime_minutes"] == 34140 + 180
     assert client.delete(f"/api/videogames/other/{fortnite['game_id']}").status_code == 204
+
+
+def test_syncing_just_one_game(client, fake, monkeypatch):
+    """The game you're playing, now: its playtime and achievements (fresh rarity), not the rest of the library."""
+    setup(client)
+    fake.calls.clear()
+    fake.games[1].update(playtime_forever=3100, rtime_last_played=T(14))       # played Hades again...
+    fake.mine[20][2] = {"apiname": "Z", "achieved": 1, "unlocktime": T(14)}     # ...and got Godlike
+    fake.rarity[20]["Z"] = 1.1
+    r = client.post("/api/videogames/20/sync")
+    assert r.status_code == 200, r.text
+    hades = r.json()
+    assert (hades["achievements_done"], hades["playtime_minutes"]) == (2, 3100)
+    assert float(next(a for a in hades["achievements"] if a["name"] == "Godlike")["global_percent"]) == 1.1
+    assert {c[2] for c in fake.calls if c[0] == "player_achievements"} == {20}  # not Celeste
+    assert not [c for c in fake.calls if c[0] in ("community", "dlc")]          # both read today already
+    with db() as conn:
+        conn.execute("UPDATE vg_games SET sh_synced_at = now() - interval '2 days'")
+    fake.calls.clear()
+    client.post("/api/videogames/20/sync")
+    assert [c[1] for c in fake.calls if c[0] == "community"] == [20]           # a day old: asked again
+    assert client.post("/api/videogames/999/sync").status_code == 404
+    from app import vgsync
+    monkeypatch.setitem(vgsync.SYNC, "running", True)
+    assert client.post("/api/videogames/20/sync").status_code == 409          # the full sync will read it
+
+
+def test_syncing_just_one_epic_game(client, exo):
+    connect(client)
+    supra = next(g for g in client.get("/api/videogames/other").json()["games"] if g["name"] == "Supraland")
+    exo.clear()
+    r = client.post(f"/api/videogames/other/{supra['game_id']}/sync")
+    assert r.status_code == 200, r.text
+    assert r.json()["achievements_done"] == 1 and exo == ["awards"]            # its list, nothing else
+    siege = next(g for g in client.get("/api/videogames/other").json()["games"] if g["platform"] == "ubisoft")
+    assert client.post(f"/api/videogames/other/{siege['game_id']}/sync").status_code == 422   # ticked by hand

@@ -233,6 +233,8 @@ export const api = {
   videoGameSummary: (platforms) => request(`/videogames/summary${platforms ? `?platforms=${platforms.join(',')}` : ''}`),
   listVideoGames: (show = 'all') => request(`/videogames?show=${show}`),
   getVideoGame: (id) => request(`/videogames/${id}`),
+  // Just this game, now: answers with the game (and sync_note if SteamHunters / Exophase didn't answer)
+  syncVideoGame: (id) => request(`/videogames/${id}/sync`, send('POST')),
   hideVideoGame: (id, hidden) => request(`/videogames/${id}`, send('PATCH', { hidden })),
   setVideoGameGoal: (percent) => request('/videogames/goal', send('PUT', { percent })),
   videoGameStats: (platforms) => request(`/videogames/stats${platforms ? `?platforms=${platforms.join(',')}` : ''}`),
@@ -415,6 +417,7 @@ export const api = {
   addOtherGame: (game) => request('/videogames/other', send('POST', game)),
   updateOtherGame: (id, data) => request(`/videogames/other/${id}`, send('PATCH', data)),
   getOtherGame: (id) => request(`/videogames/other/${id}`),
+  syncOtherGame: (id) => request(`/videogames/other/${id}/sync`, send('POST')),
   tickOtherAchievement: (id, apiName, achieved) => request(`/videogames/other/${id}/achievements/${encodeURIComponent(apiName)}`,
     send('PUT', { achieved })),
   tickAllOther: (id, achieved) => request(`/videogames/other/${id}/achievements`, send('PUT', { achieved })),

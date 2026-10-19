@@ -1306,6 +1306,7 @@ def video_games(page):
     if row.count():
         row.click()
         expect(drawer(page).locator(".item-title, .section-head").first).to_be_visible()
+        expect(drawer(page).get_by_role("button", name="Sync this game")).to_be_visible()   # not pressed: no Steam here
         if drawer(page).locator(".compared").count():
             expect(drawer(page).locator(".compared")).to_contain_text("Compared with other players")
             shot(page, "d43_video_game_compared", full=False)

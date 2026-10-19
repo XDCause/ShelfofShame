@@ -27,7 +27,7 @@ from pydantic import BaseModel, Field
 
 from . import othergames, steam
 from .db import db, found
-from .vgsync import SYNC, start_sync, sync_game
+from .vgsync import SYNC, start_sync, sync_game, sync_one
 from .settings import get_setting
 
 router = APIRouter(prefix="/api", tags=["video games"])
@@ -486,6 +486,20 @@ def get_game(app_id: int):
             ORDER BY achieved DESC, unlocked_at DESC NULLS LAST, global_percent DESC NULLS LAST, name""",
             (app_id,)).fetchall()
     return game
+
+
+@router.post("/videogames/{app_id}/sync")
+def sync_one_game(app_id: int):
+    """Sync just this game now (the one you're playing), without waiting for the whole library."""
+    with db() as conn:
+        found(conn.execute("SELECT 1 FROM vg_games WHERE app_id = %s", (app_id,)).fetchone(), "Game")
+    if SYNC["running"]:
+        raise HTTPException(409, "A full sync is running - this game will be read by it.")
+    try:
+        note = sync_one(app_id)
+    except steam.SteamError as e:
+        raise HTTPException(422, str(e))
+    return {**get_game(app_id), "sync_note": note}
 
 
 @router.patch("/videogames/{app_id}")

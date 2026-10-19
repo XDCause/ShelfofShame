@@ -1688,3 +1688,11 @@ DBeaver connection confirmed working (2026-10-11).
      Abrasives), else the kit's.
    - KitParts.jsx in the supply panel ("Part of ..." / "In this kit": ticks, + Add a part); the list shows
      "in <kit>" / "kit · N parts"; SimilarItems also matches an item whose (shorter) name is all in what's typed.
+4k. **Video games: sync just one game** (2026-10-20). User: "if I click on a game I'm working on, a sync button for
+   syncing just that one game". "Sync this game" in the game's panel (footer): POST /videogames/{app_id}/sync
+   (vgsync.sync_one) reads, straight away, its playtime (from the owned-games list; hand-added games have none),
+   achievements and fresh rarity, then SteamHunters' numbers if over a day old and its DLC list if never read (or its
+   achievements changed). Refused (409) while a full sync runs - it reads the game anyway. sync_community / sync_dlc
+   take a progress callback so a one-game sync doesn't move the full sync's progress bar. Epic games:
+   POST /videogames/other/{id}/sync (othergames.sync_one: Exophase's list and what you've earned); Ubisoft has no
+   button (you tick those). Only failures come back as a note ("Synced, but SteamHunters didn't answer...").

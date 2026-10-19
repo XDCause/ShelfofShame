@@ -4,7 +4,9 @@ A sync reads Steam (steam.py) into vg_games / vg_achievements, then how other pl
 and which achievements come with a DLC (exophase.py), with Epic / Ubisoft games from Exophase alongside
 (othergames.sync_other). The first sync reads every game; after that only games played since the last sync
 (or never read), unless full=True. It runs in the background (start_sync) with its progress in SYNC, and
-once a day by itself while the app is up (start_daily_sync).
+once a day by itself while the app is up (start_daily_sync). sync_one reads just one game, straight away
+(the game you're playing now): its playtime, achievements and rarity, then its SteamHunters numbers and
+DLC list if they're due.
 
 SYNC and the daily loop live in this process's memory: the API runs with one worker (api/Dockerfile).
 """
@@ -203,7 +205,7 @@ def community_due(full: bool, read_now: set[int]) -> list[tuple[int, str]]:
             if not r["sh_synced_at"] or r["app_id"] in read_now or now - r["sh_synced_at"] > COMMUNITY_EVERY]
 
 
-def sync_community(due: list[tuple[int, str]]) -> str:
+def sync_community(due: list[tuple[int, str]], progress=step) -> str:
     """How other players did, from SteamHunters, for the games due. One a second. If SteamHunters
     can't be reached the Steam sync still counts; this part tries again next time. Returns a note
     for the sync's message."""
@@ -231,7 +233,7 @@ def sync_community(due: list[tuple[int, str]]) -> str:
                                    {"gone": list(gone), "id": app_id}).rowcount
             if changed:
                 recount(conn, app_id)
-        step(f"How others did: {name}...")
+        progress(f"How others did: {name}...")
         steamhunters.pause()
     return f", community numbers for {len(due)}"
 
@@ -247,7 +249,7 @@ def dlc_due(full: bool) -> list[dict]:
             (DLC_EVERY,) if full else ()).fetchall()
 
 
-def sync_dlc(due: list[dict], sh_done: threading.Event | None = None) -> str:
+def sync_dlc(due: list[dict], sh_done: threading.Event | None = None, progress=step) -> str:
     """Which achievements come with a DLC, from Exophase, for the games due. Achievements Exophase
     doesn't list stay with the main game. Games SteamHunters hadn't judged yet (sh_has_dlc unknown)
     go last: once SteamHunters' side is done (sh_done), ones it says have no DLC are skipped - so a
@@ -267,7 +269,7 @@ def sync_dlc(due: list[dict], sh_done: threading.Event | None = None) -> str:
     read = 0
     for g in sorted(due, key=lambda g: g["sh_has_dlc"] is None):    # known DLC games first
         if not still_due(g):
-            step(f"Which achievements are DLC: {g['name']}...")
+            progress(f"Which achievements are DLC: {g['name']}...")
             continue
         read += 1
         try:
@@ -282,9 +284,45 @@ def sync_dlc(due: list[dict], sh_done: threading.Event | None = None) -> str:
                 conn.execute("UPDATE vg_achievements SET dlc = %s WHERE app_id = %s AND api_name = %s",
                              (groups.get(exophase.key(a["name"])), g["app_id"], a["api_name"]))
             conn.execute("UPDATE vg_games SET exo_url = %s, exo_synced_at = now() WHERE app_id = %s", (url, g["app_id"]))
-        step(f"Which achievements are DLC: {g['name']}...")
+        progress(f"Which achievements are DLC: {g['name']}...")
         exophase.pause()
     return f", DLC lists for {read}" if read else ""
+
+
+def sync_one(app_id: int) -> str:
+    """Read one game now: its playtime (from the owned-games list - a game added by hand has none), its
+    achievements with fresh rarity, then SteamHunters' numbers (if over a day old) and which achievements are
+    DLC (if never read, or its achievements changed). Raises steam.SteamError; SteamHunters or Exophase not
+    answering only adds a note. Returns the note."""
+    with db() as conn:
+        steam_id = conn.execute("SELECT steam_id FROM vg_sync WHERE id = 1").fetchone()["steam_id"]
+        game = conn.execute("SELECT name, extra FROM vg_games WHERE app_id = %s", (app_id,)).fetchone()
+    if not steam_id:
+        raise steam.SteamError("Set your Steam profile first.")
+    if not game["extra"]:
+        owned = next((g for g in steam.owned_games(steam_id) if g["appid"] == app_id), None)
+        steam.pause()
+        if owned:
+            with db() as conn:
+                conn.execute("UPDATE vg_games SET playtime_minutes = %s, playtime_2weeks = %s, last_played = %s "
+                             "WHERE app_id = %s", (owned.get("playtime_forever", 0), owned.get("playtime_2weeks", 0),
+                                                   _ts(owned.get("rtime_last_played")), app_id))
+    with db() as conn:
+        sync_game(conn, steam_id, app_id, rarity_due=True)
+    with db() as conn:
+        g = conn.execute("SELECT app_id, name, achievements_done, achievements_total, sh_has_dlc, sh_synced_at, "
+                         "exo_synced_at, hidden FROM vg_games WHERE app_id = %s", (app_id,)).fetchone()
+    if not g["achievements_done"]:      # like the full sync: not started, nothing to compare
+        return ""
+    quiet = lambda _message: None       # noqa: E731 - SYNC's progress is the full sync's
+    notes = []                          # only what went wrong: " (SteamHunters didn't answer, ...)"
+    if not g["sh_synced_at"] or datetime.now(timezone.utc) - g["sh_synced_at"] > FRESH:
+        notes.append(sync_community([(app_id, g["name"])], quiet))
+        with db() as conn:
+            g = conn.execute("SELECT * FROM vg_games WHERE app_id = %s", (app_id,)).fetchone()
+    if g["sh_has_dlc"] is not False and not g["exo_synced_at"]:
+        notes.append(sync_dlc([g], progress=quiet))
+    return "; ".join(n.strip(" ()") for n in notes if n.startswith(" ("))
 
 
 def start_sync(background: BackgroundTasks | None, full: bool) -> bool:

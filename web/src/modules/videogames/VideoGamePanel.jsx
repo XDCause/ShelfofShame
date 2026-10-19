@@ -20,6 +20,8 @@ export default function VideoGamePanel({ id, onClose }) {
   const [error, setError] = useState('')
   const [account, setAccount] = useState(null)
   const [show, setShow] = useState('all')
+  const [syncing, setSyncing] = useState(false)
+  const [synced, setSynced] = useState('')
   useEffect(() => {
     (other ? api.getOtherGame(otherId) : api.getVideoGame(id)).then(setGame).catch((e) => setError(e.message))
     if (!other) api.steamAccount().then(setAccount).catch(() => {})
@@ -35,6 +37,22 @@ export default function VideoGamePanel({ id, onClose }) {
     onClose()
   }
   const ubisoft = game.platform === 'ubisoft'
+  // Sync just this game (the one you're playing): Steam games, and Epic ones from your Exophase profile
+  const syncable = other ? game.platform === 'epic' && game.source_id && game.page_url : true
+  const syncThis = async () => {
+    setSyncing(true)
+    setSynced('')
+    setError('')
+    try {
+      const { sync_note: note, ...g } = await (other ? api.syncOtherGame(otherId) : api.syncVideoGame(id))
+      update(g)
+      setSynced(note ? `Synced, but ${note.charAt(0).toLowerCase()}${note.slice(1)}` : 'Synced just now.')
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setSyncing(false)
+    }
+  }
   const onTick = ubisoft ? async (a) => update(await api.tickOtherAchievement(otherId, a.api_name, !a.achieved)) : null
   const groups = dlcGroups(game.achievements)
   const shows = (a) => show === 'all' || (show === 'got' ? a.achieved : !a.achieved)
@@ -49,6 +67,8 @@ export default function VideoGamePanel({ id, onClose }) {
         <a className="button plain" href={`https://steamcommunity.com/profiles/${account.steam_id}/stats/${id}/achievements`}
           target="_blank" rel="noreferrer">Your achievements on Steam ↗</a>
       )}
+      {syncable && <button type="button" className="secondary" onClick={syncThis} disabled={syncing}
+        title="Read this game again now - not the rest of your library">{syncing ? 'Syncing...' : 'Sync this game'}</button>}
       <span className="spacer" />
       {removable
         ? <button type="button" className="plain destructive" onClick={remove}>Remove</button>
@@ -69,6 +89,7 @@ export default function VideoGamePanel({ id, onClose }) {
           {game.completed_at && <span className="pill ok">100% · {shortDate(game.completed_at)}</span>}
         </div>
         <CompletionBar game={game} />
+        {(synced || error) && <p className={error ? 'alert error small' : 'small muted'} role="status">{error || synced}</p>}
         {game.unobtainable_count > 0 && (
           <p className="small muted">{game.unobtainable_count} achievement{game.unobtainable_count === 1 ? " can't" : "s can't"} be
             earned any more (SteamHunters), so {game.unobtainable_count === 1 ? "it isn't" : "they aren't"} counted.</p>

@@ -170,6 +170,30 @@ def sync_details(players: dict) -> int:
     return read
 
 
+def sync_one(game_id: int) -> str:
+    """One Epic game now: its achievements and what you've earned from Exophase, and SteamHunters' numbers
+    if they're over a day old. Returns a note (Exophase / SteamHunters not answering)."""
+    with db() as conn:
+        g = conn.execute("SELECT * FROM vg_other_games WHERE game_id = %s", (game_id,)).fetchone()
+        players = conn.execute("SELECT exo_players FROM vg_sync WHERE id = 1").fetchone()["exo_players"] or {}
+    if g["platform"] != "epic" or not (g["page_url"] and g["source_id"] and players.get("epic")):
+        raise HTTPException(422, "Only Epic games from your Exophase profile can be synced (Ubisoft ones you tick).")
+    try:
+        got = exophase.earned(players["epic"], g["source_id"])
+        exophase.pause()
+        with db() as conn:
+            conn.execute("UPDATE vg_other_games SET exo_done = %s WHERE game_id = %s", (len(got), game_id))
+        epic_list({**g, "exo_done": len(got)}, players["epic"])
+    except exophase.Unavailable as e:
+        return str(e)
+    if g["steam_app_id"] and (not g["sh_synced_at"] or datetime.now(timezone.utc) - g["sh_synced_at"] > timedelta(days=1)):
+        try:
+            community(game_id, g["steam_app_id"])
+        except steamhunters.Unavailable as e:
+            return str(e)
+    return ""
+
+
 def match_steam(game_id: int, name: str):
     """Look for the game on Steam by name; remember what was found (or that nothing was)."""
     found_app = steam.find_app(name)
@@ -415,6 +439,16 @@ def _find_and_list(game_id: int, link: str | None = None, forget: bool = False):
             community(game_id, g["steam_app_id"])
     except (steam.SteamError, steamhunters.Unavailable) as e:
         log.warning("Steam version of %s: %s", g["name"], e)
+
+
+@router.post("/videogames/other/{game_id}/sync")
+def sync_one_game(game_id: int):
+    """Sync just this Epic game now."""
+    with db() as conn:
+        found(conn.execute("SELECT 1 FROM vg_other_games WHERE game_id = %s", (game_id,)).fetchone(), "Game")
+    note = sync_one(game_id)
+    with db() as conn:
+        return {**_one(conn, game_id), "sync_note": note}
 
 
 @router.put("/videogames/other/{game_id}/steam")
