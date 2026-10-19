@@ -63,9 +63,11 @@ export function ShotPlot({ g, plotting, selected, onAdd, onPick }) {
 }
 
 // Shots for a group: the target, then a row per shot (where it landed, score, X, speed, flyer) - typed or tapped.
-export function ShotsSection({ g, onSession }) {
+export function ShotsSection({ g, autoPlot = false, onSession }) {
   const { showToast } = useApp()
-  const [plotting, setPlotting] = useState(false)
+  const [plotting, setPlotting] = useState(autoPlot)
+  const here = useRef(null)
+  useEffect(() => { if (autoPlot) here.current?.scrollIntoView({ block: 'center', behavior: 'smooth' }) }, [autoPlot])
   const [selected, setSelected] = useState(null)
   const has = g.shot_list.length > 0
   const run = async (p) => {
@@ -81,7 +83,7 @@ export function ShotsSection({ g, onSession }) {
   }
   const sp = g.spread
   return (
-    <div className="shoot-shots">
+    <div className="shoot-shots" ref={here}>
       <div className="button-row">
         <button type="button" className={plotting ? 'primary small' : 'secondary small'} aria-pressed={plotting}
           onClick={() => setPlotting(!plotting)}>{plotting ? 'Done plotting' : has ? 'Plot more shots' : 'Plot shots'}</button>

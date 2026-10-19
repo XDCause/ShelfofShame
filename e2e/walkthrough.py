@@ -1943,13 +1943,13 @@ def shooting(page):
     form.get_by_label("Elevation dialled (MIL)").fill("0.5")
     form.get_by_label("Chronograph speeds (m/s)").fill("325 328 326")
     form.get_by_label("This confirms my elevation at this distance (DOPE)").check()
-    form.get_by_role("button", name="Add group").click()
+    form.get_by_role("button", name="Add and plot shots").click()     # saves it and opens its target, ready to tap
     group = d.locator(".shoot-group").first
     expect(group).to_contain_text("0.69 MOA")
     expect(group).to_contain_text("Dial 0.30 MIL down (3 clicks)")
     expect(group).to_contain_text("SD 1.5")
     # shot by shot: tap three shots onto the target; the group's size and centre then come from them
-    group.get_by_role("button", name="Plot shots").click()
+    expect(group.get_by_role("button", name="Done plotting")).to_be_visible()
     box = group.locator(".shoot-plot svg").bounding_box()
     for dx, dy in ((0.52, 0.48), (0.56, 0.47), (0.54, 0.53)):
         n = group.locator(".shoot-plot-shot").count()

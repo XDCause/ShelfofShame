@@ -36,6 +36,7 @@ export function SessionPanel({ id = null, onClose }) {
   const [s, setS] = useState(null)
   const [editing, setEditing] = useState(false)
   const [last, setLast] = useState(undefined)
+  const [plotGroup, setPlotGroup] = useState(null)      // a group just added with "Add and plot shots": its target opens
   const reload = useCallback(() => api.shootingSession(id).then(setS).catch((e) => showToast(e.message)), [id, showToast])
   useEffect(() => { if (id != null) reload() }, [id, reload])
   useEffect(() => { if (id == null) api.shootingSessions().then((all) => setLast(all[0] ?? null)).catch(() => setLast(null)) }, [id])
@@ -94,20 +95,26 @@ export function SessionPanel({ id = null, onClose }) {
       </section>
       <section className="panel-section">
         <h3 className="section-title">Groups</h3>
-        {s.groups_list.length === 0 && <p className="muted small">No groups yet - add each group, string or card you shot.</p>}
+        {s.groups_list.length === 0 && <p className="muted small">No groups yet. Add each group, string or card you shot - then tap
+          every shot onto its target ("Add and plot shots"), or just type the group's size.</p>}
         <ul className="shoot-groups">
-          {s.groups_list.map((g) => <GroupCard key={g.group_id} g={g} unit={s.scope_unit} lists={lists}
+          {s.groups_list.map((g) => <GroupCard key={g.group_id} g={g} unit={s.scope_unit} lists={lists} autoPlot={plotGroup === g.group_id}
             onChanged={(next) => { if (next) setS(next); else reload(); changed() }} />)}
         </ul>
-        <GroupForm lists={lists} unit={s.scope_unit} start={s.groups_list.at(-1)}
-          onSave={async (data) => { setS(await api.addShootingGroup(s.session_id, data)); changed() }} />
+        <GroupForm lists={lists} unit={s.scope_unit} start={s.groups_list.at(-1)} first={s.groups_list.length === 0}
+          onSave={async (data, plot) => {
+            const next = await api.addShootingGroup(s.session_id, data)
+            setS(next)
+            setPlotGroup(plot ? next.groups_list.at(-1)?.group_id : null)
+            changed()
+          }} />
       </section>
       <MediaSection s={s} onSession={setS} />
     </Drawer>
   )
 }
 
-function GroupCard({ g, unit, lists, onChanged }) {
+function GroupCard({ g, unit, lists, autoPlot = false, onChanged }) {
   const { showToast } = useApp()
   const [editing, setEditing] = useState(false)
   if (editing) {
@@ -139,7 +146,7 @@ function GroupCard({ g, unit, lists, onChanged }) {
           onChanged={(msg) => { onChanged(); showToast(msg) }} />
       </div>
       {g.notes && <p className="small shoot-notes">{g.notes}</p>}
-      <ShotsSection g={g} onSession={(next) => onChanged(next)} />
+      <ShotsSection g={g} autoPlot={autoPlot} onSession={(next) => onChanged(next)} />
       <div className="button-row">
         <button type="button" className="plain small" onClick={() => setEditing(true)}>Edit</button>
         <button type="button" className="plain small destructive" onClick={async () => onChanged(await api.deleteShootingGroup(g.group_id))}>Remove</button>
@@ -160,12 +167,12 @@ const fromGroup = (g) => ({
 
 // Add (or edit) a group: distance, shots, size (MOA / MIL shown as you type), where it hit, what you dialled,
 // a score, chronograph speeds, and whether it confirms your DOPE at that distance.
-function GroupForm({ lists, unit, start, editing = false, onSave, onCancel }) {
+function GroupForm({ lists, unit, start, editing = false, first = false, onSave, onCancel }) {
   const [open, setOpen] = useState(editing)
   const [f, setF] = useState(() => (editing ? fromGroup(start) : blankGroup(start)))
   const [error, setError] = useState('')
   useEffect(() => { if (!editing) setF(blankGroup(start)) }, [start, editing])
-  if (!open) return <button type="button" className="secondary" onClick={() => setOpen(true)}>+ Add a group</button>
+  if (!open) return <button type="button" className={first ? 'primary' : 'secondary'} onClick={() => setOpen(true)}>+ Add a group</button>
   const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }))
   const num = (v) => (v === '' || v == null ? null : Number(v))
   const a = sizeAngles(num(f.size_mm), num(f.distance), f.unit)
@@ -173,10 +180,11 @@ function GroupForm({ lists, unit, start, editing = false, onSave, onCancel }) {
   const submit = async (e) => {
     e.preventDefault()
     setError('')
+    const plot = e.nativeEvent.submitter?.value === 'plot'      // "Add and plot shots"
     try {
       await onSave({ distance: num(f.distance), unit: f.unit, shots: num(f.shots), size_mm: num(f.size_mm), up_mm: num(f.up_mm),
         right_mm: num(f.right_mm), elevation: num(f.elevation), windage: num(f.windage), position: f.position || null, score: num(f.score),
-        x_count: num(f.x_count), velocities: speeds, confirms_dope: f.confirms_dope, notes: f.notes.trim() || null })
+        x_count: num(f.x_count), velocities: speeds, confirms_dope: f.confirms_dope, notes: f.notes.trim() || null }, plot)
       if (editing) return
       setOpen(false)
     } catch (err) {
@@ -210,7 +218,8 @@ function GroupForm({ lists, unit, start, editing = false, onSave, onCancel }) {
       {a && <p className="small shoot-live">{angle(a.moa, 'MOA')} · {angle(a.mil, 'MIL')}{speeds.length > 1 && ` · ${speeds.length} speeds`}</p>}
       {error && <p className="alert error small">{error}</p>}
       <div className="button-row">
-        <button type="submit" className="primary small">{editing ? 'Save group' : 'Add group'}</button>
+        {!editing && <button type="submit" className="primary small" value="plot">Add and plot shots</button>}
+        <button type="submit" className={editing ? 'primary small' : 'secondary small'}>{editing ? 'Save group' : 'Add group'}</button>
         <button type="button" className="plain small" onClick={editing ? onCancel : () => setOpen(false)}>Cancel</button>
       </div>
     </form>
