@@ -24,7 +24,7 @@ Hobby modules:
                (+ garden_guide: the plant guide, what to sow now; garden_items: supplies, seeds, Bunnings links;
                garden_doctor: what's wrong with a plant - signs, causes, what to do)
     shooting   precision shooting: rifles, factory ammo, ranges, licence (+ shooting_sessions: sessions,
-               groups, DOPE, the dashboard; shotmath: MOA / MIL, velocities)
+               groups, DOPE, the dashboard; shooting_shots: each shot, photos and videos; shotmath: MOA / MIL, velocities)
 """
 import os
 from contextlib import asynccontextmanager
@@ -33,7 +33,7 @@ from fastapi import FastAPI
 
 from . import (activity, boardgames, bookseries, build, calendar, catalog, chess, colours, garden, garden_doctor, garden_guide,
                garden_items,
-               gear, goals, hiking, journal, journal_drawings, shooting, shooting_sessions,
+               gear, goals, hiking, journal, journal_drawings, shooting, shooting_sessions, shooting_shots,
                gundam, lookups, minis, vgsync, models, othergames, products, reading, readimport, reading_recs, settings, sitecheck, spending, supplies, vbclips, vbcoach, vgfind, vgfriends, videogames, wanted, webphoto,
                volleyball, warhammer, wishlist)
 from .db import db
@@ -60,7 +60,7 @@ async def lifespan(_app):
 app = FastAPI(title="Off the Clock API", docs_url="/api/docs", openapi_url="/api/openapi.json", lifespan=lifespan)
 
 for part in (activity, goals, journal_drawings, journal, calendar, supplies, wishlist, products, catalog, models, minis, build, colours,
-             boardgames, volleyball, gear, vbclips, vbcoach, othergames, vgfind, vgfriends, videogames, chess, reading, readimport, hiking, garden, garden_doctor, garden_guide, garden_items, shooting, shooting_sessions, reading_recs, bookseries, warhammer, gundam, spending, settings, sitecheck, lookups, webphoto, wanted):
+             boardgames, volleyball, gear, vbclips, vbcoach, othergames, vgfind, vgfriends, videogames, chess, reading, readimport, hiking, garden, garden_doctor, garden_guide, garden_items, shooting, shooting_sessions, shooting_shots, reading_recs, bookseries, warhammer, gundam, spending, settings, sitecheck, lookups, webphoto, wanted):
     app.include_router(part.router)
 
 

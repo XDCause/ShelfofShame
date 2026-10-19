@@ -2332,6 +2332,29 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .shoot-log { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
 .shoot-settings { display: grid; gap: 8px; margin-bottom: 12px; }
 .shoot-subhead { margin: 12px 0 4px; font-size: 0.85rem; color: var(--muted); }
+.shoot-shots { display: grid; gap: 8px; margin-top: 8px; }
+.shoot-plot { margin: 0; max-width: 360px; }
+.shoot-plot svg { display: block; width: 100%; aspect-ratio: 1; border-radius: 10px; touch-action: manipulation; }
+.shoot-plot.plotting svg { cursor: crosshair; outline: 2px solid var(--tint); }
+.shoot-plot-bg { fill: var(--surface, #fff); }
+.shoot-plot-grid line { stroke: var(--separator); stroke-width: 0.5; vector-effect: non-scaling-stroke; }
+.shoot-plot-axis line { stroke: var(--muted); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.shoot-plot-aim { fill: none; stroke: var(--out); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.shoot-plot-centre line { stroke: var(--tint); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.shoot-plot-shot { cursor: pointer; }
+.shoot-plot-shot circle { fill: var(--text); }
+.shoot-plot-shot text { fill: var(--bg, #fff); text-anchor: middle; font-weight: 700; pointer-events: none; }
+.shoot-plot-shot.flyer circle { fill: none; stroke: var(--muted); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.shoot-plot-shot.flyer text { fill: var(--muted); }
+.shoot-plot-shot.picked circle { fill: var(--tint); }
+.shoot-shot-table-wrap { overflow-x: auto; }
+.shoot-shot-table input[type='number'] { width: 70px; padding: 4px 6px; }
+.shoot-shot-table tr.picked td { background: var(--fill-2); }
+.shoot-media { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.shoot-media li { display: grid; gap: 4px; }
+.shoot-media img, .shoot-media video { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; background: #000; display: block; }
+.shoot-media-photo { padding: 0; border: 0; background: none; cursor: zoom-in; }
+.shoot-media-big { max-width: 100%; max-height: 70vh; border-radius: 8px; background: #000; }
 @media print {
   .shoot-noprint, nav, header, .section-tabs { display: none !important; }
   .shoot-dope { box-shadow: none; border: 1px solid #999; }

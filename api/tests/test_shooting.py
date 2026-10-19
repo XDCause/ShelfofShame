@@ -83,3 +83,59 @@ def test_shooting_gear(client):
     g = client.post("/api/gear", json={"name": "Harris bipod", "hobby": "shooting", "kind": "Bipod"})
     assert g.status_code == 201
     assert [x["name"] for x in client.get("/api/gear?hobby=shooting").json()] == ["Harris bipod"]
+
+
+def test_group_stats():
+    s = shotmath.group_stats([(0, 0), (6, 8), (0, 8)])
+    assert (s["size_mm"], s["right_mm"], s["up_mm"], s["width_mm"], s["height_mm"]) == (10.0, 2.0, 5.3, 6.0, 8.0)
+    assert shotmath.group_stats([]) is None
+
+
+def test_shot_by_shot(client):
+    rifle = client.post("/api/shooting/rifles", json={"name": "Tikka", "scope_unit": "MOA"}).json()
+    s = client.post("/api/shooting/sessions", json={"rifle_id": rifle["rifle_id"], "groups": [{"distance": 100}]}).json()
+    gid = s["groups_list"][0]["group_id"]
+    for shot in ({"x_mm": 0, "y_mm": 0, "velocity": 800, "score": 10, "is_x": True},
+                 {"x_mm": 10, "y_mm": 0, "velocity": 806, "score": 10},
+                 {"x_mm": 5, "y_mm": 12, "velocity": 803, "score": 9},
+                 {"x_mm": 80, "y_mm": -60, "flyer": True, "score": 6}):
+        s = client.post(f"/api/shooting/groups/{gid}/shots", json=shot).json()
+    g = s["groups_list"][0]
+    assert [x["n"] for x in g["shot_list"]] == [1, 2, 3, 4]
+    # the flyer isn't in the size or centre; everything else comes from the shots
+    assert (g["shots"], g["size_mm"], g["right_mm"], g["up_mm"]) == (4, 13.0, 5.0, 4.0)
+    assert (g["score"], g["x_count"], g["velocity"]["avg"], g["velocity"]["es"]) == (35, 1, 803.0, 6.0)
+    assert g["spread"]["flyers"] == 1 and g["spread"]["mean_radius"] is not None and g["moa"] == 0.45
+    flyer = g["shot_list"][3]["shot_id"]
+    g = client.patch(f"/api/shooting/shots/{flyer}", json={"flyer": False}).json()["groups_list"][0]
+    assert g["size_mm"] > 90                                  # counted now
+    g = client.delete(f"/api/shooting/shots/{g['shot_list'][0]['shot_id']}").json()["groups_list"][0]
+    assert [x["n"] for x in g["shot_list"]] == [1, 2, 3] and g["shots"] == 3
+    assert client.post(f"/api/shooting/groups/{gid}/shots", json={"x_mm": 3}).status_code == 422   # needs both
+
+
+def test_session_photos_and_videos(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("MEDIA_DIR", str(tmp_path))
+    s = client.post("/api/shooting/sessions", json={"groups": [{"distance": 50}]}).json()
+    sid, gid = s["session_id"], s["groups_list"][0]["group_id"]
+    png = b"\x89PNG\r\n\x1a\n" + b"0" * 40
+    s = client.post(f"/api/shooting/sessions/{sid}/photos?group_id={gid}&caption=Target", content=png,
+                    headers={"Content-Type": "image/png"}).json()
+    photo = s["media"][0]
+    assert (photo["kind"], photo["group_id"], photo["caption"]) == ("photo", gid, "Target")
+    assert client.get(photo["url"]).content == png
+    mp4 = b"\x00\x00\x00\x18ftypmp42" + b"0" * 100
+    s = client.post(f"/api/shooting/sessions/{sid}/videos", content=mp4,
+                    headers={"Content-Type": "video/mp4", "X-File-Name": "IMG_1.MOV"}).json()
+    video = s["media"][1]
+    assert (video["kind"], video["original_name"], video["file_size"]) == ("video", "IMG_1.MOV", len(mp4))
+    assert client.get(video["url"]).content == mp4 and len(list((tmp_path / "videos").iterdir())) == 1
+    assert client.post(f"/api/shooting/sessions/{sid}/videos", content=b"not a video",
+                       headers={"Content-Type": "video/mp4"}).status_code == 422
+    assert client.post(f"/api/shooting/sessions/{sid}/photos?group_id=999999", content=png,
+                       headers={"Content-Type": "image/png"}).status_code == 422
+    assert client.patch(f"/api/shooting/media/{video['media_id']}", json={"caption": "Prone"}).json()["media"][1]["caption"] == "Prone"
+    feed = client.get("/api/activity").json()
+    assert next(f for f in feed if f["kind"] == "shoot" and f["ref"] == sid)["photo_url"].startswith("/api/shooting/media/")
+    client.delete(f"/api/shooting/sessions/{sid}")             # its video file goes too
+    assert list((tmp_path / "videos").iterdir()) == []

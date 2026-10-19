@@ -6,6 +6,7 @@ ranges and settings are in shooting.py; the arithmetic in shotmath.py).
     GET / PATCH / DELETE /shooting/sessions/{id}       with every group worked out (MOA / MIL, velocities, a
                                             zeroing suggestion from where it hit)
     POST /shooting/sessions/{id}/groups; PATCH / DELETE /shooting/groups/{id} (+ /photo: the target)
+                                            (shots, photos and videos: shooting_shots.py)
     GET  /shooting/dope?rifle_id=&ammo_id=  your DOPE card: what your groups confirmed, what you entered, and
                                             estimates between them (never past the furthest you've confirmed)
     POST /shooting/dope; DELETE /shooting/dope/{id}
@@ -106,6 +107,11 @@ def decorate(g: dict) -> dict:
     g["angle"] = g["mil"] if unit == "MIL" else g["moa"]
     g["velocity"] = shotmath.velocity_stats(g["velocities"])
     g["correction"] = None
+    # shot by shot: mean radius and spread from where the (non-flyer) shots landed
+    placed = [(s["x_mm"], s["y_mm"]) for s in g.get("shot_list") or [] if s["x_mm"] is not None and not s["flyer"]]
+    stats = shotmath.group_stats(placed) if len(placed) >= 2 else None
+    g["spread"] = stats and {**stats, "mean_radius": _r(shotmath.angle(stats["mean_radius_mm"], m, unit)),
+                             "flyers": sum(1 for s in g["shot_list"] if s["flyer"])}
     if g["up_mm"] or g["right_mm"]:
         up = shotmath.angle(g["up_mm"] or 0, m, unit)
         right = shotmath.angle(g["right_mm"] or 0, m, unit)
@@ -123,8 +129,11 @@ def _r(v, places=2):
 
 def fetch_session(conn, session_id: int) -> dict:
     s = found(conn.execute(SESSION_SELECT + " WHERE s.session_id = %s", (session_id,)).fetchone(), "Session")
-    s["groups_list"] = [decorate(g) for g in conn.execute(GROUP_SELECT + " WHERE g.session_id = %s ORDER BY g.group_id",
-                                                          (session_id,)).fetchall()]
+    from .shooting_shots import media_for, shots_by_group
+    groups = conn.execute(GROUP_SELECT + " WHERE g.session_id = %s ORDER BY g.group_id", (session_id,)).fetchall()
+    shots = shots_by_group(conn, [g["group_id"] for g in groups])
+    s["groups_list"] = [decorate({**g, "shot_list": shots[g["group_id"]]}) for g in groups]
+    s["media"] = media_for(conn, session_id)
     s["best_moa"] = _r(s["best_moa"])
     return s
 
@@ -156,6 +165,7 @@ def list_sessions(year: int | None = Query(None, ge=1900, le=3000), rifle_id: in
 def add_session(body: SessionIn):
     groups = body.groups
     data = tidy_text({k: v for k, v in body.model_dump(exclude={"groups"}).items() if v is not None}, required=())
+    data.setdefault("kind", "Practice")          # (an INSERT needs at least one column; the date defaults to today)
     with db() as conn:
         session_id = insert_row(conn, "shooting_sessions", data, "session_id")
         for g in groups:
@@ -183,9 +193,15 @@ def update_session(session_id: int, body: SessionFields):
 
 @router.delete("/shooting/sessions/{session_id}", status_code=204)
 def delete_session(session_id: int):
+    """Remove a session: its groups, shots, photos and videos (their files too)."""
+    from .volleyball import remove_file
     with db() as conn:
+        files = [m["file_name"] for m in conn.execute("SELECT file_name FROM shooting_media WHERE session_id = %s AND file_name IS NOT NULL",
+                                                      (session_id,)).fetchall()]
         found(conn.execute("DELETE FROM shooting_sessions WHERE session_id = %s RETURNING session_id", (session_id,)).fetchone(),
               "Session")
+    for name in files:
+        remove_file(name)
     return Response(status_code=204)
 
 

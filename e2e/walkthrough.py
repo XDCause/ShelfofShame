@@ -1948,6 +1948,22 @@ def shooting(page):
     expect(group).to_contain_text("0.69 MOA")
     expect(group).to_contain_text("Dial 0.30 MIL down (3 clicks)")
     expect(group).to_contain_text("SD 1.5")
+    # shot by shot: tap three shots onto the target; the group's size and centre then come from them
+    group.get_by_role("button", name="Plot shots").click()
+    box = group.locator(".shoot-plot svg").bounding_box()
+    for dx, dy in ((0.52, 0.48), (0.56, 0.47), (0.54, 0.53)):
+        n = group.locator(".shoot-plot-shot").count()
+        page.mouse.click(box["x"] + box["width"] * dx, box["y"] + box["height"] * dy)
+        expect(group.locator(".shoot-plot-shot")).to_have_count(n + 1)
+    group.get_by_role("button", name="Done plotting").click()
+    expect(group).to_contain_text("50 m · 3 shots")
+    expect(group).to_contain_text("Mean radius")
+    expect(group.locator(".shoot-shot-table tbody tr")).to_have_count(3)
+    # a photo of the session (a made-up JPEG)
+    jpeg = base64.b64decode(page.evaluate("""() => { const c = document.createElement('canvas'); c.width = 80; c.height = 60;
+        const g = c.getContext('2d'); g.fillStyle = '#c33'; g.fillRect(0, 0, 80, 60); return c.toDataURL('image/jpeg').split(',')[1] }"""))
+    d.get_by_role("region", name="Photos and video").locator('input[type=file][data-source="gallery"]').set_input_files(files=[{"name": "target.jpg", "mimeType": "image/jpeg", "buffer": jpeg}])
+    expect(d.locator(".shoot-media img")).to_have_count(1)
     shot(page, "d90_shooting_session", full=True)
     page.keyboard.press("Escape")
     rifle_id = next(r["rifle_id"] for r in page.request.get(f"{BASE}/api/shooting/rifles").json() if r["name"] == f"Rifle {MARK}")

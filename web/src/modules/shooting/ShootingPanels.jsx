@@ -5,6 +5,7 @@ import Drawer from '../../components/Drawer.jsx'
 import { RowPhoto } from '../../components/RecordFields.jsx'
 import { useApp } from '../../core/app-context.js'
 import { FormPanel } from '../volleyball/VolleyballPanels.jsx'
+import { MediaSection, ShotsSection } from './ShootingShots.jsx'
 import { KIND_TONE, angle, dist, parseVelocities, plural, sizeAngles, useShootingLists, useShootingThings } from './shootingParts.jsx'
 
 // Precision shooting's panels: a session and its groups, a rifle, ammunition, a range.
@@ -101,6 +102,7 @@ export function SessionPanel({ id = null, onClose }) {
         <GroupForm lists={lists} unit={s.scope_unit} start={s.groups_list.at(-1)}
           onSave={async (data) => { setS(await api.addShootingGroup(s.session_id, data)); changed() }} />
       </section>
+      <MediaSection s={s} onSession={setS} />
     </Drawer>
   )
 }
@@ -137,6 +139,7 @@ function GroupCard({ g, unit, lists, onChanged }) {
           onChanged={(msg) => { onChanged(); showToast(msg) }} />
       </div>
       {g.notes && <p className="small shoot-notes">{g.notes}</p>}
+      <ShotsSection g={g} onSession={(next) => onChanged(next)} />
       <div className="button-row">
         <button type="button" className="plain small" onClick={() => setEditing(true)}>Edit</button>
         <button type="button" className="plain small destructive" onClick={async () => onChanged(await api.deleteShootingGroup(g.group_id))}>Remove</button>
@@ -202,6 +205,8 @@ function GroupForm({ lists, unit, start, editing = false, onSave, onCancel }) {
       <label className="field">Notes<input value={f.notes} onChange={set('notes')} /></label>
       <label className="check"><input type="checkbox" checked={f.confirms_dope} onChange={set('confirms_dope')} />
         This confirms my elevation at this distance (DOPE)</label>
+      {editing && start.shot_list?.length > 0 && <p className="hint">This group has its shots plotted: its size, where it hit,
+        speeds and score come from them (change a shot to change these).</p>}
       {a && <p className="small shoot-live">{angle(a.moa, 'MOA')} · {angle(a.mil, 'MIL')}{speeds.length > 1 && ` · ${speeds.length} speeds`}</p>}
       {error && <p className="alert error small">{error}</p>}
       <div className="button-row">

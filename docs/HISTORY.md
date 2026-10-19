@@ -1630,3 +1630,17 @@ DBeaver connection confirmed working (2026-10-11).
    - Session form waits for its rifle / ammo / range lists before it shows (a form rebuilt when they arrived could
      drop a choice made in that moment - the walk-through's slower copy did). Chart axis steps are rounded (3 x 0.2).
    - The user's club is a row in dev's database, not in the repo.
+4g. **Shooting: shot by shot, photos and video** (2026-10-19). User: "a way to record shot by shot, and to upload footage
+   or photos".
+   - 74_shooting_shots_media.sql: shooting_shots (n, x_mm right / y_mm up of the aim, score, X, velocity, a called
+     flyer) and shooting_media (photos in the table, shrunk by the browser; videos on disk in <media>/videos like
+     volleyball's, "shoot-<session>-<random>.ext", so the nightly backup copies them; optionally of one group).
+   - shooting_shots.py: adding / changing / removing a shot recomputes the group (recompute): count, size + centre
+     from the placed non-flyer shots (shotmath.group_stats), velocities, score / X. decorate adds a spread: mean
+     radius (in the scope unit), width x height, flyers left out. Deleting a session removes its video files after
+     the rows go. Every call answers with the whole session.
+   - The target (ShootingShots.jsx ShotPlot): an SVG in the scope's unit at the group's distance (grid 0.1-1 MIL /
+     0.5-2 MOA), aim point, numbered shots (flyers hollow), the centre as +; "Plot shots" turns taps into shots (to
+     0.5 mm, via getScreenCTM). A table under it edits each shot. Photos / videos: several at once, "of which group",
+     captions, a viewer.
+   - An empty POST /shooting/sessions now defaults its kind (an INSERT needs a column).

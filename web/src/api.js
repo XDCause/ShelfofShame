@@ -295,6 +295,29 @@ export const api = {
   addShootingGroup: (sessionId, data) => request(`/shooting/sessions/${sessionId}/groups`, send('POST', data)),
   updateShootingGroup: (id, data) => request(`/shooting/groups/${id}`, send('PATCH', data)),
   deleteShootingGroup: (id) => request(`/shooting/groups/${id}`, send('DELETE')),
+  // Shot by shot, and a session's photos and videos (api/app/shooting_shots.py) - each answers with the whole session
+  addShot: (groupId, data) => request(`/shooting/groups/${groupId}/shots`, send('POST', data)),
+  updateShot: (id, data) => request(`/shooting/shots/${id}`, send('PATCH', data)),
+  deleteShot: (id) => request(`/shooting/shots/${id}`, send('DELETE')),
+  addShootPhoto: (sessionId, blob, params = {}) => request(`/shooting/sessions/${sessionId}/photos?${query(params)}`, image('POST', blob)),
+  // A video straight off the phone (XMLHttpRequest, so the upload can report its progress: onProgress(0-1)).
+  addShootVideo: (sessionId, file, params = {}, onProgress) => new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', `/api/shooting/sessions/${sessionId}/videos?${query(params)}`)
+    xhr.setRequestHeader('Content-Type', videoType(file))
+    xhr.setRequestHeader('X-File-Name', encodeURIComponent(file.name))
+    xhr.upload.onprogress = (e) => e.lengthComputable && onProgress?.(e.loaded / e.total)
+    xhr.onload = () => {
+      let body = null
+      try { body = JSON.parse(xhr.responseText) } catch { /* not JSON */ }
+      if (xhr.status >= 200 && xhr.status < 300) resolve(body)
+      else reject(new Error(errorMessage(body) || (xhr.status === 413 ? 'That video is too big (4 GB at most).' : `Upload failed (${xhr.status})`)))
+    }
+    xhr.onerror = () => reject(new Error("Couldn't reach the app to upload the video."))
+    xhr.send(file)
+  }),
+  updateShootMedia: (id, data) => request(`/shooting/media/${id}`, send('PATCH', data)),
+  deleteShootMedia: (id) => request(`/shooting/media/${id}`, send('DELETE')),
   dope: (rifleId, ammoId) => request(`/shooting/dope?${query({ rifle_id: rifleId, ammo_id: ammoId })}`),
   addDope: (data) => request('/shooting/dope', send('POST', data)),
   deleteDope: (id) => request(`/shooting/dope/${id}`, send('DELETE')),

@@ -168,8 +168,10 @@ WITH feed AS (
                       FROM shooting_groups g WHERE g.session_id = s.session_id HAVING sum(g.score) IS NOT NULL),
                      s.finish),
            NULL, NULL,
-           (SELECT '/api/shooting/groups/' || g.group_id || '/photo?v=' || (extract(epoch FROM g.photo_updated) * 1000)::bigint
-            FROM shooting_groups g WHERE g.session_id = s.session_id AND g.photo IS NOT NULL ORDER BY g.group_id LIMIT 1)
+           COALESCE((SELECT '/api/shooting/groups/' || g.group_id || '/photo?v=' || (extract(epoch FROM g.photo_updated) * 1000)::bigint
+                     FROM shooting_groups g WHERE g.session_id = s.session_id AND g.photo IS NOT NULL ORDER BY g.group_id LIMIT 1),
+                    (SELECT '/api/shooting/media/' || m.media_id || '?v=' || (extract(epoch FROM m.created_at) * 1000)::bigint
+                     FROM shooting_media m WHERE m.session_id = s.session_id AND m.kind = 'photo' ORDER BY m.media_id LIMIT 1))
     FROM shooting_sessions s LEFT JOIN shooting_ranges rg ON rg.range_id = s.range_id LEFT JOIN rifles r ON r.rifle_id = s.rifle_id
   UNION ALL
     SELECT {_on_day('p.started_on', 'p.created_at')}, 'planting', p.planting_id,

@@ -4,6 +4,7 @@
     moa(size_mm, metres)          a size at a distance as an angle: 1 MOA = 29.09 mm at 100 m
     mil(size_mm, metres)          1 mil (milliradian) = 100 mm at 100 m
     velocity_stats([m/s ...])     average, SD (sample), ES - the chronograph numbers that matter at long range
+    group_stats([(x, y)...])      from shot positions: size, centre, mean radius, width and height
     estimate(rows, distance)      elevation between distances you've confirmed (straight line between the nearest
                                   two - close enough between nearby distances; never beyond the furthest)
 """
@@ -52,3 +53,19 @@ def estimate(rows: list[dict], at_m: float) -> float | None:
         if m1 <= at_m <= m2 and m2 > m1:
             return round(e1 + (e2 - e1) * (at_m - m1) / (m2 - m1), 2)
     return next((e for m, e in pts if m == at_m), None)
+
+
+def group_stats(points) -> dict | None:
+    """From shot positions [(x_mm, y_mm)...] (right / up of the aim point): the group's size (centre to centre of the
+    two furthest apart), its centre, mean radius (the average distance of each shot from the centre - steadier
+    than size, which only looks at two shots), and how wide and tall it is."""
+    pts = [(float(x), float(y)) for x, y in points]
+    if not pts:
+        return None
+    cx = sum(x for x, _ in pts) / len(pts)
+    cy = sum(y for _, y in pts) / len(pts)
+    size = max((math.dist(a, b) for i, a in enumerate(pts) for b in pts[i + 1:]), default=0.0)
+    return {"size_mm": round(size, 1), "right_mm": round(cx, 1), "up_mm": round(cy, 1),
+            "mean_radius_mm": round(sum(math.dist(p, (cx, cy)) for p in pts) / len(pts), 1),
+            "width_mm": round(max(x for x, _ in pts) - min(x for x, _ in pts), 1),
+            "height_mm": round(max(y for _, y in pts) - min(y for _, y in pts), 1)}
