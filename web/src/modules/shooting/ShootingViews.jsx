@@ -6,6 +6,7 @@ import { CrosshairIcon, TargetIcon, TrophyIcon } from '../../components/icons.js
 import { useApp } from '../../core/app-context.js'
 import EmptyState from '../../core/EmptyState.jsx'
 import Stat, { StatSkeleton } from '../../core/Stat.jsx'
+import { startShooting } from './ShootingLive.jsx'
 import { KIND_TONE, LicenceCard, angle, dist, plural, useShootingSummary, useShootingThings } from './shootingParts.jsx'
 
 // Precision shooting's pages: the dashboard, every session, rifles, ammunition, and the DOPE card.
@@ -23,7 +24,8 @@ export function ShootingTiles() {
 
 export function Dashboard() {
   const { data: s, error } = useShootingSummary()
-  const { openPanel } = useApp()
+  const app = useApp()
+  const { openPanel } = app
   if (error) return <p className="alert error">{error}</p>
   if (!s) return <p className="muted loading">Loading...</p>
   const y = s.this_year
@@ -50,6 +52,9 @@ export function Dashboard() {
           </div>
         </section>
       )}
+      <div className="toolbar"><span className="grow" />
+        <button type="button" className="primary" onClick={() => startShooting(app).catch((e) => app.showToast(e.message))}>Start shooting</button>
+      </div>
       <div className="home-stats">
         <Stat to="/shooting/sessions" Icon={CrosshairIcon} tone="out" value={y.sessions} label={`Sessions in ${s.year}`} sub={`${plural(s.all_time.sessions, 'session')} in all`} />
         <Stat to="/shooting/sessions" Icon={TargetIcon} tone="tint" value={y.rounds.toLocaleString()} label="Rounds this year" sub={`${s.all_time.rounds.toLocaleString()} in all`} />
@@ -103,6 +108,13 @@ export function Dashboard() {
               <p className="muted small">Groups of 3 shots or more. Smaller is better.</p>
             </section>
           )}
+          {s.hit_rates.length > 0 && (
+            <section className="card home-card">
+              <h2 className="home-card-title">Hit rate by distance ({s.year})</h2>
+              <ColumnChart title="Hit rate by distance" rows={s.hit_rates.map((r) => ({ label: r.label, value: r.rate, tip: `${r.hits} of ${r.shots} hit` }))}
+                valueLabel="% hit" labelValues />
+            </section>
+          )}
           {scores.length > 0 && (
             <section className="card home-card">
               <h2 className="home-card-title">Match scores</h2>
@@ -130,7 +142,7 @@ function SessionRow({ s }) {
         <span className="grow">
           <span className="item-title">{shortDate(s.shot_on)} · {s.match_name || s.range_name || 'Range session'}</span>
           <span className="item-meta">{[s.rifle_name, s.ammo_name, plural(s.rounds, 'round'), s.best_moa != null && `best ${s.best_moa} MOA`,
-            s.score != null && `${s.score}${s.x_count ? `-${s.x_count}X` : ''}`].filter(Boolean).join(' · ')}</span>
+            s.score != null && `${s.score}${s.x_count ? `-${s.x_count}X` : ''}`, s.hits != null && `${s.hits}/${s.hit_shots} hits`].filter(Boolean).join(' · ')}</span>
         </span>
         <span className={`pill ${KIND_TONE[s.kind] ?? ''}`}>{s.kind}</span>
       </button>
@@ -156,7 +168,8 @@ function RifleRow({ r }) {
 }
 
 export function SessionsView() {
-  const { refreshKey, openPanel } = useApp()
+  const app = useApp()
+  const { refreshKey, openPanel } = app
   const things = useShootingThings()
   const [year, setYear] = useState('')
   const [rifle, setRifle] = useState('')
@@ -180,7 +193,8 @@ export function SessionsView() {
           <option value="">Every rifle</option>
           {things.rifles.map((r) => <option key={r.rifle_id} value={r.rifle_id}>{r.name}</option>)}
         </select>
-        <button type="button" className="primary" onClick={() => openPanel('shootsession', {})}>+ Log a session</button>
+        <button type="button" className="primary" onClick={() => startShooting(app).catch((e) => app.showToast(e.message))}>Start shooting</button>
+        <button type="button" className="secondary" onClick={() => openPanel('shootsession', {})}>+ Log a session</button>
       </div>
       <div className="chip-row" role="group" aria-label="Kind">
         {['', 'Practice', 'Match', 'Zeroing', 'Ammo test'].map((k) => (

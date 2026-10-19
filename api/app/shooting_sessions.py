@@ -41,6 +41,8 @@ class GroupFields(BaseModel):
     x_count: int | None = Field(None, ge=0, le=1000)
     velocities: list[float] | None = Field(None, max_length=200)
     confirms_dope: bool | None = None
+    target: str | None = Field(None, max_length=120)
+    hits: int | None = Field(None, ge=0, le=1000)
     notes: str | None = Field(None, max_length=5000)
 
 
@@ -76,6 +78,8 @@ SELECT s.session_id, s.shot_on, s.kind, s.range_id, s.rifle_id, s.ammo_id, s.mat
        (SELECT count(*) FROM shooting_groups g WHERE g.session_id = s.session_id)::int AS groups,
        (SELECT sum(g.score)::float8 FROM shooting_groups g WHERE g.session_id = s.session_id) AS score,
        (SELECT sum(g.x_count)::int FROM shooting_groups g WHERE g.session_id = s.session_id) AS x_count,
+       (SELECT sum(g.hits)::int FROM shooting_groups g WHERE g.session_id = s.session_id) AS hits,
+       (SELECT sum(g.shots)::int FROM shooting_groups g WHERE g.session_id = s.session_id AND g.hits IS NOT NULL) AS hit_shots,
        (SELECT min(g.size_mm / (CASE g.unit WHEN 'yd' THEN g.distance * 0.9144 ELSE g.distance END * {shotmath.MM_PER_MOA_AT_100M} / 100))::float8
         FROM shooting_groups g WHERE g.session_id = s.session_id AND g.size_mm IS NOT NULL AND COALESCE(g.shots, 3) >= 3) AS best_moa,
        (SELECT '/api/shooting/groups/' || g.group_id || '/photo?v=' || (extract(epoch FROM g.photo_updated) * 1000)::bigint
@@ -88,7 +92,7 @@ LEFT JOIN ammo a ON a.ammo_id = s.ammo_id"""
 GROUP_SELECT = """
 SELECT g.group_id, g.session_id, g.distance, g.unit, g.shots, g.size_mm::float8 AS size_mm, g.up_mm::float8 AS up_mm,
        g.right_mm::float8 AS right_mm, g.elevation::float8 AS elevation, g.windage::float8 AS windage, g.position,
-       g.score::float8 AS score, g.x_count, g.velocities::float8[] AS velocities, g.confirms_dope, g.notes,
+       g.score::float8 AS score, g.x_count, g.velocities::float8[] AS velocities, g.confirms_dope, g.notes, g.target, g.hits,
        s.shot_on, s.rifle_id, s.ammo_id, s.wind_kmh::float8 AS wind_kmh, COALESCE(r.scope_unit, 'MOA') AS scope_unit,
        r.click::float8 AS click,
        CASE WHEN g.photo IS NOT NULL THEN '/api/shooting/groups/' || g.group_id || '/photo?v='
@@ -106,6 +110,9 @@ def decorate(g: dict) -> dict:
     g["mil"] = _r(shotmath.mil(g["size_mm"], m))
     g["angle"] = g["mil"] if unit == "MIL" else g["moa"]
     g["velocity"] = shotmath.velocity_stats(g["velocities"])
+    g["hit_rate"] = round(100 * g["hits"] / g["shots"]) if g["hits"] is not None and g["shots"] else None
+    called = [s["hit"] for s in g.get("shot_list") or [] if s["hit"] is not None]
+    g["best_streak"] = max((len(run) for run in "".join("h" if h else "m" for h in called).split("m")), default=0) if called else None
     g["correction"] = None
     # shot by shot: mean radius and spread from where the (non-flyer) shots landed
     placed = [(s["x_mm"], s["y_mm"]) for s in g.get("shot_list") or [] if s["x_mm"] is not None and not s["flyer"]]
@@ -347,6 +354,7 @@ def summary():
         all_time = conn.execute(f"SELECT count(*)::int AS sessions, COALESCE(sum({SESSION_ROUNDS}), 0)::int AS rounds "
                                 "FROM shooting_sessions s").fetchone()
         recent = conn.execute(SESSION_SELECT + " ORDER BY s.shot_on DESC, s.session_id DESC LIMIT 6").fetchall()
+        groups_all = [decorate(g) for g in conn.execute(GROUP_SELECT + " WHERE extract(year FROM s.shot_on) = %s", (year,)).fetchall()]
         groups = [decorate(g) for g in conn.execute(GROUP_SELECT + " WHERE g.size_mm IS NOT NULL").fetchall()]
         months = conn.execute(f"""SELECT to_char(m, 'YYYY-MM') AS month,
                 (SELECT count(*) FROM shooting_sessions s WHERE date_trunc('month', s.shot_on) = m)::int AS sessions,
@@ -374,7 +382,15 @@ def summary():
     for m in months:
         sizes = trend.get(m["month"])
         m["avg_moa"] = _r(sum(sizes) / len(sizes)) if sizes else None
+    rates = {}
+    for g in groups_all:
+        if g["hits"] is not None and g["shots"]:
+            r = rates.setdefault(f"{g['distance']} {g['unit']}", {"label": f"{g['distance']} {g['unit']}", "m": g["metres"], "hits": 0, "shots": 0})
+            r["hits"] += g["hits"]
+            r["shots"] += g["shots"]
+    hit_rates = sorted(({**r, "rate": round(100 * r["hits"] / r["shots"])} for r in rates.values()), key=lambda r: r["m"])
     return {
+        "hit_rates": hit_rates,
         "year": year, "settings": s, "this_year": this_year, "all_time": all_time, "recent": recent,
         "bests": sorted(best.values(), key=lambda g: g["metres"]), "months": months, "matches": list(reversed(matches)),
         "rifles": [r for r in rifles if r["status"] == "In use"], "clean_due": [r for r in rifles if r["clean_due"]],

@@ -166,6 +166,8 @@ WITH feed AS (
                              || ' MOA' FROM shooting_groups g WHERE g.session_id = s.session_id AND COALESCE(g.shots, 3) >= 3),
                      (SELECT 'scored ' || trim_scale(sum(g.score)) || COALESCE('-' || sum(g.x_count) || 'X', '')
                       FROM shooting_groups g WHERE g.session_id = s.session_id HAVING sum(g.score) IS NOT NULL),
+                     (SELECT 'hit ' || sum(g.hits) || '/' || sum(g.shots) FROM shooting_groups g
+                      WHERE g.session_id = s.session_id AND g.hits IS NOT NULL HAVING sum(g.shots) > 0),
                      s.finish),
            NULL, NULL,
            COALESCE((SELECT '/api/shooting/groups/' || g.group_id || '/photo?v=' || (extract(epoch FROM g.photo_updated) * 1000)::bigint

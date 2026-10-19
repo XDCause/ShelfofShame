@@ -5,6 +5,7 @@ import Drawer from '../../components/Drawer.jsx'
 import { RowPhoto } from '../../components/RecordFields.jsx'
 import { useApp } from '../../core/app-context.js'
 import { FormPanel } from '../volleyball/VolleyballPanels.jsx'
+import LiveBoard from './ShootingLive.jsx'
 import { MediaSection, ShotsSection } from './ShootingShots.jsx'
 import { KIND_TONE, angle, dist, parseVelocities, plural, sizeAngles, useShootingLists, useShootingThings } from './shootingParts.jsx'
 
@@ -29,7 +30,7 @@ const NUMBER_FIELDS = ['range_id', 'rifle_id', 'ammo_id']
 const asNumbers = (data) => Object.fromEntries(Object.entries(data).map(([k, v]) => [k, NUMBER_FIELDS.includes(k) && v != null ? Number(v) : v]))
 
 // A session: a new one starts with what you used last (range, rifle, its ammo); once saved, add its groups.
-export function SessionPanel({ id = null, onClose }) {
+export function SessionPanel({ id = null, live = false, onClose }) {
   const { changed, showToast, openPanel } = useApp()
   const lists = useShootingLists()
   const things = useShootingThings()
@@ -37,6 +38,7 @@ export function SessionPanel({ id = null, onClose }) {
   const [editing, setEditing] = useState(false)
   const [last, setLast] = useState(undefined)
   const [plotGroup, setPlotGroup] = useState(null)      // a group just added with "Add and plot shots": its target opens
+  const [board, setBoard] = useState(live)              // the live board (hit / miss)
   const reload = useCallback(() => api.shootingSession(id).then(setS).catch((e) => showToast(e.message)), [id, showToast])
   useEffect(() => { if (id != null) reload() }, [id, reload])
   useEffect(() => { if (id == null) api.shootingSessions().then((all) => setLast(all[0] ?? null)).catch(() => setLast(null)) }, [id])
@@ -85,6 +87,7 @@ export function SessionPanel({ id = null, onClose }) {
           <div><dt>Groups</dt><dd>{s.groups}</dd></div>
           {s.best_moa != null && <div><dt>Best group</dt><dd>{s.best_moa} MOA</dd></div>}
           {s.score != null && <div><dt>Score</dt><dd>{s.score}{s.x_count ? `-${s.x_count}X` : ''}</dd></div>}
+          {s.hits != null && <div><dt>Hits</dt><dd>{s.hits}/{s.hit_shots}<span className="muted small"> {Math.round((100 * s.hits) / (s.hit_shots || 1))}%</span></dd></div>}
           {s.finish && <div><dt>Placed</dt><dd>{s.finish}</dd></div>}
         </dl>
         {(s.temp_c != null || s.wind_kmh != null || s.light) && (
@@ -94,7 +97,10 @@ export function SessionPanel({ id = null, onClose }) {
         {s.notes && <p className="small shoot-notes">{s.notes}</p>}
       </section>
       <section className="panel-section">
-        <h3 className="section-title">Groups</h3>
+        <div className="section-head">
+          <h3 className="section-title">Groups</h3>
+          <button type="button" className="primary small" onClick={() => setBoard(true)}>Live board</button>
+        </div>
         {s.groups_list.length === 0 && <p className="muted small">No groups yet. Add each group, string or card you shot - then tap
           every shot onto its target ("Add and plot shots"), or just type the group's size.</p>}
         <ul className="shoot-groups">
@@ -110,6 +116,7 @@ export function SessionPanel({ id = null, onClose }) {
           }} />
       </section>
       <MediaSection s={s} onSession={setS} />
+      {board && <LiveBoard s={s} lists={lists} onSession={setS} onClose={() => setBoard(false)} />}
     </Drawer>
   )
 }
@@ -130,7 +137,7 @@ function GroupCard({ g, unit, lists, autoPlot = false, onChanged }) {
   return (
     <li className="card shoot-group">
       <div className="shoot-group-head">
-        <strong>{dist(g)}{g.shots && ` · ${g.shots} shots`}{g.position && ` · ${g.position}`}</strong>
+        <strong>{dist(g)}{g.target && ` · ${g.target}`}{g.shots && ` · ${g.shots} shots`}{g.position && ` · ${g.position}`}</strong>
         {g.confirms_dope && <span className="pill ok">DOPE</span>}
       </div>
       <div className="shoot-group-body">
@@ -140,6 +147,10 @@ function GroupCard({ g, unit, lists, autoPlot = false, onChanged }) {
             <dd>{[g.elevation != null && `${g.elevation} ${unit} up`, g.windage != null && `${g.windage} ${unit} wind`].filter(Boolean).join(' · ')}</dd></>}
           {g.correction && <><dt>To centre</dt><dd>{g.correction}</dd></>}
           {g.score != null && <><dt>Score</dt><dd>{g.score}{g.x_count ? `-${g.x_count}X` : ''}</dd></>}
+          {g.hits != null && <><dt>Hits</dt><dd><strong>{g.hits}/{g.shots}</strong>{g.hit_rate != null && ` (${g.hit_rate}%)`}
+            {g.best_streak > 1 && <span className="muted"> · best streak {g.best_streak}</span>}
+            {g.shot_list?.some((x) => x.hit != null) && <span className="shoot-board-dots small-dots" aria-hidden="true">
+              {g.shot_list.filter((x) => x.hit != null).map((x) => <i key={x.shot_id} className={x.hit ? 'hit' : 'miss'} />)}</span>}</dd></>}
           {v && <><dt>Velocity</dt><dd>{v.avg} m/s ({v.fps} fps) · SD {v.sd} · ES {v.es} <span className="muted">({v.n} shots)</span></dd></>}
         </dl>
         <RowPhoto path={`/shooting/groups/${g.group_id}`} url={g.photo_url} label="target photo"
@@ -158,11 +169,12 @@ function GroupCard({ g, unit, lists, autoPlot = false, onChanged }) {
 const blankGroup = (start) => ({
   distance: String(start?.distance ?? 50), unit: start?.unit ?? 'm', shots: String(start?.shots ?? 5), size_mm: '', up_mm: '', right_mm: '',
   elevation: start?.elevation != null ? String(start.elevation) : '', windage: '', position: start?.position ?? '',
-  score: '', x_count: '', velocities: '', confirms_dope: false, notes: '',
+  score: '', x_count: '', velocities: '', confirms_dope: false, notes: '', target: start?.target ?? '', hits: '',
 })
 const fromGroup = (g) => ({
   ...blankGroup(g), size_mm: g.size_mm ?? '', up_mm: g.up_mm ?? '', right_mm: g.right_mm ?? '', windage: g.windage ?? '',
   score: g.score ?? '', x_count: g.x_count ?? '', velocities: (g.velocities ?? []).join(' '), confirms_dope: g.confirms_dope, notes: g.notes ?? '',
+  hits: g.hits ?? '',
 })
 
 // Add (or edit) a group: distance, shots, size (MOA / MIL shown as you type), where it hit, what you dialled,
@@ -184,7 +196,8 @@ function GroupForm({ lists, unit, start, editing = false, first = false, onSave,
     try {
       await onSave({ distance: num(f.distance), unit: f.unit, shots: num(f.shots), size_mm: num(f.size_mm), up_mm: num(f.up_mm),
         right_mm: num(f.right_mm), elevation: num(f.elevation), windage: num(f.windage), position: f.position || null, score: num(f.score),
-        x_count: num(f.x_count), velocities: speeds, confirms_dope: f.confirms_dope, notes: f.notes.trim() || null }, plot)
+        x_count: num(f.x_count), velocities: speeds, confirms_dope: f.confirms_dope, notes: f.notes.trim() || null,
+        target: f.target.trim() || null, hits: num(f.hits) }, plot)
       if (editing) return
       setOpen(false)
     } catch (err) {
@@ -208,6 +221,8 @@ function GroupForm({ lists, unit, start, editing = false, first = false, onSave,
         <label className="field">Windage ({unit})<input type="number" step="0.01" inputMode="decimal" value={f.windage} onChange={set('windage')} /></label>
         <label className="field">Score<input type="number" min="0" step="0.1" inputMode="decimal" value={f.score} onChange={set('score')} /></label>
         <label className="field">X count<input type="number" min="0" value={f.x_count} onChange={set('x_count')} /></label>
+        <label className="field">Target<input value={f.target} onChange={set('target')} placeholder="e.g. 2 MOA steel" /></label>
+        <label className="field">Hits<input type="number" min="0" value={f.hits} onChange={set('hits')} /></label>
       </div>
       <label className="field">Chronograph speeds (m/s)<input value={f.velocities} onChange={set('velocities')} placeholder="e.g. 325 328 326" /></label>
       <label className="field">Notes<input value={f.notes} onChange={set('notes')} /></label>

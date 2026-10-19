@@ -1644,3 +1644,15 @@ DBeaver connection confirmed working (2026-10-11).
      0.5 mm, via getScreenCTM). A table under it edits each shot. Photos / videos: several at once, "of which group",
      captions, a viewer.
    - An empty POST /shooting/sessions now defaults its kind (an INSERT needs a column).
+4h. **Shooting: the live board** (2026-10-19). User: "a live board where I go hit, miss, hit, hit, hit and then it wraps
+   up that group - counting as we go".
+   - 75_shooting_hits.sql: shooting_shots.hit (null = not called), shooting_groups.target ("2 MOA steel") and hits
+     (from the shots by recompute, or typed). decorate: hit_rate, best_streak; sessions sum hits; the dashboard has
+     hit rate by distance (this year); the feed says "hit 12/15".
+   - ShootingLive.jsx: Start shooting (Sessions, the dashboard, Home's quick action) opens today's session - or makes
+     one with what you used last / your club - on the board. Set distance / target / position, Start (the group is
+     made then), then HIT / MISS: counts, hit rate, streak and dots update straight away; each tap is POSTed in order
+     through one promise queue (Undo deletes the last saved shot, after the taps before it have landed), so nothing's
+     lost if the phone sleeps. Finish group -> the result, then Next group (same), Change distance, or Done. A group
+     finished with no shots is removed. Keys: H, M, Backspace. Phones that can, buzz.
+   - The walk-through's Home tile count includes shooting when there are sessions (dev had the user's first one).

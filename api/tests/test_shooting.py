@@ -139,3 +139,20 @@ def test_session_photos_and_videos(client, tmp_path, monkeypatch):
     assert next(f for f in feed if f["kind"] == "shoot" and f["ref"] == sid)["photo_url"].startswith("/api/shooting/media/")
     client.delete(f"/api/shooting/sessions/{sid}")             # its video file goes too
     assert list((tmp_path / "videos").iterdir()) == []
+
+
+def test_live_board_hits_and_misses(client):
+    s = client.post("/api/shooting/sessions", json={"shot_on": str(__import__("datetime").date.today()),
+                                                   "groups": [{"distance": 300, "target": "2 MOA steel"}]}).json()
+    gid = s["groups_list"][0]["group_id"]
+    for hit in (True, False, True, True, True):
+        s = client.post(f"/api/shooting/groups/{gid}/shots", json={"hit": hit}).json()
+    g = s["groups_list"][0]
+    assert (g["shots"], g["hits"], g["hit_rate"], g["best_streak"], g["target"]) == (5, 4, 80, 3, "2 MOA steel")
+    assert (s["hits"], s["hit_shots"]) == (4, 5)
+    s = client.delete(f"/api/shooting/shots/{g['shot_list'][-1]['shot_id']}").json()      # undo the last
+    assert (s["groups_list"][0]["shots"], s["groups_list"][0]["hits"]) == (4, 3)
+    rates = client.get("/api/shooting/summary").json()["hit_rates"]
+    assert rates == [{"label": "300 m", "m": 300.0, "hits": 3, "shots": 4, "rate": 75}]
+    feed = client.get("/api/activity").json()
+    assert "hit 3/4" in next(f for f in feed if f["kind"] == "shoot" and f["ref"] == s["session_id"])["detail"]

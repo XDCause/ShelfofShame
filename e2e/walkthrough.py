@@ -35,6 +35,7 @@ READING = (any(_reading["counts"].values())) + bool(_reading["reading"])   # Hom
 HIKING = bool(json.load(urllib.request.urlopen(f"{BASE}/api/hiking/summary"))["all_time"]["hikes"])   # Home: km hiked
 _garden = json.load(urllib.request.urlopen(f"{BASE}/api/garden/summary"))
 GARDEN = bool(_garden["growing"] or _garden["spaces"])                                  # Home: plants growing
+SHOOTING = bool(json.load(urllib.request.urlopen(f"{BASE}/api/shooting/summary"))["all_time"]["sessions"])   # Home: rounds this year
 MARK = f"e2e{int(time.time())}"   # a word only this run's journal page contains
 
 
@@ -95,10 +96,10 @@ def home(page):
     expect(stats.filter(has_text="Supplies")).to_contain_text(str(TOTAL))
     for tile in ("Shelf of shame", "Board games", "Volleyball", "Next game"):
         expect(stats.filter(has_text=tile)).to_be_visible()
-    expect(stats).to_have_count(10 + CHESS + READING + HIKING + GARDEN)
+    expect(stats).to_have_count(10 + CHESS + READING + HIKING + GARDEN + SHOOTING)
     expect(page.locator(".home-card", has_text="Recent activity").locator(".pill").first).to_be_visible()
     expect(page.locator(".home-card", has_text="Coming up")).to_be_visible()
-    expect(page.locator(".quick-action")).to_have_count(13)       # + Log a chess game, Add a book, Log a hike, Add a plant, Log a shoot
+    expect(page.locator(".quick-action")).to_have_count(13)       # + Log a chess game, Add a book, Log a hike, Add a plant, Start shooting
     shot(page, "d00_home", full=False)
     stats.filter(has_text="To buy").click()
     expect(page).to_have_url(BASE + "/wishlist")
@@ -1906,7 +1907,7 @@ FAKE_BUNNINGS = """<html><head><title>Leek - Bunnings</title></head><body><h1>10
             "images": [{"imageType": "PRIMARY", "url": "https://media.bunnings.com.au/api/public/content/leek?v=1"}]}}}]}}}})
 
 
-@step("Precision shooting: a rifle (MIL scope) and ammo, a session with a group (MOA / MIL, what to dial), DOPE card, dashboard")
+@step("Precision shooting: a rifle (MIL scope) and ammo, a session with a group (MOA / MIL, what to dial), shots plotted, a photo, the live board (hit / miss), DOPE card, dashboard")
 def shooting(page):
     page.goto(BASE + "/shooting/rifles")
     page.get_by_role("button", name="+ Add a rifle").first.click()
@@ -1970,8 +1971,32 @@ def shooting(page):
     page.goto(f"{BASE}/shooting/dope?rifle={rifle_id}")
     expect(page.locator(".shoot-dope tbody tr").first).to_contain_text("0.5 MIL")
     expect(page.locator(".shoot-dope tbody tr").first).to_contain_text("Confirmed")
+    # the live board: hit, miss, hit, hit, hit - counting as it goes - then wrap the group up
+    page.goto(BASE + "/shooting/sessions")
+    page.get_by_role("button", name="Start shooting").click()                  # today's session: opens its live board
+    board = page.get_by_role("dialog", name="Live board")
+    board.get_by_label("Distance", exact=True).fill("300")
+    board.get_by_label("Target").fill("2 MOA steel")
+    board.get_by_role("button", name="Start").click()
+    for b in ("HIT", "MISS", "HIT", "HIT", "HIT"):
+        board.get_by_role("button", name=b, exact=True).click()
+    counts = board.locator(".shoot-board-counts")
+    expect(counts).to_contain_text("5shots")
+    expect(counts).to_contain_text("4hits")
+    expect(counts).to_contain_text("80%")
+    expect(board).to_contain_text("3 in a row")
+    board.get_by_role("button", name="HIT", exact=True).click()
+    board.get_by_role("button", name="Undo").click()                           # takes the last one back
+    expect(counts).to_contain_text("5shots")
+    shot(page, "d92_shooting_live", full=False)
+    board.get_by_role("button", name="Finish group").last.click()
+    expect(board.locator(".shoot-board-result")).to_contain_text("4/5")
+    board.get_by_role("button", name="Done").click()
+    expect(drawer(page).locator(".shoot-group", has_text="2 MOA steel")).to_contain_text("4/5 (80%)")
+    page.keyboard.press("Escape")
     page.locator(".section-tabs").get_by_role("link", name="Dashboard", exact=True).click()
     expect(page.locator(".home-card", has_text="Best groups")).to_contain_text("50 m")
+    expect(page.locator(".home-card", has_text="Hit rate by distance")).to_be_visible()
     shot(page, "d91_shooting_dashboard", full=True)
     assert any(f["kind"] == "shoot" for f in page.request.get(f"{BASE}/api/activity").json())
     # tidy up through the API

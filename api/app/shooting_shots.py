@@ -33,11 +33,12 @@ class ShotFields(BaseModel):
     is_x: bool | None = None
     velocity: float | None = Field(None, gt=0, lt=3000)
     flyer: bool | None = None
+    hit: bool | None = None                  # the live board: a hit or a miss
     note: str | None = Field(None, max_length=500)
 
 
 SHOT_SELECT = """SELECT shot_id, group_id, n, x_mm::float8 AS x_mm, y_mm::float8 AS y_mm, score::float8 AS score, is_x,
-       velocity::float8 AS velocity, flyer, note FROM shooting_shots"""
+       velocity::float8 AS velocity, flyer, hit, note FROM shooting_shots"""
 
 
 def shots_by_group(conn, group_ids: list[int]) -> dict[int, list[dict]]:
@@ -56,7 +57,7 @@ def media_for(conn, session_id: int) -> list[dict]:
 
 def recompute(conn, group_id: int):
     """A group's numbers from its shots: count; size and centre from the placed shots that weren't flyers;
-    velocities; score and X count. Numbers the shots don't have are left as you typed them."""
+    velocities; score and X count; hits (the live board). Numbers the shots don't have are left as you typed them."""
     shots = conn.execute(SHOT_SELECT + " WHERE group_id = %s ORDER BY n", (group_id,)).fetchall()
     if not shots:
         return
@@ -73,6 +74,8 @@ def recompute(conn, group_id: int):
     scored = [s for s in shots if s["score"] is not None]
     if scored:
         data.update(score=sum(s["score"] for s in scored), x_count=sum(1 for s in scored if s["is_x"]))
+    if any(s["hit"] is not None for s in shots):
+        data["hits"] = sum(1 for s in shots if s["hit"])
     update_row(conn, "shooting_groups", "group_id", group_id, data)
 
 

@@ -1,5 +1,6 @@
 import { CrosshairIcon, TargetIcon, TrophyIcon } from '../../components/icons.jsx'
 import { GearView } from '../volleyball/VolleyballViews.jsx'
+import { startShooting } from './ShootingLive.jsx'
 import { AmmoPanel, RangePanel, RiflePanel, SessionPanel } from './ShootingPanels.jsx'
 import { AmmoView, Dashboard, DopeView, RiflesView, SessionsView, ShootingTiles } from './ShootingViews.jsx'
 
@@ -15,7 +16,7 @@ export default {
   Icon: CrosshairIcon,
   underConstruction: true,
   home: { Tiles: ShootingTiles },
-  actions: [{ label: 'Log a shoot', Icon: CrosshairIcon, run: (app) => app.openPanel('shootsession', {}) }],
+  actions: [{ label: 'Start shooting', Icon: CrosshairIcon, run: (app) => startShooting(app).catch((e) => app.showToast(e.message)) }],
   panels: { shootsession: SessionPanel, rifle: RiflePanel, ammo: AmmoPanel, shootrange: RangePanel },
   pages: [
     { path: 'dashboard', label: 'Dashboard', Icon: TrophyIcon, render: () => <Dashboard /> },
