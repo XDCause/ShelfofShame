@@ -52,8 +52,10 @@ function ridge(rand, { base, height, rough, smooth }) {
 
 const area = (pts, bottom = H) => `M0 ${bottom} L${pts.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join(' L')} L${W} ${bottom} Z`
 
-// Pines standing on a ridge: little stacked triangles, as one path.
-function pines(rand, pts, size, every) {
+// Pines standing on a ridge: little stacked triangles, as one path. Only where the ridge is (its own x range) and,
+// for the coast's headland, only on land (above maxY, the sea's line) - never in the air. (A tree's base is checked
+// to be on its ridge by e2e/ui_audit.py: the "art" check.)
+function pines(rand, pts, size, every, maxY = Infinity) {
   let d = ''
   const at = (x) => {
     const i = pts.findIndex(([px]) => px >= x)
@@ -62,10 +64,13 @@ function pines(rand, pts, size, every) {
     const [x1, y1] = pts[i]
     return y0 + ((x - x0) / (x1 - x0 || 1)) * (y1 - y0)
   }
-  for (let x = rand() * every; x < W; x += every * (0.5 + rand())) {
+  const [from, to] = [pts[0][0], pts.at(-1)[0]]
+  for (let x = from + rand() * every; x < to; x += every * (0.5 + rand())) {
     const h = size * (0.6 + rand() * 0.8)
     const w = h * 0.32
-    const y = at(x) + 4
+    const ground = at(x)
+    if (ground > maxY) continue
+    const y = ground + 4
     d += `M${x.toFixed(1)} ${(y - h).toFixed(1)} L${(x - w * 0.62).toFixed(1)} ${(y - h * 0.48).toFixed(1)} L${(x - w * 0.36).toFixed(1)} ${(y - h * 0.5).toFixed(1)} `
       + `L${(x - w).toFixed(1)} ${y.toFixed(1)} L${(x + w).toFixed(1)} ${y.toFixed(1)} L${(x + w * 0.36).toFixed(1)} ${(y - h * 0.5).toFixed(1)} `
       + `L${(x + w * 0.62).toFixed(1)} ${(y - h * 0.48).toFixed(1)} Z `
@@ -95,16 +100,16 @@ function Landscape({ scene = 'peaks', hue = '#84a85c', seed = 7, className = '',
   const ridges = Array.from({ length: layers }, (_, i) => {
     const t = i / (layers - 1)
     const base = coast ? seaLine + 2 : H * (0.5 + t * 0.42)
-    const height = (scene === 'peaks' ? 260 : 150) * (1 - t * 0.45)
+    const height = coast ? 70 + t * 40 : (scene === 'peaks' ? 260 : 150) * (1 - t * 0.45)
     const pts = ridge(rand, { base, height, rough: scene === 'peaks' ? 0.56 : 0.5, smooth: scene !== 'peaks' || t > 0.7 })
-    return { pts, t, colour: mix(haze, near, Math.pow(t, 0.75)) }
+    // far hills fade into the haze (the coast's are all far: across the water, so never near-black)
+    return { pts, t, colour: mix(haze, near, coast ? 0.1 + t * 0.3 : Math.pow(t, 0.75)) }
   })
-  // The coast's headland: a cliff on one side running down into the sea.
+  // The coast's headland: wooded hills on the left that slope smoothly down into the sea (gone under it by mid-way).
   const headland = coast && (() => {
-    const pts = ridge(rand, { base: H * 0.78, height: 170, rough: 0.5, smooth: true })
-      .map(([x, y]) => [x, x > W * 0.48 ? y + Math.pow((x - W * 0.48) / (W * 0.18), 2) * 160 : y])
-      .map(([x, y]) => [x, Math.min(y, H + 10)])
-    return pts
+    const ease = (v) => { const c = Math.max(0, Math.min(1, v)); return c * c * (3 - 2 * c) }   // smoothstep
+    return ridge(rand, { base: H * 0.6, height: 110, rough: 0.5, smooth: true })
+      .map(([x, y]) => [x, Math.min(y + ease((x - W * 0.2) / (W * 0.34)) * 340, H + 10)])
   })()
   const stars = night && Array.from({ length: 90 }, () => [rand() * W, rand() * H * 0.55, rand() * 1.4 + 0.3, rand() * 0.7 + 0.2])
 
@@ -126,6 +131,10 @@ function Landscape({ scene = 'peaks', hue = '#84a85c', seed = 7, className = '',
           <stop offset="0.6" stopColor={glow} stopOpacity={night ? 0.06 : 0.12} />
           <stop offset="1" stopColor={glow} stopOpacity="0" />
         </linearGradient>
+        <radialGradient id={`glint${id}`}>
+          <stop offset="0" stopColor={glow} stopOpacity="0.3" />
+          <stop offset="1" stopColor={glow} stopOpacity="0" />
+        </radialGradient>
         <linearGradient id={`sea${id}`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor={mix(horizon, skyMid, 0.35)} />
           <stop offset="1" stopColor={mix(skyTop, near, 0.4)} />
@@ -136,20 +145,22 @@ function Landscape({ scene = 'peaks', hue = '#84a85c', seed = 7, className = '',
       <rect width={W} height={H} fill={`url(#sun${id})`} />
       <circle cx={sunX} cy={sunY} r={night ? 30 : 42} fill={glow} opacity={night ? 0.9 : 0.85} />
       {coast && <rect y={seaLine} width={W} height={H - seaLine} fill={`url(#sea${id})`} />}
-      {coast && <rect x={sunX - 70} y={seaLine} width="140" height={H - seaLine} fill={glow} opacity="0.08" />}
+      {/* the sun on the water: a soft path of light, and a bright line where it meets the horizon */}
+      {coast && <ellipse cx={sunX} cy={seaLine} rx="200" ry={H - seaLine} fill={`url(#glint${id})`} />}
+      {coast && <ellipse cx={sunX} cy={seaLine + 2} rx="150" ry="3" fill={glow} opacity="0.45" />}
       {ridges.map(({ pts, t, colour }, i) => (
         <g key={i}>
-          <path d={area(pts, coast ? seaLine + 4 : H)} fill={colour} />
+          <path className="ridge" data-ridge={i} d={area(pts, coast ? seaLine + 4 : H)} fill={colour} />
           {(scene === 'forest' || scene === 'peaks' || scene === 'night') && t > 0.5 && (
-            <path d={pines(rand, pts, 30 + t * 34, 26 - t * 8)} fill={colour} />
+            <path className="pines" data-ridge={i} d={pines(rand, pts, 30 + t * 34, 26 - t * 8)} fill={colour} />
           )}
           {i < layers - 1 && !coast && (
             <rect y={Math.min(...pts.map(([, y]) => y)) - 10} width={W} height="120" fill={`url(#mist${id})`} />
           )}
         </g>
       ))}
-      {headland && <path d={area(headland)} fill={near} />}
-      {headland && <path d={pines(rand, headland.filter(([x]) => x < W * 0.5), 46, 20)} fill={near} />}
+      {headland && <path className="ridge" data-ridge="h" d={area(headland)} fill={near} />}
+      {headland && <path className="pines" data-ridge="h" d={pines(rand, headland, 46, 20, seaLine - 24)} fill={near} />}
     </svg>
   )
 }

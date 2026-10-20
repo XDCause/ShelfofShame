@@ -1840,3 +1840,16 @@ DBeaver connection confirmed working (2026-10-11).
      signatures: made, used, replay refused, wrong key / site refused, removed); the PC script. The walk-through has a
      "Sign in" step (stranger -> wrong password -> right -> Security -> sign out) and runs over https; the UI audit
      checks the sign-in screen too.
+4z. **Banner art: floating trees on the coast, and a check for it** (2026-10-20). User: "some of the images are a bit off
+   like volleyball - and why didn't the tests catch it". The coast scene (volleyball, travel) had a row of pines hanging in
+   the sky: pines() walked the whole width, but the headland's points only covered its left half - past them, `at(x)`
+   fell back to the first point's height. Also a hard-edged "reflection" rectangle, near-black far hills (a dark band on
+   the horizon) and a headland that started below them. Fixed: pines only within their ridge's x range and above the sea
+   (maxY); a smooth headland sloping into the water; a soft glow + horizon glint; far coast hills fade into the haze.
+   Why nothing caught it: the UI audit checks the page's structure (overflow, overlap, contrast, names, sizes); a banner is
+   decoration hidden from screen readers, so nothing looked inside it. Now: Landscape labels its paths (path.ridge /
+   path.pines, data-ridge) and ui_audit.py's "art" check asks the browser whether each tree's base is inside its hill's
+   shape (isPointInFill) - a floating tree fails the run. The check tests itself first (a tiny banner with one tree on its
+   hill and one floating: it must flag exactly that one) - a detector that silently finds nothing is worse than none. It
+   also saves a gallery of every banner (e2e/out/banner_*.png, pc + phone, dark) for a look by eye: drawings can be wrong in
+   ways no rule describes.

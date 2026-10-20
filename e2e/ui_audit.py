@@ -6,6 +6,7 @@ person notices - and the walk-through doesn't look for:
   overlap      two buttons / links on top of each other, or two pieces of text on top of each other
   small        a touch target under 24 x 24 px on a phone (WCAG 2.2 target size; inline links in text are fine)
   image        an image that didn't load
+  art          a drawn banner with a tree off its hill (floating in the sky / sea); a gallery of every banner is saved too
   a11y         axe-core's accessibility rules (contrast, names, roles, landmarks...), serious and critical only
   console      browser errors and failed requests while the page was open
 
@@ -195,6 +196,27 @@ CHECKS = r"""
       if (r.width < 24 || r.height < 24) out.push({ kind: 'small', selector: name(el), detail: `"${text(el)}" is ${Math.round(r.width)}x${Math.round(r.height)}px`, rect: rect(r) });
     }
   }
+  // art: in a drawn banner (components/Landscape.jsx) every tree stands on its hill - its base just inside the hill's
+  // shape - not floating in the sky or the sea. (The banner is decoration hidden from screen readers, so nothing
+  // above looks inside it; this is what does.)
+  for (const svg of document.querySelectorAll('svg.landscape')) {
+    if (!svg.getBoundingClientRect().width) continue;
+    let floating = 0, trees = 0;
+    for (const group of svg.querySelectorAll('path.pines')) {
+      const hill = svg.querySelector(`path.ridge[data-ridge="${group.dataset.ridge}"]`);
+      for (const tree of (group.getAttribute('d') || '').split('M').filter((s) => s.trim())) {
+        const nums = tree.match(/-?[0-9.]+/g).map(Number);
+        const pts = []; for (let i = 0; i + 1 < nums.length; i += 2) pts.push([nums[i], nums[i + 1]]);
+        const baseY = Math.max(...pts.map((q) => q[1]));
+        const base = pts.filter((q) => q[1] === baseY);
+        const x = base.reduce((s, q) => s + q[0], 0) / base.length;
+        trees++;
+        const spot = svg.createSVGPoint(); spot.x = x; spot.y = baseY + 3;      // (this Chromium wants an SVGPoint)
+        if (!hill || !hill.isPointInFill(spot)) floating++;
+      }
+    }
+    if (floating) out.push({ kind: 'art', selector: name(svg.parentElement) + ' > svg.landscape', detail: `${floating} of ${trees} trees aren't standing on their hill`, rect: rect(svg.getBoundingClientRect()) });
+  }
   // image: broken
   for (const img of scope.querySelectorAll('img')) {
     if (img.complete && img.naturalWidth === 0 && visible(img) && img.getAttribute('src') && !img.src.includes('/stand-in/')) out.push({ kind: 'image', selector: name(img), detail: img.getAttribute('src').slice(0, 80), rect: rect(img.getBoundingClientRect()) });
@@ -217,6 +239,12 @@ MARK = """(rects) => { for (const [x, y, w, h] of rects) { const d = document.cr
 
 def signed_in_context(browser, **kw):
     """A browser context signed in with this copy's password (run_e2e.ps1 sets E2E_PASSWORD): a session of its own."""
+    token = os.environ.get("E2E_TOKEN")               # (an existing session instead - looking at a copy without its password)
+    ctx = browser.new_context(ignore_https_errors=True, **kw)
+    if token:
+        ctx.add_cookies([{"name": "otc_session", "value": token, "url": BASE, "secure": True, "httpOnly": True, "sameSite": "Strict"}])
+        return ctx
+    ctx.close()
     tls = ssl.create_default_context()
     tls.check_hostname, tls.verify_mode = False, ssl.CERT_NONE
     jar = http.cookiejar.CookieJar()
@@ -316,6 +344,9 @@ def worker(size_name):
                 page.goto(BASE + path)
                 settle(page)
                 audit(page, f"{tag} {path}", problems, f"{size}_{theme}_{path}", with_axe)
+                banner = page.locator(".page-banner").first
+                if theme == "dark" and size in ("pc", "phone") and banner.count():      # the banner gallery, to look over
+                    banner.screenshot(path=f"{OUT}/banner_{size}_{re.sub(r'[^a-z]+', '_', path.strip('/')) or 'home'}.png")
             for path, opener in PANELS:
                 if not path.startswith(ONLY):
                     continue
@@ -339,11 +370,31 @@ def worker(size_name):
         json.dump({"problems": problems, "console": console}, f)
 
 
+# The art check, checked: a tiny banner with one tree on its hill and one floating above it. If the detector doesn't
+# flag exactly the floating one, the audit stops - a check that silently finds nothing is worse than none.
+SELF_TEST = """<div class="banner-art"><svg class="landscape" viewBox="0 0 400 200" width="400" height="200">
+  <path class="ridge" data-ridge="0" d="M0 200 L0 120 L400 120 L400 200 Z" />
+  <path class="pines" data-ridge="0" d="M100 84 L92 124 L108 124 Z " />
+  <path class="pines" data-ridge="1" d="M300 20 L292 60 L308 60 Z " />
+  <path class="ridge" data-ridge="1" d="M0 200 L0 150 L400 150 L400 200 Z" />
+</svg></div>"""
+
+
+def self_test(browser):
+    page = browser.new_page()
+    page.set_content(SELF_TEST)
+    found = [p for p in page.evaluate(CHECKS) if p["kind"] == "art"]
+    page.close()
+    if len(found) != 1 or "1 of 2 trees" not in found[0]["detail"]:
+        raise SystemExit(f"The audit's art check is broken (expected one floating tree, got {found}).")
+
+
 def main():
     """Find the pages once, then one worker process per screen size, side by side; then the report."""
     started = time.time()
     with sync_playwright() as p:
         browser = p.chromium.launch()
+        self_test(browser)
         ctx = signed_in_context(browser, viewport={"width": 1440, "height": 900}, bypass_csp=True)
         pages = [r for r in routes(ctx.new_page()) if r.startswith(ONLY)]
         browser.close()
