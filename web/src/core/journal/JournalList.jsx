@@ -86,7 +86,7 @@ export default function JournalList() {
         <button type="button" className="primary" onClick={() => newPage()}>+ New page</button>
       </div>
       <div className="filters">
-        <div className="chip-row" aria-label="Tags">
+        <div className="chip-row" role="group" aria-label="Tags">
           <button type="button" className="chip-filter" aria-pressed={!tag} onClick={() => setTag('')}>All</button>
           {tags.map((t) => (
             <button key={t.name} type="button" className="chip-filter" aria-pressed={tag === t.name}
@@ -95,7 +95,7 @@ export default function JournalList() {
             </button>
           ))}
         </div>
-        <div className="chip-row mood-filter" aria-label="Mood">
+        <div className="chip-row mood-filter" role="group" aria-label="Mood">
           {MOODS.map((m) => (
             <button key={m.id} type="button" className="chip-filter" aria-pressed={mood === m.id}
               title={`${m.label} days`} aria-label={`${m.label} days`}

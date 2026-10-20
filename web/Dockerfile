@@ -12,6 +12,7 @@ RUN npm run build
 
 # Stage 2: serve the built files with nginx (no Node.js in the final image)
 FROM nginx:1.27-alpine
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# a template: ${HTTPS_PORT} is filled in when the container starts (the nginx image's own envsubst step)
+COPY nginx.conf /etc/nginx/templates/default.conf.template
 COPY security-headers.inc /etc/nginx/security-headers.inc
 COPY --from=build /app/dist /usr/share/nginx/html

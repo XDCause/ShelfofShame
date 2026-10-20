@@ -424,7 +424,7 @@ function GameHead({ sort, flipped, setSort }) {
       <p className="game-key small muted" aria-hidden="true">
         {Object.values(COLUMNS).map(({ Icon, what }) => <span key={what}><Icon size={14} /> {what}</span>)}
       </p>
-      <div className="game-head" role="row">
+      <div className="game-head" role="group" aria-label="Sort by">
         <span />
         {heads.map(([key, head]) => (
           <button key={key} type="button" className="game-head-cell" aria-pressed={sort === key}

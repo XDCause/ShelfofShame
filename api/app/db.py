@@ -162,3 +162,11 @@ def db():
     except (errors.CheckViolation, errors.NotNullViolation) as e:
         raise HTTPException(422, CONSTRAINT_MESSAGES.get(e.diag.constraint_name,
                                                          e.diag.message_primary))
+    # A value the column can't hold (a number past an integer's range, text past a length, a date out of range):
+    # the request's fault, so a 422 that says so - not a crash (tests/test_robustness.py).
+    except errors.NumericValueOutOfRange:
+        raise HTTPException(422, "A number there is too big (or too small).") from None
+    except errors.StringDataRightTruncation:
+        raise HTTPException(422, "Some of that text is too long.") from None
+    except (errors.DatetimeFieldOverflow, errors.InvalidDatetimeFormat):
+        raise HTTPException(422, "A date there isn't one the calendar has.") from None

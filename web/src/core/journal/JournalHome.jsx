@@ -43,7 +43,7 @@ function YourWeek() {
   if (!moods) return null
   const byDay = Object.fromEntries(moods.map((m) => [m.day, m]))
   return (
-    <div className="your-week" aria-label="Your week">
+    <div className="your-week" role="group" aria-label="Your week">
       {days.map((day) => {
         const m = byDay[day]
         const mood = moodOf(m?.mood)

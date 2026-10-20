@@ -69,6 +69,7 @@ const WHAT = { model: 'Model', supply: 'Supply', page: 'Journal page', game: 'Bo
 export default function Editor({ pageId, initialContent, onChange, onOpenMention, previews = {}, onDraw }) {
   const editor = useCreateBlockNote({
     schema,
+    domAttributes: { editor: { 'aria-label': 'Page text' } },   // its name for screen readers
     initialContent: initialContent?.length ? initialContent : undefined,
     uploadFile: async (file) => (await api.uploadJournalImage(await shrink(file, 1600), pageId)).url,
   })

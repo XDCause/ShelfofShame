@@ -1786,3 +1786,57 @@ DBeaver connection confirmed working (2026-10-11).
      Settings at its foot (the nav bar's gear is for phones only). Tabs: words with the current page a filled pill.
    - Journal: a notes page is warm paper in both themes (local tokens on .journal-page; the editor is always light).
    - Walk-through: a Banners step (name, a picture, moved, back to the drawing, the bar showing the name on scroll).
+4x. **A full code review, and new nets for UI and API problems** (2026-10-20). User: "a full code review... build more
+   to catch UI issues". What was added and found:
+   - **API coverage** (`.\run_tests.ps1 -Coverage` -> api\coverage.txt): 89% of 10,365 statements. The untested lines
+     were mostly edit / delete routes (shooting ranges, rifles, ammo; trip expenses, packing lists; garden notes and
+     reminders) -> tests/test_edit_delete.py (all passed first time). The rest are outside-site parsers (faked).
+   - **tests/test_robustness.py**: every route from the OpenAPI list, poked with a missing id, a word for an id, an
+     empty / junk body and junk in each field, on an empty database, with every outside site "down" (conftest
+     SITES_DOWN: each guarded call raises that module's own "couldn't reach" error; the real network is blocked).
+     Never a 500. It found **six crashes**: a number too big for an integer column (supplies, wishlist, price
+     guide, garden notes, shooting sessions, volleyball games) -> db.py now turns NumericValueOutOfRange,
+     StringDataRightTruncation and bad dates into a 422 that says so. (FastAPI 0.143's app.routes holds lazy
+     routers: the test reads app.openapi()["paths"] instead.)
+   - **Static checks**: ruff bugbear + bandit rules. No SQL injection (every f-string SQL only splices code-written
+     fragments; values are parameters); the GPX parser already refuses DOCTYPE / ENTITY; webphoto's SSRF guard is
+     sound (one known theoretical gap: DNS rebinding between the check and the fetch - fine for one person at home).
+   - **Panels**: a stale or failed record no longer means "Loading..." for ever (trip, session, rifle, ammo, booking,
+     coach note, video), and two panels no longer turn a removed record into an "add new" form that would add it
+     again (a trip's place, a volleyball team). Drawer: Tab stays inside the open panel; closing puts focus back on
+     what opened it (walk-through step "Keyboard").
+   - **e2e/ui_audit.py** (run by run_e2e.ps1 after the walk-through, ~4 min, one process per size): every page (found
+     from the sidebar and tabs) and some panels at 1440 / 1024 / 768 / 390 / 320 px in both themes, checked for
+     sideways overflow, clipped text, overlapping controls or text, touch targets < 24 px, broken images, browser
+     errors, and axe-core (WCAG 2.2 A/AA, serious + critical; at 1440 and 390). First run: 261 distinct problems.
+     Fixed: the tablet sidebar's name (a later .brand rule beat the old hide), contrast (light --muted 4.45 -> 5.4:1,
+     other-month calendar days, retired teams, the idle timer, the 100% badge in dark, a browser-grey delete button,
+     .plain fading on hover), links in sentences underlined, ARIA (labelled divs given roles; the calendar and the
+     games list's headings no longer claim grid / row roles they don't have; the unlock calendar is keyboard
+     reachable), touch targets on touch screens, colliding chart labels and value caps, quick actions on tablets, a
+     friend's long "Playing" pill, Gundam badges on narrow cards. Accepted (ACCEPTED in the script, with why): axe
+     can't see the banner behind the clear nav bar, so it misjudges the search box there.
+4y. **Signing in and HTTPS** (2026-10-20). User: "build a secure login as part of the cyber uplift" - one account,
+   password + authenticator and passkeys, self-signed HTTPS on the Wi-Fi, 30 days per device. (Asked: "will this open me
+   up to web scrapes?" - no: the app is still only on the home network / Tailscale; the login closes the gap that anyone
+   on the Wi-Fi could use it. A self-signed certificate isn't in the public Certificate Transparency logs either.)
+   - api/app/auth.py + 81_auth.sql: Argon2id (argon2-cffi), TOTP (pyotp: each 30-second code once; 10 one-time
+     recovery codes, sha256-stored), passkeys (py_webauthn 3: discoverable, user verification required, challenges kept
+     in memory - one worker), sessions (a random token in an HttpOnly + Secure + SameSite=Strict cookie, only its sha256
+     stored, 30 days), guessing limits (5 wrong per address / 20 overall in 15 min -> 429), an Origin check on every
+     change (CSRF). main.py adds require_session to every router; /api/health and /api/about stay public.
+   - No sign-up route: `python -m app.auth set-password` (set-password.ps1, on the PC) sets / resets it, optionally
+     turning off the authenticator and signing out every device (the lost-phone path).
+   - HTTPS: scripts/make_cert.py (in the API image: the cryptography library) makes a 10-year local CA once
+     (%USERPROFILE%\.offtheclock\ca, shared by dev and prod) and an 800-day server certificate (Apple's limit is 825)
+     for the PC's name, name.local, its Tailscale name and addresses. nginx: 443 with TLS 1.2/1.3; 80 only redirects
+     (and serves /ca.crt for phones, /nginx-health). No HSTS (a home certificate). nginx.conf is now a template
+     (${HTTPS_PORT}). Passkeys need a name, not an IP (WebAuthn): https://<pc>.local.
+   - Web: core/auth (AuthGate wraps App; api.js fires "otc-signed-out" on any 401 -> the sign-in screen; Settings >
+     Security: password, authenticator with QR (segno SVG from the API), recovery codes, passkeys, devices).
+   - Tests: tests/test_auth.py - every route refuses a stranger; sign in / out; the cookie's flags; Argon2; guessing
+     limits; expiry; changing the password signs others out; cross-site refused; the authenticator (codes once,
+     recovery codes once, turning off); devices; passkeys end to end with a software authenticator (real ES256
+     signatures: made, used, replay refused, wrong key / site refused, removed); the PC script. The walk-through has a
+     "Sign in" step (stranger -> wrong password -> right -> Security -> sign out) and runs over https; the UI audit
+     checks the sign-in screen too.

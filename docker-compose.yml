@@ -81,12 +81,17 @@ services:
       api:
         condition: service_healthy
     ports:
-      # No address = all interfaces (IPv4 + IPv6), so phones/tablets on the home network can
-      # reach it at http://<this PC's IP>:8080. Only the web app is exposed this way; the API
-      # (8000) and database (5433) stay on this PC only. Other devices reach the API via /api.
+      # No address = all interfaces (IPv4 + IPv6), so phones/tablets on the home network (and Tailscale) can reach it.
+      # Only the web app is exposed this way; the API (8000) and database (5433) stay on this PC only.
+      # 8080 (http) only sends you to 8443 (https) - and offers the CA certificate to install (make-cert.ps1).
       - "${WEB_PORT:-8080}:80"
+      - "${WEB_HTTPS_PORT:-8443}:443"
+    environment:
+      HTTPS_PORT: ${WEB_HTTPS_PORT:-8443}     # where http sends you (nginx.conf is a template)
+    volumes:
+      - ./certs:/etc/nginx/certs:ro           # this copy's certificate (make-cert.ps1; git-ignored)
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/nginx-health"]
       interval: 10s
       timeout: 5s
       retries: 5

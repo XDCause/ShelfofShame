@@ -70,11 +70,13 @@ export default function TripPanel({ id = null, tab: askedTab = null, onClose }) 
   const [t, setT] = useState(null)
   const [editing, setEditing] = useState(false)
   const [tab, setTab] = useState(askedTab)
-  const reload = useCallback(() => api.trip(id).then(setT).catch((e) => showToast(e.message)), [id, showToast])
+  const [failed, setFailed] = useState('')       // it couldn't be loaded (removed since?): said in the panel
+  const reload = useCallback(() => api.trip(id).then(setT).catch((e) => { setFailed(e.message); showToast(e.message) }), [id, showToast])
   useEffect(() => { if (id != null) reload() }, [id, reload])
 
   if (id == null) return <TripForm onClose={onClose} />
-  if (!t) return <Drawer title="Trip" onClose={onClose}><p className="muted">Loading...</p></Drawer>
+  if (!t) return <Drawer title="Trip" onClose={onClose}>{failed ? <p className="alert error">{failed}</p>
+    : <p className="muted">Loading...</p>}</Drawer>
   if (editing) return <TripForm t={t} onClose={() => setEditing(false)} onSaved={(next) => { setT(next); setEditing(false) }} />
 
   const update = (next) => { setT(next); changed() }
@@ -106,7 +108,7 @@ export default function TripPanel({ id = null, tab: askedTab = null, onClose }) 
           <ul className="trip-warnings" aria-label="Needs doing">{t.warnings.map((w) => <li key={w}>{w}</li>)}</ul>
         )}
         {t.weather && (
-          <div className="trip-weather" aria-label={`Weather in ${t.weather.place}`}>
+          <div className="trip-weather" role="group" aria-label={`Weather in ${t.weather.place}`}>
             <span className="muted small">{t.weather.place}</span>
             {t.weather.days.map((d, i) => (
               <span key={d.day} className="trip-weather-day" title={d.sky ?? ''}>

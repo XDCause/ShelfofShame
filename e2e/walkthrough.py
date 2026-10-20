@@ -10,6 +10,9 @@ Written against the user's real data (the Zero and P-40E models, XF-1 etc.); ite
 read from the API at the start, so adding or removing supplies doesn't break it.
 """
 import base64
+import http.cookiejar
+import os
+import ssl
 import json
 import re
 import struct
@@ -20,23 +23,46 @@ import urllib.request
 
 from playwright.sync_api import expect, sync_playwright
 
-BASE = "http://web"
+BASE = "https://web"          # (the copy's own certificate: the browser and urllib are told not to check it)
 OUT = "/out"
 results, errors = [], []
 
+# Signed in (api/app/auth.py): run_e2e.ps1 set this copy's password (E2E_PASSWORD) - its own, never yours.
+PASSWORD = os.environ["E2E_PASSWORD"]
+_tls = ssl.create_default_context()
+_tls.check_hostname, _tls.verify_mode = False, ssl.CERT_NONE
+_jar = http.cookiejar.CookieJar()
+_api = urllib.request.build_opener(urllib.request.HTTPSHandler(context=_tls), urllib.request.HTTPCookieProcessor(_jar))
+_api.open(urllib.request.Request(f"{BASE}/api/auth/login", data=json.dumps({"password": PASSWORD}).encode(),
+                                 headers={"Content-Type": "application/json"}))
+TOKEN = next(c.value for c in _jar if c.name == "otc_session")
+
+
+def get_json(path):
+    """A signed-in read of the API."""
+    return json.load(_api.open(f"{BASE}{path}"))
+
+
+def signed_in(context):
+    """A browser context with this run's session cookie (as if signed in)."""
+    context.add_cookies([{"name": "otc_session", "value": TOKEN, "url": BASE, "secure": True, "httpOnly": True,
+                          "sameSite": "Strict"}])
+    return context
+
+
 # How many supplies there are right now (and how many are Paint), for the list checks.
-_supplies = json.load(urllib.request.urlopen(f"{BASE}/api/supplies"))
+_supplies = get_json(f"/api/supplies")
 TOTAL = len(_supplies)
 PAINTS = sum(s["category"] == "Paint" for s in _supplies)
-MODELS = len(json.load(urllib.request.urlopen(f"{BASE}/api/models")))
-CHESS = bool(json.load(urllib.request.urlopen(f"{BASE}/api/chess/account"))["username"])   # Home gets a rating tile
-_reading = json.load(urllib.request.urlopen(f"{BASE}/api/reading/summary"))
+MODELS = len(get_json(f"/api/models"))
+CHESS = bool(get_json(f"/api/chess/account")["username"])   # Home gets a rating tile
+_reading = get_json(f"/api/reading/summary")
 READING = (any(_reading["counts"].values())) + bool(_reading["reading"])   # Home: books this year (+ reading now)
-HIKING = bool(json.load(urllib.request.urlopen(f"{BASE}/api/hiking/summary"))["all_time"]["hikes"])   # Home: km hiked
-_garden = json.load(urllib.request.urlopen(f"{BASE}/api/garden/summary"))
+HIKING = bool(get_json(f"/api/hiking/summary")["all_time"]["hikes"])   # Home: km hiked
+_garden = get_json(f"/api/garden/summary")
 GARDEN = bool(_garden["growing"] or _garden["spaces"])                                  # Home: plants growing
-SHOOTING = bool(json.load(urllib.request.urlopen(f"{BASE}/api/shooting/summary"))["all_time"]["sessions"])   # Home: rounds this year
-_travel = json.load(urllib.request.urlopen(f"{BASE}/api/travel/summary"))
+SHOOTING = bool(get_json(f"/api/shooting/summary")["all_time"]["sessions"])   # Home: rounds this year
+_travel = get_json(f"/api/travel/summary")
 TRAVEL = bool(_travel["now"] or _travel["upcoming"] or _travel["countries_been"])          # Home: the next trip / countries
 MARK = f"e2e{int(time.time())}"   # a word only this run's journal page contains
 
@@ -83,10 +109,12 @@ SECTION_TABS = {"Colours": "Models", "Plays": "Board games", "Gear": "Volleyball
 
 
 def watch(page, label):
-    page.on("console", lambda m: m.type == "error" and errors.append(f"[{label}] console: {m.text}"))
+    # (a wrong password's 401 from /api/auth/login is expected in the sign-in step: the browser logs it as an error too)
+    page.on("console", lambda m: m.type == "error" and "status of 401" not in m.text and errors.append(f"[{label}] console: {m.text}"))
     page.on("pageerror", lambda e: errors.append(f"[{label}] page error: {e}"))
     # Every failed request names its address (the browser's own "Failed to load resource" line doesn't).
-    page.on("response", lambda r: r.status >= 400 and errors.append(f"[{label}] HTTP {r.status} {r.url}"))
+    page.on("response", lambda r: r.status >= 400 and not (r.status == 401 and "/api/auth/login" in r.url)
+            and errors.append(f"[{label}] HTTP {r.status} {r.url}"))
 
 
 # ---------------------------------------------------------------- desktop
@@ -338,7 +366,7 @@ def models(page):
     go(page, "Models")
     expect(page.locator(".model-card")).to_have_count(MODELS)
     expect(page.locator(".stat-grid")).to_contain_text("Shelf of shame")
-    kits = json.load(urllib.request.urlopen(f"{BASE}/api/models/summary"))["all_kits"]   # every bought kit
+    kits = get_json(f"/api/models/summary")["all_kits"]   # every bought kit
     spent = "—" if kits["unpriced"] == kits["kits"] else f"${kits['value']:,.2f}"           # none priced: no $0.00
     expect(page.locator(".stat-grid")).to_contain_text(f"Spent on kits{spent}")
     shot(page, "d09_models")
@@ -931,6 +959,24 @@ def banners(page):
     page.keyboard.press("Escape")
 
 
+@step("Keyboard: a panel keeps Tab inside it, and closing it puts focus back on what opened it")
+def panel_focus(page):
+    go(page, "Home")
+    settings = page.get_by_role("button", name="Settings")
+    settings.focus()
+    page.keyboard.press("Enter")
+    expect(drawer(page)).to_be_visible()
+    for _ in range(40):                                                          # round and round: never out of the panel
+        page.keyboard.press("Tab")
+        assert page.evaluate("document.querySelector('aside.drawer').contains(document.activeElement)"), "Tab left the panel"
+    for _ in range(5):
+        page.keyboard.press("Shift+Tab")
+        assert page.evaluate("document.querySelector('aside.drawer').contains(document.activeElement)"), "Shift+Tab left the panel"
+    page.keyboard.press("Escape")
+    expect(drawer(page)).to_have_count(0)
+    expect(settings).to_be_focused()
+
+
 @step("Settings: Appearance switches light and dark; Home's Wishlist action opens + Add")
 def appearance(page):
     page.get_by_role("button", name="Settings").click()
@@ -1378,7 +1424,7 @@ def video_games(page):
         page.keyboard.press("Escape")
     # A game with DLC (when the data has one): a DLC badge in the list; the panel splits the main game
     # from each DLC.
-    with_dlc = [g for g in json.load(urllib.request.urlopen(f"{BASE}/api/videogames?show=started")) if g.get("dlc_count")]
+    with_dlc = [g for g in get_json(f"/api/videogames?show=started") if g.get("dlc_count")]
     if with_dlc:
         g = max(with_dlc, key=lambda g: g["dlc_count"])
         page.get_by_label("Search your games").fill(g["name"])
@@ -2052,7 +2098,7 @@ def travel(page):
     page.goto(BASE + "/travel/dashboard")
     expect(page.locator(".home-card", has_text="Coming up")).to_contain_text(f"Trip {MARK}")
     shot(page, "e12_travel_dashboard", full=False)
-    for trip in json.load(urllib.request.urlopen(f"{BASE}/api/travel/trips")):
+    for trip in get_json(f"/api/travel/trips"):
         if trip["name"] == f"Trip {MARK}":
             page.request.delete(f"{BASE}/api/travel/trips/{trip['trip_id']}")
 
@@ -2431,21 +2477,55 @@ def phone(page):
     assert button["height"] >= 44, f"Start timer is {button['height']}px tall (44 for a finger)"
 
 
+@step("Sign in: a stranger sees only the sign-in; a wrong password says so; the right one opens the app; signing out")
+def sign_in_ui(page):
+    page.goto(BASE)
+    expect(page.get_by_role("heading", name="Welcome back")).to_be_visible(timeout=15000)
+    expect(page.locator(".sidebar")).to_have_count(0)                          # none of the app shows
+    page.get_by_label("Password").fill("not the password at all")
+    page.get_by_role("button", name="Sign in", exact=True).click()
+    expect(page.get_by_role("alert")).to_contain_text("isn't right")
+    page.get_by_label("Password").fill(PASSWORD)
+    page.get_by_role("button", name="Sign in", exact=True).click()
+    expect(page.locator(".hero h2")).to_have_text(re.compile("^Good "), timeout=15000)
+    cookie = next(c for c in page.context.cookies() if c["name"] == "otc_session")
+    assert cookie["httpOnly"] and cookie["secure"] and cookie["sameSite"] == "Strict", cookie
+    shot(page, "a00_signed_in", full=False)
+    page.get_by_role("button", name="Settings").click()
+    drawer(page).locator("summary", has_text="Security").click()
+    expect(drawer(page).locator(".security-list .pill", has_text="This device")).to_be_visible()
+    expect(drawer(page).get_by_role("button", name="Set up an authenticator app")).to_be_visible()
+    shot(page, "a01_security", full=False)
+    drawer(page).get_by_role("button", name="Sign out of this device").click()
+    expect(page.get_by_role("heading", name="Welcome back")).to_be_visible(timeout=15000)
+    page.goto(BASE + "/supplies")                                              # a deep link still needs signing in
+    expect(page.get_by_role("heading", name="Welcome back")).to_be_visible()
+
+
+def sign_in_page(browser, zone):
+    ctx = browser.new_context(viewport={"width": 1280, "height": 860}, timezone_id=zone, ignore_https_errors=True)
+    page = ctx.new_page()
+    watch(page, "sign-in")
+    sign_in_ui(page)
+    ctx.close()
+
+
 with sync_playwright() as p:
     browser = p.chromium.launch()
     # The user's time zone: "today" in the browser must be the same day the app dates pages by.
     zone = "Australia/Brisbane"
-    desk = browser.new_page(viewport={"width": 1280, "height": 860}, timezone_id=zone)
+    sign_in_page(browser, zone)
+    desk = signed_in(browser.new_context(viewport={"width": 1280, "height": 860}, timezone_id=zone, ignore_https_errors=True)).new_page()
     watch(desk, "desktop")
     for fn in (home, inventory_loads, search, chip, groups, condition_low, plus_minus, notes, edit_details, settings,
                add_lookup, add_to_wishlist, wishlist_buy, delete_bought, scan_owned, scan_unknown,
                models, model_paste, add_model_hasegawa, add_model_trumpeter, undo, add_to_wishlist_button, duplicate_check, wishlist_panel, shop_tamiya, used_up,
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
                matches, used_on, gundam, bandai_lookup, warhammer, journal_write, journal_links, journal_from_model,
-               journal_suggestion, journal_todo, global_search, journal_wishlist, banners, appearance,
+               journal_suggestion, journal_todo, global_search, journal_wishlist, banners, panel_focus, appearance,
                build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, warhammer_minis, gundam_range, board_game_kinds, board_game_elsewhere, volleyball_coach, video_game_friends, wishlist_shops, goals, supply_kit, hiking, gardening, shooting, travel, bunnings_button, settings_more, no_panel):
         fn(desk)
-    ctx = browser.new_context(**p.devices["iPhone 13"], timezone_id=zone)
+    ctx = signed_in(browser.new_context(**p.devices["iPhone 13"], timezone_id=zone, ignore_https_errors=True))
     mob = ctx.new_page()
     watch(mob, "phone")
     phone(mob)

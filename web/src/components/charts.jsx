@@ -48,7 +48,7 @@ export function ColumnChart({ title, rows, valueLabel, tickEvery = 1, labelValue
           {rows.map((r, i) => {
             const showValue = (labelValues || i === highest) && r.value > 0
             return (
-              <div key={r.label} className="chart-slot" tabIndex={0} aria-label={`${r.label}: ${r.value.toLocaleString()} ${valueLabel}`}
+              <div key={r.label} className="chart-slot" tabIndex={0} role="img" aria-label={`${r.label}: ${r.value.toLocaleString()} ${valueLabel}`}
                 onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}
                 onFocus={() => setHover(i)} onBlur={() => setHover(null)}>
                 <span className="chart-column" style={{ height: `${(r.value / top) * 100}%` }}>

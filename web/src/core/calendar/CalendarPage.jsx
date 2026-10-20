@@ -73,14 +73,14 @@ export default function CalendarPage() {
       {error && <p className="alert error">{error}</p>}
 
       <div className="calendar-layout">
-        <div className="month card" role="grid" aria-label="Month">
-          {WEEKDAYS.map((w) => <span key={w} className="weekday" role="columnheader">{w}</span>)}
+        <div className="month card" role="group" aria-label="Month">
+          {WEEKDAYS.map((w) => <span key={w} className="weekday" aria-hidden="true">{w}</span>)}
           {days.map((d) => {
             const iso = isoDay(d)
             const day = byDay[iso]
             const kinds = [...new Set(day?.happened.map((h) => h.kind) ?? [])]
             return (
-              <button key={iso} type="button" role="gridcell" aria-selected={iso === selected}
+              <button key={iso} type="button" aria-pressed={iso === selected}
                 className={['day', d.getMonth() !== month.getMonth() && 'other', iso === today() && 'today'].filter(Boolean).join(' ')}
                 onClick={() => pick(iso)} aria-label={`${d.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}${day?.events.length ? `, ${day.events.length} planned` : ''}`}>
                 <span className="day-top">

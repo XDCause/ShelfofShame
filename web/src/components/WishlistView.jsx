@@ -106,7 +106,7 @@ export default function WishlistView({ lookups, settings, refreshKey, onChanged 
         </p>
       )}
       <div className="wish-head">
-        {items.length > 0 && <div className="progress" aria-label={`${ticked.length} of ${items.length} ticked`}>
+        {items.length > 0 && <div className="progress" role="img" aria-label={`${ticked.length} of ${items.length} ticked`}>
           <span className="progress-text">
             <strong>{ticked.length}</strong> of {items.length} ticked
           </span>

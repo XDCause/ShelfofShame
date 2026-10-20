@@ -36,7 +36,7 @@ export default function MoodPicker({ mood, words = [], onChange }) {
               </button>
             ))}
           </div>
-          <div className="chips mood-words" aria-label="A word or two">
+          <div className="chips mood-words" role="group" aria-label="A word or two">
             {choices.map((w) => (
               <button key={w} type="button" className="chip-filter" aria-pressed={words.includes(w)}
                 onClick={() => toggleWord(w)} disabled={!words.includes(w) && words.length >= 5}>{w}</button>

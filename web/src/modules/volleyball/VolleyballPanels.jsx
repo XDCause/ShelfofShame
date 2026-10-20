@@ -184,7 +184,7 @@ export function VideoPanel({ id = null, gameId = null, onClose }) {
   const [progress, setProgress] = useState(null)  // 0-1 while uploading
   const reloadVideo = useCallback(() => api.listVideos().then((vs) => {
     const v = vs.find((x) => x.video_id === id)
-    setVideo(v)
+    setVideo(v ?? false)                            // false: removed since (says so, not "Loading..." for ever)
     setAsLink(Boolean(v?.url))
   }), [id])
   useEffect(() => {
@@ -193,6 +193,7 @@ export function VideoPanel({ id = null, gameId = null, onClose }) {
       reloadVideo().catch((e) => showToast(e.message))
     }
   }, [id, showToast])  // eslint-disable-line react-hooks/exhaustive-deps -- once per video
+  if (id != null && video === false) return <Drawer title="Video" onClose={onClose}><p className="alert error">That video isn't there any more.</p></Drawer>
   if (id != null && !video) return <Drawer title="Video" onClose={onClose}><p className="muted">Loading...</p></Drawer>
 
   const fields = [
@@ -285,6 +286,8 @@ export function TeamPanel({ id = null, onClose }) {
   }, [id, showToast])
   if (!data) return <Drawer title="Team" onClose={onClose}><p className="muted">Loading...</p></Drawer>
   const team = data.teams.find((x) => x.team_id === id) ?? null
+  // removed since: say so (not the "new team" form, which would add it again)
+  if (id != null && !team) return <Drawer title="Team" onClose={onClose}><p className="alert error">That team isn't there any more.</p></Drawer>
 
   const save = async (form) => {
     const body = { ...form, is_default: isDefault && !retired, ...(team && { retired }) }

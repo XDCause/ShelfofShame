@@ -29,7 +29,9 @@ Get-Content '.env' | Where-Object { $_ -match '^\s*([^#=\s]+)\s*=\s*(.*)$' } | F
 
 # 3. Build the image and start the container in the background.
 Write-Host "Building and starting ($AppEnv)..." -ForegroundColor Cyan
-docker compose up -d --build
+docker compose build
+powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'make-cert.ps1')   # HTTPS certificate
+docker compose up -d
 if ($LASTEXITCODE -ne 0) {
     Write-Host 'docker compose up failed - see the messages above.' -ForegroundColor Red
     exit 1
@@ -60,7 +62,8 @@ $port = if ($envVars['POSTGRES_PORT']) { $envVars['POSTGRES_PORT'] } else { '543
 $webPort = if ($envVars['WEB_PORT']) { $envVars['WEB_PORT'] } else { '8080' }
 $apiPort = if ($envVars['API_PORT']) { $envVars['API_PORT'] } else { '8000' }
 Write-Host ''
-Write-Host "Web app:   http://localhost:$webPort" -ForegroundColor Green
+$httpsPort = if ($envVars['WEB_HTTPS_PORT']) { $envVars['WEB_HTTPS_PORT'] } else { '8443' }
+Write-Host "Web app:   https://$($env:COMPUTERNAME.ToLower()).local:$httpsPort   (or https://localhost:$httpsPort)" -ForegroundColor Green
 Write-Host "API docs:  http://localhost:$apiPort/api/docs" -ForegroundColor Green
 Write-Host ''
 Write-Host 'DBeaver connection details:' -ForegroundColor Green

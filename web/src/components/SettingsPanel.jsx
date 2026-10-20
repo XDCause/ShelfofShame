@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { api, backupUrl, exportUrl, shortDate } from '../api.js'
+import Security from '../core/auth/Security.jsx'
 import { readTheme, setTheme, THEMES } from '../core/theme.js'
 import Drawer from './Drawer.jsx'
 import Fold from './Fold.jsx'
@@ -16,6 +17,7 @@ export default function SettingsPanel({ lookups, settings, onClose, onSettings, 
         <Fold title="Appearance" detail={THEMES.find(([k]) => k === readTheme())?.[1]}>
           <Appearance settings={settings} onSettings={onSettings} />
         </Fold>
+        <Fold title="Security" detail="sign-in, devices"><Security /></Fold>
         <Fold title="Spending"><Spending /></Fold>
         <Fold title="Price guide" detail="your usual prices"><PriceGuide lookups={lookups} /></Fold>
         <Fold title="Default shop" detail={settings.default_shop}>

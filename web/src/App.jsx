@@ -182,7 +182,8 @@ export default function App() {
       <div className="app">
         <Sidebar />
         <div className="main-col">
-          <header className={`navbar${area ? ' over-banner' : ''}${scrolled ? ' scrolled' : ''}`}>
+          {/* (over-banner only once the banner is there: while loading, a clear bar would sit over nothing) */}
+          <header className={`navbar${area && lookups ? ' over-banner' : ''}${scrolled ? ' scrolled' : ''}`}>
             <div className="navbar-row">
               <h1>
                 {title}{envBadge}

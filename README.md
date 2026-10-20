@@ -88,7 +88,7 @@ Three Docker containers:
 
 | Container | What it is | Address on this PC |
 |---|---|---|
-| `hobby-inventory-web` | React app (built with Vite), served by nginx; forwards `/api/*` to the API | http://localhost:8080 |
+| `hobby-inventory-web` | React app (built with Vite), served by nginx over HTTPS; forwards `/api/*` to the API | https://&lt;pc&gt;.local:8443 (http 8080 redirects) |
 | `hobby-inventory-api` | FastAPI backend, the only thing that talks to the database | http://localhost:8000/api/docs |
 | `hobby-inventory-db` | PostgreSQL 17 | `localhost:5433` (DBeaver) |
 
@@ -109,7 +109,7 @@ touch your real data:
 |---|---|---|
 | Folder | `C:\Users\xdhar\hobby-inventory` | `C:\Users\xdhar\hobby-inventory-dev` |
 | Git branch | `main` | `dev` |
-| Web app | http://localhost:8080 | http://localhost:8081 (orange **DEV** badge) |
+| Web app | https://&lt;pc&gt;.local:8443 | https://&lt;pc&gt;.local:8444 (orange **DEV** badge) |
 | API | http://localhost:8000/api/docs | http://localhost:8001/api/docs |
 | Database | `localhost:5433`, volume `hobby_pgdata` | `localhost:5434`, volume `hobby_dev_pgdata` |
 
@@ -233,6 +233,36 @@ Grouped as in `api/app/` (one module per part of the app):
 | POST/DELETE | `/api/lookups/{brands,categories,locations}[/{id}]` | Add / remove a list entry |
 
 Try them interactively at http://localhost:8000/api/docs ("Try it out").
+
+## Signing in and HTTPS
+
+The app asks you to sign in (one account: yours) and is served over HTTPS with its own certificate. It's still only
+reachable on the home network and Tailscale - **never forward a port to it on the router, or turn on Tailscale Funnel**.
+
+**Set the password (on this PC, in the app's folder):** `.\set-password.ps1`. There's no sign-up page on purpose, so
+nobody else on the Wi-Fi can get there first. Then open the app and sign in.
+
+- Settings > Security: change the password, set up an **authenticator app** (6-digit codes; you get 10 recovery codes -
+  keep them safe), add **passkeys** (Face ID / fingerprint / PIN), see and sign out **devices** (each stays signed in
+  30 days).
+- **Lost your phone or password?** On the PC: `.\set-password.ps1 -ResetAuthenticator -SignOutEverywhere`.
+- Five wrong passwords or codes from one device (or twenty from anywhere) in 15 minutes and signing in waits 15 minutes.
+
+**HTTPS on your devices (once each).** `.\make-cert.ps1` makes "Off the Clock local CA" the first time (kept in
+`%USERPROFILE%\.offtheclock\ca`, shared by dev and prod; never in the repo) and this copy's certificate (`certs\`,
+git-ignored). Install the CA once on every device you use - then there are no warnings, and passkeys work:
+
+- **This PC (Windows):** double-click `certs\offtheclock-ca.crt` > Install Certificate > Current User > *Place all
+  certificates in the following store* > **Trusted Root Certification Authorities** > Finish (Windows asks you to confirm).
+- **iPhone / iPad:** in Safari open `http://<PC's IP>:8080/ca.crt` > Allow; Settings > *Profile Downloaded* > Install;
+  then Settings > General > About > **Certificate Trust Settings** > turn on "Off the Clock local CA".
+- **Android:** open `http://<PC's IP>:8080/ca.crt` to download it; Settings > Security > Encryption & credentials >
+  **Install a certificate** > CA certificate > pick it.
+
+Then use **https://&lt;pc&gt;.local:8443** (the PC's name, e.g. travel-laptop.local) - passkeys need the name; an IP address
+(https://10.0.0.33:8443) works for everything else. Over Tailscale: https://&lt;pc&gt;.&lt;tailnet&gt;.ts.net:8443. The
+certificate covers all of these; `.\make-cert.ps1` remakes it if the PC's names or addresses change (dev.ps1,
+start.ps1 and promote.ps1 run it).
 
 ## First-time setup
 

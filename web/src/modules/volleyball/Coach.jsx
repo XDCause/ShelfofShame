@@ -108,10 +108,13 @@ export function CoachNotePanel({ id = null, onClose }) {
       setLists({ skills: d.skills, positions: d.positions })
       const n = d.notes.find((x) => x.note_id === id)
       if (n) { setNote(n); setF({ ...n, skill: n.skill ?? '', position: n.position ?? '', body: n.body ?? '', status: n.status ?? 'working on' }) }
+      else if (id != null) setError("That note isn't there any more.")   // removed since: not "Loading..." for ever
     }).catch((e) => setError(e.message))
     api.listVideos().then(setVideos).catch(() => {})
   }, [id])
-  if (id != null && !note && !error) return <Drawer title="Note" onClose={onClose}><p className="muted">Loading...</p></Drawer>
+  if (id != null && !note) {
+    return <Drawer title="Note" onClose={onClose}>{error ? <p className="alert error">{error}</p> : <p className="muted">Loading...</p>}</Drawer>
+  }
 
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
   const addLink = () => {

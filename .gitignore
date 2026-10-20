@@ -28,3 +28,8 @@ web/public/fonts/
 
 # Uploaded videos (your own files)
 media/
+api/coverage.txt
+api/.coverage
+
+# HTTPS certificate and key for this copy (make-cert.ps1; the CA itself lives in %USERPROFILE%\.offtheclock)
+certs/

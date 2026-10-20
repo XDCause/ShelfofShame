@@ -83,7 +83,9 @@ if ($LASTEXITCODE -ne 0) { Fail ("Database update failed.$rollback") }
 
 # 7. Rebuild
 Step 'Rebuilding and restarting prod'
-docker compose up -d --build 2>$null | Out-Null
+docker compose build 2>$null | Out-Null
+powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'make-cert.ps1')   # HTTPS certificate (if missing / changed)
+docker compose up -d 2>$null | Out-Null
 if ($LASTEXITCODE -ne 0) { Fail ("docker compose up failed.$rollback") }
 Write-Host -NoNewline 'Waiting for prod to be healthy'
 if (-not (Wait-Healthy @($DbContainer, $ApiContainer, $WebContainer))) { Fail ("Prod didn't come back healthy.$rollback") }

@@ -14,7 +14,7 @@ if not os.environ.get("POSTGRES_DB", "").endswith("_test"):
 
 from fastapi.testclient import TestClient  # noqa: E402
 
-from app import tamiya  # noqa: E402
+from app import auth, tamiya  # noqa: E402
 from app.db import db  # noqa: E402
 from app.main import app  # noqa: E402
 
@@ -28,7 +28,7 @@ def clean_database():
                      "colour_group_members, mixes, mix_parts, price_guide, journal_pages, tags, page_tags, "
                      "journal_links, journal_images, journal_drawings, calendar_events, board_games, board_game_plays, gear, "
                      "volleyball_games, volleyball_teams, volleyball_videos, vg_achievements, vg_games, vg_other_games, "
-                     "chess_games, chess_archives, books, reading_log, book_quotes, vg_friends, volleyball_coach, goals, site_checks, hikes, hike_photos, hike_gear, garden_spaces, garden_containers, garden_plantings, garden_logs, garden_photos, garden_tasks, garden_items, shooting_ranges, rifles, ammo, shooting_sessions, shooting_groups, shooting_shots, shooting_media, rifle_logs, dope_rows, trips, trip_places, travel_countries, vg_playtime, banners "
+                     "chess_games, chess_archives, books, reading_log, book_quotes, vg_friends, volleyball_coach, goals, site_checks, hikes, hike_photos, hike_gear, garden_spaces, garden_containers, garden_plantings, garden_logs, garden_photos, garden_tasks, garden_items, shooting_ranges, rifles, ammo, shooting_sessions, shooting_groups, shooting_shots, shooting_media, rifle_logs, dope_rows, trips, trip_places, travel_countries, vg_playtime, banners, auth_account, auth_recovery_codes, auth_sessions, auth_passkeys, auth_failures "
                      "RESTART IDENTITY CASCADE")
         conn.execute("DELETE FROM settings WHERE key LIKE 'reading_goal_%%'")
         conn.execute("DELETE FROM garden_guides WHERE custom")
@@ -54,49 +54,63 @@ def clean_database():
     yield
 
 
+# tests/test_robustness.py sets this: every outside site is "down" - each guarded call raises that module's own
+# "couldn't reach it" error, as the real one does when the network fails - instead of failing the test.
+SITES_DOWN = {"on": False}
+
+
 @pytest.fixture(autouse=True)
 def no_real_steam(monkeypatch):
-    """Tests never call Steam (and never use the real key): a test that forgets to fake it fails."""
+    """Tests never call an outside site (Steam, shops, Open Library...) or use the real Steam key: a test that forgets
+    to fake one fails."""
+    import httpx
+
     from app import (bluesky, bookseries, bunnings, chess, goodgames, chesscom, exophase, frankfurter, hiking, openlibrary, openmeteo,
                      overpass,
                      reading, steam,
                      stedi, steamhunters, trumpeter, videogames, gameology, ucp, wikimedia)
 
-    def refuse(*_a, **_k):
-        raise AssertionError("A test tried to call the real Steam API")
-    monkeypatch.setattr(steam, "_get", refuse)
+    def refusing(down_error):
+        def refuse(*_a, **_k):
+            if SITES_DOWN["on"]:
+                raise down_error("Couldn't reach it (the site is down, a test says).")
+            raise AssertionError("A test tried to call a real outside site")
+        return refuse
+    connect_error = lambda msg: httpx.ConnectError(msg)     # noqa: E731 - trumpeter's _get lets httpx errors through
+    monkeypatch.setattr(steam, "_get", refusing(steam.SteamError))
     monkeypatch.setattr(steam, "pause", lambda: None)
-    monkeypatch.setattr(steamhunters, "_get", refuse)
+    monkeypatch.setattr(steamhunters, "_get", refusing(steamhunters.Unavailable))
     monkeypatch.setattr(steamhunters, "pause", lambda: None)
-    monkeypatch.setattr(exophase, "_get", refuse)
-    monkeypatch.setattr(steam, "find_app", refuse)            # Steam's store search (not via steam._get)
-    monkeypatch.setattr(steam, "store_search", refuse)
-    monkeypatch.setattr(chesscom, "_get", refuse)
+    monkeypatch.setattr(exophase, "_get", refusing(exophase.Unavailable))
+    monkeypatch.setattr(steam, "find_app", refusing(steam.SteamError))            # Steam's store search (not via steam._get)
+    monkeypatch.setattr(steam, "store_search", refusing(steam.SteamError))
+    monkeypatch.setattr(chesscom, "_get", refusing(chesscom.ChessError))
     monkeypatch.setattr(chesscom, "pause", lambda: None)
-    monkeypatch.setattr(openlibrary, "_get", refuse)
-    monkeypatch.setattr(bookseries, "_wikidata", refuse)
-    monkeypatch.setattr(goodgames, "_call", refuse)
-    monkeypatch.setattr(bluesky, "_call", refuse)
-    monkeypatch.setattr(stedi, "_call", refuse)
+    monkeypatch.setattr(openlibrary, "_get", refusing(openlibrary.BookError))
+    monkeypatch.setattr(bookseries, "_wikidata", refusing(bookseries.SeriesError))
+    monkeypatch.setattr(goodgames, "_call", refusing(ucp.ShopError))
+    monkeypatch.setattr(bluesky, "_call", refusing(ucp.ShopError))
+    monkeypatch.setattr(stedi, "_call", refusing(ucp.ShopError))
     monkeypatch.setattr(ucp, "PAUSE", 0)                  # the shops' product search (Good Games, Blue Sky)
     monkeypatch.setattr(ucp, "RETRY_WAIT", 0)
-    monkeypatch.setattr(gameology, "_get", refuse)
-    monkeypatch.setattr(gameology, "photo", refuse)
+    monkeypatch.setattr(gameology, "_get", refusing(gameology.ShopError))
+    monkeypatch.setattr(gameology, "photo", refusing(gameology.ShopError))
     monkeypatch.setattr(gameology, "PAUSE", 0)
     monkeypatch.setattr(openlibrary, "pause", lambda: None)
-    monkeypatch.setattr(overpass, "_post", refuse)
+    monkeypatch.setattr(overpass, "_post", refusing(overpass.OverpassError))
     monkeypatch.setattr(overpass, "RETRY_WAITS", ())
-    monkeypatch.setattr(wikimedia, "_get", refuse)
-    monkeypatch.setattr(bunnings, "_get", refuse)
+    monkeypatch.setattr(wikimedia, "_get", refusing(wikimedia.CommonsError))
+    monkeypatch.setattr(bunnings, "_get", refusing(bunnings.BunningsError))
     monkeypatch.setattr(bunnings, "photo", lambda image: (None, None))
     monkeypatch.setattr(bunnings, "PAUSE", 0)
-    monkeypatch.setattr(openmeteo, "_get", refuse)
+    monkeypatch.setattr(openmeteo, "_get", refusing(openmeteo.WeatherError))
     openmeteo._cache.clear()
-    monkeypatch.setattr(frankfurter, "_get", refuse)
+    monkeypatch.setattr(frankfurter, "_get", refusing(frankfurter.RatesError))
     frankfurter._cache.clear()
-    monkeypatch.setattr(trumpeter, "_get", refuse)
+    monkeypatch.setattr(trumpeter, "_get", refusing(connect_error))
     monkeypatch.setattr(trumpeter, "PAUSE", 0)
     hiking.LOOKING.clear()
+    auth.CHALLENGES.clear()
     reading.COVERS.update(running=False, done=0, total=0, found=0, error=None)
     chess.SYNC.update(running=False, done=0, total=0, message=None, error=None, finished_at=None)
     monkeypatch.setattr(exophase, "pause", lambda: None)
@@ -105,7 +119,32 @@ def no_real_steam(monkeypatch):
 
 @pytest.fixture
 def client():
-    return TestClient(app)
+    """A signed-in device (every route but signing in needs one): the account and a session made straight in the
+    database. https://, as the app's cookie is only sent over https."""
+    signed_in = TestClient(app, base_url="https://testserver")
+    token = sign_in_directly()
+    signed_in.cookies.set(auth.COOKIE, token)
+    return signed_in
+
+
+TEST_PASSWORD = "correct horse battery staple"
+_TEST_HASH = auth.HASHER.hash(TEST_PASSWORD)      # once: Argon2 is slow on purpose
+
+
+def sign_in_directly() -> str:
+    import secrets
+    token = secrets.token_urlsafe(32)
+    with db() as conn:
+        conn.execute("INSERT INTO auth_account (account_id, password_hash) VALUES (1, %s) ON CONFLICT DO NOTHING", (_TEST_HASH,))
+        conn.execute("INSERT INTO auth_sessions (token_hash, method, expires_at) VALUES (%s, 'password', now() + interval '1 day')",
+                     (auth.sha256(token),))
+    return token
+
+
+@pytest.fixture
+def anon():
+    """A device that hasn't signed in."""
+    return TestClient(app, base_url="https://testserver")
 
 
 @pytest.fixture

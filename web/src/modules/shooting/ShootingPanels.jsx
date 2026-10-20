@@ -39,7 +39,8 @@ export function SessionPanel({ id = null, live = false, onClose }) {
   const [last, setLast] = useState(undefined)
   const [plotGroup, setPlotGroup] = useState(null)      // a group just added with "Add and plot shots": its target opens
   const [board, setBoard] = useState(live)              // the live board (hit / miss)
-  const reload = useCallback(() => api.shootingSession(id).then(setS).catch((e) => showToast(e.message)), [id, showToast])
+  const [failed, setFailed] = useState('')       // it couldn't be loaded (removed since?): said in the panel
+  const reload = useCallback(() => api.shootingSession(id).then(setS).catch((e) => { setFailed(e.message); showToast(e.message) }), [id, showToast])
   useEffect(() => { if (id != null) reload() }, [id, reload])
   useEffect(() => { if (id == null) api.shootingSessions().then((all) => setLast(all[0] ?? null)).catch(() => setLast(null)) }, [id])
 
@@ -66,7 +67,8 @@ export function SessionPanel({ id = null, live = false, onClose }) {
         onDelete={s && (async () => { await api.deleteShootingSession(s.session_id); changed(); onClose() })} deleteLabel="Remove" />
     )
   }
-  if (!s) return <Drawer title="Session" onClose={onClose}><p className="muted">Loading...</p></Drawer>
+  if (!s) return <Drawer title="Session" onClose={onClose}>{failed ? <p className="alert error">{failed}</p>
+    : <p className="muted">Loading...</p>}</Drawer>
   const footer = (
     <>
       <span className="spacer" />
@@ -275,7 +277,8 @@ export function RiflePanel({ id = null, onClose }) {
   const [editing, setEditing] = useState(false)
   const [logKind, setLogKind] = useState('Cleaned')
   const [logNote, setLogNote] = useState('')
-  const reload = useCallback(() => api.rifle(id).then(setR).catch((e) => showToast(e.message)), [id, showToast])
+  const [failed, setFailed] = useState('')       // it couldn't be loaded (removed since?): said in the panel
+  const reload = useCallback(() => api.rifle(id).then(setR).catch((e) => { setFailed(e.message); showToast(e.message) }), [id, showToast])
   useEffect(() => { if (id != null) reload() }, [id, reload])
   if (!lists) return <Drawer title="Rifle" onClose={onClose}><p className="muted">Loading...</p></Drawer>
   if (id == null || editing) {
@@ -294,7 +297,8 @@ export function RiflePanel({ id = null, onClose }) {
         onDelete={r && (async () => { await api.deleteRifle(r.rifle_id); changed(); onClose() })} deleteLabel="Remove" />
     )
   }
-  if (!r) return <Drawer title="Rifle" onClose={onClose}><p className="muted">Loading...</p></Drawer>
+  if (!r) return <Drawer title="Rifle" onClose={onClose}>{failed ? <p className="alert error">{failed}</p>
+    : <p className="muted">Loading...</p>}</Drawer>
   const addLog = async () => {
     await api.addRifleLog(r.rifle_id, { kind: logKind, notes: logNote.trim() || null })
     setLogNote('')
@@ -405,7 +409,8 @@ export function AmmoPanel({ id = null, onClose }) {
   const [a, setA] = useState(null)
   const [editing, setEditing] = useState(false)
   const [lot, setLot] = useState('')
-  const reload = useCallback(() => api.ammo(id).then(setA).catch((e) => showToast(e.message)), [id, showToast])
+  const [failed, setFailed] = useState('')       // it couldn't be loaded (removed since?): said in the panel
+  const reload = useCallback(() => api.ammo(id).then(setA).catch((e) => { setFailed(e.message); showToast(e.message) }), [id, showToast])
   useEffect(() => { if (id != null) reload() }, [id, reload])
   if (!lists) return <Drawer title="Ammunition" onClose={onClose}><p className="muted">Loading...</p></Drawer>
   if (id == null || editing) {
@@ -424,7 +429,8 @@ export function AmmoPanel({ id = null, onClose }) {
         onDelete={a && (async () => { await api.deleteAmmo(a.ammo_id); changed(); onClose() })} deleteLabel="Remove" />
     )
   }
-  if (!a) return <Drawer title="Ammunition" onClose={onClose}><p className="muted">Loading...</p></Drawer>
+  if (!a) return <Drawer title="Ammunition" onClose={onClose}>{failed ? <p className="alert error">{failed}</p>
+    : <p className="muted">Loading...</p>}</Drawer>
   const box = async () => {
     try {
       await api.ammoBox(a.ammo_id, { lot: lot.trim() || null })

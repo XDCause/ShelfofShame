@@ -13,6 +13,8 @@ Core (every hobby):
     journal    Notion-style pages, tags, @mentions, photos, suggestions, to-dos
     journal_drawings  pen sketches and whiteboard pages (Excalidraw scenes, previews)
     activity   one feed of what you've done (stock, kits, plays, games, journal...)
+    auth       signing in: one account, password + authenticator or a passkey, 30-day sessions (every other
+               router requires a session)
     banners    the picture at the top of each main page and hobby (yours, or a drawn landscape)
     calendar   events (repeating ones too) and what happened on each day
 Hobby modules:
@@ -32,9 +34,9 @@ Hobby modules:
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 
-from . import (activity, banners, boardgames, bookseries, build, calendar, catalog, chess, colours, garden, garden_doctor, garden_guide,
+from . import (activity, auth, banners, boardgames, bookseries, build, calendar, catalog, chess, colours, garden, garden_doctor, garden_guide,
                garden_items,
                gear, goals, hiking, journal, journal_drawings, shooting, shooting_sessions, shooting_shots, travel, travel_trip,
                gundam, lookups, minis, vgsync, models, othergames, products, reading, readimport, reading_recs, settings, sitecheck, spending, supplies, vbclips, vbcoach, vgfind, vgfriends, videogames, wanted, webphoto,
@@ -64,7 +66,8 @@ app = FastAPI(title="Off the Clock API", docs_url="/api/docs", openapi_url="/api
 
 for part in (activity, banners, goals, journal_drawings, journal, calendar, supplies, wishlist, products, catalog, models, minis, build, colours,
              boardgames, volleyball, gear, vbclips, vbcoach, othergames, vgfind, vgfriends, videogames, chess, reading, readimport, hiking, garden, garden_doctor, garden_guide, garden_items, shooting, shooting_sessions, shooting_shots, travel, travel_trip, reading_recs, bookseries, warhammer, gundam, spending, settings, sitecheck, lookups, webphoto, wanted):
-    app.include_router(part.router)
+    app.include_router(part.router, dependencies=[Depends(auth.require_session)])   # signed in only (auth.py)
+app.include_router(auth.router)                  # signing in itself: each route checks what it needs
 
 
 @app.get("/api/health")

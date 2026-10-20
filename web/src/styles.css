@@ -20,7 +20,7 @@
   --fill-2: rgb(70 82 56 / 0.055);
   /* Text */
   --text: #1d2620;
-  --muted: #5d6253;
+  --muted: #545949;                         /* 5.4:1 on parchment, 4.9:1 on a pill's fill */
   --faint: #a29f8f;
   /* Interaction: the tint marks what you can tap; a primary button is the one strong action on a page */
   --tint: #3d6a2c;                          /* moss */
@@ -34,10 +34,10 @@
   --ember-soft: rgb(181 85 47 / 0.12);
   /* Status (always with a word or icon too) */
   --ok: #256d4b;    --ok-bg: rgb(37 109 75 / 0.12);
-  --low: #94570c;   --low-bg: rgb(200 134 40 / 0.16);
+  --low: #7d4806;   --low-bg: rgb(200 134 40 / 0.16);   /* 5.2:1+ on its own tint */
   --out: #a93b26;   --out-bg: rgb(169 59 38 / 0.11);
   --purple: #6b4799; --purple-bg: rgb(107 71 153 / 0.11);
-  --teal: #2b6680;  --teal-bg: rgb(43 102 128 / 0.11);
+  --teal: #245a72;  --teal-bg: rgb(36 90 114 / 0.11);
   /* The sidebar: deep pine in both themes */
   --side-bg: #142019;
   --side-text: #e9e1cd;
@@ -133,6 +133,7 @@ h1, h2, h3, h4, h5 { line-height: 1.2; }
 h1, h2, h3 { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.005em; }
 a { color: var(--tint); text-decoration: none; }
 a:hover { text-decoration: underline; }
+p a, .hint a, li > p a { text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
 :focus-visible { outline: 2px solid var(--tint); outline-offset: 2px; }
 
 /* ---------- The frame ----------
@@ -173,10 +174,12 @@ a:hover { text-decoration: underline; }
 }
 @media (min-width: 701px) and (max-width: 1000px) {
   .app { --sidebar-w: 64px; }
-  .brand, .side-link span { display: none; }
+  .side-link span { display: none; }
   .side-link { justify-content: center; padding: 8px; }
   .side-section { height: 0; margin: 10px 6px; overflow: hidden; border-top: 1px solid rgb(255 255 255 / 0.08); }
   .side-settings { justify-content: center; }
+  .sidebar .brand-name { display: none; }
+  .sidebar .brand { justify-content: center; margin: 4px 0 18px; }
   .sidebar .nudge { display: none; }   /* (beats the nudge's own rule, which comes later) */
 }
 .page { display: flex; flex-direction: column; gap: 20px; animation: page-in var(--slow) var(--ease-out) both; }
@@ -258,10 +261,11 @@ button:disabled { cursor: not-allowed; opacity: 0.4; }
 .secondary:hover:not(:disabled) { background: color-mix(in srgb, var(--tint) 22%, transparent); }
 .primary:active, .secondary:active, .danger:active { filter: brightness(0.94); transform: scale(0.98); }
 .plain { background: none; border: 0; padding: 6px 4px; color: var(--tint); font-weight: 500; }
-.plain:hover:not(:disabled) { opacity: 0.75; }
+.plain:hover:not(:disabled) { text-decoration: underline; text-underline-offset: 3px; }   /* (fading it failed contrast) */
 .plain.inline { padding: 0; }
 .plain.small { font-size: 0.87rem; }
 .destructive { color: var(--out); }
+button.destructive { background: none; border: 0; padding: 6px 4px; font-weight: 600; }   /* (no browser-grey button behind red text) */
 .icon-btn {
   display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0;
   border: 0; border-radius: 50%; background: transparent; color: var(--muted); font-size: 0.95rem;
@@ -557,7 +561,7 @@ th.col-value { width: 96px; }
 .preview p { margin: 0 0 6px; }
 .preview-title { font-weight: 600; }
 .preview-desc, .detail-desc { font-size: 0.88rem; white-space: pre-line; margin: 0 0 8px; }
-.photo-missing { color: #8e8e93; font-size: 0.85rem; padding: 10px; text-align: center; }
+.photo-missing { color: #5f6368; font-size: 0.85rem; padding: 10px; text-align: center; }   /* on the white frame: 6:1 */
 .photo-upload { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .barcode-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
 .scan-control { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
@@ -701,7 +705,7 @@ th.col-value { width: 96px; }
 .plain-list .grow { min-width: 0; }
 .activity .item-title, .plain-list .item-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-.quick-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.quick-actions { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; }
 .quick-action {
   display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 6px; border-radius: var(--radius);
   border: 1px solid var(--border); background: var(--fill-2); color: var(--text); font-size: 0.85rem; font-weight: 550;
@@ -803,9 +807,9 @@ td .fill-bar { width: 90px; height: 4px; margin-top: 5px; }
   --text: #2a2a22; --muted: #6b6555; --faint: #a8a08a; --surface: #f3ecdc; --field: #faf5e9; --fill: rgb(70 60 40 / 0.09);
   --fill-2: rgb(70 60 40 / 0.05); --separator: rgb(70 60 40 / 0.14); --border: rgb(70 60 40 / 0.16);
   --tint: #3d6a2c; --tint-soft: rgb(61 106 44 / 0.12); --on-tint: #fff; --primary-bg: #24392b; --primary-text: #f6f0e1;
-  --ok: #256d4b; --ok-bg: rgb(37 109 75 / 0.12); --low: #94570c; --low-bg: rgb(200 134 40 / 0.16);
+  --ok: #256d4b; --ok-bg: rgb(37 109 75 / 0.12); --low: #7d4806; --low-bg: rgb(200 134 40 / 0.16);
   --out: #a93b26; --out-bg: rgb(169 59 38 / 0.11); --purple: #6b4799; --purple-bg: rgb(107 71 153 / 0.11);
-  --teal: #2b6680; --teal-bg: rgb(43 102 128 / 0.11);
+  --teal: #245a72; --teal-bg: rgb(36 90 114 / 0.11);
   color: var(--text); border-color: transparent; box-shadow: 0 30px 60px rgb(0 0 0 / 0.4);
   color-scheme: light;
 }
@@ -933,7 +937,7 @@ button.mention:disabled { color: var(--muted); background: var(--fill); text-dec
 /* Timer */
 .timer { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 6px 0 10px; }
 .timer .elapsed { font-size: 2rem; font-weight: 300; letter-spacing: 0.02em; min-width: 5.2em; }
-.timer .elapsed.idle { color: var(--faint); }
+.timer .elapsed.idle { color: var(--muted); }
 .timer.running .elapsed { color: var(--tint); font-weight: 400; }
 .timer input { flex: 1 1 180px; }
 .timer .stop { background: var(--out); }
@@ -1097,8 +1101,9 @@ button.mention:disabled { color: var(--muted); background: var(--fill); text-dec
   font-size: 0.75rem; transition: border-color 0.15s, background 0.15s;
 }
 .day:hover { border-color: color-mix(in srgb, var(--tint) 40%, transparent); }
-.day.other { opacity: 0.45; }
-.day[aria-selected='true'] { border-color: var(--tint); background: var(--tint-soft); }
+.day.other { background: transparent; }
+.day.other .day-num { color: var(--muted); font-weight: 500; }   /* another month's day: quieter, still readable (4.5:1+) */
+.day[aria-pressed='true'] { border-color: var(--tint); background: var(--tint-soft); }
 .day-num { font-size: 0.85rem; font-weight: 600; }
 .day.today .day-num {
   display: inline-grid; place-items: center; align-self: flex-start; min-width: 24px; height: 24px; padding: 0 4px;
@@ -1299,7 +1304,7 @@ body.writing-mode .journal-title { font-size: 2.2rem; }
 .game-header.game-picture-missing { height: 120px; }
 .perfect-badge {
   position: absolute; top: 6px; right: 6px; padding: 2px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 700;
-  color: #fff; background: var(--ok);
+  color: var(--on-solid); background: var(--ok);
 }
 .perfect-name { padding: 4px 8px 0; font-weight: 600; font-size: 0.88rem; }
 .perfect-card .muted { padding: 0 8px; }
@@ -1331,7 +1336,7 @@ body.writing-mode .journal-title { font-size: 2.2rem; }
    series colour. */
 .chart { margin: 0; }
 .chart-sub { margin: -8px 0 12px; }
-.chart-plot { position: relative; margin: 10px 0 0 34px; }
+.chart-plot { position: relative; margin: 24px 0 0 34px; }   /* (room above the tallest column for its number) */
 .chart-grid { position: absolute; inset: 0; pointer-events: none; }
 .chart-gridline { position: absolute; left: 0; right: 0; border-top: 1px solid var(--separator); }
 .chart-gridline > span {
@@ -1360,7 +1365,8 @@ body.writing-mode .journal-title { font-size: 2.2rem; }
 .chart-tip span { color: var(--muted); }
 .chart-labels { display: flex; gap: 2px; margin: 6px 0 0 34px; }
 .chart-labels span {
-  flex: 1; min-width: 0; text-align: center; font-size: 0.7rem; color: var(--muted); white-space: nowrap; overflow: visible;
+  flex: 1; min-width: 0; text-align: center; font-size: 0.7rem; color: var(--muted); line-height: 1.15;
+  overflow-wrap: anywhere;            /* "Under 10%" next to "10-24%": two lines when narrow, not on top of each other */
 }
 .chart-table { margin-top: 12px; font-size: 0.85rem; }
 .chart-table summary { cursor: pointer; color: var(--tint); }
@@ -1752,7 +1758,7 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
   border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text); }
 .team-chip:hover { border-color: color-mix(in srgb, var(--tint) 45%, var(--border)); }
 .team-chip .muted { flex-basis: 100%; }
-.team-chip.retired { opacity: 0.6; }
+.team-chip.retired { opacity: 1; border-style: dashed; color: var(--muted); }   /* (faded with opacity it failed contrast) */
 
 /* Board games: finding one at Gameology; a game's categories and mechanisms. */
 .shop-results .thumb { width: 52px; height: 52px; object-fit: contain; border-radius: 8px; flex: none; background: #fff; }
@@ -1985,6 +1991,8 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .wh-stock { right: 10px; color: #fff; }
 .wh-stock.in { background: #15803d; }
 .wh-stock.out { background: #6b7280; }
+@container (max-width: 200px) { .wh-stock { top: 40px; } }   /* a narrow card: the stock under the grade, not on it */
+.wh-card .model-photo { container-type: inline-size; }
 .wh-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 6px; }
 @media (max-width: 700px) {
   .wh-armies .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
@@ -2097,6 +2105,7 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .friend-grid { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 12px; }
 .friend-card { display: flex; align-items: center; gap: 14px; width: 100%; height: 100%; text-align: left; color: inherit; padding: 14px 16px; }
 .friend-card .grow, .friend-head .grow { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.friend-card .pill { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }   /* "Playing <a long game name>" */
 .friend-avatar { border-radius: 50%; object-fit: cover; flex: none; }
 .friend-avatar.empty { display: grid; place-items: center; background: var(--fill); color: var(--muted); font-weight: 700; }
 .friend-head { display: flex; align-items: center; gap: 14px; }
@@ -2746,3 +2755,53 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
   .section-tabs { margin-bottom: 14px; }
 }
 @media (prefers-reduced-motion: reduce) { .glance-card:hover, .model-card:hover, .home-stat:hover, .journal-card:hover { transform: none; } }
+
+/* ---------- Touch targets (tests: e2e/ui_audit.py "small") ----------
+   On a touch screen every small link and toggle is at least 24 px tall (WCAG 2.2 target size). */
+@media (pointer: coarse) {
+  .home-card-title a, .model-links a, .panel-section > a.small, .chart-table > summary, .more-menu > summary,
+  .link-title, .link-plain, .section-head a.small { display: inline-flex; align-items: center; min-height: 28px; }
+}
+
+/* ---------- Fixes found by the UI audit (e2e/ui_audit.py) ---------- */
+.item-cell .item-title { overflow-wrap: anywhere; }                  /* a long supply name on a 320 px phone */
+.toolbar > .summary.grow { flex: 1 1 14em; }                         /* the count wraps above its button, not under it */
+.sidebar .brand { min-height: 40px; }                                /* the logo is a link: a full-size target */
+.day-event .day-time { opacity: 1; }                                 /* (faded, a calendar event's time was 2.9:1) */
+:root[data-theme='dark'] .tabbar a { color: #b4baa8; }               /* the tab bar's labels over the page: 5:1 */
+/* A long word with no spaces (a name, a code) wraps rather than poking out of its box. */
+.item-title, .item-meta, .cover-card, .journal-card .grow, .page-row .grow { overflow-wrap: anywhere; }
+@media (max-width: 480px) { td.item-cell { min-width: 0; } td.item-cell .item-meta > *, td.item-cell .item-meta .condition, td.item-cell .item-meta .badge { white-space: normal; flex-wrap: wrap; overflow-wrap: anywhere; min-width: 0; } }
+@media (pointer: coarse) { button.tag, .list button.tag { min-height: 26px; } }
+
+/* ---------- Signing in (core/auth) ----------
+   A drawn landscape behind a parchment card: the password (then the authenticator's code) or a passkey. */
+.signin { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; position: relative; isolation: isolate; }
+.signin-art { position: fixed; inset: 0; z-index: -1; }
+.signin-art svg { width: 100%; height: 100%; display: block; }
+.signin-art::after { content: ''; position: absolute; inset: 0; background: rgb(8 12 10 / 0.35); }
+.signin-card {
+  width: min(400px, 100%); padding: 28px; border-radius: var(--radius); background: var(--elevated); color: var(--text);
+  border: 1px solid var(--border); box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 14px;
+}
+.signin-brand { display: flex; align-items: center; gap: 10px; margin: 0; font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; color: var(--tint); }
+.signin-title { margin: 0; font-size: var(--text-2xl); }
+.signin-form { display: flex; flex-direction: column; gap: 12px; }
+.signin-form .primary { min-height: 44px; }
+.signin-or { display: flex; align-items: center; gap: 10px; margin: 0; color: var(--muted); font-size: var(--text-sm); }
+.signin-or::before, .signin-or::after { content: ''; flex: 1; border-top: 1px solid var(--separator); }
+.signin-passkey { min-height: 44px; }
+.signin-command { margin: 0; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--fill); font-size: 0.95rem; }
+
+/* Settings > Security */
+.security { display: flex; flex-direction: column; gap: 18px; align-items: flex-start; }
+.security-part { width: 100%; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.security-part .section-title { margin: 0; }
+.security-form { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 420px; }
+.security-list { width: 100%; }
+.totp-qr { width: 200px; padding: 8px; background: #fff; border-radius: var(--radius-sm); }
+.totp-qr svg { width: 100%; height: auto; display: block; }
+.totp-secret { word-break: break-all; }
+.recovery-codes { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.recovery-list { list-style: none; margin: 0; padding: 12px 16px; display: grid; grid-template-columns: repeat(2, auto); gap: 4px 24px;
+  background: var(--fill-2); border-radius: var(--radius-sm); }

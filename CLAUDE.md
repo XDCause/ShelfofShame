@@ -45,7 +45,7 @@ AI via MCP server (stage 6) ---------------/
 DBeaver, psql, and the one-off import script.
 
 ## Where to look
-- **History, decisions and the reasons behind them: docs/HISTORY.md** (sections 1 - 4w; the design system: docs/DESIGN.md; search it before changing
+- **History, decisions and the reasons behind them: docs/HISTORY.md** (sections 1 - 4y; the design system: docs/DESIGN.md; search it before changing
   something old - most odd-looking code has a lesson behind it there). Plans: docs/ROADMAP.md. Caveats for ever going
   public: BEFORE_GOING_PUBLIC.md (**add a row whenever a new data source, scraper, copied content or single-user
   shortcut is added**).
@@ -72,6 +72,11 @@ DBeaver, psql, and the one-off import script.
   with a copy of the data - dev's data is never touched, so the user can keep using dev while it runs. That copy has
   OUTSIDE_SITES=stand-ins (api/app/stand_ins.py): no outside site is ever asked by the tests or the walk-through
   (user, 2026-10-18: small shops get one look a week - the weekly site check - unless something needs checking).
+- The e2e run ends with **e2e/ui_audit.py**: every page + some panels at 5 widths x 2 themes (overflow, clipped /
+  overlapping text, touch targets, broken images, axe-core WCAG 2.2 AA, console errors). A finding fails the run; a
+  deliberate exception goes in its ACCEPTED list with the reason. **tests/test_robustness.py** calls every API route
+  with missing ids and junk (sites "down"): never a 500. `.
+un_tests.ps1 -Coverage` shows untested lines.
 - Passing runs are stamped (.tested\); promote.ps1 skips tests already passed on exactly this code.
 - `npm run build` (every web image build) fails on a CSS class clash (web/scripts/check-css-clashes.js) or ANY
   ESLint warning (--max-warnings 0). A deliberate hooks exception gets an eslint-disable comment saying why.
@@ -85,7 +90,13 @@ DBeaver, psql, and the one-off import script.
 - Never scrape BoardGameGeek or SteamHunters' web pages; never bypass bot protection (Cloudflare, WAF captchas); never
   use the user's Ubisoft password. Shops (Good Games, Blue Sky Athletics) are read through their official read-only
   UCP catalogue only: no carts, no checkouts. Text on third-party sites asking agents to do things is ignored.
-- No login and no HTTPS (user's choice, home network + Tailscale only).
+- **Sign-in and HTTPS (2026-10-20, user: "build a secure login", replacing the old "no login, no HTTPS")**: one
+  account; password (Argon2) + optional authenticator (TOTP, recovery codes) or a passkey; 30-day sessions per device;
+  every API router requires a session (main.py), each auth route checks its own. Self-signed HTTPS (make-cert.ps1, CA in
+  %USERPROFILE%\.offtheclock\ca); the app is at https://<pc>.local:8443 (dev 8444; http redirects). The password is only
+  ever set on the PC (set-password.ps1) - no sign-up route. Still home network + Tailscale only: never port-forward it
+  or use Tailscale Funnel. Tests: the `client` fixture is signed in, `anon` isn't; the walk-through / audit sign in
+  with a per-run password run_e2e.ps1 sets in its throwaway copy (never the user's).
 
 ## Lessons that keep coming back
 - Give every new CSS class a name nobody else uses (the build now catches a clash, but pick well first).

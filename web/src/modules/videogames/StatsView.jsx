@@ -156,7 +156,7 @@ export function UnlockCalendar({ days, today, streak, title = 'Unlock calendar',
         {' · '}streak: <strong>{streak.current} day{streak.current === 1 ? '' : 's'}</strong>
         {' · '}longest: <strong>{streak.longest} days</strong>{streak.longest_end && ` (to ${longDay(streak.longest_end)})`}
       </p>
-      <div className="heatmap-scroll">
+      <div className="heatmap-scroll" tabIndex={0} role="region" aria-label="Unlocks by day (scrolls sideways)">
         <div className="heatmap" role="img" aria-label={`${title}: ${total} ${many} on ${inYear.length} days in the last year`}>
           <div className="heatmap-months" aria-hidden="true">
             {weeks.map((w, i) => <span key={w[0].iso}>{w[0].first || i === 0 ? monthName(w[0].iso.slice(0, 7)).split(' ')[0] : ''}</span>)}

@@ -204,14 +204,14 @@ export default function InventoryView({ refreshKey, onOpen, onAdd, onAdjusted })
           </div>
         )}
         {conditions.length > 1 && (
-          <div className="chip-row" aria-label="Condition">
+          <div className="chip-row" role="group" aria-label="Condition">
             {conditions.map((c) => (
               <Chip key={c} on={filters.condition === c} onClick={() => toggle('condition', c)} label={c} count={counts.condition[c]} />
             ))}
           </div>
         )}
         {categories.length > 1 && (
-          <div className="chip-row" aria-label="Category">
+          <div className="chip-row" role="group" aria-label="Category">
             {categories.map((c) => (
               <Chip key={c} on={filters.category === c} onClick={() => toggle('category', c)} label={c} count={counts.category[c]} />
             ))}

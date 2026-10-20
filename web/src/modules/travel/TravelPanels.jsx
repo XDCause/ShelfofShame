@@ -19,10 +19,17 @@ export function BookingPanel({ id = null, tripId, kind: startKind = 'Flight', on
   const lists = useTravelLists()
   const [trip, setTrip] = useState(null)
   const [kind, setKind] = useState(startKind)
-  useEffect(() => { api.trip(tripId).then((t) => { setTrip(t); const b = t.bookings.find((x) => x.booking_id === id); if (b) setKind(b.kind) }) }, [tripId, id])
+  const [error, setError] = useState('')
+  useEffect(() => {
+    api.trip(tripId).then((t) => { setTrip(t); const b = t.bookings.find((x) => x.booking_id === id); if (b) setKind(b.kind) })
+      .catch((e) => setError(e.message))
+  }, [tripId, id])
   const back = () => { onClose(); openPanel('trip', { id: tripId, tab: 'bookings' }) }
   const booking = trip?.bookings.find((b) => b.booking_id === id) ?? null
-  if (!lists || !trip || (id != null && !booking)) return <Drawer title="Booking" onClose={back}><p className="muted">Loading...</p></Drawer>
+  // (a booking removed since the trip was opened: say so, rather than "Loading..." for ever)
+  const problem = error || (trip && id != null && !booking ? "That booking isn't on this trip any more." : '')
+  if (problem) return <Drawer title="Booking" onClose={back}><p className="alert error">{problem}</p></Drawer>
+  if (!lists || !trip) return <Drawer title="Booking" onClose={back}><p className="muted">Loading...</p></Drawer>
   const [from, to] = TIMES[kind] ?? ['Starts', 'Ends']
   const lastCurrency = trip.bookings.at(-1)?.currency ?? trip.expenses[0]?.currency ?? 'AUD'
   const fields = [
@@ -68,12 +75,17 @@ export function PlacePanel({ id = null, tripId = null, onClose }) {
   const lists = useTravelLists()
   const [place, setPlace] = useState(undefined)
   const [trip, setTrip] = useState(null)
+  const [error, setError] = useState('')
   useEffect(() => {
-    if (tripId != null) api.trip(tripId).then((t) => { setTrip(t); setPlace(t.places.find((p) => p.place_id === id) ?? null) })
-    else if (id != null) api.travelPlaces().then((all) => setPlace(all.find((p) => p.place_id === id) ?? null))
+    const failed = (e) => setError(e.message)
+    if (tripId != null) api.trip(tripId).then((t) => { setTrip(t); setPlace(t.places.find((p) => p.place_id === id) ?? null) }).catch(failed)
+    else if (id != null) api.travelPlaces().then((all) => setPlace(all.find((p) => p.place_id === id) ?? null)).catch(failed)
     else setPlace(null)
   }, [id, tripId])
   const back = () => { onClose(); if (tripId != null) openPanel('trip', { id: tripId, tab: 'places' }) }
+  // (a place removed since: say so - not an empty "new place" form that would add it again)
+  const problem = error || (id != null && place === null ? "That place isn't there any more." : '')
+  if (problem) return <Drawer title="Place" onClose={back}><p className="alert error">{problem}</p></Drawer>
   if (!lists || place === undefined || (tripId != null && !trip)) return <Drawer title="Place" onClose={back}><p className="muted">Loading...</p></Drawer>
   const fields = [
     { name: 'name', label: 'Name', required: true, wide: true, placeholder: 'e.g. Kyoto, Fushimi Inari, a great ramen place' },

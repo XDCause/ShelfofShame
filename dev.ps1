@@ -9,7 +9,7 @@
 #                prod (real data)                     dev (test copy)
 #   folder       C:\Users\xdhar\hobby-inventory       C:\Users\xdhar\hobby-inventory-dev
 #   git branch   main                                 dev
-#   web app      http://localhost:8080                http://localhost:8081  (DEV badge)
+#   web app      https://<pc>.local:8443              https://<pc>.local:8444  (DEV badge; http 8080 / 8081 redirect)
 #   API          http://localhost:8000/api/docs       http://localhost:8001/api/docs
 #   database     localhost:5433, volume hobby_pgdata  localhost:5434, volume hobby_dev_pgdata
 #
@@ -29,7 +29,11 @@ function In-Dev([scriptblock]$block) {
 function Start-Dev {
     Write-Host 'Building and starting the dev copy...' -ForegroundColor Cyan
     $code = Get-CodeHash $DevRoot       # the code this build is made from (for run_e2e's "passed" stamp)
-    In-Dev { docker compose up -d --build 2>$null | Out-Null }
+    In-Dev { docker compose build 2>$null | Out-Null }
+    # its HTTPS certificate before nginx starts (made if missing or this PC's names / addresses changed)
+    powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $DevRoot 'make-cert.ps1')
+    if ($LASTEXITCODE -ne 0) { exit 1 }
+    In-Dev { docker compose up -d 2>$null | Out-Null }
     if ($LASTEXITCODE -ne 0) { Write-Host 'docker compose up failed (run it in the dev folder to see why).' -ForegroundColor Red; exit 1 }
     Write-Host -NoNewline 'Waiting for it to be healthy'
     if (-not (Wait-Healthy @('hobby-dev-db', 'hobby-dev-api', 'hobby-dev-web'))) { exit 1 }
@@ -80,10 +84,10 @@ if ($Setup) {
     if (-not (Test-Path $devEnv)) {
         # Same database name, user and password as prod; its own names, ports and data volume.
         $lines = Get-Content (Join-Path $ProdRoot '.env') | Where-Object {
-            $_ -notmatch '^\s*(APP_PREFIX|APP_ENV|POSTGRES_PORT|API_PORT|WEB_PORT|DB_VOLUME)\s*='
+            $_ -notmatch '^\s*(APP_PREFIX|APP_ENV|POSTGRES_PORT|API_PORT|WEB_PORT|WEB_HTTPS_PORT|DB_VOLUME)\s*='
         }
         $lines += @('', '# The dev copy (dev.ps1 wrote this)', 'APP_PREFIX=hobby-dev', 'APP_ENV=dev',
-                    'POSTGRES_PORT=5434', 'API_PORT=8001', 'WEB_PORT=8081', 'DB_VOLUME=hobby_dev_pgdata')
+                    'POSTGRES_PORT=5434', 'API_PORT=8001', 'WEB_PORT=8081', 'WEB_HTTPS_PORT=8444', 'DB_VOLUME=hobby_dev_pgdata')
         Set-Content -Path $devEnv -Value $lines -Encoding ascii
         Write-Host "Wrote $devEnv" -ForegroundColor Green
     }
@@ -96,5 +100,5 @@ if ($Setup) {
 }
 
 Write-Host ''
-Write-Host 'Dev copy:  http://localhost:8081   (API docs: http://localhost:8001/api/docs)' -ForegroundColor Green
+Write-Host "Dev copy:  https://$($env:COMPUTERNAME.ToLower()).local:8444   (API docs: http://localhost:8001/api/docs)" -ForegroundColor Green
 Write-Host "Code:      $DevRoot  (branch dev).  Promote to prod with .\promote.ps1"

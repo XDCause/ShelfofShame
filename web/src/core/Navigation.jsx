@@ -48,7 +48,7 @@ export function Sidebar() {
   const { openPanel } = useApp()
   return (
     <aside className="sidebar">
-      <Link to="/" className="brand" aria-label="Off the Clock: Home"><LogoMark size={30} className="brand-mark" />Off the Clock</Link>
+      <Link to="/" className="brand" aria-label="Off the Clock: Home"><LogoMark size={30} className="brand-mark" /><span className="brand-name">Off the Clock</span></Link>
       <nav aria-label="Sections">
         {CORE_PAGES.map((p) => (
           <NavLink key={p.path} to={p.path} end={p.path === '/'} className="side-link" title={p.label}>

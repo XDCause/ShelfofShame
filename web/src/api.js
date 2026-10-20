@@ -6,6 +6,8 @@ async function request(path, options = {}) {
     ...options,
     headers: { 'Content-Type': 'application/json', ...options.headers },
   })
+  // Signed out (the 30 days are up, or this device was signed out from another): the sign-in screen (core/auth).
+  if (res.status === 401 && !path.startsWith('/auth/')) window.dispatchEvent(new Event('otc-signed-out'))
   if (res.status === 204) return null
   const body = await res.json().catch(() => null)
   if (!res.ok) throw Object.assign(new Error(errorMessage(body) || `${res.status} ${res.statusText}`), { status: res.status })
@@ -37,6 +39,27 @@ const query = (params) => new URLSearchParams(Object.entries(params).filter(([, 
 const image = (method, blob) => ({ method, body: blob, headers: { 'Content-Type': blob.type } })
 
 export const api = {
+  // Signing in (api/app/auth.py): the password (+ authenticator code) or a passkey; devices; the authenticator
+  authStatus: () => request('/auth/status'),
+  signIn: (password, code) => request('/auth/login', send('POST', { password, code: code || null })),
+  signOut: () => request('/auth/logout', send('POST')),
+  changePassword: (current, next) => request('/auth/password', send('POST', { current, new: next })),
+  devices: () => request('/auth/sessions'),
+  signOutDevice: (id) => request(`/auth/sessions/${id}`, send('DELETE')),
+  signOutOthers: () => request('/auth/sessions/others/sign-out', send('POST')),
+  totpStart: (password) => request('/auth/totp/start', send('POST', { password })),
+  totpConfirm: (code) => request('/auth/totp/confirm', send('POST', { code })),
+  totpOff: (password, code) => request('/auth/totp/off', send('POST', { password, code })),
+  recoveryCodesLeft: () => request('/auth/recovery-codes'),
+  newRecoveryCodes: (password) => request('/auth/recovery-codes', send('POST', { password })),
+  passkeys: () => request('/auth/passkeys'),
+  passkeyRegisterOptions: () => request('/auth/passkeys/register/options', send('POST')),
+  passkeyRegister: (credential, name) => request('/auth/passkeys/register/verify', send('POST', { credential, name })),
+  renamePasskey: (id, name) => request(`/auth/passkeys/${id}`, send('PATCH', { name })),
+  removePasskey: (id) => request(`/auth/passkeys/${id}`, send('DELETE')),
+  passkeyLoginOptions: () => request('/auth/passkey/login/options', send('POST')),
+  passkeySignIn: (credential) => request('/auth/passkey/login/verify', send('POST', { credential })),
+
   // What you've done lately (core): stock, kits, build log, time, journal
   activity: (limit = 20) => request(`/activity?limit=${limit}`),
 

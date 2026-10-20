@@ -29,6 +29,7 @@ $Network = "${Prefix}_default"      # compose project name = APP_PREFIX
 $DbName = Cfg 'POSTGRES_DB' 'hobby_inventory'
 $DbUser = Cfg 'POSTGRES_USER' 'hobby'
 $WebPort = Cfg 'WEB_PORT' '8080'
+$WebHttpsPort = Cfg 'WEB_HTTPS_PORT' '8443'
 $ApiPort = Cfg 'API_PORT' '8000'
 $DbPort = Cfg 'POSTGRES_PORT' '5433'
 $BackupDir = Join-Path $Root 'backups'

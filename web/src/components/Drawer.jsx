@@ -5,7 +5,8 @@ import { useEffect, useId, useRef } from 'react'
 const open = []
 
 // A panel over the page: from the right on wide screens, a sheet from the bottom on phones.
-// Closes with Esc, the ✕, or a click on the dimmed background.
+// Closes with Esc, the ✕, or a click on the dimmed background. Tab stays inside it; closing it puts focus back
+// where it was (the row or button that opened it).
 export default function Drawer({ title, onClose, children, footer, wide = false }) {
   const panel = useRef(null)
   const titleId = useId()
@@ -17,7 +18,22 @@ export default function Drawer({ title, onClose, children, footer, wide = false 
   useEffect(() => {
     const me = {}
     open.push(me)
-    const onKey = (e) => e.key === 'Escape' && open.at(-1) === me && close.current()
+    const opener = document.activeElement      // focus goes back here when the panel closes
+    const onKey = (e) => {
+      if (open.at(-1) !== me) return
+      if (e.key === 'Escape') close.current()
+      // Tab stays inside the panel (it's modal): from the last control to the first, and back
+      if (e.key === 'Tab' && panel.current) {
+        const all = [...panel.current.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]):not([type=hidden]), '
+          + 'select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])')]
+          .filter((el) => el.offsetParent !== null)
+        if (!all.length) return
+        const [first, last] = [all[0], all.at(-1)]
+        if (e.shiftKey && (document.activeElement === first || document.activeElement === panel.current)) { e.preventDefault(); last.focus() }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+        else if (!panel.current.contains(document.activeElement)) { e.preventDefault(); first.focus() }
+      }
+    }
     document.addEventListener('keydown', onKey)
     document.body.classList.add('drawer-open') // stop the page behind from scrolling
     panel.current?.focus()
@@ -25,6 +41,7 @@ export default function Drawer({ title, onClose, children, footer, wide = false 
       open.splice(open.indexOf(me), 1)
       document.removeEventListener('keydown', onKey)
       if (open.length === 0) document.body.classList.remove('drawer-open')
+      if (opener?.isConnected && open.length === 0) opener.focus({ preventScroll: true })
     }
   }, [])
 
