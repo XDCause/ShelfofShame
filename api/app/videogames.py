@@ -149,8 +149,10 @@ ALL_GAMES = f"""(
     SELECT 'steam' AS platform, app_id::text AS app_id, name, hidden, has_achievements, achievements_done,
            achievements_total, completed_at, playtime_minutes FROM vg_games
     UNION ALL
-    SELECT platform, app_id, name, hidden, has_achievements, achievements_done, achievements_total,
-           completed_at, playtime_minutes FROM ({othergames.SELECT}) o)"""
+    SELECT platform, app_id, name, hidden, has_achievements AND counted,
+           -- achievements you ticked yourself and chose not to count: not in the totals (the playtime still is)
+           CASE WHEN counted THEN achievements_done END, CASE WHEN counted THEN achievements_total END,
+           CASE WHEN counted THEN completed_at END, playtime_minutes FROM ({othergames.SELECT}) o)"""
 ALL_ACHIEVEMENTS = """(
     SELECT 'steam' AS platform, a.app_id::text AS app_id, g.name AS game, g.hidden AS game_hidden, a.api_name,
            a.name, a.description, a.icon, a.global_percent, a.achieved, a.unlocked_at
@@ -158,7 +160,7 @@ ALL_ACHIEVEMENTS = """(
     UNION ALL
     SELECT o.platform, o.platform || '-' || o.game_id, o.name, o.hidden, a.api_name, a.name, a.description,
            a.icon, a.global_percent, a.achieved, a.unlocked_at
-    FROM vg_other_achievements a JOIN vg_other_games o USING (game_id))"""
+    FROM vg_other_achievements a JOIN vg_other_games o USING (game_id) WHERE o.counted)"""
 # Your unlocks on the chosen platforms, in games you haven't hidden.
 UNLOCKS = f"FROM {ALL_ACHIEVEMENTS} a WHERE a.platform = ANY(%(platforms)s) AND NOT a.game_hidden AND a.achieved"
 
@@ -170,17 +172,19 @@ def steam_ids(rows: list[dict]) -> list[dict]:
     return rows
 
 
-def games_where(conn, platforms: list[str], where: str, sort, limit: int | None = None, params: dict | None = None):
+def games_where(conn, platforms: list[str], where: str, sort, limit: int | None = None, params: dict | None = None,
+                counted_only: bool = True):
     """Whole game rows (as the Games list has them) on the chosen platforms that match `where` (in
-    the columns both shapes share: hidden, achievements_done, completed_at...), sorted by `sort`."""
+    the columns both shapes share: hidden, achievements_done, completed_at...), sorted by `sort`.
+    counted_only: leave out Epic / Ubisoft games whose ticked achievements you chose not to count."""
     params = {**(params or {}), "others": [p for p in platforms if p != "steam"]}
     rows = []
     if "steam" in platforms:
         rows += [with_pictures({**g, "platform": "steam"})
                  for g in conn.execute(f"SELECT * FROM ({GAME_SELECT}) x WHERE {where}", params).fetchall()]
     if params["others"]:
-        rows += conn.execute(f"SELECT * FROM ({othergames.SELECT}) x WHERE x.platform = ANY(%(others)s) AND {where}",
-                             params).fetchall()
+        rows += conn.execute(f"SELECT * FROM ({othergames.SELECT}) x WHERE x.platform = ANY(%(others)s) AND {where}"
+                             + (" AND x.counted" if counted_only else ""), params).fetchall()
     rows.sort(key=sort)
     return rows[:limit] if limit else rows
 
@@ -343,7 +347,7 @@ def stats(months: int = Query(24, ge=1, le=120), platforms: str | None = PLATFOR
             f"SELECT 100.0 * achievements_done / achievements_total AS p FROM {ALL_GAMES} g "
             "WHERE platform = ANY(%(platforms)s) AND NOT hidden AND achievements_done > 0", p).fetchall()]
         most_played = games_where(conn, chosen, "NOT hidden AND playtime_minutes > 0",
-                                  lambda g: -g["playtime_minutes"], 10)
+                                  lambda g: -g["playtime_minutes"], 10, counted_only=False)
         today = conn.execute("SELECT now()::date AS d").fetchone()["d"]
         days = conn.execute(f"""
             SELECT a.unlocked_at::date AS day, count(*)::int AS count {UNLOCKS} AND a.unlocked_at IS NOT NULL

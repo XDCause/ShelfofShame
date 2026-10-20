@@ -6,7 +6,7 @@ import { RowPhoto } from '../../components/RecordFields.jsx'
 import { useApp } from '../../core/app-context.js'
 import JournalMentions from '../../core/journal/JournalMentions.jsx'
 import { BellCurveIcon, ClockIcon, HourglassIcon, TrophyIcon } from '../../components/icons.jsx'
-import { CompletionBar, GamePicture, playtime, rarity } from './steam.jsx'
+import { CompletionBar, GamePicture, HandTicked, playtime, rarity } from './steam.jsx'
 
 // One game - Steam, Epic or Ubisoft, shown the same way: its picture, completion, every achievement
 // (unlocked first; locked ones greyed, hidden ones' descriptions kept secret) - split into the main
@@ -39,7 +39,8 @@ export default function VideoGamePanel({ id, onClose }) {
   }
   const ubisoft = game.platform === 'ubisoft'
   // Sync just this game (the one you're playing): Steam games, and Epic ones from your Exophase profile
-  const syncable = other ? game.platform === 'epic' && game.source_id && game.page_url : true
+  // (one added by hand re-reads its Steam version's list; your ticks stay)
+  const syncable = other ? (game.platform === 'epic' && game.source_id && game.page_url) || (!game.source_id && game.steam_app_id) : true
   const syncThis = async () => {
     setSyncing(true)
     setSynced('')
@@ -54,7 +55,7 @@ export default function VideoGamePanel({ id, onClose }) {
       setSyncing(false)
     }
   }
-  const onTick = ubisoft ? async (a) => update(await api.tickOtherAchievement(otherId, a.api_name, !a.achieved)) : null
+  const onTick = game.tickable ? async (a) => update(await api.tickOtherAchievement(otherId, a.api_name, !a.achieved)) : null
   const groups = dlcGroups(game.achievements)
   const shows = (a) => show === 'all' || (show === 'got' ? a.achieved : !a.achieved)
   const steamId = other ? game.steam_app_id : id
@@ -82,14 +83,24 @@ export default function VideoGamePanel({ id, onClose }) {
       <GamePicture game={game} className="game-header" />
       <section className="panel-section">
         <div className="section-head">
-          <strong>{game.achievements_total ? `${game.achievements_done} of ${game.achievements_total} achievements · ${game.percent}%`
+          <strong>{game.achievements_total ? <>{game.achievements_done} of {game.achievements_total} achievements · {game.percent}%<HandTicked game={game} /></>
             : game.has_achievements === false ? 'This game has no achievements'
               : other ? (!game.source_id && !game.steam_app_id ? 'No achievements'
                 : ubisoft ? 'No achievement list yet' : 'No achievements read yet') : 'Not read from Steam yet'}</strong>
           {other && <span className={`pill ${ubisoft ? 'teal' : 'purple'}`}>{ubisoft ? 'Ubisoft' : 'Epic'}</span>}
-          {game.completed_at && <span className="pill ok">100% · {shortDate(game.completed_at)}</span>}
+          {game.completed_at && <span className="pill ok">100%{game.by_hand && '*'} · {shortDate(game.completed_at)}</span>}
         </div>
         <CompletionBar game={game} />
+        {game.by_hand && (
+          <div className="hand-ticked-note small">
+            <span className="muted">* Ticked off by you: {ubisoft ? 'Ubisoft' : 'Epic'} doesn't sync this game's achievements.</span>
+            <label className="tick-row">
+              <input type="checkbox" checked={game.counted}
+                onChange={async () => update(await api.updateOtherGame(otherId, { counted: !game.counted }))} />
+              Count it in my completion, goal and totals
+            </label>
+          </div>
+        )}
         {(synced || error) && <p className={error ? 'alert error small' : 'small muted'} role="status">{error || synced}</p>}
         {game.unobtainable_count > 0 && (
           <p className="small muted">{game.unobtainable_count} achievement{game.unobtainable_count === 1 ? " can't" : "s can't"} be
@@ -124,14 +135,14 @@ export default function VideoGamePanel({ id, onClose }) {
                 <button key={k} type="button" aria-pressed={show === k} onClick={() => setShow(k)}>{label}</button>
               ))}
             </div>
-            {ubisoft && (
+            {game.tickable && (
               <button type="button" className="plain small" onClick={async () => update(await api.tickAllOther(otherId,
                 game.achievements_done < game.achievements_total))}>
                 {game.achievements_done < game.achievements_total ? 'Tick all' : 'Untick all'}
               </button>
             )}
           </div>
-          {ubisoft && <p className="hint">Tick the ones you have (Ubisoft Connect: the game's Achievements page). The list is the
+          {game.tickable && <p className="hint">Tick the ones you have{ubisoft ? ' (Ubisoft Connect: the game\'s Achievements page)' : ''}. The list is the
             game's Steam version's; rarity is Steam players'.</p>}
           {groups.length === 1 ? <AchievementList items={groups[0].items.filter(shows)} onTick={onTick} /> : (
             <div className="dlc-groups">
@@ -150,7 +161,7 @@ export default function VideoGamePanel({ id, onClose }) {
               <p className="hint">Which achievements come with a DLC: Exophase, read when the game's achievements change.</p>
             </div>
           )}
-          {other && !ubisoft && <p className="hint">From your Exophase profile; rarity is Exophase players'.</p>}
+          {other && !ubisoft && game.source_id && <p className="hint">From your Exophase profile; rarity is Exophase players'.</p>}
         </section>
       )}
       {other && !game.source_id && (

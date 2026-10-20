@@ -14,6 +14,12 @@ export const rarity = (percent) => {
     label: p <= 5 ? 'Ultra rare' : p <= 20 ? 'Rare' : null }
 }
 
+// An asterisk after a game's progress when you ticked its achievements yourself (a Ubisoft game, or an Epic one
+// added by hand using its Steam version's list) - the platform doesn't sync them.
+export const HandTicked = ({ game }) => (game?.by_hand ? (
+  <span className="hand-ticked" title={`Ticked off by you - ${game.platform === 'ubisoft' ? 'Ubisoft' : 'Epic'} doesn't sync these${
+    game.counted === false ? '; not counted in your totals' : ''}`}>*</span>) : null)
+
 // Playtime as hours and minutes: "45 min", "3 h 5 min", "1,204 h 12 min".
 export const playtime = (minutes) => {
   const m = Math.max(0, Math.round(minutes ?? 0))

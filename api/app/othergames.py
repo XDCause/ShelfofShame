@@ -53,7 +53,10 @@ SELECT o.game_id, o.platform, o.platform || '-' || o.game_id AS app_id, o.source
        CASE WHEN d.total > 0 THEN round(100.0 * d.done / d.total, 1) END AS percent,
        CASE WHEN d.total > 0 AND d.done >= d.total THEN COALESCE(a.last_unlock, o.exo_completed_at, o.updated_at) END
            AS completed_at,
-       COALESCE(o.my_minutes, o.exo_minutes, 0) AS playtime_minutes, 0 AS dlc_count, false AS extra
+       COALESCE(o.my_minutes, o.exo_minutes, 0) AS playtime_minutes, 0 AS dlc_count, false AS extra,
+       -- achievements you tick (or type) yourself - a Ubisoft game, or an Epic one added by hand with its Steam
+       -- version's list - not synced from the platform: shown with an asterisk; counted = in your totals or not
+       (o.platform = 'ubisoft' OR o.source_id IS NULL) AND d.total > 0 AS by_hand, (o.platform = 'ubisoft' OR o.source_id IS NULL) AND a.listed > 0 AS tickable, o.counted
 FROM vg_other_games o
 LEFT JOIN LATERAL (SELECT count(*)::int AS listed, count(*) FILTER (WHERE achieved)::int AS have,
                           min(global_percent) AS rarest_percent, max(unlocked_at) AS last_unlock
@@ -85,6 +88,7 @@ class GamePatch(BaseModel):
     hours: float | None = Field(None, ge=0, le=100000)
     minutes: int | None = Field(None, ge=0, le=6_000_000)
     hidden: bool | None = None
+    counted: bool | None = None          # in your completion, goal and totals (achievements you ticked yourself)
 
 
 class SteamLinkIn(BaseModel):
@@ -168,7 +172,7 @@ def sync_details(players: dict) -> int:
                     not g["list_synced_at"] or g["list_done"] != g["exo_done"]):
                 epic_list(g, players["epic"])
                 read += 1
-            elif g["platform"] == "ubisoft" and g["steam_app_id"] and (
+            elif (g["platform"] == "ubisoft" or not g["source_id"]) and g["steam_app_id"] and (
                     not g["list_synced_at"] or now - g["list_synced_at"] > WEEKLY):
                 steam_list(g["game_id"], g["steam_app_id"])
                 read += 1
@@ -183,7 +187,16 @@ def sync_one(game_id: int) -> str:
     with db() as conn:
         g = conn.execute("SELECT * FROM vg_other_games WHERE game_id = %s", (game_id,)).fetchone()
         players = conn.execute("SELECT exo_players FROM vg_sync WHERE id = 1").fetchone()["exo_players"] or {}
-    if g["platform"] != "epic" or not (g["page_url"] and g["source_id"] and players.get("epic")):
+    if not g["source_id"]:
+        if not g["steam_app_id"]:
+            raise HTTPException(422, "Set its Steam version first: its achievement list comes from there.")
+        try:
+            steam_list(game_id, g["steam_app_id"])
+            community(game_id, g["steam_app_id"])
+        except (steam.SteamError, steamhunters.Unavailable) as e:
+            return str(e)
+        return ""
+    if g["platform"] != "epic" or not (g["page_url"] and players.get("epic")):
         raise HTTPException(422, "Only Epic games from your Exophase profile can be synced (Ubisoft ones you tick).")
     try:
         got = exophase.earned(players["epic"], g["source_id"])
@@ -280,7 +293,7 @@ def summarise(games: list[dict]) -> list[dict]:
         mine = [g for g in games if g["platform"] == platform and not g["hidden"]]
         if not mine:
             continue
-        counted = [g for g in mine if g["achievements_total"]]
+        counted = [g for g in mine if g["achievements_total"] and g["counted"]]
         out.append({
             "platform": platform, "name": name, "games": len(mine),
             "done": sum(g["achievements_done"] or 0 for g in counted),
@@ -430,7 +443,7 @@ def _find_and_list(game_id: int, link: str | None = None, forget: bool = False):
             conn.execute("UPDATE vg_other_games SET steam_app_id = NULL, header_url = NULL, steam_checked_at = now(), "
                          "sh_median_minutes = NULL, sh_fastest_minutes = NULL, sh_players_perfected = NULL, "
                          "sh_players_started = NULL, sh_synced_at = NULL WHERE game_id = %s", (game_id,))
-            if g["platform"] == "ubisoft":
+            if g["platform"] == "ubisoft" or not g["source_id"]:
                 conn.execute("DELETE FROM vg_other_achievements WHERE game_id = %s", (game_id,))
                 conn.execute("UPDATE vg_other_games SET list_synced_at = NULL WHERE game_id = %s", (game_id,))
         return
@@ -450,7 +463,7 @@ def _find_and_list(game_id: int, link: str | None = None, forget: bool = False):
         with db() as conn:
             g = conn.execute("SELECT * FROM vg_other_games WHERE game_id = %s", (game_id,)).fetchone()
         if g["steam_app_id"]:
-            if g["platform"] == "ubisoft":
+            if g["platform"] == "ubisoft" or not g["source_id"]:
                 steam_list(game_id, g["steam_app_id"])
             community(game_id, g["steam_app_id"])
     except (steam.SteamError, steamhunters.Unavailable) as e:
@@ -477,9 +490,10 @@ def set_steam(game_id: int, body: SteamLinkIn):
 
 
 def _ubisoft(conn, game_id: int) -> dict:
+    """A game whose achievements you tick: Ubisoft, or one added by hand (Exophase's Epic games sync theirs)."""
     game = _one(conn, game_id, with_list=False)
-    if game["platform"] != "ubisoft":
-        raise HTTPException(409, "Epic achievements come from your Exophase profile.")
+    if game["platform"] != "ubisoft" and game["source_id"]:
+        raise HTTPException(409, "This game's achievements come from your Exophase profile.")
     return game
 
 
@@ -516,7 +530,8 @@ def update_game(game_id: int, body: GamePatch):
         done = sent.get("done", game["my_done"])
         total = sent.get("total", game["my_total"])
         _check(done, total)
-        changes = {"name": sent.get("name"), "my_done": done, "my_total": total, "hidden": sent.get("hidden")}
+        changes = {"name": sent.get("name"), "my_done": done, "my_total": total, "hidden": sent.get("hidden"),
+                   "counted": sent.get("counted")}
         if "minutes" in sent or "hours" in sent:
             changes["my_minutes"] = _minutes(sent.get("minutes"), sent.get("hours"))
             vgplaytime.snapshot(conn, game["platform"], game["app_id"],

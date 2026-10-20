@@ -858,3 +858,28 @@ def test_a_game_added_by_hand_minutes_and_a_photo(client, exo):
     g = client.get(f"/api/videogames/other/{g['game_id']}").json()
     assert g["has_photo"] and g["header_url"].startswith(f"/api/videogames/other/{g['game_id']}/photo?v=")
     assert client.get(g["header_url"]).content == png
+
+
+def test_an_epic_game_added_by_hand_ticks_its_steam_versions_list(client, exo):
+    """Stranded Deep on Epic: no Epic achievements, so its Steam version's list comes over to tick off - marked as
+    ticked by hand (by_hand), and counted in your totals unless you say not."""
+    connect(client)
+    r = client.post("/api/videogames/other", json={"name": "Rainbow Six Siege X", "platform": "epic", "minutes": 60})
+    assert r.status_code == 201, r.text
+    g = r.json()
+    assert (g["steam_app_id"], len(g["achievements"]), g["tickable"], g["counted"]) == (359550, 3, True, True)
+    url = f"/api/videogames/other/{g['game_id']}"
+    g = client.put(f"{url}/achievements/ACH_1", json={"achieved": True}).json()
+    assert (g["achievements_done"], g["achievements_total"], g["by_hand"]) == (1, 3, True)
+    epic = lambda: client.get("/api/videogames/summary?platforms=epic").json()  # noqa: E731
+    before = epic()["achievements"]
+    g = client.patch(url, json={"counted": False}).json()
+    assert g["counted"] is False and g["achievements_done"] == 1          # its own progress still shows...
+    assert epic()["achievements"] == before - 1                           # ...but not in your totals
+    platforms = {p["platform"]: p for p in client.get("/api/videogames/other").json()["platforms"]}
+    assert platforms["epic"]["total"] == 7                                # the Exophase games only (as before it)
+    r = client.post(f"{url}/sync")                                        # its Steam list again: your ticks stay
+    assert r.status_code == 200 and r.json()["achievements_done"] == 1
+    supra = next(x for x in client.get("/api/videogames/other").json()["games"] if x["name"] == "Supraland")
+    assert supra["by_hand"] is False and supra["tickable"] is False      # Exophase's: synced, not ticked
+    assert client.put(f"/api/videogames/other/{supra['game_id']}/achievements/501", json={"achieved": False}).status_code == 409

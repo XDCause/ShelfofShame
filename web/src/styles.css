@@ -2313,6 +2313,9 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .vg-played dd { margin: 0; font-size: 1.1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
 .vg-played-games { margin-top: 6px; }
 .vg-played-line { margin: 4px 0 0; }
+/* Video games: achievements you ticked yourself - an asterisk, a note and the "count it" switch */
+.hand-ticked { margin-left: 1px; color: var(--purple); font-weight: 700; cursor: help; }
+.hand-ticked-note { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; margin-top: 6px; }
 /* Video games: the Hide 100% toggle sits apart from the show-chips (it's on top of whichever is picked) */
 .chip-filter.games-hide-done { margin-left: 10px; }
 .chip-filter.games-hide-done:disabled { opacity: 0.45; cursor: default; }

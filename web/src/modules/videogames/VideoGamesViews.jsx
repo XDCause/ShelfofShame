@@ -6,7 +6,7 @@ import { useApp } from '../../core/app-context.js'
 import Stat, { Change, StatSkeleton } from '../../core/Stat.jsx'
 import { OtherPlatformsCard, PLATFORMS, PlatformToggles, useCounting, useOtherGames } from './OtherPlatforms.jsx'
 import {
-  CompletionBar, GamePicture, playtime, rarity, SteamSetup, SyncBar, SyncButton, useSteamAccount, useSteamSummary,
+  CompletionBar, GamePicture, HandTicked, playtime, rarity, SteamSetup, SyncBar, SyncButton, useSteamAccount, useSteamSummary,
 } from './steam.jsx'
 
 // The dashboard: the account and sync, profile completion against your goal, headline tiles,
@@ -209,7 +209,7 @@ function GameRow({ game: g, detail }) {
         <GamePicture game={g} className="game-capsule" />
         <span className="grow">
           <span className="item-title">{g.name}</span>
-          <span className="item-meta">{g.achievements_done} of {g.achievements_total} · {g.percent}%{detail && ` · ${detail}`}</span>
+          <span className="item-meta">{g.achievements_done} of {g.achievements_total} · {g.percent}%<HandTicked game={g} />{detail && ` · ${detail}`}</span>
           <CompletionBar game={g} />
         </span>
       </button>
@@ -247,7 +247,7 @@ export function PerfectCard({ game: g }) {
   return (
     <button type="button" className="perfect-card" onClick={() => openPanel('videogame', { id: g.app_id })}>
       <GamePicture game={g} className="perfect-picture" />
-      <span className="perfect-badge">100%</span>
+      <span className="perfect-badge">100%{g.by_hand && '*'}</span>
       <span className="perfect-name">{g.name}</span>
       <span className="muted small">{shortDate(g.completed_at)}{g.perfect_rate != null && ` · ${Number(g.perfect_rate)}% of players`}</span>
     </button>
@@ -442,7 +442,7 @@ function GameTable({ games, onOpen, showPlatform = false }) {
                 {g.achievements_total ? (
                   <>
                     <span className="game-progress-text"><strong>{g.achievements_done}</strong> / {g.achievements_total}
-                      <span className="muted"> · {Number(g.percent)}%</span></span>
+                      <span className="muted"> · {Number(g.percent)}%</span><HandTicked game={g} /></span>
                     <CompletionBar game={g} />
                   </>
                 ) : <span className="muted small">{g.has_achievements === false ? 'No achievements'

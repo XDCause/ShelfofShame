@@ -1354,6 +1354,8 @@ def video_games(page):
             before = d.locator(".section-head strong").inner_text()
             d.locator(".ach-tick").first.click()
             expect(d.locator(".section-head strong")).not_to_have_text(before)
+            expect(d.locator(".section-head .hand-ticked")).to_have_text("*")      # ticked by hand, not synced
+            expect(d.get_by_label("Count it in my completion, goal and totals")).to_be_visible()
         shot(page, "d47_ubisoft_game", full=False)
         page.keyboard.press("Escape")
         toggles.get_by_role("button", name="Epic").click()

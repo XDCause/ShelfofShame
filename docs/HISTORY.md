@@ -1732,3 +1732,13 @@ DBeaver connection confirmed working (2026-10-11).
    "1,204 h 12 min" everywhere; a hand-added game takes hours + minutes (API: `minutes`). Home's third video games tile:
    Gaming this week. A hand-added Epic / Ubisoft game says "No achievements" (was "Hours only") and can have your own
    picture (vg_other_games.photo, add_photo_routes).
+4q. **Video games: achievements you tick yourself - an asterisk, and a "count it" switch** (2026-10-20). User (Stranded Deep:
+   Steam achievements, none on Epic) picked option 3: tick them off, shown differently - "an asterisk for any game that
+   has its achievements hand ticked off, for all that aren't synced". An Epic game added by hand now gets its Steam
+   version's list to tick (like Ubisoft: _find_and_list, the weekly sync_details, and its one-game sync re-reads the list,
+   ticks kept). othergames.SELECT: by_hand (Ubisoft, or added by hand, with achievements - ticked or typed), tickable,
+   counted. 79_vg_counted.sql: vg_other_games.counted (default true) - off leaves the game out of completion, the goal,
+   achievement totals, the per-platform numbers and the dashboard lists (ALL_GAMES blanks its achievement columns,
+   ALL_ACHIEVEMENTS skips it, games_where(counted_only)); its own progress and its playtime still show. Web: HandTicked
+   (steam.jsx) - "*" after the progress in the list, the dashboard rows, 100% badges and the panel, with the note and the
+   switch in the panel.
