@@ -33,3 +33,7 @@ api/.coverage
 
 # HTTPS certificate and key for this copy (make-cert.ps1; the CA itself lives in %USERPROFILE%\.offtheclock)
 certs/
+
+# The showcase (showcase.ps1): screenshots of every version, and its working folder
+showcase/
+.showcase/

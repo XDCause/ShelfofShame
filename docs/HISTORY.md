@@ -1878,3 +1878,17 @@ DBeaver connection confirmed working (2026-10-11).
    selector, which changes with the rest of the page. User: the banners' Picture button is clutter - now a setting
    (Settings > Appearance, "Picture button on banners", settings.banner_pictures, off by default); pictures already
    chosen show either way.
+5c. **Sample data, the showcase, and one cookie per copy** (2026-10-21). User: "is there a way I can showcase old prod web
+   pages... just show visually where things are at" (made-up data, a local folder) and "build test dev data so I can see
+   and make changes better in dev". e2e/sample_data.py fills an app through its API with an invented "Alex" (kits with
+   generated cover pictures - pure-Python PNGs, no outside images - board games and plays, volleyball, games, chess,
+   books, GPX hikes, a balcony garden, a rimfire, a Japan trip, goals, to-dos, events, journal pages; dates relative to
+   today). sample-data.ps1 puts it in dev (fresh schema from db\init, auth tables and your name kept, a temporary
+   session instead of a password; backup first; refuses prod). showcase.ps1: an empty throwaway copy (APP_ENV prod: old
+   builds show a DEV badge from the API) + the sample, then each milestone's web build (git worktree, the Dockerfile's
+   build stage, APP_ENV=prod) served by a bare nginx in front of the same API; e2e/showcase.py shoots 15 pages at
+   laptop / phone (full page at the normal window size - a taller window stretches Home's screen-sized row; Brisbane
+   time zone), e2e/showcase_gallery.py writes showcase\index.html (timeline, pages, compare). Old pages against today's
+   API render as they were. Also: dev and prod on one host shared a cookie jar (cookies ignore the port), so signing in
+   to one signed out the other - the cookie name now follows APP_ENV (auth.COOKIE). The user asked for full test runs
+   at their discretion, not after every change (CLAUDE.md Quality gates).

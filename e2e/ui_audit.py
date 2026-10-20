@@ -245,8 +245,8 @@ def signed_in_context(browser, **kw):
     """A browser context signed in with this copy's password (run_e2e.ps1 sets E2E_PASSWORD): a session of its own."""
     token = os.environ.get("E2E_TOKEN")               # (an existing session instead - looking at a copy without its password)
     ctx = browser.new_context(ignore_https_errors=True, **kw)
-    if token:
-        ctx.add_cookies([{"name": "otc_session", "value": token, "url": BASE, "secure": True, "httpOnly": True, "sameSite": "Strict"}])
+    if token:                                          # (E2E_COOKIE: its name in that copy - auth.COOKIE)
+        ctx.add_cookies([{"name": os.environ.get("E2E_COOKIE", "otc_session"), "value": token, "url": BASE, "secure": True, "httpOnly": True, "sameSite": "Strict"}])
         return ctx
     ctx.close()
     tls = ssl.create_default_context()
@@ -255,9 +255,9 @@ def signed_in_context(browser, **kw):
     opener = urllib.request.build_opener(urllib.request.HTTPSHandler(context=tls), urllib.request.HTTPCookieProcessor(jar))
     opener.open(urllib.request.Request(f"{BASE}/api/auth/login", data=json.dumps({"password": os.environ["E2E_PASSWORD"]}).encode(),
                                        headers={"Content-Type": "application/json"}))
-    token = next(c.value for c in jar if c.name == "otc_session")
+    cookie = next(c for c in jar if c.name.startswith("otc_session"))     # otc_session, otc_session_dev...: auth.COOKIE
     ctx = browser.new_context(ignore_https_errors=True, **kw)
-    ctx.add_cookies([{"name": "otc_session", "value": token, "url": BASE, "secure": True, "httpOnly": True, "sameSite": "Strict"}])
+    ctx.add_cookies([{"name": cookie.name, "value": cookie.value, "url": BASE, "secure": True, "httpOnly": True, "sameSite": "Strict"}])
     return ctx
 
 

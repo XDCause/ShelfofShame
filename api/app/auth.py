@@ -19,6 +19,7 @@ import getpass
 import hashlib
 import ipaddress
 import json
+import os
 import secrets
 import sys
 import time
@@ -40,7 +41,10 @@ from .db import db, found
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
-COOKIE = "otc_session"
+# The sign-in cookie's name: one per copy. A browser keeps cookies per host name, not per port, so dev (:8444) and prod
+# (:8443) on the same PC would otherwise overwrite each other's - signing in to one signed you out of the other.
+_ENV = os.environ.get("APP_ENV", "prod")
+COOKIE = "otc_session" if _ENV == "prod" else f"otc_session_{_ENV}"
 SESSION_DAYS = 30
 MIN_PASSWORD = 12
 HASHER = PasswordHasher()                   # Argon2id with the library's (RFC 9106) defaults

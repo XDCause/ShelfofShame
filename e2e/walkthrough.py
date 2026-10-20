@@ -35,7 +35,9 @@ _jar = http.cookiejar.CookieJar()
 _api = urllib.request.build_opener(urllib.request.HTTPSHandler(context=_tls), urllib.request.HTTPCookieProcessor(_jar))
 _api.open(urllib.request.Request(f"{BASE}/api/auth/login", data=json.dumps({"password": PASSWORD}).encode(),
                                  headers={"Content-Type": "application/json"}))
-TOKEN = next(c.value for c in _jar if c.name == "otc_session")
+# (the cookie's name depends on the copy - otc_session, otc_session_dev: auth.COOKIE - so it's taken from the answer)
+COOKIE = next(c.name for c in _jar if c.name.startswith("otc_session"))
+TOKEN = next(c.value for c in _jar if c.name == COOKIE)
 
 
 def get_json(path):
@@ -45,7 +47,7 @@ def get_json(path):
 
 def signed_in(context):
     """A browser context with this run's session cookie (as if signed in)."""
-    context.add_cookies([{"name": "otc_session", "value": TOKEN, "url": BASE, "secure": True, "httpOnly": True,
+    context.add_cookies([{"name": COOKIE, "value": TOKEN, "url": BASE, "secure": True, "httpOnly": True,
                           "sameSite": "Strict"}])
     return context
 
@@ -2554,7 +2556,7 @@ def sign_in_ui(page):
     page.get_by_label("Password").fill(PASSWORD)
     page.get_by_role("button", name="Sign in", exact=True).click()
     expect(page.locator(".hero h2")).to_have_text(re.compile("^Good "), timeout=15000)
-    cookie = next(c for c in page.context.cookies() if c["name"] == "otc_session")
+    cookie = next(c for c in page.context.cookies() if c["name"] == COOKIE)
     assert cookie["httpOnly"] and cookie["secure"] and cookie["sameSite"] == "Strict", cookie
     shot(page, "a00_signed_in", full=False)
     page.get_by_role("button", name="Settings").click()

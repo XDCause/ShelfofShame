@@ -66,7 +66,10 @@ DBeaver, psql, and the one-off import script.
   panels, Home tiles / cards, quick actions), components/ (shared), styles.css (one file, sections by comment).
 - **Database**: numbered idempotent files in db/init (01-80); migrate.ps1 applies pending ones.
 
-## Quality gates (run them; they're fast)
+## Quality gates
+- **When (user, 2026-10-21): at the user's discretion.** Not after every tweak in dev - rebuild (`.\dev.ps1`, whose build
+  still catches CSS clashes and lint) and let the user look. Run the full suite when asked, at the end of a hobby update,
+  or after a batch of changes; promote.ps1 runs it anyway if this exact code hasn't passed.
 - `.\test_all.ps1` in dev = API tests (run_tests.ps1: fresh test DB from db\init, pytest) and the browser walk-through
   (run_e2e.ps1) side by side, ~3 minutes. The walk-through runs on its OWN throwaway copy of the app (hobby-e2e-*)
   with a copy of the data - dev's data is never touched, so the user can keep using dev while it runs. That copy has
@@ -75,8 +78,7 @@ DBeaver, psql, and the one-off import script.
 - The e2e run ends with **e2e/ui_audit.py**: every page + some panels at 5 widths x 2 themes (overflow, clipped /
   overlapping text, touch targets, broken images, axe-core WCAG 2.2 AA, console errors). A finding fails the run; a
   deliberate exception goes in its ACCEPTED list with the reason. **tests/test_robustness.py** calls every API route
-  with missing ids and junk (sites "down"): never a 500. `.
-un_tests.ps1 -Coverage` shows untested lines.
+  with missing ids and junk (sites "down"): never a 500. `.un_tests.ps1 -Coverage` shows untested lines.
 - Passing runs are stamped (.tested\); promote.ps1 skips tests already passed on exactly this code.
 - `npm run build` (every web image build) fails on a CSS class clash (web/scripts/check-css-clashes.js) or ANY
   ESLint warning (--max-warnings 0). A deliberate hooks exception gets an eslint-disable comment saying why.
@@ -96,7 +98,9 @@ un_tests.ps1 -Coverage` shows untested lines.
   %USERPROFILE%\.offtheclock\ca); the app is at https://<pc>.local:8443 (dev 8444; http redirects). The password is only
   ever set on the PC (set-password.ps1) - no sign-up route. Still home network + Tailscale only: never port-forward it
   or use Tailscale Funnel. Tests: the `client` fixture is signed in, `anon` isn't; the walk-through / audit sign in
-  with a per-run password run_e2e.ps1 sets in its throwaway copy (never the user's).
+  with a per-run password run_e2e.ps1 sets in its throwaway copy (never the user's). The cookie is named per copy
+  (auth.COOKIE: otc_session in prod, otc_session_dev in dev): a browser keeps cookies per host, not per port, so one
+  name made signing in to dev sign you out of prod and back. Scripts take the name from the login answer.
 
 ## Lessons that keep coming back
 - Give every new CSS class a name nobody else uses (the build now catches a clash, but pick well first).
@@ -162,6 +166,11 @@ un_tests.ps1 -Coverage` shows untested lines.
   so the user's numbering stays gap-free.
 
 ## Handy commands
+- Dev with made-up sample data (an invented "Alex"): `.\sample-data.ps1` in dev (keeps the sign-in and your name; backs
+  up first; refuses to run in prod). Back to a copy of prod's real data: `.\dev.ps1 -Refresh`.
+- The showcase (how the look has changed, for showing people): `.\showcase.ps1` in dev -> showcase\index.html (git-ignored;
+  same sample data; each version's pages built from git). `-Only now` after a big UI change; add a line to its list to
+  keep a new look.
 - Verify: `docker exec hobby-inventory-db psql -U hobby -d hobby_inventory -c "SELECT * FROM v_supplies"`
 - Interactive: `docker exec -it hobby-inventory-db psql -U hobby -d hobby_inventory`
 - Backup: `docker exec hobby-inventory-db pg_dump -U hobby -d hobby_inventory > backup.sql`
