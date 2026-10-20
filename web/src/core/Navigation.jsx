@@ -47,14 +47,16 @@ const nudge = () => NUDGES[Math.floor(Date.now() / 86400000) % NUDGES.length]
 // Wide screens: a sidebar like the Mac's (Notes, Mail): the core pages, then one entry per hobby.
 // A hobby's own pages (Kits, Colours...) are tabs at the top of its page (SectionTabs).
 // Between 701 and 1000 px it shrinks to icons only (CSS).
-export function Sidebar() {
+// env: which copy this is ("dev" in the dev copy - the brand says so, so it's never mistaken for your real data).
+export function Sidebar({ env = 'prod' }) {
   const { openPanel } = useApp()
   const { pathname } = useLocation()
   // On a short screen the hobbies list scrolls: keep the hobby you're in visible in it.
   useEffect(() => { document.querySelector('.side-hobbies .active')?.scrollIntoView({ block: 'nearest' }) }, [pathname])
   return (
     <aside className="sidebar">
-      <Link to="/" className="brand" aria-label="Off the Clock: Home"><LogoMark size={30} className="brand-mark" /><span className="brand-name">Off the Clock</span></Link>
+      <Link to="/" className="brand" aria-label="Off the Clock: Home"><LogoMark size={30} className="brand-mark" /><span className="brand-name">Off the Clock</span>
+        {env !== 'prod' && <span className="brand-env" title="A test copy - not your real data">{env}</span>}</Link>
       <nav aria-label="Sections">
         {CORE_PAGES.map((p) => (
           <NavLink key={p.path} to={p.path} end={p.path === '/'} className="side-link" title={p.label}>

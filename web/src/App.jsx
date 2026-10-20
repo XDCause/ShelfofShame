@@ -182,7 +182,9 @@ export default function App() {
   return (
     <AppContext.Provider value={app}>
       <div className="app">
-        <Sidebar />
+        <Sidebar env={appEnv} />
+        {/* (on a phone or tablet the sidebar has no name to sit beside: a tag in the corner instead) */}
+        {appEnv !== 'prod' && <span className="env-tag" aria-hidden="true">{appEnv}</span>}
         <div className="main-col">
           {/* (over-banner only once the banner is there: while loading, a clear bar would sit over nothing) */}
           <header className={`navbar${area && lookups ? ' over-banner' : ''}${scrolled ? ' scrolled' : ''}`}>

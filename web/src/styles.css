@@ -178,7 +178,7 @@ p a, .hint a, li > p a { text-decoration: underline; text-underline-offset: 2px;
   .side-link { justify-content: center; padding: 8px; }
   .side-section { height: 0; margin: 10px 6px; overflow: hidden; border-top: 1px solid rgb(255 255 255 / 0.08); }
   .side-settings { justify-content: center; }
-  .sidebar .brand-name { display: none; }
+  .sidebar .brand-name, .sidebar .brand-env { display: none; }
   .sidebar .brand { justify-content: center; margin: 4px 0 18px; }
   .sidebar .nudge { display: none; }   /* (beats the nudge's own rule, which comes later) */
 }
@@ -735,6 +735,16 @@ td .fill-bar { width: 90px; height: 4px; margin-top: 5px; }
 }
 .brand:hover { text-decoration: none; }
 .brand-mark { flex: none; color: #cfe3c2; }
+/* The dev copy says so - beside the name in the sidebar, or in the corner where the sidebar has no name (phone, tablet). */
+.brand-env, .env-tag {
+  padding: 2px 8px; border-radius: 999px; background: #e0a35a; color: #1d1a12; font-family: var(--font-body);
+  font-size: 0.72rem; font-weight: 750; letter-spacing: 0.04em; text-transform: capitalize; line-height: 1.5;
+}
+.brand-env { margin-left: -3px; }
+.env-tag { display: none; position: fixed; z-index: 60; top: calc(env(safe-area-inset-top, 0px) + 10px); left: 10px;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.3); pointer-events: none; }
+@media (max-width: 1000px) { .env-tag { display: block; } }
+@media (min-width: 701px) and (max-width: 1000px) { .env-tag { left: calc(var(--sidebar-w) + 10px); } }
 .nudge {
   display: flex; gap: 10px; align-items: flex-start; margin: auto 2px 8px; padding: 12px; border-radius: var(--radius-sm);
   border: 1px solid rgb(255 255 255 / 0.07); background: rgb(255 255 255 / 0.03); font-size: 0.8rem; color: var(--side-muted);
