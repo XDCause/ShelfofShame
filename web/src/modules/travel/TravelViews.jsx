@@ -95,6 +95,7 @@ export function Dashboard() {
   const empty = !s.now.length && !s.upcoming.length && !s.ideas.length && !s.recent.length
   const y = s.this_year
   const focus = s.now[0] ?? s.upcoming[0]
+  const coming = s.now.length > 0 || s.upcoming.length > 0
   return (
     <section className="page travel">
       {empty && (
@@ -109,7 +110,8 @@ export function Dashboard() {
           </div>
         </section>
       )}
-      {!empty && (
+      {/* Plan a trip: in Coming up's heading when there's a trip coming (no row of its own), otherwise up here */}
+      {!empty && !coming && (
         <div className="toolbar"><span className="grow" />
           <button type="button" className="primary" onClick={() => openPanel('trip', {})}>+ Plan a trip</button>
         </div>
@@ -128,9 +130,10 @@ export function Dashboard() {
       {s.passport_warning && <p className="alert low">{s.passport_warning}</p>}
       <div className="home-grid">
         <div className="home-stack">
-          {(s.now.length > 0 || s.upcoming.length > 0) && (
+          {coming && (
             <section className="card home-card">
-              <h2 className="home-card-title">Coming up</h2>
+              <h2 className="home-card-title">Coming up
+                <button type="button" className="primary small trip-plan" onClick={() => openPanel('trip', {})}>+ Plan a trip</button></h2>
               <ul className="list plain-list">{[...s.now, ...s.upcoming].map((t) => <TripRow key={t.trip_id} t={t} />)}</ul>
             </section>
           )}
@@ -146,6 +149,7 @@ export function Dashboard() {
               <ul className="list plain-list">{s.recent.map((t) => <TripRow key={t.trip_id} t={t} />)}</ul>
             </section>
           )}
+          <PassportCard passport={s.passport} />
         </div>
         <div className="home-stack">
           {s.years.length > 0 && (
@@ -155,7 +159,6 @@ export function Dashboard() {
                 rows={s.years.map((r) => ({ label: String(r.year), value: r.days, tip: `${plural(r.trips, 'trip')} · ${aud(r.spent)}` }))} />
             </section>
           )}
-          <PassportCard passport={s.passport} />
         </div>
       </div>
     </section>

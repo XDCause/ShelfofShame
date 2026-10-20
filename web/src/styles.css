@@ -737,7 +737,7 @@ td .fill-bar { width: 90px; height: 4px; margin-top: 5px; }
 .brand-mark { flex: none; color: #cfe3c2; }
 /* The dev copy says so - beside the name in the sidebar, or in the corner where the sidebar has no name (phone, tablet). */
 .brand-env, .env-tag {
-  padding: 2px 8px; border-radius: 999px; background: #e0a35a; color: #1d1a12; font-family: var(--font-body);
+  padding: 2px 8px; border-radius: 999px; background: #e0a35a; color: #1d1a12; font-family: var(--font-ui);
   font-size: 0.72rem; font-weight: 750; letter-spacing: 0.04em; text-transform: capitalize; line-height: 1.5;
 }
 .brand-env { margin-left: -3px; }
@@ -2113,6 +2113,10 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 
 /* Cards stacked in one column of a .home-grid (so a tall card beside them leaves no gap). */
 .home-stack { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+/* Travel's dashboard: the two columns end on the same line (the last card in the shorter one grows), and Plan a trip
+   sits in Coming up's heading rather than on a row of its own. */
+.travel .home-stack > :last-child { flex: 1 0 auto; }
+.trip-plan { margin-left: auto; font-family: var(--font-ui); }
 
 /* Video games friends: cards with an avatar and status; you vs them bars per shared game. */
 .friend-grid { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 12px; }
