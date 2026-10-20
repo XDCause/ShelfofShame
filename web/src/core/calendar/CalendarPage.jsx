@@ -121,7 +121,7 @@ export default function CalendarPage() {
             <ul className="list plain-list">
               {chosen.events.map((e) => (
                 <li key={e.event_id}>
-                  <button type="button" className="row-button" onClick={() => openPanel('event', { id: e.event_id, day: selected })}>
+                  <button type="button" className="row-button" onClick={() => (e.trip_id ? openPanel('trip', { id: e.trip_id }) : openPanel('event', { id: e.event_id, day: selected }))}>
                     <span className={`time-block ${HOBBY_TONE[e.hobby] ?? 'tint'}`}>{e.start_time ? clock(e.start_time) : 'All day'}</span>
                     <span className="grow">
                       <span className="item-title">{e.title}</span>
@@ -186,7 +186,7 @@ export function ComingUp() {
             const d = dayDate(e.day)
             return (
               <li key={`${e.event_id}-${e.day}`}>
-                <button type="button" className="row-button" onClick={() => openPanel('event', { id: e.event_id, day: e.day })}>
+                <button type="button" className="row-button" onClick={() => (e.trip_id ? openPanel('trip', { id: e.trip_id }) : openPanel('event', { id: e.event_id, day: e.day }))}>
                   <span className={`date-chip ${HOBBY_TONE[e.hobby] ?? 'tint'}`}>
                     <small>{d.toLocaleDateString('en-AU', { weekday: 'short' })}</small><strong>{d.getDate()}</strong>
                   </span>

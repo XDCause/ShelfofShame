@@ -1,7 +1,7 @@
 """Open-Meteo (https://open-meteo.com): free weather forecasts, no key (free for non-commercial use;
 CC BY 4.0 - credited where the tips show). Used by Gardening for balcony tips: heat, wind, rain, UV.
 
-    find_place(name)     -> [{name, region, lat, lon}]   (their geocoding API; to set where you are)
+    find_place(name)     -> [{name, region, country, lat, lon}]   (their geocoding API; country = its ISO code)
     forecast(lat, lon)   -> the next 3 days: [{day, max, min, rain_mm, rain_chance, gusts, uv, code, sky, icon}]
                             (sky / icon: the day's weather code in words - Sunny, Cloudy, Rain...)
 
@@ -52,6 +52,7 @@ def _get(url: str, params: dict) -> dict:
 def find_place(name: str) -> list[dict]:
     data = _get(GEOCODE, {"name": name, "count": 6, "language": "en", "format": "json"})
     return [{"name": p["name"], "region": ", ".join(filter(None, [p.get("admin1"), p.get("country")])),
+             "country": (p.get("country_code") or "").upper() or None,
              "lat": round(p["latitude"], 4), "lon": round(p["longitude"], 4)} for p in data.get("results") or []]
 
 

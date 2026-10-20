@@ -242,7 +242,7 @@ def test_weather_tips(client, monkeypatch):
                                               "precipitation_sum": [0], "precipitation_probability_max": [10],
                                               "wind_gusts_10m_max": [20], "uv_index_max": [8], "weather_code": [0]}})
     place = client.get("/api/garden/places?q=Brisbane").json()[0]
-    assert place == {"name": "Brisbane", "region": "Queensland, Australia", "lat": -27.4679, "lon": 153.0281}
+    assert place == {"name": "Brisbane", "region": "Queensland, Australia", "country": None, "lat": -27.4679, "lon": 153.0281}
     client.put("/api/garden/settings", json={"place_name": "Brisbane", "lat": place["lat"], "lon": place["lon"]})
     w = client.get("/api/garden/today").json()["weather"]
     assert w["place"] == "Brisbane" and w["days"][0]["max"] == 31 and w["tips"][0]["kind"] == "heat"

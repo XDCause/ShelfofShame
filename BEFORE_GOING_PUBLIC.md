@@ -140,3 +140,6 @@ Safety headers (`web/security-headers.inc`: nosniff, no framing, referrer policy
 policy), web-only links, photo type and size checks on uploads and scraped photos, CSV formula
 protection, and dependency audits (`pip-audit`, `npm audit`) were clean at the time. Still needed
 before anyone else uses it: **login and HTTPS** (see above) - the headers don't replace those.
+| **Travel records with no login** | Trip dates (when you're away from home), booking references, passport expiry, photos with GPS | `api/app/travel.py`, `travel_trip.py` | Single user on a home network. | **Change.** Anyone on the Wi-Fi can see when the house is empty and your booking references. Public use needs logins and per-user data; strip GPS from shared photos. |
+| **Frankfurter exchange rates** | The ECB's daily rates (free, no key) | `api/app/frankfurter.py` | Asked at most every 12 h. | **Check.** Fine for personal use; a public app should cache harder or host its own copy. |
+| **OpenStreetMap map tiles (Travel map)** | tile.openstreetmap.org | `web/src/modules/travel/TravelMap.jsx` | Light personal use, credited as asked. | **Change.** OSM's tile policy doesn't allow heavy use: a public app needs a tile provider. |

@@ -226,7 +226,7 @@ function GroupForm({ lists, unit, start, editing = false, first = false, onSave,
       </div>
       <label className="field">Chronograph speeds (m/s)<input value={f.velocities} onChange={set('velocities')} placeholder="e.g. 325 328 326" /></label>
       <label className="field">Notes<input value={f.notes} onChange={set('notes')} /></label>
-      <label className="check"><input type="checkbox" checked={f.confirms_dope} onChange={set('confirms_dope')} />
+      <label className="tick-row"><input type="checkbox" checked={f.confirms_dope} onChange={set('confirms_dope')} />
         This confirms my elevation at this distance (DOPE)</label>
       {editing && start.shot_list?.length > 0 && <p className="hint">This group has its shots plotted: its size, where it hit,
         speeds and score come from them (change a shot to change these).</p>}

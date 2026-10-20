@@ -2303,6 +2303,89 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
   .garden-weather { gap: 4px; }
 }
 
+/* ---------- A plain ticked line: a real checkbox and its words (.check is the round paint-checklist tick) ---------- */
+.tick-row { display: flex; align-items: center; gap: 8px; cursor: pointer; min-width: 0; }
+.tick-row input { width: 20px; height: 20px; min-height: 0; flex: none; margin: 0; }
+
+/* Video games: the Hide 100% toggle sits apart from the show-chips (it's on top of whichever is picked) */
+.chip-filter.games-hide-done { margin-left: 10px; }
+.chip-filter.games-hide-done:disabled { opacity: 0.45; cursor: default; }
+
+/* ---------- Travel (modules/travel): trips, the map, packing, the journal ---------- */
+.travel-map-frame { margin: 0 0 12px; }
+.segmented.travel-map-bases { margin-bottom: 8px; }
+.travel-map-box { height: 380px; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); background: var(--fill-2); z-index: 0; }
+.travel-map-frame.picking .travel-map-box { height: 260px; cursor: crosshair; }
+.travel-map-key { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; font-size: 0.78rem; }
+.travel-map-key i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; vertical-align: -1px; }
+.travel-map-key .muted { margin-left: auto; }
+.travel-key-been { background: var(--ok); }
+.travel-key-planned { background: var(--tint); }
+.travel-key-want { background: var(--purple); }
+.travel-map-key i.travel-key-stop { background: var(--tint); border: 2px solid #fff; box-shadow: 0 0 0 1px var(--tint); }
+.travel-map-key i.travel-key-photo { background: var(--teal, var(--tint)); border-radius: 3px; }
+/* On the map: a numbered stop (the route) and your photo (a thumbnail with a white frame) */
+.travel-stop-pin > span { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--tint);
+  color: #fff; font: 700 0.75rem/1 system-ui, sans-serif; border: 2px solid #fff; box-shadow: 0 1px 4px rgb(0 0 0 / 0.35); }
+.travel-photo-pin { border-radius: 8px; border: 3px solid #fff; overflow: hidden; background: #fff; box-shadow: 0 2px 8px rgb(0 0 0 / 0.4); }
+.travel-photo-pin img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.travel-find { display: flex; gap: 6px; margin-bottom: 8px; }
+.travel-find input { flex: 1; min-width: 0; }
+.travel-found { margin-bottom: 8px; }
+.travel-flags { list-style: none; margin: 0 0 10px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 4px 12px; }
+.travel-flags li { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.travel-flag { font-size: 1.3rem; line-height: 1; }
+.trip-thumb { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: 10px; object-fit: cover;
+  background: var(--fill); color: var(--muted); }
+.trip-cover { display: block; width: 100%; max-height: 220px; object-fit: cover; border-radius: 12px; margin-bottom: 10px; }
+.trip-group { margin-bottom: 16px; }
+.trip-rating { margin: 4px 0; }
+.trip-highlights { white-space: pre-wrap; }
+.trip-warnings { list-style: none; margin: 10px 0 0; padding: 8px 12px; border-radius: 10px; color: var(--low); background: var(--low-bg);
+  font-size: 0.88rem; display: grid; gap: 4px; }
+.trip-weather { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-top: 10px; }
+.trip-weather-day { display: inline-flex; align-items: center; gap: 4px; }
+.segmented.trip-tabs { display: flex; flex-wrap: wrap; margin: 4px 0 12px; }
+.segmented.trip-tabs button { flex: 1 0 auto; }
+.trip-day { padding: 10px 0; border-top: 0.5px solid var(--separator); }
+.trip-day.today .trip-day-head { color: var(--ok); }
+.trip-day-head { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font-size: 0.9rem; }
+.trip-checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.trip-checklist li { display: flex; align-items: center; gap: 8px; min-height: 34px; }
+.trip-checklist li.done .tick-row span { color: var(--muted); text-decoration: line-through; }
+.trip-booking-line { font-size: 0.92rem; }
+.trip-add { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; align-items: center; }
+.trip-add input:not([type='checkbox']) { flex: 1 1 160px; min-width: 0; }
+.trip-add .trip-year { flex: 0 0 90px; }
+.trip-cost { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.trip-money { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 0 0 8px; }
+.trip-money dt { font-size: 0.78rem; color: var(--muted); }
+.trip-money dd { margin: 0; font-size: 1.15rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.trip-money dd.trip-over { color: var(--out); }
+.fill-bar.trip-budget-bar, .fill-bar.trip-pack-bar { max-width: none; height: 8px; margin: 4px 0 12px; }
+.trip-expense-form { display: grid; grid-template-columns: 1fr auto auto; gap: 6px; }
+.trip-expense-form input[aria-label='What'] { grid-column: 1 / -1; }
+.trip-expense-form input, .trip-expense-form select { min-width: 0; }
+.trip-expense { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+.trip-rates li { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+.trip-pack-tools { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.trip-pack-tools select { flex: 1 1 160px; min-width: 0; }
+.trip-pack-group { margin-top: 8px; }
+.trip-stops li { display: flex; align-items: center; gap: 8px; }
+.trip-stop-n { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--tint);
+  color: var(--on-tint, #fff); font-size: 0.75rem; font-weight: 700; }
+.trip-stop-move { display: flex; flex: none; }
+.trip-thumbs { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.trip-thumbs button { padding: 0; border: 0; background: none; border-radius: 8px; overflow: hidden; display: block; }
+.trip-thumbs img { display: block; width: 84px; height: 84px; object-fit: cover; }
+.trip-photo-view { margin: 10px 0; padding: 10px; }
+.trip-photo-view img { display: block; width: 100%; max-height: 60vh; object-fit: contain; border-radius: 8px; background: var(--fill); }
+.trip-photo-view figcaption { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
+.trip-photo-view figcaption input { flex: 1 1 180px; min-width: 0; }
+.packing-list-fold { margin-bottom: 8px; }
+.packing-list-group { margin: 6px 0; display: grid; gap: 4px; }
+.packing-list-group .chip { display: inline-flex; align-items: center; gap: 2px; }
+
 /* ---------- Supplies: kits and their parts ---------- */
 .kit-of { margin: 6px 0 0; }
 .kit-suggest { display: grid; gap: 4px; margin-top: 8px; justify-items: start; }

@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { api } from '../api.js'
-import { BoxIcon, DiceIcon, GamepadIcon, JournalIcon, PlaneIcon, SearchIcon, ShoeIcon } from '../components/icons.jsx'
+import { BookIcon, BoxIcon, ChessIcon, DiceIcon, GamepadIcon, JournalIcon, PlaneIcon, SearchIcon, ShoeIcon, SuitcaseIcon } from '../components/icons.jsx'
 import { useApp } from './app-context.js'
 
-const ICON = { model: PlaneIcon, supply: BoxIcon, page: JournalIcon, game: DiceIcon, gear: ShoeIcon, videogame: GamepadIcon }
-const WHAT = { model: 'Kit', supply: 'Supply', page: 'Journal page', game: 'Board game', gear: 'Gear', videogame: 'Video game' }
+const ICON = { model: PlaneIcon, supply: BoxIcon, page: JournalIcon, game: DiceIcon, gear: ShoeIcon, videogame: GamepadIcon, chess: ChessIcon,
+  book: BookIcon, trip: SuitcaseIcon }
+const WHAT = { model: 'Kit', supply: 'Supply', page: 'Journal page', game: 'Board game', gear: 'Gear', videogame: 'Video game', chess: 'Chess game',
+  book: 'Book', trip: 'Trip' }
 const isMac = /Mac|iPhone|iPad/.test(navigator.platform)
 
 // Search everything from the nav bar: kits, supplies, journal pages, board games and gear. Ctrl+K (⌘K) jumps here;

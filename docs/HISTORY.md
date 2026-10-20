@@ -1699,3 +1699,20 @@ DBeaver connection confirmed working (2026-10-11).
 4l. **Precision shooting shipped to prod** (2026-10-20, user: "ship shooting to prod"). underConstruction taken off its
    manifest; its tables were already in prod (73-75 apply with every promote). The club range is added in prod's data
    only (the repo never names it).
+4m. **Video games: Hide 100%** (2026-10-20). User: "a toggle to turn off games already at 100% so when I filter down on
+   progress I don't have to scroll". A chip after the show-chips on the Games list: leaves out games with completed_at
+   (or 100%) whatever's shown (off for the 100% chip itself); remembered on this device (localStorage
+   videogames.hideDone).
+4n. **Travel, built** (2026-10-20; still underConstruction - dev only until the user says it's done). User picked: planning,
+   journal / memories, a places map and bucket list, packing lists; budget vs spent; overseas, domestic, road trips /
+   camping, hobby trips. 77_travel.sql; api/app/travel.py (trips: phase from the dates - idea / upcoming / now / past /
+   cancelled; places (a trip's stops in order, or the bucket list; a planned place on a trip that's over shows as Been);
+   countries (been = trips started + places been + ones you add); the dashboard; calendar_entries - each trip day and
+   timed bookings - merged into /calendar and Coming up); travel_trip.py (bookings, the day plan - no day = before you go -,
+   expenses, packing + reusable lists + your hobby gear, the journal, photos with EXIF GPS); frankfurter.py (the ECB's
+   rates; money keeps amount + currency + the rate to AUD when entered; a trip can have its own rate per currency).
+   Warnings: passport expiring within 6 months of coming home, unpaid bookings, to-dos, packing, over budget. Weather
+   (Open-Meteo) while a trip's on; find a town by name (Open-Meteo's place search now returns the country code).
+   Web: modules/travel (dashboard, trips, places map + countries, packing lists; the trip panel's tabs). Also: a
+   `.tick-row` class for a plain labelled checkbox - `.check` is the round paint-checklist tick, and the kit-parts and
+   DOPE ticks were wrongly using it.

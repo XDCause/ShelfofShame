@@ -142,6 +142,7 @@ export default function App() {
     else if (kind === 'gspace') navigate(`/gardening/layout?space=${id}`)
     else if (kind === 'garden') openPanel('gitem', { id })
     else if (kind === 'shoot') openPanel('shootsession', { id })
+    else if (kind === 'trip') openPanel('trip', { id })
   }, [openModel, openItem, navigate, openPanel])
   const app = useMemo(() => ({
     lookups, settings, refreshKey, changed, openItem, openModel, openAdd, openPanel, openThing, adjusted, showToast,

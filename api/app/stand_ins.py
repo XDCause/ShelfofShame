@@ -10,7 +10,7 @@ same shape the real site gives. Only main.py calls it, and only with OUTSIDE_SIT
 """
 import logging
 
-from . import (bluesky, bookseries, bunnings, chesscom, exophase, gameology, goodgames, hasegawa, hlj, openlibrary,
+from . import (bluesky, bookseries, bunnings, chesscom, exophase, frankfurter, gameology, goodgames, hasegawa, hlj, openlibrary,
                openmeteo, overpass, stedi, steam, steamhunters, tamiya, trumpeter, webphoto, wikimedia)
 
 log = logging.getLogger("stand_ins")
@@ -165,7 +165,11 @@ def install():
     bunnings._get = _refuse(bunnings.BunningsError, "Bunnings")
     bunnings.photo = lambda image: (PNG, "image/png")
     openmeteo._get = lambda url, params: ({"results": [{"name": "Brisbane", "admin1": "Queensland", "country": "Australia",
-                                                        "latitude": -27.47, "longitude": 153.03}]} if "geocoding" in url else FORECAST)
+                                                        "latitude": -27.47, "longitude": 153.03, "country_code": "AU"}]}
+                                          if "geocoding" in url else FORECAST)
+    # Exchange rates (units of each currency for 1 AUD)
+    frankfurter._get = lambda url, params: {"amount": 1.0, "base": "AUD", "date": "2026-10-19",
+                                            "rates": {"JPY": 100.0, "NZD": 1.1, "USD": 0.65, "EUR": 0.6}}
     # A photo from a web address
     webphoto.fetch = lambda url: (PNG, "image/png")
     log.warning("Outside websites are stand-ins (OUTSIDE_SITES=stand-ins): nothing is fetched from them.")

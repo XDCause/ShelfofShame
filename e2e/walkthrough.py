@@ -36,6 +36,8 @@ HIKING = bool(json.load(urllib.request.urlopen(f"{BASE}/api/hiking/summary"))["a
 _garden = json.load(urllib.request.urlopen(f"{BASE}/api/garden/summary"))
 GARDEN = bool(_garden["growing"] or _garden["spaces"])                                  # Home: plants growing
 SHOOTING = bool(json.load(urllib.request.urlopen(f"{BASE}/api/shooting/summary"))["all_time"]["sessions"])   # Home: rounds this year
+_travel = json.load(urllib.request.urlopen(f"{BASE}/api/travel/summary"))
+TRAVEL = bool(_travel["now"] or _travel["upcoming"] or _travel["countries_been"])          # Home: the next trip / countries
 MARK = f"e2e{int(time.time())}"   # a word only this run's journal page contains
 
 
@@ -96,10 +98,10 @@ def home(page):
     expect(stats.filter(has_text="Supplies")).to_contain_text(str(TOTAL))
     for tile in ("Shelf of shame", "Board games", "Volleyball", "Next game"):
         expect(stats.filter(has_text=tile)).to_be_visible()
-    expect(stats).to_have_count(10 + CHESS + READING + HIKING + GARDEN + SHOOTING)
+    expect(stats).to_have_count(10 + CHESS + READING + HIKING + GARDEN + SHOOTING + TRAVEL)
     expect(page.locator(".home-card", has_text="Recent activity").locator(".pill").first).to_be_visible()
     expect(page.locator(".home-card", has_text="Coming up")).to_be_visible()
-    expect(page.locator(".quick-action")).to_have_count(13)       # + Log a chess game, Add a book, Log a hike, Add a plant, Start shooting
+    expect(page.locator(".quick-action")).to_have_count(14)       # + Log a chess game, Add a book, Log a hike, Add a plant, Start shooting, Plan a trip
     shot(page, "d00_home", full=False)
     stats.filter(has_text="To buy").click()
     expect(page).to_have_url(BASE + "/wishlist")
@@ -1299,6 +1301,12 @@ def video_games(page):
     expect(page.locator(".game-head")).to_be_visible()
     if page.locator(".game-rows li").count():   # connected: Sync now is pinned too (not pressed - no Steam here)
         expect(page.locator(".games-pinned").get_by_role("button", name="Sync now")).to_be_visible()
+        hide = page.get_by_role("button", name="Hide 100%")                     # 100% games out of the list, and back
+        hide.click()
+        expect(hide).to_have_attribute("aria-pressed", "true")
+        expect(page.locator(".game-rows .perfect-badge")).to_have_count(0)
+        hide.click()
+        expect(hide).to_have_attribute("aria-pressed", "false")
     shot(page, "d44_video_games_list", full=False)
     page.mouse.wheel(0, -6000)
     page.get_by_label("Search your games").fill("Clair Obscur")
@@ -1915,6 +1923,81 @@ FAKE_BUNNINGS = """<html><head><title>Leek - Bunnings</title></head><body><h1>10
             "images": [{"imageType": "PRIMARY", "url": "https://media.bunnings.com.au/api/public/content/leek?v=1"}]}}}]}}}})
 
 
+@step("Travel: plan a trip (overseas), a to-do, a flight, money in yen (stand-in rates), a packing list ticked, a place found and on the map; trips, places and packing pages")
+def travel(page):
+    from datetime import date, timedelta
+    start, end = date.today() + timedelta(days=10), date.today() + timedelta(days=14)
+    page.goto(BASE + "/travel/dashboard")
+    page.get_by_role("button", name="+ Plan a trip").first.click()
+    d = drawer(page)
+    d.get_by_label(re.compile(r"^Name")).fill(f"Trip {MARK}")
+    d.get_by_label(re.compile(r"^Kind")).select_option("Overseas")
+    d.get_by_label("From", exact=True).fill(start.isoformat())
+    d.get_by_label("To", exact=True).fill(end.isoformat())
+    d.get_by_label(re.compile(r"^Countries")).fill("Japan")
+    d.get_by_role("button", name="Plan it").click()
+    expect(d.get_by_role("heading", name=f"Trip {MARK}")).to_be_visible()     # opens it
+    expect(d.locator(".section-head").first).to_contain_text("In 10 days")
+    expect(d).to_contain_text("Japan")
+    # Plan: something to do before you go
+    d.get_by_label("Add to the plan").fill("Apply for the visa")
+    d.get_by_role("button", name="Add", exact=True).click()
+    expect(d.locator(".trip-checklist")).to_contain_text("Apply for the visa")
+    # A booking (its own panel, then back to the trip)
+    d.get_by_role("tab", name="Bookings").click()
+    d.get_by_role("button", name="+ Add a booking").click()
+    d.get_by_label(re.compile(r"^What")).fill("QF61")
+    d.get_by_label("Cost", exact=True).fill("1200")
+    d.get_by_role("button", name="Add booking").click()
+    expect(d.locator(".trip-bookings")).to_contain_text("QF61")
+    expect(d.locator(".trip-bookings")).to_contain_text("To pay")
+    # Money: ramen in yen, in AUD at the (stand-in) rate: 100 yen to the dollar
+    d.get_by_role("tab", name="Money").click()
+    d.get_by_label("Amount").fill("2500")
+    d.get_by_label("Currency", exact=True).select_option("JPY")
+    d.get_by_label("What", exact=True).fill("Ramen")
+    d.get_by_role("button", name="Add", exact=True).click()
+    expect(d.locator(".trip-expenses")).to_contain_text("Ramen")
+    expect(d.locator(".trip-expenses")).to_contain_text("$25.00")
+    expect(d.locator(".trip-money")).to_contain_text("$1,225.00")
+    shot(page, "e10_trip_money", full=False)
+    # Packing: the Overseas list, the passport ticked
+    d.get_by_role("tab", name=re.compile(r"^Packing")).click()
+    lists = d.get_by_label("A packing list")
+    lists.select_option(label=next(o for o in lists.locator("option").all_inner_texts() if o.startswith("Overseas")))
+    d.get_by_role("button", name="Add list").click()
+    expect(d.get_by_label("Passport", exact=True)).to_be_visible()
+    d.get_by_label("Passport", exact=True).click()                         # ticked once saved
+    expect(d.get_by_label("Passport", exact=True)).to_be_checked()
+    expect(d.get_by_role("tab", name=re.compile(r"^Packing"))).to_contain_text("1/")
+    # Places: found by name (Open-Meteo's place search - a stand-in), then on the trip's map
+    d.get_by_role("tab", name="Places").click()
+    d.get_by_role("button", name="+ Add a place").click()
+    d.get_by_label("Find a town or city").fill("Brisbane")
+    d.get_by_role("button", name="Find", exact=True).click()
+    d.locator(".travel-found button", has_text="Brisbane").click()
+    expect(d.get_by_label(re.compile(r"^Latitude"))).to_have_value("-27.47")
+    d.get_by_role("button", name="Add place").click()
+    expect(d.locator(".trip-stops")).to_contain_text("Brisbane")
+    expect(d.locator(".travel-map-box")).to_be_visible()
+    shot(page, "e11_trip_places", full=False)
+    page.keyboard.press("Escape")
+    # The pages: every trip, places (the map), packing lists
+    page.goto(BASE + "/travel/trips")
+    expect(page.locator(".trip-group", has_text="Coming up")).to_contain_text(f"Trip {MARK}")
+    page.goto(BASE + "/travel/places")
+    expect(page.locator(".travel-map-box")).to_be_visible()
+    expect(page.locator(".home-card", has_text="Places")).to_contain_text("Brisbane")
+    page.goto(BASE + "/travel/packing")
+    expect(page.locator(".packing-list-fold", has_text="Essentials")).to_be_visible()
+    page.goto(BASE + "/travel/dashboard")
+    expect(page.locator(".home-card", has_text="Coming up")).to_contain_text(f"Trip {MARK}")
+    shot(page, "e12_travel_dashboard", full=False)
+    for trip in json.load(urllib.request.urlopen(f"{BASE}/api/travel/trips")):
+        if trip["name"] == f"Trip {MARK}":
+            page.request.delete(f"{BASE}/api/travel/trips/{trip['trip_id']}")
+
+
 @step("Precision shooting: a rifle (MIL scope) and ammo, a session with a group (MOA / MIL, what to dial), shots plotted, a photo, the live board (hit / miss), DOPE card, dashboard")
 def shooting(page):
     page.goto(BASE + "/shooting/rifles")
@@ -2219,7 +2302,7 @@ def settings_more(page):
     d.locator("summary", has_text="Tamiya catalogue").click()
     expect(d.locator(".settings > .fold", has_text="Tamiya catalogue")).to_contain_text("Tamiya products")
     d.locator("summary", has_text="Lookup sites").click()             # the weekly site check (no live run here)
-    expect(d.locator(".site-check")).to_have_count(15)
+    expect(d.locator(".site-check")).to_have_count(16)
     expect(d.get_by_role("button", name="Check now")).to_be_visible()
     shot(page, "d22_settings", full=False)
     page.keyboard.press("Escape")
@@ -2301,7 +2384,7 @@ with sync_playwright() as p:
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
                matches, used_on, gundam, bandai_lookup, warhammer, journal_write, journal_links, journal_from_model,
                journal_suggestion, journal_todo, global_search, journal_wishlist, appearance,
-               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, warhammer_minis, gundam_range, board_game_kinds, board_game_elsewhere, volleyball_coach, video_game_friends, wishlist_shops, goals, supply_kit, hiking, gardening, shooting, bunnings_button, settings_more, no_panel):
+               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, warhammer_minis, gundam_range, board_game_kinds, board_game_elsewhere, volleyball_coach, video_game_friends, wishlist_shops, goals, supply_kit, hiking, gardening, shooting, travel, bunnings_button, settings_more, no_panel):
         fn(desk)
     ctx = browser.new_context(**p.devices["iPhone 13"], timezone_id=zone)
     mob = ctx.new_page()

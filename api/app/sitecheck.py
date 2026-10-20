@@ -16,7 +16,7 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, BackgroundTasks
 
-from . import (bluesky, bunnings, exophase, gameology, goodgames, hasegawa, hlj, stedi, trumpeter, openlibrary, openmeteo, overpass, steam,
+from . import (bluesky, bunnings, exophase, frankfurter, gameology, goodgames, hasegawa, hlj, stedi, trumpeter, openlibrary, openmeteo, overpass, steam,
                steamhunters, tamiya, wikimedia)
 from .db import db
 
@@ -146,6 +146,13 @@ def _openmeteo():
     return f"Brisbane today: {days[0]['max']:.0f}° max"
 
 
+def _frankfurter():
+    frankfurter._cache.clear()
+    r = frankfurter.rates()
+    expect(r["aud_per"].get("USD") and r["aud_per"].get("JPY"), "Frankfurter's rates have no USD or JPY")
+    return f"1 USD = {r['aud_per']['USD']:.4f} AUD ({r['date']})"
+
+
 # (site, what the app uses it for, the check)
 CHECKS = [
     ("Tamiya", "paint and kit look-ups, photos", _tamiya),
@@ -165,7 +172,8 @@ CHECKS = [
     ("OpenStreetMap (Overpass)", "landmarks near a hike's track", _overpass),
     ("Wikimedia Commons", "photos near a hike's track and of its landmarks", _commons),
     ("Bunnings", "garden supplies and seeds from a product link", _bunnings),
-    ("Open-Meteo", "weather tips for the balcony garden", _openmeteo),
+    ("Open-Meteo", "weather tips for the balcony garden; places and weather for trips", _openmeteo),
+    ("Frankfurter", "exchange rates for trips' money in other currencies", _frankfurter),
 ]
 STATE = {"running": False}
 _lock = threading.Lock()

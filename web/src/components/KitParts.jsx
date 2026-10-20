@@ -50,7 +50,7 @@ export default function KitParts({ item, onOpenItem, onChanged, setItem }) {
         <div className="kit-suggest">
           <p className="small">{parts.length ? 'It also comes with:' : 'It says it comes with - add them as parts, so you can find each one:'}</p>
           {suggested.map((p) => (
-            <label key={p} className="check"><input type="checkbox" checked={ticked.has(p)} onChange={() => toggle(p)} /> {p}</label>
+            <label key={p} className="tick-row"><input type="checkbox" checked={ticked.has(p)} onChange={() => toggle(p)} /> {p}</label>
           ))}
           <button type="button" className="secondary small" disabled={busy || !chosen.length}
             onClick={() => add(chosen)}>Add {chosen.length} part{chosen.length === 1 ? '' : 's'}</button>

@@ -2,7 +2,8 @@
 
     planned   calendar_events (db/init/20_calendar.sql): a volleyball game every Tuesday at 7,
               a games night, a model show. Repeating events are expanded into one entry per day
-              here, so the browser never has to work out repeats.
+              here, so the browser never has to work out repeats. Trips too (travel.calendar_entries:
+              each day of a trip, its flights, check-ins...): their entries have a trip_id.
     happened  the activity feed (activity.py) for the same days: kits bought and finished,
               plays, volleyball games, journal pages...
     moods     how each day felt (journal pages' mood)
@@ -17,7 +18,7 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 
-from . import activity, journal
+from . import activity, journal, travel
 from .db import MODULE_IDS, REPEATS, db, found, insert_row, update_row
 
 router = APIRouter(prefix="/api", tags=["calendar"])
@@ -89,7 +90,12 @@ def occurrences(conn, start: date, end: date) -> list[dict]:
                 "notes": e["notes"], "repeats": e["repeats"], "repeat_until": e["repeat_until"],
                 "starts_on": e["starts_on"], "logged_id": logged.get((e["event_id"], day)),
             })
-    return sorted(result, key=lambda o: (o["day"], o["start_time"] or time(0), o["title"].lower()))
+    return sorted(result, key=_order)
+
+
+def _order(o: dict):
+    """By day, then time (all-day first), then title."""
+    return o["day"], o["start_time"] or time(0), o["title"].lower()
 
 
 def fetch_event(conn, event_id: int) -> dict:
@@ -103,7 +109,8 @@ def calendar(start: date, end: date):
     if end < start or (end - start).days > MAX_DAYS:
         raise HTTPException(422, f"The end must be after the start, and at most {MAX_DAYS} days later.")
     with db() as conn:
-        return {"events": occurrences(conn, start, end), "happened": activity.rows(conn, 2000, start, end),
+        events = sorted(occurrences(conn, start, end) + travel.calendar_entries(conn, start, end), key=_order)
+        return {"events": events, "happened": activity.rows(conn, 2000, start, end),
                 "moods": journal.moods_between(conn, start, end)}
 
 
@@ -112,7 +119,9 @@ def upcoming(days: int = Query(60, ge=1, le=MAX_DAYS), limit: int = Query(5, ge=
     """The next few events from today, soonest first (for Home's "Coming up")."""
     today = date.today()
     with db() as conn:
-        return occurrences(conn, today, today + timedelta(days=days))[:limit]
+        end = today + timedelta(days=days)
+        return sorted(occurrences(conn, today, end) + travel.calendar_entries(conn, today, end, first_day_only=True),
+                      key=_order)[:limit]
 
 
 @router.post("/calendar/events", status_code=201)

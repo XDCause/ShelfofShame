@@ -1,25 +1,26 @@
-import { SuitcaseIcon } from '../../components/icons.jsx'
-import EmptyState from '../../core/EmptyState.jsx'
+import { BoxIcon, CalendarIcon, SuitcaseIcon, TrophyIcon } from '../../components/icons.jsx'
+import { BookingPanel, PlacePanel } from './TravelPanels.jsx'
+import { Dashboard, PackingListsView, PlacesView, TravelTiles, TripsView } from './TravelViews.jsx'
+import TripPanel from './TripPanel.jsx'
 
-// Travel: a placeholder for now - just the reminder in the sidebar (underConstruction puts a
-// spanner after its name). Trips, plans and places come later.
-function TravelPage() {
-  return (
-    <section className="page">
-      <EmptyState Icon={SuitcaseIcon} title="Travel">
-        Under construction. This is where trips will live - plans, places and memories.
-      </EmptyState>
-    </section>
-  )
-}
-
+// Travel (api/app/travel.py, travel_trip.py): trips - ideas, coming up, on now, been - each with its bookings, a day-by-day
+// plan, money (a budget; other currencies in AUD), packing (lists, your hobby gear), places (its stops and route) and a
+// journal with photos; a map of everywhere you've been and want to go, countries and a bucket list. Trips show on the
+// calendar (each day, flights, check-ins) and in the activity feed; @mention them in the journal.
+// underConstruction keeps it in dev only until you say it's done (modules/index.js).
 export default {
   id: 'travel',
   name: 'Travel',
-  what: 'Trips and places (under construction)',
+  what: 'Trips: bookings, plans, budget, packing, places and memories',
   Icon: SuitcaseIcon,
   underConstruction: true,
+  home: { Tiles: TravelTiles },
+  actions: [{ label: 'Plan a trip', Icon: SuitcaseIcon, run: (app) => app.openPanel('trip', {}) }],
+  panels: { trip: TripPanel, tbooking: BookingPanel, tplace: PlacePanel },
   pages: [
-    { path: 'trips', label: 'Trips', Icon: SuitcaseIcon, render: () => <TravelPage /> },
+    { path: 'dashboard', label: 'Dashboard', Icon: TrophyIcon, render: () => <Dashboard /> },
+    { path: 'trips', label: 'Trips', Icon: SuitcaseIcon, render: () => <TripsView /> },
+    { path: 'places', label: 'Places', Icon: CalendarIcon, render: () => <PlacesView /> },
+    { path: 'packing', label: 'Packing lists', Icon: BoxIcon, render: () => <PackingListsView /> },
   ],
 }

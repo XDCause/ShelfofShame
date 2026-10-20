@@ -261,7 +261,10 @@ def mentionable(q: str = ""):
             UNION ALL
             (SELECT 'book', book_id, title || COALESCE(' (' || author || ')', ''), 'Book' FROM books
              WHERE title ILIKE %(q)s OR author ILIKE %(q)s
-             ORDER BY status = 'reading' DESC, updated_at DESC LIMIT 8)""", {"q": like}).fetchall()
+             ORDER BY status = 'reading' DESC, updated_at DESC LIMIT 8)
+            UNION ALL
+            (SELECT 'trip', trip_id, name || COALESCE(' (' || to_char(start_date, 'Mon YYYY') || ')', ''), 'Trip' FROM trips
+             WHERE name ILIKE %(q)s OR destination ILIKE %(q)s ORDER BY start_date DESC NULLS FIRST LIMIT 8)""", {"q": like}).fetchall()
     return rows
 
 

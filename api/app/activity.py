@@ -15,6 +15,7 @@
     goals       reached, and each progress note                                     (goals, goal_updates)
     hiking      a hike: distance, climb, time                                       (hikes)
     shooting    a range session: where, rifle, rounds, best group, score            (shooting_sessions)
+    travel      a trip, on the day it started: where, how long                      (trips)
     gardening   sowed / planted; harvests, repotting, problems, notes and photos   (garden_plantings, garden_logs)
                 (not every watering - that's what Today is for)
 
@@ -175,6 +176,15 @@ WITH feed AS (
                     (SELECT '/api/shooting/media/' || m.media_id || '?v=' || (extract(epoch FROM m.created_at) * 1000)::bigint
                      FROM shooting_media m WHERE m.session_id = s.session_id AND m.kind = 'photo' ORDER BY m.media_id LIMIT 1))
     FROM shooting_sessions s LEFT JOIN shooting_ranges rg ON rg.range_id = s.range_id LEFT JOIN rifles r ON r.rifle_id = s.rifle_id
+  UNION ALL
+    SELECT {NOON.format('t.start_date')}, 'trip', t.trip_id, 'Travelled', t.name,
+           concat_ws(' · ', t.destination, (COALESCE(t.end_date, t.start_date) - t.start_date + 1) || ' days'),
+           NULL, NULL,
+           COALESCE(CASE WHEN t.photo IS NOT NULL THEN '/api/travel/trips/' || t.trip_id || '/photo?v='
+                         || (extract(epoch FROM t.photo_updated) * 1000)::bigint END,
+                    (SELECT '/api/travel/photos/' || p.photo_id FROM trip_photos p WHERE p.trip_id = t.trip_id
+                     ORDER BY p.taken_at NULLS LAST, p.photo_id LIMIT 1))
+    FROM trips t WHERE t.status = 'Planned' AND t.start_date <= current_date
   UNION ALL
     SELECT {_on_day('p.started_on', 'p.created_at')}, 'planting', p.planting_id,
            CASE WHEN p.source = 'Seed' THEN 'Sowed' ELSE 'Planted' END, p.name || COALESCE(' (' || p.variety || ')', ''),

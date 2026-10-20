@@ -266,6 +266,12 @@ function GamesView({ chosen, other, switcher }) {
   const [show, setShow] = useState(() => new URLSearchParams(window.location.search).get('show') ?? 'all')
   const [sort, setSort] = useState('played')
   const [q, setQ] = useState('')
+  // Hide games already at 100% (remembered on this device): sorting by progress then starts with the ones to do.
+  const [hideDone, setHideDone] = useState(() => { try { return localStorage.getItem('videogames.hideDone') === '1' } catch { return false } })
+  const toggleHideDone = () => setHideDone((v) => {
+    try { localStorage.setItem('videogames.hideDone', v ? '0' : '1') } catch { /* a private window: just not remembered */ }
+    return !v
+  })
   const [steamGames, setSteamGames] = useState(null)
   const [error, setError] = useState('')
   const withSteam = chosen.includes('steam')
@@ -279,9 +285,11 @@ function GamesView({ chosen, other, switcher }) {
     ...other.games.filter((g) => chosenKey.split(',').includes(g.platform) && OTHER_SHOWS[show](g)),
   ]), [withSteam, steamGames, other, chosenKey, show])
   const several = chosen.length > 1
+  const hiding = hideDone && show !== 'perfect'
   const visible = useMemo(() => (games ?? [])
+    .filter((g) => !hiding || !(g.completed_at || Number(g.percent) >= 100))
     .filter((g) => !q.trim() || g.name.toLowerCase().includes(q.trim().toLowerCase()))
-    .sort(SORTS[sort][1]), [games, q, sort])
+    .sort(SORTS[sort][1]), [games, q, sort, hiding])
 
   if (error) return <p className="alert error">{error}</p>
   return (
@@ -305,6 +313,8 @@ function GamesView({ chosen, other, switcher }) {
         {SHOWS.map(([id, label]) => (
           <button key={id} type="button" className="chip-filter" aria-pressed={show === id} onClick={() => setShow(id)}>{label}</button>
         ))}
+        <button type="button" className="chip-filter games-hide-done" aria-pressed={hideDone} onClick={toggleHideDone}
+          disabled={show === 'perfect'} title="Leave out games you've already 100%'d">Hide 100%</button>
       </div>
       <GameHead sort={sort} setSort={setSort} />
       </div>
