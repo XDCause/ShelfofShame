@@ -1312,6 +1312,17 @@ def video_games(page):
         expect(page.locator(".game-rows .perfect-badge")).to_have_count(0)
         hide.click()
         expect(hide).to_have_attribute("aria-pressed", "false")
+    names = page.locator(".game-rows .game-name .item-title")                              # a heading clicked twice reverses
+    if names.count() > 1:
+        game_head = page.locator(".game-head").get_by_role("button", name="Game", exact=True)
+        game_head.click()
+        first = names.first.inner_text()
+        game_head.click()
+        expect(game_head).to_contain_text("▴")
+        expect(names.first).not_to_have_text(first)
+        game_head.click()
+        expect(names.first).to_have_text(first)
+        page.get_by_label("Sort games").select_option("played")
     shot(page, "d44_video_games_list", full=False)
     page.mouse.wheel(0, -6000)
     page.get_by_label("Search your games").fill("Clair Obscur")

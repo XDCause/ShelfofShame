@@ -256,14 +256,28 @@ export function PerfectCard({ game: g }) {
 
 const SHOWS = [['all', 'All'], ['perfect', '100%'], ['started', 'In progress'], ['untouched', 'Not started'],
   ['no_achievements', 'No achievements'], ['hidden', 'Hidden']]
+// Each sort: its label, the value compared (null = no number: always last) and which way it starts
+// (1 = smallest first, -1 = biggest first). Clicking the same heading again flips the way.
+const num = (v) => (v == null || v === '' ? null : Number(v))
 const SORTS = {
-  played: ['Recently played', (a, b) => (b.last_played ?? '').localeCompare(a.last_played ?? '')],
-  percent: ['Completion', (a, b) => Number(b.percent ?? -1) - Number(a.percent ?? -1) || a.left_to_get - b.left_to_get],
-  left: ['Fewest to go', (a, b) => (a.left_to_get || 1e9) - (b.left_to_get || 1e9)],
-  time: ['Most played', (a, b) => b.playtime_minutes - a.playtime_minutes],
-  rare: ['Rarest to 100%', (a, b) => Number(a.perfect_rate ?? 1e9) - Number(b.perfect_rate ?? 1e9)],
-  quick: ['Quickest to 100% (median)', (a, b) => (a.sh_median_minutes || 1e9) - (b.sh_median_minutes || 1e9)],
-  name: ['Name', (a, b) => a.name.localeCompare(b.name)],
+  played: ['Recently played', (g) => g.last_played || null, -1],
+  percent: ['Completion', (g) => num(g.percent), -1],
+  left: ['Fewest to go', (g) => g.left_to_get || null, 1],
+  time: ['Most played', (g) => g.playtime_minutes ?? 0, -1],
+  rare: ['Rarest to 100%', (g) => num(g.perfect_rate), 1],
+  quick: ['Quickest to 100% (median)', (g) => g.sh_median_minutes || null, 1],
+  name: ['Name', (g) => g.name.toLowerCase(), 1],
+}
+function sorter(sort, flipped) {
+  const [, value, way] = SORTS[sort]
+  const dir = flipped ? -way : way
+  const cmp = (x, y) => (typeof x === 'string' ? x.localeCompare(y) : x - y)
+  return (a, b) => {
+    const x = value(a)
+    const y = value(b)
+    if (x == null || y == null) return x == null ? (y == null ? 0 : 1) : -1
+    return dir * cmp(x, y) || a.name.localeCompare(b.name)
+  }
 }
 
 // Every game: which to show, a search, a sort, and a row each with its completion. Adding a game
@@ -300,7 +314,13 @@ const OTHER_SHOWS = {
 function GamesView({ chosen, other, switcher }) {
   const { refreshKey, openPanel } = useApp()
   const [show, setShow] = useState(() => new URLSearchParams(window.location.search).get('show') ?? 'all')
-  const [sort, setSort] = useState('played')
+  const [sort, setSortKey] = useState('played')
+  const [flipped, setFlipped] = useState(false)
+  // A new sort starts its usual way; the same one again (a heading clicked twice) flips it.
+  const setSort = (key) => {
+    setFlipped((f) => (key === sort ? !f : false))
+    setSortKey(key)
+  }
   const [q, setQ] = useState('')
   // Hide games already at 100% (remembered on this device): sorting by progress then starts with the ones to do.
   const [hideDone, setHideDone] = useState(() => { try { return localStorage.getItem('videogames.hideDone') === '1' } catch { return false } })
@@ -325,7 +345,7 @@ function GamesView({ chosen, other, switcher }) {
   const visible = useMemo(() => (games ?? [])
     .filter((g) => !hiding || !(g.completed_at || Number(g.percent) >= 100))
     .filter((g) => !q.trim() || g.name.toLowerCase().includes(q.trim().toLowerCase()))
-    .sort(SORTS[sort][1]), [games, q, sort, hiding])
+    .sort(sorter(sort, flipped)), [games, q, sort, flipped, hiding])
 
   if (error) return <p className="alert error">{error}</p>
   return (
@@ -352,7 +372,7 @@ function GamesView({ chosen, other, switcher }) {
         <button type="button" className="chip-filter games-hide-done" aria-pressed={hideDone} onClick={toggleHideDone}
           disabled={show === 'perfect'} title="Leave out games you've already 100%'d">Hide 100%</button>
       </div>
-      <GameHead sort={sort} setSort={setSort} />
+      <GameHead sort={sort} flipped={flipped} setSort={setSort} />
       </div>
       {!games ? <p className="muted loading">Loading...</p> : visible.length === 0 ? <p className="empty card">No games here.</p> : (
         <GameTable games={visible} showPlatform={several} onOpen={(g) => openPanel('videogame', { id: g.app_id })} />
@@ -397,7 +417,7 @@ function Stat1({ kind, value }) {
 
 // The column headings (pinned with the search and filters; click one to sort by it). On a phone
 // there are no columns, so they become a small key to the icons on each card.
-function GameHead({ sort, setSort }) {
+function GameHead({ sort, flipped, setSort }) {
   const heads = [['name', 'Game'], ['percent', 'Progress'], ['time', COLUMNS.time], ['quick', COLUMNS.median], ['rare', COLUMNS.rate]]
   return (
     <div className="game-table">
@@ -408,9 +428,10 @@ function GameHead({ sort, setSort }) {
         <span />
         {heads.map(([key, head]) => (
           <button key={key} type="button" className="game-head-cell" aria-pressed={sort === key}
-            onClick={() => setSort(key)} title={`Sort by ${typeof head === 'string' ? head.toLowerCase() : head.what.toLowerCase()}`}>
+            onClick={() => setSort(key)} title={sort === key ? 'Click again to reverse'
+              : `Sort by ${typeof head === 'string' ? head.toLowerCase() : head.what.toLowerCase()}`}>
             {typeof head === 'string' ? head : <><head.Icon size={15} aria-hidden="true" /> {head.label}</>}
-            {sort === key && <span aria-hidden="true"> ▾</span>}
+            {sort === key && <span aria-hidden="true">{flipped ? ' ▴' : ' ▾'}</span>}
           </button>
         ))}
       </div>
