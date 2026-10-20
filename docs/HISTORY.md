@@ -1755,3 +1755,7 @@ DBeaver connection confirmed working (2026-10-11).
    for achievements". A search box beside All / Unlocked / Still to get in the game's panel: every word must be in the
    achievement's name, description or DLC name (hidden ones' descriptions aren't sent, so they stay secret); it says
    how many match, and while searching shows one list (a match inside a folded DLC group would be out of sight).
+4t. **Video games: a games-list heading clicked twice reverses its sort** (2026-10-20). Each sort is now a value and a usual
+   direction (VideoGamesViews SORTS); the same heading again flips it (arrow ▾/▴). Games with no number stay last both ways.
+4u. **Travel shipped to prod** (2026-10-20, user: "push travel to prod"). underConstruction taken off its manifest; its
+   tables (77) were already in prod. Car is the only unfinished hobby left.

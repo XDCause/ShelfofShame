@@ -7,13 +7,11 @@ import TripPanel from './TripPanel.jsx'
 // plan, money (a budget; other currencies in AUD), packing (lists, your hobby gear), places (its stops and route) and a
 // journal with photos; a map of everywhere you've been and want to go, countries and a bucket list. Trips show on the
 // calendar (each day, flights, check-ins) and in the activity feed; @mention them in the journal.
-// underConstruction keeps it in dev only until you say it's done (modules/index.js).
 export default {
   id: 'travel',
   name: 'Travel',
   what: 'Trips: bookings, plans, budget, packing, places and memories',
   Icon: SuitcaseIcon,
-  underConstruction: true,
   home: { Tiles: TravelTiles },
   actions: [{ label: 'Plan a trip', Icon: SuitcaseIcon, run: (app) => app.openPanel('trip', {}) }],
   panels: { trip: TripPanel, tbooking: BookingPanel, tplace: PlacePanel },

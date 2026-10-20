@@ -45,7 +45,7 @@ AI via MCP server (stage 6) ---------------/
 DBeaver, psql, and the one-off import script.
 
 ## Where to look
-- **History, decisions and the reasons behind them: docs/HISTORY.md** (sections 1 - 4s; search it before changing
+- **History, decisions and the reasons behind them: docs/HISTORY.md** (sections 1 - 4u; search it before changing
   something old - most odd-looking code has a lesson behind it there). Plans: docs/ROADMAP.md. Caveats for ever going
   public: BEFORE_GOING_PUBLIC.md (**add a row whenever a new data source, scraper, copied content or single-user
   shortcut is added**).
@@ -100,7 +100,7 @@ DBeaver, psql, and the one-off import script.
 - Playwright's Chromium can't play H.264; browser tests of playback need WebM.
 - An element with an id is also a window global (`window.__NEXT_DATA__` can be the <script> element): check its shape.
 - A new outside source needs a stand-in in stand_ins.py (and a fake in conftest), or the walk-through would ask it live.
-- Unfinished hobbies (manifest underConstruction: car, travel; shooting shipped 2026-10-20) show in dev only; prod's web build leaves
+- Unfinished hobbies (manifest underConstruction: car; shooting and travel shipped 2026-10-20) show in dev only; prod's web build leaves
   them out (APP_ENV build arg -> VITE_APP_ENV, modules/index.js). Take the flag off when a hobby is fully built.
 - Good Games is paused in the weekly site check (a small shop; user's call) - its features still work when used.
 
