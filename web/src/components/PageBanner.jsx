@@ -15,9 +15,10 @@ export function BannerArt({ area, photo, strip = false }) {
   return <Landscape scene={b.scene} seed={b.seed} hue={area.hue} strip={strip} time={b.time} extras={b.extras} />
 }
 
-// "Picture": choose a photo of your own for this banner, move it up or down, or go back to the drawing.
+// "Picture": choose a photo of your own for this banner, move it up or down, or go back to the drawing. Shown only
+// when Settings > Appearance turns it on (off by default: clutter once the pictures are chosen).
 export function BannerPicture({ area, photo }) {
-  const { showToast } = useApp()
+  const { showToast, settings } = useApp()
   const input = useRef(null)
   const menu = useRef(null)
   const [busy, setBusy] = useState(false)
@@ -40,6 +41,7 @@ export function BannerPicture({ area, photo }) {
     if (file) run(async () => api.setBanner(area.id, await shrink(file, 2200)), 'Picture saved.')
   }
   const move = (by) => run(() => api.moveBanner(area.id, Math.max(0, Math.min(100, photo.focus_y + by))))
+  if (settings?.banner_pictures !== 'on') return null
   return (
     <details className="banner-picture" ref={menu}>
       <summary aria-label={`Change the ${area.name ?? 'page'} picture`} title="Change this picture">

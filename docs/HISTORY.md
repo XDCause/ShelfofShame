@@ -1863,3 +1863,18 @@ DBeaver connection confirmed working (2026-10-11).
    seven, ticked off there (Undo in the toast), a quick add, and the tick boxes from journal pages (which moved off
    Home's Journal card - one place for everything to do). A to-do's panel (TodoPanel) holds the details. Done to-dos stay
    out of the activity feed on purpose (small tasks would crowd out the hobbies). GoalsHome.jsx went (unused).
+5b. **"Failed to fetch" 1 time in 1000, and the Picture button behind a setting** (2026-10-21). The walk-through
+   failed now and then on a random late step (volleyball, shooting): "Failed to fetch" / net::ERR_FAILED, a request
+   with no answer at all. The walk-through now names every such request (requestfailed: address + step). First guess
+   (wrong): requests cancelled by the next page.goto. The real cause: nginx closes a connection after
+   keepalive_requests (default 1000) and, with HTTP/2, everything shares one connection - a request sent as it closes
+   fails. Shown by a burst of 6000 fetches from Chromium in the e2e image (7 failed); keepalive_requests 1000000 +
+   keepalive_timeout 300s in nginx.conf: 6000 / 6000. It could hit a save after a long session, so it was a real bug.
+   Lesson: don't excuse a flaky failure in the test - reproduce it. Also: the travel step counted days from the
+   container's UTC date (a day behind Brisbane before 10 am) - UTC+10 now; the walk-through tests the images dev is
+   RUNNING (after a web change, .\dev.ps1 before promote.ps1); the first promote with HTTPS ran the OLD promote.ps1 (no
+   make-cert), so prod's nginx had no certificate until .\make-cert.ps1 was run by hand. The UI audit's accepted
+   "search box over the banner" contrast is now matched by place (inside .navbar.over-banner, not scrolled), not by axe's
+   selector, which changes with the rest of the page. User: the banners' Picture button is clutter - now a setting
+   (Settings > Appearance, "Picture button on banners", settings.banner_pictures, off by default); pictures already
+   chosen show either way.

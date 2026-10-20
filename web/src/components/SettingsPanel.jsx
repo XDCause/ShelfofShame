@@ -61,7 +61,34 @@ function Appearance({ settings, onSettings }) {
         <input value={name} maxLength={40} onChange={(e) => setName(e.target.value)} onBlur={save}
           onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()} placeholder="For Home's greeting" />
       </label>
-      <p className="hint">Home says "Good morning, {name.trim() || 'you'}". Each page's picture is changed from its banner (Picture). {saved}</p>
+      <p className="hint">Home says "Good morning, {name.trim() || 'you'}". {saved}</p>
+      <BannerPictures settings={settings} onSettings={onSettings} />
+    </>
+  )
+}
+
+// The Picture button on every page's banner: off unless you want to change a picture (pictures you chose show either way).
+function BannerPictures({ settings, onSettings }) {
+  const [error, setError] = useState('')
+  const [on, setOn] = useState(settings.banner_pictures === 'on')   // ticks at once; back again if it couldn't save
+  const flip = async () => {
+    const want = !on
+    setOn(want)
+    try {
+      onSettings(await api.updateSettings({ banner_pictures: want ? 'on' : 'off' }))
+      setError('')
+    } catch (e) {
+      setOn(!want)
+      setError(e.message)
+    }
+  }
+  return (
+    <>
+      <label className="tick-row">
+        <input type="checkbox" checked={on} onChange={flip} /> Picture button on banners
+      </label>
+      <p className="hint">Turn on to put a photo of your own behind a page's banner (or move it, or go back to the drawing);
+        turn off again when you're done. {error}</p>
     </>
   )
 }

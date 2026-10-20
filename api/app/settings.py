@@ -9,6 +9,7 @@ import subprocess
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
+from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Response
 from fastapi.responses import FileResponse
@@ -21,12 +22,15 @@ router = APIRouter(prefix="/api", tags=["settings"])
 # ---------------------------------------------------------------------------
 # Settings (key -> value)
 # ---------------------------------------------------------------------------
-DEFAULTS = {"default_shop": "Hobbyrama", "your_name": None}   # your_name: Home says "Good morning, <name>"
+# your_name: Home says "Good morning, <name>". banner_pictures: "on" shows the Picture button on every banner (off by
+# default - it's clutter once your pictures are chosen; pictures already chosen show either way).
+DEFAULTS = {"default_shop": "Hobbyrama", "your_name": None, "banner_pictures": "off"}
 
 
 class SettingsPatch(BaseModel):
     default_shop: str | None = Field(None, max_length=100)
     your_name: str | None = Field(None, max_length=40)
+    banner_pictures: Literal["on", "off"] | None = None
 
 
 def get_setting(conn, key: str) -> str | None:

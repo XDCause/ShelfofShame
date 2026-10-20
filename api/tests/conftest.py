@@ -44,7 +44,7 @@ def clean_database():
                      "exo_synced_at = NULL, exo_error = NULL")
         # the seeded settings (db/init/15_settings.sql)
         conn.execute("UPDATE settings SET value = 'Hobbyrama' WHERE key = 'default_shop'")
-        conn.execute("DELETE FROM settings WHERE key = 'your_name'")
+        conn.execute("DELETE FROM settings WHERE key IN ('your_name', 'banner_pictures')")
         conn.execute("""INSERT INTO price_guide (label, title_contains, paint_type, size, price, sort_order)
                         VALUES ('Panel Line Accent', 'PANEL LINE ACCENT', NULL, NULL, 10.95, 1),
                                ('Acrylic paint, 10ml', NULL, 'Acrylic', '10ml', 3.95, 2)""")

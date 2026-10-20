@@ -46,10 +46,7 @@ PANELS = [("/supplies", "tr.row"), ("/models/kits", ".model-card"), ("/reading/b
 ACCEPTED = {
     # axe can't see the banner picture behind the clear nav bar, so it measures the search box's light text against
     # the page colour; over the (always dark) banner it's ~9:1, and once scrolled the bar is solid with dark text.
-    "a11y|color-contrast: input[type=\"search\"]": "over the banner",
-    "a11y|color-contrast: input[aria-label=\"Search everything\"][type=\"search\"][value=\"\"]": "over the banner",
-    "a11y|color-contrast: input[aria-label=\"Search everything\"][type=\"search\"]": "over the banner",
-    "a11y|color-contrast: kbd": "over the banner",
+    "a11y|color-contrast: nav bar over the banner": "over the banner",
 }
 
 # The checks, run in the page. Returns [{kind, selector, detail, rect}].
@@ -229,7 +226,14 @@ AXE_RUN = """async () => {
   const scope = document.querySelector('aside.drawer') || document;
   const r = await axe.run(scope, { resultTypes: ['violations'], runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'] } });
   return r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').flatMap((v) =>
-    v.nodes.slice(0, 6).map((n) => ({ kind: 'a11y', selector: v.id + ': ' + n.target.join(' '), detail: (n.failureSummary || v.help).replace(/\\s+/g, ' ').slice(0, 160) })));
+    v.nodes.slice(0, 6).map((n) => {
+      // Contrast in the clear nav bar over the banner: named by where it is, not by axe's selector (which changes with
+      // whatever else is on the page - "input", "label > input", ".search-box > input"...).
+      const el = n.target.length === 1 ? document.querySelector(n.target[0]) : null;
+      const overBanner = v.id === 'color-contrast' && el?.closest('.navbar.over-banner:not(.scrolled)');
+      return { kind: 'a11y', selector: v.id + ': ' + (overBanner ? 'nav bar over the banner' : n.target.join(' ')),
+        detail: (n.failureSummary || v.help).replace(/\\s+/g, ' ').slice(0, 160) };
+    }));
 }"""
 
 MARK = """(rects) => { for (const [x, y, w, h] of rects) { const d = document.createElement('div'); d.className = 'audit-mark';

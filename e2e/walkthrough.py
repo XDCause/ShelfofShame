@@ -124,20 +124,10 @@ def watch(page, label):
             and errors.append(f"[{label}] HTTP {r.status} {r.url}"))
     # A request with no answer at all (net::ERR_FAILED, refused, reset) has no response either: name it and the step.
     # Not counted: ERR_ABORTED (the page moved on before it came back) and ERR_BLOCKED_BY_ORB (an outside site's
-    # picture - the stand-ins' made-up addresses - that this offline copy can't fetch). Nor a GET that fails as the
-    # walk-through opens another page: one still coming back when the page goes (save, Escape, goto at once - what a
-    # person can't do) is cancelled, and Chromium sometimes calls that ERR_FAILED. A failed save still counts.
-    left = {"at": 0.0}
-    page.on("request", lambda r: r.is_navigation_request() and r.frame == page.main_frame and left.update(at=time.time()))
-
-    def failed(r):
-        why = r.failure or ""
-        if any(x in why for x in ("ERR_ABORTED", "ERR_BLOCKED_BY_ORB")):
-            return
-        if r.method == "GET" and "ERR_FAILED" in why and time.time() - left["at"] < 2:
-            return
-        errors.append(f"[{label}] {NOW['step']}: {r.method} {r.url} - {why}")
-    page.on("requestfailed", failed)
+    # picture - the stand-ins' made-up addresses - that this offline copy can't fetch). ERR_FAILED always counts: it
+    # once looked like a page change cancelling requests, and was really nginx dropping 1 request in 1000 (HISTORY 5b).
+    page.on("requestfailed", lambda r: not any(x in (r.failure or "") for x in ("ERR_ABORTED", "ERR_BLOCKED_BY_ORB"))
+            and errors.append(f"[{label}] {NOW['step']}: {r.method} {r.url} - {r.failure}"))
 
 
 # ---------------------------------------------------------------- desktop
@@ -966,6 +956,11 @@ def banners(page):
     banner = page.locator(".page-banner")
     expect(banner.locator(".banner-title")).to_have_text("Board games")
     expect(banner.locator(".banner-tagline")).to_be_visible()
+    expect(page.locator(".banner-picture")).to_have_count(0)                    # the Picture button: off until Settings turns it on
+    page.get_by_role("button", name="Settings").click()
+    d.locator("summary", has_text="Appearance").click()
+    d.get_by_label("Picture button on banners").check()
+    page.keyboard.press("Escape")
     banner.get_by_label("Change the Board games picture").click()
     banner.locator(".banner-picture-menu input[type=file]").set_input_files(
         {"name": "table.png", "mimeType": "image/png", "buffer": PIXEL})
@@ -979,10 +974,12 @@ def banners(page):
     expect(banner.locator(".landscape")).to_have_count(1)
     page.mouse.wheel(0, 600)                                                     # scrolled: the bar shows the page's name
     expect(page.locator(".navbar.scrolled h1")).to_contain_text("Board games")
-    page.get_by_role("button", name="Settings").click()                          # tidy up: no name again
+    page.get_by_role("button", name="Settings").click()                          # tidy up: no name, no Picture button
     d.locator("summary", has_text="Appearance").click()
     d.get_by_label("Your name").fill("")
     d.get_by_label("Your name").press("Enter")
+    d.get_by_label("Picture button on banners").uncheck()
+    expect(page.locator(".banner-picture")).to_have_count(0)
     page.keyboard.press("Escape")
 
 

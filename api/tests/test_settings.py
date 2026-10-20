@@ -10,10 +10,11 @@ from tests.conftest import FIXTURES
 
 # ---------------------------------------------------------------- default shop
 def test_default_shop_is_hobbyrama_and_can_change(client):
-    assert client.get("/api/settings").json() == {"default_shop": "Hobbyrama", "your_name": None}
+    rest = {"your_name": None, "banner_pictures": "off"}
+    assert client.get("/api/settings").json() == {"default_shop": "Hobbyrama", **rest}
     assert client.patch("/api/settings", json={"default_shop": " Frontline Hobbies "}).json() == \
-        {"default_shop": "Frontline Hobbies", "your_name": None}
-    assert client.patch("/api/settings", json={"default_shop": ""}).json() == {"default_shop": None, "your_name": None}
+        {"default_shop": "Frontline Hobbies", **rest}
+    assert client.patch("/api/settings", json={"default_shop": ""}).json() == {"default_shop": None, **rest}
 
 
 def test_your_name_for_the_greeting(client):
@@ -21,6 +22,14 @@ def test_your_name_for_the_greeting(client):
     assert client.get("/api/settings").json()["your_name"] == "Sam"
     assert client.patch("/api/settings", json={"your_name": ""}).json()["your_name"] is None
     assert client.patch("/api/settings", json={"your_name": "x" * 41}).status_code == 422
+
+
+def test_the_banner_picture_button_is_off_until_turned_on(client):
+    assert client.get("/api/settings").json()["banner_pictures"] == "off"
+    assert client.patch("/api/settings", json={"banner_pictures": "on"}).json()["banner_pictures"] == "on"
+    assert client.get("/api/settings").json()["banner_pictures"] == "on"
+    assert client.patch("/api/settings", json={"banner_pictures": "off"}).json()["banner_pictures"] == "off"
+    assert client.patch("/api/settings", json={"banner_pictures": "maybe"}).status_code == 422
 
 
 def test_buying_without_a_shop_uses_the_default(client, ids):
