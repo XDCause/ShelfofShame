@@ -10,7 +10,7 @@ export default {
   name: 'Chess',
   // its colour (walnut: sidebar icon, Home card, banner) and its banner (components/Landscape.jsx scenes)
   hue: '#a8825a',
-  banner: { scene: 'hills', seed: 14, tagline: 'One move at a time.' },
+  banner: { scene: 'hills', seed: 14, time: 'overcast', extras: ['fog', 'lake'], tagline: 'One move at a time.' },
   what: 'chess.com ratings, games and openings; games over the board',
   Icon: ChessIcon,
   home: { Tiles: ChessTiles },

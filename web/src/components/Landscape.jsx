@@ -78,24 +78,42 @@ function pines(rand, pts, size, every, maxY = Infinity) {
   return d
 }
 
+// The time of day: the sky's colours before the area's hue is mixed in, and whether the sun shows.
+//   golden    late afternoon (the first look; Home keeps it)    dawn      lilac sky, a peach horizon
+//   blue      after sunset: cool, a glow where the sun went     overcast  soft grey, cloud cover, no sun
+const TIMES = {
+  golden: { top: '#1a2a2a', mid: '#5d6a55', horizon: '#f0b47a', glow: '#ffd8a3', haze: '#55695a', sun: true },
+  dawn: { top: '#1c2236', mid: '#6a5a7a', horizon: '#f2a690', glow: '#ffe1d2', haze: '#5c5a6c', sun: true },
+  blue: { top: '#0b1626', mid: '#2a4964', horizon: '#8eb2c8', glow: '#e6f1fb', haze: '#3a5468', sun: false },
+  overcast: { top: '#1f2729', mid: '#4a5553', horizon: '#a1aaa0', glow: '#e1e6df', haze: '#5b655f', sun: false },
+}
+
 // strip: a short, wide crop (a card's picture strip) shows the horizon rather than the foot of the hills.
-function Landscape({ scene = 'peaks', hue = '#84a85c', seed = 7, className = '', strip = false }) {
+// time and extras (clouds, birds, snow, lake, fog, aurora) make each area's picture its own; with neither given it's
+// drawn exactly as it always was (Home's).
+function Landscape({ scene = 'peaks', hue = '#84a85c', seed = 7, className = '', strip = false, time = 'golden', extras = [] }) {
   const id = useId().replace(/:/g, '')
   const rand = random(seed * 9973 + scene.length * 131)
+  const more = random(seed * 7919 + 17)          // the extras' own dice, so they don't reshape the hills
   const night = scene === 'night'
   const coast = scene === 'coast'
+  const has = (x) => extras.includes(x)
+  const sky = TIMES[time] ?? TIMES.golden
+  const varied = time !== 'golden' || extras.length > 0
 
   // The palette: a deep sky over a warm horizon, ridges going from hazy (far) to near-black pine (near).
-  const skyTop = mix(night ? '#08111a' : '#1a2a2a', hue, 0.2)
-  const skyMid = mix(night ? '#1b2d40' : '#5d6a55', hue, 0.34)
-  const horizon = mix(night ? '#46607a' : '#f0b47a', hue, night ? 0.3 : 0.26)
-  const glow = night ? '#dfe8ef' : '#ffd8a3'
-  const haze = mix(horizon, night ? '#243844' : '#55695a', 0.5)
+  const skyTop = mix(night ? '#08111a' : sky.top, hue, 0.2)
+  const skyMid = mix(night ? '#1b2d40' : sky.mid, hue, 0.34)
+  const horizon = mix(night ? '#46607a' : sky.horizon, hue, night ? 0.3 : 0.26)
+  const glow = night ? '#dfe8ef' : sky.glow
+  const haze = mix(horizon, night ? '#243844' : sky.haze, 0.5)
   const near = mix('#09100c', hue, 0.06)
   const layers = coast ? 3 : 5
-  const sunX = W * (0.56 + rand() * 0.26)
-  const sunY = H * (night ? 0.24 : 0.5)
+  const firstSunX = W * (0.56 + rand() * 0.26)
+  const sunX = varied ? W * (0.14 + more() * 0.72) : firstSunX      // (anywhere along the sky, for a varied picture)
+  const sunY = H * (night ? 0.24 : varied ? 0.42 + more() * 0.14 : 0.5)
   const seaLine = H * 0.66
+  const showSun = night || sky.sun
 
   const ridges = Array.from({ length: layers }, (_, i) => {
     const t = i / (layers - 1)
@@ -112,6 +130,13 @@ function Landscape({ scene = 'peaks', hue = '#84a85c', seed = 7, className = '',
       .map(([x, y]) => [x, Math.min(y + ease((x - W * 0.2) / (W * 0.34)) * 340, H + 10)])
   })()
   const stars = night && Array.from({ length: 90 }, () => [rand() * W, rand() * H * 0.55, rand() * 1.4 + 0.3, rand() * 0.7 + 0.2])
+  // Clouds: a few soft lit puffs (a sky full of them when it's overcast).
+  const clouds = (has('clouds') || time === 'overcast') && Array.from({ length: time === 'overcast' ? 8 : 3 + Math.floor(more() * 3) }, () => ({
+    x: more() * W, y: H * (0.06 + more() * (time === 'overcast' ? 0.36 : 0.28)), w: 160 + more() * 260, h: 16 + more() * 22, o: 0.3 + more() * 0.3 }))
+  // Birds: a loose few, near the sun.
+  const birds = has('birds') && Array.from({ length: 3 + Math.floor(more() * 4) }, () => ({
+    x: Math.max(40, Math.min(W - 40, sunX + (more() - 0.5) * 560)), y: H * (0.12 + more() * 0.24), s: 7 + more() * 8 }))
+  const lakeAfter = Math.floor(layers / 2)          // (a lake shows between the middle and the near hills)
 
   return (
     <svg className={`landscape ${className}`} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio={strip ? 'xMidYMid slice' : 'xMidYMax slice'} aria-hidden="true" focusable="false">
@@ -135,6 +160,14 @@ function Landscape({ scene = 'peaks', hue = '#84a85c', seed = 7, className = '',
           <stop offset="0" stopColor={glow} stopOpacity="0.3" />
           <stop offset="1" stopColor={glow} stopOpacity="0" />
         </radialGradient>
+        <filter id={`soft${id}`} x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="9" /></filter>
+        <filter id={`veil${id}`} x="-10%" y="-100%" width="120%" height="300%"><feGaussianBlur stdDeviation="22" /></filter>
+        <linearGradient id={`aurora${id}`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#6fe0b0" stopOpacity="0" />
+          <stop offset="0.35" stopColor="#6fe0b0" stopOpacity="0.55" />
+          <stop offset="0.7" stopColor="#8f7ae6" stopOpacity="0.45" />
+          <stop offset="1" stopColor="#8f7ae6" stopOpacity="0" />
+        </linearGradient>
         <linearGradient id={`sea${id}`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor={mix(horizon, skyMid, 0.35)} />
           <stop offset="1" stopColor={mix(skyTop, near, 0.4)} />
@@ -142,8 +175,25 @@ function Landscape({ scene = 'peaks', hue = '#84a85c', seed = 7, className = '',
       </defs>
       <rect width={W} height={H} fill={`url(#sky${id})`} />
       {stars && stars.map(([x, y, r, o], i) => <circle key={i} cx={x.toFixed(1)} cy={y.toFixed(1)} r={r.toFixed(2)} fill="#fff" opacity={o.toFixed(2)} />)}
-      <rect width={W} height={H} fill={`url(#sun${id})`} />
-      <circle cx={sunX} cy={sunY} r={night ? 30 : 42} fill={glow} opacity={night ? 0.9 : 0.85} />
+      {/* northern lights: soft ribbons across the night sky */}
+      {night && has('aurora') && [0, 1].map((k) => {
+        const y0 = H * (0.12 + k * 0.1)
+        return <path key={k} d={`M-40 ${y0 + 40} C ${W * 0.25} ${y0 - 60}, ${W * 0.45} ${y0 + 90}, ${W * 0.7} ${y0} S ${W + 40} ${y0 + 30}, ${W + 60} ${y0 - 10}`}
+          stroke={`url(#aurora${id})`} strokeWidth={70 - k * 25} fill="none" filter={`url(#veil${id})`} opacity={0.8 - k * 0.25} />
+      })}
+      <rect width={W} height={H} fill={`url(#sun${id})`} opacity={showSun ? 1 : 0.55} />
+      {showSun && <circle cx={sunX} cy={sunY} r={night ? 30 : 42} fill={glow} opacity={night ? 0.9 : 0.85} />}
+      {clouds && clouds.map((c, i) => (
+        <g key={`c${i}`} filter={`url(#soft${id})`} opacity={c.o} fill={mix(glow, skyMid, time === 'overcast' ? 0.45 : 0.3)}>
+          <ellipse cx={c.x} cy={c.y} rx={c.w / 2} ry={c.h / 2} />
+          <ellipse cx={c.x - c.w * 0.18} cy={c.y - c.h * 0.35} rx={c.w * 0.22} ry={c.h * 0.6} />
+          <ellipse cx={c.x + c.w * 0.15} cy={c.y - c.h * 0.25} rx={c.w * 0.18} ry={c.h * 0.5} />
+        </g>
+      ))}
+      {birds && birds.map((b, i) => (
+        <path key={`b${i}`} d={`M${b.x - b.s} ${b.y} Q${b.x - b.s / 2} ${b.y - b.s * 0.55} ${b.x} ${b.y} Q${b.x + b.s / 2} ${b.y - b.s * 0.55} ${b.x + b.s} ${b.y}`}
+          stroke={mix(near, skyMid, 0.25)} strokeWidth="2" fill="none" strokeLinecap="round" />
+      ))}
       {coast && <rect y={seaLine} width={W} height={H - seaLine} fill={`url(#sea${id})`} />}
       {/* the sun on the water: a soft path of light, and a bright line where it meets the horizon */}
       {coast && <ellipse cx={sunX} cy={seaLine} rx="200" ry={H - seaLine} fill={`url(#glint${id})`} />}
@@ -151,6 +201,27 @@ function Landscape({ scene = 'peaks', hue = '#84a85c', seed = 7, className = '',
       {ridges.map(({ pts, t, colour }, i) => (
         <g key={i}>
           <path className="ridge" data-ridge={i} d={area(pts, coast ? seaLine + 4 : H)} fill={colour} />
+          {/* snow on the far peaks: the ridge again, in snow, above a line a little under its highest point */}
+          {has('snow') && t < 0.5 && (() => {
+            const top = Math.min(...pts.map(([, y]) => y))
+            return (
+              <>
+                <clipPath id={`snow${id}${i}`}><rect width={W} height={top + 38 + (1 - t) * 20} /></clipPath>
+                <path d={area(pts, coast ? seaLine + 4 : H)} fill={mix('#f4f1ea', glow, 0.3)} opacity={0.78 - t * 0.5} clipPath={`url(#snow${id}${i})`} />
+              </>
+            )
+          })()}
+          {/* a lake in the valley: still water reflecting the sky, the nearer hills in front of it */}
+          {has('lake') && i === lakeAfter && <>
+            <rect y={H * 0.76} width={W} height={H * 0.24} fill={`url(#sea${id})`} />
+            <ellipse cx={sunX} cy={H * 0.76} rx="180" ry={H * 0.16} fill={`url(#glint${id})`} />
+            <rect y={H * 0.76} width={W} height="2" fill={glow} opacity="0.35" />
+          </>}
+          {/* low fog drifting between the nearer hills */}
+          {has('fog') && t > 0.3 && t < 0.9 && (
+            <ellipse cx={W * (0.3 + more() * 0.4)} cy={Math.min(...pts.map(([, y]) => y)) + 60} rx={W * 0.6} ry="34" fill={glow}
+              opacity="0.16" filter={`url(#veil${id})`} />
+          )}
           {(scene === 'forest' || scene === 'peaks' || scene === 'night') && t > 0.5 && (
             <path className="pines" data-ridge={i} d={pines(rand, pts, 30 + t * 34, 26 - t * 8)} fill={colour} />
           )}

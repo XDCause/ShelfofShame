@@ -18,7 +18,7 @@ export default {
   name: 'Building my car',
   // its colour (slate: sidebar icon, Home card, banner) and its banner (components/Landscape.jsx scenes)
   hue: '#7f97a6',
-  banner: { scene: 'hills', seed: 23, tagline: 'Built, not bought.' },
+  banner: { scene: 'hills', seed: 23, extras: ['birds', 'clouds'], tagline: 'Built, not bought.' },
   what: 'Modified Toyota 86 (under construction)',
   Icon: CarIcon,
   underConstruction: true,

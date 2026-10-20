@@ -81,14 +81,11 @@ export default function Home() {
       </section>
 
       <div className="home-grid">
-        <div className="home-column">
-          <ComingUp />
-          <QuickActions newPage={newPage} />
-        </div>
-        <div className="home-column">
-          <JournalHome />
-        </div>
+        <ComingUp />
+        <JournalHome />
       </div>
+
+      <QuickActions newPage={newPage} />
 
       <div className="home-grid">
         <RunningLow />

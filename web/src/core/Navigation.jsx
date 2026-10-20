@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Link, NavLink, useLocation } from 'react-router'
 import { useApp } from './app-context.js'
 import { BoltIcon, BoxIcon, CalendarIcon, CartIcon, GearIcon, GridIcon, HomeIcon, JournalIcon, LogoMark, TargetIcon, WrenchIcon } from '../components/icons.jsx'
@@ -46,6 +47,9 @@ const nudge = () => NUDGES[Math.floor(Date.now() / 86400000) % NUDGES.length]
 // Between 701 and 1000 px it shrinks to icons only (CSS).
 export function Sidebar() {
   const { openPanel } = useApp()
+  const { pathname } = useLocation()
+  // On a short screen the hobbies list scrolls: keep the hobby you're in visible in it.
+  useEffect(() => { document.querySelector('.side-hobbies .active')?.scrollIntoView({ block: 'nearest' }) }, [pathname])
   return (
     <aside className="sidebar">
       <Link to="/" className="brand" aria-label="Off the Clock: Home"><LogoMark size={30} className="brand-mark" /><span className="brand-name">Off the Clock</span></Link>
@@ -56,11 +60,14 @@ export function Sidebar() {
           </NavLink>
         ))}
         <p className="side-section">Hobbies</p>
-        {MODULES.map((m) => (
-          <NavLink key={m.id} to={`/${m.id}`} className="side-link" title={m.what} data-hobby={m.id} style={{ '--hue': m.hue }}>
-            <m.Icon size={20} /><span>{m.name}{m.underConstruction && <UnderConstruction />}</span>
-          </NavLink>
-        ))}
+        {/* only the hobbies scroll (a short window): the main pages above and Settings below stay put */}
+        <div className="side-hobbies">
+          {MODULES.map((m) => (
+            <NavLink key={m.id} to={`/${m.id}`} className="side-link" title={m.what} data-hobby={m.id} style={{ '--hue': m.hue }}>
+              <m.Icon size={20} /><span>{m.name}{m.underConstruction && <UnderConstruction />}</span>
+            </NavLink>
+          ))}
+        </div>
       </nav>
       <div className="nudge" aria-hidden="true">
         <BoltIcon size={18} />

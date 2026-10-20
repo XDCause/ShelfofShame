@@ -13,7 +13,7 @@ export default {
   name: 'Volleyball',
   // its colour (sand and sun: sidebar icon, Home card, banner) and its banner (components/Landscape.jsx scenes)
   hue: '#d9a62e',
-  banner: { scene: 'coast', seed: 6, tagline: 'Serve, dig, spike, repeat.' },
+  banner: { scene: 'coast', seed: 6, extras: ['clouds', 'birds'], tagline: 'Serve, dig, spike, repeat.' },
   what: 'Games, training, videos, coaching notes and gear',
   Icon: BallIcon,
   home: { Tiles: VolleyballTiles },

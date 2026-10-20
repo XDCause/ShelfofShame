@@ -384,7 +384,7 @@ function GamesView({ chosen, other, switcher }) {
 // Home: two tiles.
 export function VideoGamesTiles() {
   const { data: s } = useSteamSummary()
-  if (!s) return <><StatSkeleton /><StatSkeleton /><StatSkeleton /></>
+  if (!s) return <><StatSkeleton /><StatSkeleton /></>
   return (
     <>
       <Stat to="/videogames/dashboard" Icon={TrophyIcon} tone="ok" value={s.perfect} label="Games at 100%"
@@ -392,8 +392,6 @@ export function VideoGamesTiles() {
       <Stat to="/videogames/dashboard" Icon={GamepadIcon} tone="purple" value={`${s.goal.percent}%`}
         change={s.week && <Change value={s.week.percent} unit="%" />}
         label="Profile completion" sub={s.goal.reached ? `goal ${s.goal.goal_percent}% reached` : `goal ${s.goal.goal_percent}% · ${s.goal.points_to_go} points to go`} />
-      <Stat to="/videogames/dashboard" Icon={ClockIcon} tone="teal" value={playtime(s.played.this_week)} label="Gaming this week"
-        sub={`${playtime(s.played.today)} today · ${playtime(s.playtime_minutes)} in all`} />
     </>
   )
 }

@@ -22,9 +22,14 @@ export function HikingTiles() {
   if (!s) return <StatSkeleton />
   if (!s.all_time.hikes) return null
   const y = s.this_year
+  const top = s.bests?.highest?.max_ele_m
   return (
-    <Stat to="/hiking/dashboard" Icon={MountainIcon} tone="ok" value={`${y.km.toFixed(1)} km`} label={`Hiked in ${s.year}`}
-      sub={`${plural(y.hikes, 'hike')} · ${metres(y.ascent_m)} climbed`} />
+    <>
+      <Stat to="/hiking/dashboard" Icon={MountainIcon} tone="ok" value={`${y.km.toFixed(1)} km`} label={`Hiked in ${s.year}`}
+        sub={`${plural(y.hikes, 'hike')}${s.recent[0] ? ` · last ${shortDate(s.recent[0].hiked_on)}` : ''}`} />
+      <Stat to="/hiking/dashboard" Icon={BootIcon} tone="teal" value={metres(y.ascent_m)} label={`Climbed in ${s.year}`}
+        sub={top ? `highest point ${metres(top)}` : 'uphill, all hikes'} />
+    </>
   )
 }
 

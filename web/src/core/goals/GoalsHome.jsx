@@ -5,8 +5,11 @@ import { TargetIcon } from '../../components/icons.jsx'
 import { useApp } from '../app-context.js'
 import { dueText, periodShort, ProgressBar, progressText } from './goalParts.jsx'
 
-// Goals on the Home page: the active ones (pinned first, then soonest due), up to four. Phones reach
+// Goals on the Home page: the active ones (pinned first, then soonest due), up to eight - enough to fill the card beside
+// Recent activity - then "+N more". Phones reach
 // the Goals page from here (their tab bar has no room for it).
+const SHOWN = 8
+
 export default function GoalsHome() {
   const { refreshKey } = useApp()
   const [goals, setGoals] = useState(null)
@@ -19,7 +22,7 @@ export default function GoalsHome() {
         <Link to="/goals" className="small">{goals.length ? 'All goals →' : 'Set a goal →'}</Link></h2>
       {goals.length === 0 ? <p className="muted small">Nothing you're aiming for yet.</p> : (
         <ul className="list plain-list home-goals">
-          {goals.slice(0, 4).map((g) => (
+          {goals.slice(0, SHOWN).map((g) => (
             <li key={g.goal_id}>
               <Link to={`/goals/${g.goal_id}`} className="row-button">
                 <span className="grow">
@@ -32,6 +35,7 @@ export default function GoalsHome() {
           ))}
         </ul>
       )}
+      {goals.length > SHOWN && <Link to="/goals" className="small home-goals-more">+{goals.length - SHOWN} more goal{goals.length - SHOWN === 1 ? '' : 's'} →</Link>}
     </section>
   )
 }

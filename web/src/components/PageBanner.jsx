@@ -11,7 +11,8 @@ export function BannerArt({ area, photo, strip = false }) {
   if (photo) {
     return <img className="banner-photo" src={photo.photo_url} alt="" style={{ objectPosition: `50% ${photo.focus_y}%` }} />
   }
-  return <Landscape scene={area.banner?.scene} seed={area.banner?.seed} hue={area.hue} strip={strip} />
+  const b = area.banner ?? {}
+  return <Landscape scene={b.scene} seed={b.seed} hue={area.hue} strip={strip} time={b.time} extras={b.extras} />
 }
 
 // "Picture": choose a photo of your own for this banner, move it up or down, or go back to the drawing.
@@ -68,7 +69,8 @@ export default function PageBanner({ area, title, eyebrow }) {
   const photo = banners[area.id]
   return (
     <header className="page-banner" style={{ '--hue': area.hue }}>
-      <div className="banner-art"><BannerArt area={area} photo={photo} /></div>
+      {/* strip: a page banner is wide and short - show the horizon and sky (clouds, peaks, the sun), not just the hills' feet */}
+      <div className="banner-art"><BannerArt area={area} photo={photo} strip /></div>
       <div className="banner-text" aria-hidden="true">
         {eyebrow && <p className="banner-eyebrow">{eyebrow}</p>}
         <p className="banner-title">{title}</p>

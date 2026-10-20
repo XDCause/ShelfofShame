@@ -244,6 +244,8 @@ export function ChessTiles() {
     <>
       {main && <Stat to="/chess/dashboard" Icon={ChessIcon} tone="tint" value={main.rating ?? '—'} label={`${className(main.time_class)} rating`}
         change={main.week_change != null && <Change value={main.week_change} />} sub={`${s.week.games} game${s.week.games === 1 ? '' : 's'} this week`} />}
+      {s.puzzles?.highest && <Stat to="/chess/dashboard" Icon={TrophyIcon} tone="ok" value={s.puzzles.highest} label="Puzzles (best)"
+        sub={s.puzzles.rush_best ? `Puzzle Rush best ${s.puzzles.rush_best}` : 'chess.com puzzles'} />}
     </>
   )
 }

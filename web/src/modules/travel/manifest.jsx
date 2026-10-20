@@ -12,7 +12,7 @@ export default {
   name: 'Travel',
   // its colour (lagoon: sidebar icon, Home card, banner) and its banner (components/Landscape.jsx scenes)
   hue: '#2fa39a',
-  banner: { scene: 'coast', seed: 2, tagline: 'Somewhere new is waiting.' },
+  banner: { scene: 'coast', seed: 2, time: 'dawn', extras: ['clouds'], tagline: 'Somewhere new is waiting.' },
   what: 'Trips: bookings, plans, budget, packing, places and memories',
   Icon: SuitcaseIcon,
   home: { Tiles: TravelTiles, Feature: NextAdventure },

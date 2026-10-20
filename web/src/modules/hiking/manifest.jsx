@@ -12,7 +12,7 @@ export default {
   name: 'Hiking',
   // its colour (pine: sidebar icon, Home card, banner) and its banner (components/Landscape.jsx scenes)
   hue: '#4f9e62',
-  banner: { scene: 'peaks', seed: 19, tagline: 'The view is worth the climb.' },
+  banner: { scene: 'peaks', seed: 19, extras: ['snow', 'birds'], tagline: 'The view is worth the climb.' },
   what: 'Hikes from AllTrails: distance, climb, routes and splits',
   Icon: BootIcon,
   home: { Tiles: HikingTiles },

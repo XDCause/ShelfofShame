@@ -56,6 +56,7 @@ TOTAL = len(_supplies)
 PAINTS = sum(s["category"] == "Paint" for s in _supplies)
 MODELS = len(get_json(f"/api/models"))
 CHESS = bool(get_json(f"/api/chess/account")["username"])   # Home gets a rating tile
+CHESS_PUZZLES = CHESS and bool((get_json("/api/chess/summary").get("puzzles") or {}).get("highest"))   # ...and a puzzle one
 _reading = get_json(f"/api/reading/summary")
 READING = (any(_reading["counts"].values())) + bool(_reading["reading"])   # Home: books this year (+ reading now)
 HIKING = bool(get_json(f"/api/hiking/summary")["all_time"]["hikes"])   # Home: km hiked
@@ -126,7 +127,9 @@ def home(page):
     expect(stats.filter(has_text="Supplies")).to_contain_text(str(TOTAL))
     for tile in ("Shelf of shame", "Board games", "Volleyball", "Next game"):
         expect(stats.filter(has_text=tile)).to_be_visible()
-    expect(stats).to_have_count(11 + CHESS + READING + HIKING + GARDEN + SHOOTING + TRAVEL)
+    # supplies 2, models 2, board games 2, volleyball 2, video games 2 = 10; chess (+ puzzles), reading, travel 1 each;
+    # hiking, gardening and shooting 2 each (2026-10-20: a second number each)
+    expect(stats).to_have_count(10 + CHESS + CHESS_PUZZLES + READING + 2 * HIKING + 2 * GARDEN + 2 * SHOOTING + TRAVEL)
     expect(page.locator(".home-card", has_text="Recent activity").locator(".pill").first).to_be_visible()
     expect(page.locator(".home-card", has_text="Coming up")).to_be_visible()
     expect(page.locator(".quick-action")).to_have_count(14)       # + Log a chess game, Add a book, Log a hike, Add a plant, Start shooting, Plan a trip

@@ -12,7 +12,7 @@ export default {
   name: 'Models',
   // its colour (terracotta: sidebar icon, Home card, banner) and its banner (components/Landscape.jsx scenes)
   hue: '#d0704f',
-  banner: { scene: 'peaks', seed: 4, tagline: 'Build. Paint. Display.' },
+  banner: { scene: 'peaks', seed: 4, time: 'dawn', extras: ['snow', 'clouds'], tagline: 'Build. Paint. Display.' },
   what: 'Scale models, Gundam and Warhammer',
   Icon: PlaneIcon,
   home: { Tiles: ModelsTiles, Cards: ModelsCards },

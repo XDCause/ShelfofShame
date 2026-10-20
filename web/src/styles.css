@@ -148,13 +148,13 @@ p a, .hint a, li > p a { text-decoration: underline; text-underline-offset: 2px;
 .content, .navbar-row { max-width: var(--column); margin: 0 auto; padding-left: var(--gutter); padding-right: var(--gutter); }
 
 .sidebar {
-  position: sticky; top: 0; height: 100vh; overflow-y: auto; z-index: 31;
+  position: sticky; top: 0; height: 100vh; overflow: hidden; z-index: 31;    /* (only its hobbies scroll: .side-hobbies) */
   display: flex; flex-direction: column; gap: 1px; padding: calc(18px + env(safe-area-inset-top, 0px)) 12px 16px;
   background: var(--side-bg); color: var(--side-text); border-right: 1px solid rgb(255 255 255 / 0.04);
   scrollbar-color: rgb(255 255 255 / 0.15) transparent;
 }
 .side-link {
-  position: relative; display: flex; align-items: center; gap: 12px; min-height: 36px; padding: 7px 12px; border-radius: var(--radius-sm);
+  position: relative; display: flex; align-items: center; gap: 12px; min-height: 34px; padding: 6px 12px; border-radius: var(--radius-sm);
   color: var(--side-text); font-weight: 500; font-size: 0.92rem; border: 0; background: none; width: 100%; text-align: left;
   transition: background var(--fast), color var(--fast);
 }
@@ -169,7 +169,7 @@ p a, .hint a, li > p a { text-decoration: underline; text-underline-offset: 2px;
   background: #cfe3c2;
 }
 .side-section {
-  margin: 22px 12px 6px; font-size: 0.68rem; font-weight: 650; color: var(--side-muted);
+  margin: 16px 12px 4px; font-size: 0.68rem; font-weight: 650; color: var(--side-muted);
   text-transform: uppercase; letter-spacing: 0.14em;
 }
 @media (min-width: 701px) and (max-width: 1000px) {
@@ -2805,3 +2805,19 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .recovery-codes { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
 .recovery-list { list-style: none; margin: 0; padding: 12px 16px; display: grid; grid-template-columns: repeat(2, auto); gap: 4px 24px;
   background: var(--fill-2); border-radius: var(--radius-sm); }
+
+/* ---------- The sidebar's parts, and the nav bar's three columns ----------
+   The sidebar is exactly the window's height: the logo and main pages at the top and the nudge and Settings at the
+   bottom stay put; only the hobbies between them scroll when the window is short. */
+.sidebar > nav { display: flex; flex-direction: column; gap: 1px; flex: 1; min-height: 0; }
+.side-hobbies { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 1px;
+  margin: 0 -12px; padding: 0 12px 10px; scrollbar-width: thin;
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 22px), transparent); }   /* (a soft edge: there's more below) */
+.sidebar .nudge { margin-top: 12px; flex: none; }
+/* The nav bar on a computer: the page's name | the search box, centred on the page | the buttons. */
+@media (min-width: 701px) {
+  .navbar-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 480px) minmax(0, 1fr); }
+  .navbar-row > h1 { grid-column: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .navbar-row > .global-search { grid-column: 2; width: 100%; max-width: none; margin: 0; }
+  .navbar-row > .navbar-actions { grid-column: 3; justify-self: end; }
+}

@@ -13,7 +13,7 @@ export default {
   name: 'Reading',
   // its colour (ink blue: sidebar icon, Home card, banner) and its banner (components/Landscape.jsx scenes)
   hue: '#4f8fc9',
-  banner: { scene: 'forest', seed: 17, tagline: 'Better books. Bigger worlds.' },
+  banner: { scene: 'forest', seed: 17, time: 'blue', extras: ['lake'], tagline: 'Better books. Bigger worlds.' },
   what: "Books: what you're reading, your goal, ratings and quotes",
   Icon: BookIcon,
   home: { Tiles: ReadingTiles },

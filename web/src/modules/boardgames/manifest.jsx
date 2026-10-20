@@ -9,7 +9,7 @@ export default {
   name: 'Board games',
   // its colour (berry: sidebar icon, Home card, banner) and its banner (components/Landscape.jsx scenes)
   hue: '#c0588a',
-  banner: { scene: 'forest', seed: 12, tagline: 'Good games. Great company.' },
+  banner: { scene: 'forest', seed: 12, time: 'blue', extras: ['fog'], tagline: 'Good games. Great company.' },
   what: 'Your games and every play',
   Icon: DiceIcon,
   home: { Tiles: BoardGamesTiles },
