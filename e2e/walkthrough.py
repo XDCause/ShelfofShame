@@ -114,17 +114,30 @@ SECTION_TABS = {"Colours": "Models", "Plays": "Board games", "Gear": "Volleyball
 
 
 def watch(page, label):
-    # (a wrong password's 401 from /api/auth/login is expected in the sign-in step: the browser logs it as an error too)
-    page.on("console", lambda m: m.type == "error" and "status of 401" not in m.text and errors.append(f"[{label}] console: {m.text}"))
+    # (a wrong password's 401 from /api/auth/login is expected in the sign-in step: the browser logs it as an error too;
+    # "Failed to load resource: net::ERR_FAILED" says no more than requestfailed below, which names the address)
+    page.on("console", lambda m: m.type == "error" and "status of 401" not in m.text
+            and "Failed to load resource: net::ERR_FAILED" not in m.text and errors.append(f"[{label}] console: {m.text}"))
     page.on("pageerror", lambda e: errors.append(f"[{label}] page error: {e}"))
     # Every failed request names its address (the browser's own "Failed to load resource" line doesn't).
     page.on("response", lambda r: r.status >= 400 and not (r.status == 401 and "/api/auth/login" in r.url)
             and errors.append(f"[{label}] HTTP {r.status} {r.url}"))
     # A request with no answer at all (net::ERR_FAILED, refused, reset) has no response either: name it and the step.
     # Not counted: ERR_ABORTED (the page moved on before it came back) and ERR_BLOCKED_BY_ORB (an outside site's
-    # picture - the stand-ins' made-up addresses - that this offline copy can't fetch).
-    page.on("requestfailed", lambda r: not any(x in (r.failure or "") for x in ("ERR_ABORTED", "ERR_BLOCKED_BY_ORB"))
-            and errors.append(f"[{label}] {NOW['step']}: {r.method} {r.url} - {r.failure}"))
+    # picture - the stand-ins' made-up addresses - that this offline copy can't fetch). Nor a GET that fails as the
+    # walk-through opens another page: one still coming back when the page goes (save, Escape, goto at once - what a
+    # person can't do) is cancelled, and Chromium sometimes calls that ERR_FAILED. A failed save still counts.
+    left = {"at": 0.0}
+    page.on("request", lambda r: r.is_navigation_request() and r.frame == page.main_frame and left.update(at=time.time()))
+
+    def failed(r):
+        why = r.failure or ""
+        if any(x in why for x in ("ERR_ABORTED", "ERR_BLOCKED_BY_ORB")):
+            return
+        if r.method == "GET" and "ERR_FAILED" in why and time.time() - left["at"] < 2:
+            return
+        errors.append(f"[{label}] {NOW['step']}: {r.method} {r.url} - {why}")
+    page.on("requestfailed", failed)
 
 
 # ---------------------------------------------------------------- desktop
@@ -2084,8 +2097,10 @@ FAKE_BUNNINGS = """<html><head><title>Leek - Bunnings</title></head><body><h1>10
 
 @step("Travel: plan a trip (overseas), a to-do, a flight, money in yen (stand-in rates), a packing list ticked, a place found and on the map; trips, places and packing pages")
 def travel(page):
-    from datetime import date, timedelta
-    start, end = date.today() + timedelta(days=10), date.today() + timedelta(days=14)
+    from datetime import datetime, timedelta, timezone
+    # Brisbane's today, as the app's (UTC+10, no daylight saving): this container runs on UTC, a day behind before 10 am
+    today = datetime.now(timezone(timedelta(hours=10))).date()
+    start, end = today + timedelta(days=10), today + timedelta(days=14)
     page.goto(BASE + "/travel/dashboard")
     page.get_by_role("button", name="+ Plan a trip").first.click()
     d = drawer(page)
