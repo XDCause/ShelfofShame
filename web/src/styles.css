@@ -697,7 +697,7 @@ th.col-value { width: 96px; }
 .plain-list { background: transparent !important; }
 .plain-list li { padding: 8px 0; }
 .plain-list li + li::before { left: 56px; }
-.plain-list .row-button { align-items: center; }
+.plain-list .row-button { align-items: center; min-height: 32px; } /* a one-line row is still easy to tap */
 .plain-list .row-button:disabled { opacity: 1; cursor: default; }
 /* Long names end in "..." instead of widening the page (a button in a flex row won't shrink below
    its content unless told it may). */
