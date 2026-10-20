@@ -17,7 +17,7 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import BackgroundTasks
 
-from . import exophase, othergames, steam, steamhunters
+from . import exophase, othergames, steam, steamhunters, vgplaytime
 from .db import db
 
 log = logging.getLogger("videogames")
@@ -117,6 +117,7 @@ def run_sync(full: bool = False):
                     {"appid": g["appid"], "name": g.get("name") or f"App {g['appid']}", "icon": g.get("img_icon_url") or None,
                      "play": g.get("playtime_forever", 0), "two": g.get("playtime_2weeks", 0),
                      "last": _ts(g.get("rtime_last_played"))})
+                vgplaytime.snapshot(conn, "steam", g["appid"], g.get("playtime_forever", 0))
         # Pictures: games never looked up (every game on a full sync, as the art changes).
         with db() as conn:
             missing = [r["app_id"] for r in conn.execute(
@@ -307,6 +308,7 @@ def sync_one(app_id: int) -> str:
                 conn.execute("UPDATE vg_games SET playtime_minutes = %s, playtime_2weeks = %s, last_played = %s "
                              "WHERE app_id = %s", (owned.get("playtime_forever", 0), owned.get("playtime_2weeks", 0),
                                                    _ts(owned.get("rtime_last_played")), app_id))
+                vgplaytime.snapshot(conn, "steam", app_id, owned.get("playtime_forever", 0))
     with db() as conn:
         sync_game(conn, steam_id, app_id, rarity_due=True)
     with db() as conn:

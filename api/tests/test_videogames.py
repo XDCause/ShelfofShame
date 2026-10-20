@@ -819,3 +819,42 @@ def test_syncing_just_one_epic_game(client, exo):
     assert r.json()["achievements_done"] == 1 and exo == ["awards"]            # its list, nothing else
     siege = next(g for g in client.get("/api/videogames/other").json()["games"] if g["platform"] == "ubisoft")
     assert client.post(f"/api/videogames/other/{siege['game_id']}/sync").status_code == 422   # ticked by hand
+
+
+def test_playtime_over_time(client, fake):
+    """Each sync saves every game's total; a day's playing is that day's total less the day before's."""
+    setup(client)
+    with db() as conn:
+        for row in [("20", 1, 2880), ("10", 2, 800), ("10", 1, 850)]:
+            conn.execute("INSERT INTO vg_playtime (platform, app_id, day, minutes) VALUES ('steam', %s, current_date - %s, %s)", row)
+    # today's totals (from the sync): Hades 3000, Celeste 900 -> today Hades 120, Celeste 50; yesterday Celeste 50
+    p = client.get("/api/videogames/playtime?days=7").json()
+    assert (p["totals"]["today"], p["totals"]["last_7_days"]) == (170, 220)
+    assert len(p["days"]) == 7 and p["days"][-1]["minutes"] == 170 and p["days"][-2]["minutes"] == 50
+    assert [(g["name"], g["minutes"], g["app_id"]) for g in p["games"]] == [("Hades", 120, 20), ("Celeste", 100, 10)]
+    assert client.get("/api/videogames/summary").json()["played"]["today"] == 170
+    hades = client.get("/api/videogames/20").json()["played"]
+    assert (hades["last_7_days"], [d["minutes"] for d in hades["days"]]) == (120, [120])
+    fake.games[1]["playtime_forever"] = 3045                             # played more, synced again today
+    client.post("/api/videogames/20/sync")
+    assert client.get("/api/videogames/playtime?days=1").json()["totals"]["today"] == 165 + 50
+    client.patch("/api/videogames/20", json={"hidden": True})            # hidden games aren't counted
+    assert client.get("/api/videogames/playtime?days=1").json()["totals"]["today"] == 50
+
+
+def test_a_game_added_by_hand_minutes_and_a_photo(client, exo):
+    r = client.post("/api/videogames/other", json={"name": "Fortnite", "platform": "epic", "minutes": 125})
+    assert r.status_code == 201, r.text
+    g = r.json()
+    assert (g["playtime_minutes"], g["has_photo"]) == (125, False)
+    with db() as conn:                                                    # played 2 h 5 min yesterday... then more
+        conn.execute("UPDATE vg_playtime SET day = current_date - 1 WHERE app_id = %s", (g["app_id"],))
+    g = client.patch(f"/api/videogames/other/{g['game_id']}", json={"minutes": 185}).json()
+    assert (g["playtime_minutes"], g["played"]["last_7_days"]) == (185, 60)
+    assert client.patch(f"/api/videogames/other/{g['game_id']}", json={"hours": 4}).json()["playtime_minutes"] == 240
+    png = (b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
+           b"\x00\x00\x00\rIDATx\x9cc\xf8\xff\xff?\x00\x05\xfe\x02\xfe\xa7\x35\x81\x84\x00\x00\x00\x00IEND\xaeB`\x82")
+    assert client.put(f"/api/videogames/other/{g['game_id']}/photo", content=png, headers={"Content-Type": "image/png"}).status_code == 204
+    g = client.get(f"/api/videogames/other/{g['game_id']}").json()
+    assert g["has_photo"] and g["header_url"].startswith(f"/api/videogames/other/{g['game_id']}/photo?v=")
+    assert client.get(g["header_url"]).content == png

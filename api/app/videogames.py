@@ -25,7 +25,7 @@ from datetime import date, timedelta
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 
-from . import othergames, steam
+from . import othergames, steam, vgplaytime
 from .db import db, found
 from .vgsync import SYNC, start_sync, sync_game, sync_one
 from .settings import get_setting
@@ -244,6 +244,7 @@ def summary(platforms: str | None = PLATFORMS_QUERY):
             conn.execute("SELECT now()::date AS d").fetchone()["d"])
         others = [r["platform"] for r in conn.execute(
             "SELECT DISTINCT platform FROM vg_other_games WHERE NOT hidden").fetchall()]
+        totals["played"] = played(conn, chosen, 31)["totals"]
     return {**totals, "platforms": chosen, "available": [x for x in PLATFORMS if x == "steam" or x in others],
             "closest": closest, "recent": recent, "rarest": rarest, "recent_perfect": perfect,
             "quick_wins": quick_wins(quick)}
@@ -277,6 +278,47 @@ RARITY_BANDS = [(0, 1, "Under 1%"), (1, 5, "1–5%"), (5, 10, "5–10%"), (10, 2
                 (50, 101, "50% or more")]
 COMPLETION_BANDS = [(0, 10, "Under 10%"), (10, 25, "10–24%"), (25, 50, "25–49%"), (50, 75, "50–74%"),
                     (75, 100, "75–99%"), (100, 101, "100%")]
+
+
+def played(conn, platforms: list[str], days: int) -> dict:
+    """Playtime over the last `days` days on the chosen platforms (games you haven't hidden): each day's minutes
+    (days with none included), totals for today / the last 7 days / this week (from Monday) / this month, the most
+    played games in that time, and the day the history starts (vgplaytime.py)."""
+    rows = conn.execute(f"""
+        SELECT x.day, x.played::int AS minutes, g.platform, g.app_id, g.name
+        FROM ({vgplaytime.PLAYED}) x JOIN {ALL_GAMES} g ON g.platform = x.platform AND g.app_id = x.app_id
+        WHERE x.platform = ANY(%(platforms)s) AND NOT g.hidden AND x.day > current_date - %(days)s""",
+        {"platforms": platforms, "days": max(days, 31)}).fetchall()
+    meta = conn.execute("SELECT current_date AS today, (SELECT min(day) FROM vg_playtime) AS since").fetchone()
+    today = meta["today"]
+    by_day = {}
+    for r in rows:
+        by_day[r["day"]] = by_day.get(r["day"], 0) + r["minutes"]
+    window = [today - timedelta(days=n) for n in range(days - 1, -1, -1)]
+    games = {}
+    for r in rows:
+        if (today - r["day"]).days < days:
+            g = games.setdefault((r["platform"], r["app_id"]), {"platform": r["platform"], "app_id": r["app_id"],
+                                                                 "name": r["name"], "minutes": 0})
+            g["minutes"] += r["minutes"]
+
+    def since(first: date) -> int:
+        return sum(m for d, m in by_day.items() if d >= first)
+    return {
+        "days": [{"day": d, "minutes": by_day.get(d, 0)} for d in window],
+        "games": steam_ids(sorted(games.values(), key=lambda g: -g["minutes"])[:8]),
+        "totals": {"today": since(today), "last_7_days": since(today - timedelta(days=6)),
+                   "this_week": since(today - timedelta(days=today.weekday())), "this_month": since(today.replace(day=1)),
+                   "since": meta["since"]},
+    }
+
+
+@router.get("/videogames/playtime")
+def playtime(days: int = Query(30, ge=1, le=366), platforms: str | None = PLATFORMS_QUERY):
+    """What you've played each day lately, across the chosen platforms (default all). Steam, Epic and your typed-in
+    hours only give totals, so the history starts from the first sync that saved one."""
+    with db() as conn:
+        return played(conn, platforms_from(platforms), days)
 
 
 @router.get("/videogames/stats")
@@ -485,6 +527,7 @@ def get_game(app_id: int):
             FROM vg_achievements WHERE app_id = %s
             ORDER BY achieved DESC, unlocked_at DESC NULLS LAST, global_percent DESC NULLS LAST, name""",
             (app_id,)).fetchall()
+        game["played"] = vgplaytime.history(conn, "steam", app_id)
     return game
 
 

@@ -111,7 +111,7 @@ export default function FindGamePanel({ onClose }) {
 // its list comes from its Steam version when there is one).
 function AddOtherGame({ platform, game, onBack, onClose }) {
   const { changed, showToast, openPanel } = useApp()
-  const [f, setF] = useState({ name: game.name, hours: '', done: '', total: '' })
+  const [f, setF] = useState({ name: game.name, hours: '', minutes: '', done: '', total: '' })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const num = (v) => (v === '' ? null : Number(v))
@@ -120,7 +120,8 @@ function AddOtherGame({ platform, game, onBack, onClose }) {
     setBusy(true)
     setError('')
     try {
-      const added = await api.addOtherGame({ platform, name: f.name, exo_id: game.exo_id ?? null, hours: num(f.hours),
+      const played = f.hours === '' && f.minutes === '' ? null : Math.round(Number(f.hours || 0) * 60 + Number(f.minutes || 0))
+      const added = await api.addOtherGame({ platform, name: f.name, exo_id: game.exo_id ?? null, minutes: played,
         done: num(f.done), total: num(f.total) })
       changed()
       showToast(`Added ${added.name} to your ${PLATFORM[platform]} games`)
@@ -138,8 +139,10 @@ function AddOtherGame({ platform, game, onBack, onClose }) {
         {game.picture && <img className="find-picked" src={game.picture} alt="" referrerPolicy="no-referrer" />}
         <div className="other-fields">
           <label>Game<input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} required readOnly={!!game.exo_id} /></label>
-          <label>Hours played<input type="number" min="0" step="0.5" value={f.hours} autoFocus
+          <label>Hours played<input type="number" min="0" step="1" value={f.hours} autoFocus
             onChange={(e) => setF({ ...f, hours: e.target.value })} /></label>
+          <label>Minutes<input type="number" min="0" max="59" step="1" value={f.minutes}
+            onChange={(e) => setF({ ...f, minutes: e.target.value })} /></label>
           {platform === 'ubisoft' && (
             <>
               <label>Achievements you have<input type="number" min="0" value={f.done} onChange={(e) => setF({ ...f, done: e.target.value })} /></label>
@@ -149,7 +152,7 @@ function AddOtherGame({ platform, game, onBack, onClose }) {
         </div>
         <p className="hint">{platform === 'ubisoft'
           ? "If it's on Steam too, its achievement list comes from there and you tick them off; otherwise type the numbers (or leave them, and track just the hours)."
-          : "Tracked by hours played. Epic games with achievements come in by themselves from your Exophase profile."}</p>
+          : "Tracked by time played (change it in the game's panel as you play; add a picture there too). Epic games with achievements come in by themselves from your Exophase profile."}</p>
         <button type="submit" className="primary" disabled={busy || !f.name.trim()}>{busy ? 'Adding...' : 'Add game'}</button>
         {error && <p className="alert error small">{error}</p>}
       </form>

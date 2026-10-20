@@ -2307,6 +2307,12 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .tick-row { display: flex; align-items: center; gap: 8px; cursor: pointer; min-width: 0; }
 .tick-row input { width: 20px; height: 20px; min-height: 0; flex: none; margin: 0; }
 
+/* Video games: playtime over time (the dashboard card, a game's line), time played as h + min */
+.vg-played { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 0 0 10px; }
+.vg-played dt { font-size: 0.78rem; color: var(--muted); }
+.vg-played dd { margin: 0; font-size: 1.1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.vg-played-games { margin-top: 6px; }
+.vg-played-line { margin: 4px 0 0; }
 /* Video games: the Hide 100% toggle sits apart from the show-chips (it's on top of whichever is picked) */
 .chip-filter.games-hide-done { margin-left: 10px; }
 .chip-filter.games-hide-done:disabled { opacity: 0.45; cursor: default; }

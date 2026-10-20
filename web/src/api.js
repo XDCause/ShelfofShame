@@ -237,6 +237,8 @@ export const api = {
   syncVideoGame: (id) => request(`/videogames/${id}/sync`, send('POST')),
   hideVideoGame: (id, hidden) => request(`/videogames/${id}`, send('PATCH', { hidden })),
   setVideoGameGoal: (percent) => request('/videogames/goal', send('PUT', { percent })),
+  // What you played each day lately (totals saved each sync; api/app/vgplaytime.py)
+  videoGamePlaytime: (days, platforms) => request(`/videogames/playtime?${query({ days, platforms: platforms?.join(',') })}`),
   videoGameStats: (platforms) => request(`/videogames/stats${platforms ? `?platforms=${platforms.join(',')}` : ''}`),
   videoGameRecap: (month, platforms) => request(`/videogames/recap?${new URLSearchParams({
     ...(month && { month }), ...(platforms && { platforms: platforms.join(',') }) })}`),

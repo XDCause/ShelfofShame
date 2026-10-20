@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { api, shortDate } from '../../api.js'
 import Drawer from '../../components/Drawer.jsx'
 import Fold from '../../components/Fold.jsx'
+import { RowPhoto } from '../../components/RecordFields.jsx'
 import { useApp } from '../../core/app-context.js'
 import JournalMentions from '../../core/journal/JournalMentions.jsx'
 import { BellCurveIcon, ClockIcon, HourglassIcon, TrophyIcon } from '../../components/icons.jsx'
@@ -83,7 +84,7 @@ export default function VideoGamePanel({ id, onClose }) {
         <div className="section-head">
           <strong>{game.achievements_total ? `${game.achievements_done} of ${game.achievements_total} achievements · ${game.percent}%`
             : game.has_achievements === false ? 'This game has no achievements'
-              : other ? (!game.source_id && !game.steam_app_id ? 'Hours only - no achievements tracked'
+              : other ? (!game.source_id && !game.steam_app_id ? 'No achievements'
                 : ubisoft ? 'No achievement list yet' : 'No achievements read yet') : 'Not read from Steam yet'}</strong>
           {other && <span className={`pill ${ubisoft ? 'teal' : 'purple'}`}>{ubisoft ? 'Ubisoft' : 'Epic'}</span>}
           {game.completed_at && <span className="pill ok">100% · {shortDate(game.completed_at)}</span>}
@@ -105,6 +106,9 @@ export default function VideoGamePanel({ id, onClose }) {
           : game.extra ? <p className="muted small">Added by hand: Steam doesn't list it in your library, so playtime isn't known.</p>
             : <p className="muted small">{game.playtime_minutes > 0 ? `${playtime(game.playtime_minutes)} played` : 'Playtime not known'}
               {game.last_played && ` · last played ${shortDate(game.last_played)}`}</p>}
+        {game.played?.last_30_days > 0 && (
+          <p className="small vg-played-line">Played {playtime(game.played.last_7_days)} in the last 7 days · {playtime(game.played.last_30_days)} in 30</p>
+        )}
         {ubisoft && game.challenges_total > 0 && <p className="hint">Ubisoft challenges (from Exophase): {game.challenges_done} of {game.challenges_total}.</p>}
       </section>
 
@@ -149,6 +153,13 @@ export default function VideoGamePanel({ id, onClose }) {
           {other && !ubisoft && <p className="hint">From your Exophase profile; rarity is Exophase players'.</p>}
         </section>
       )}
+      {other && !game.source_id && (
+        <section className="panel-section">
+          <h3 className="section-title">Picture</h3>
+          <RowPhoto path={`/videogames/other/${otherId}`} url={game.has_photo ? game.header_url : null} label="picture"
+            onChanged={async () => update(await api.getOtherGame(otherId))} />
+        </section>
+      )}
       {other && <SteamVersion game={game} id={otherId} onSaved={update} />}
       {!other && <JournalMentions kind="videogame" id={game.app_id} name={game.name} onLeave={onClose} />}
     </Drawer>
@@ -158,17 +169,26 @@ export default function VideoGamePanel({ id, onClose }) {
 // Epic / Ubisoft: hours played (Exophase doesn't get Epic's, and often not Ubisoft's), saved when you
 // leave the box.
 function HoursPlayed({ game, id, onSaved }) {
-  const [hours, setHours] = useState(game.my_minutes != null ? String(game.my_minutes / 60) : '')
+  const mine = game.my_minutes
+  const [hours, setHours] = useState(mine != null ? String(Math.floor(mine / 60)) : '')
+  const [mins, setMins] = useState(mine != null ? String(mine % 60) : '')
+  // Saved when you leave either box: the hours and minutes as minutes (both blank = Exophase's time, if any).
   const save = async () => {
-    const value = hours === '' ? null : Number(hours)
-    if ((value == null ? null : Math.round(value * 60)) !== game.my_minutes) onSaved(await api.updateOtherGame(id, { hours: value }))
+    const value = hours === '' && mins === '' ? null : Math.round(Number(hours || 0) * 60 + Number(mins || 0))
+    if (value !== mine) onSaved(await api.updateOtherGame(id, { minutes: value }))
   }
+  const hint = game.exo_minutes ? Math.floor(game.exo_minutes / 60) : null
   return (
-    <label className="hours-played small muted">Hours played
-      <input type="number" min="0" step="0.5" value={hours} placeholder={game.exo_minutes ? String(Math.round(game.exo_minutes / 60)) : ''}
+    <div className="hours-played small muted">
+      <span>Played</span>
+      <input type="number" min="0" step="1" value={hours} placeholder={hint != null ? String(hint) : '0'} aria-label="Hours played"
         onChange={(e) => setHours(e.target.value)} onBlur={save} />
+      <span>h</span>
+      <input type="number" min="0" max="59" step="1" value={mins} placeholder={game.exo_minutes ? String(game.exo_minutes % 60) : '0'}
+        aria-label="Minutes played" onChange={(e) => setMins(e.target.value)} onBlur={save} />
+      <span>min</span>
       {game.last_played && <span>· last played {shortDate(game.last_played)}</span>}
-    </label>
+    </div>
   )
 }
 

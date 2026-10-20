@@ -25,8 +25,9 @@ from fastapi import APIRouter, HTTPException, Query
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel, Field
 
-from . import exophase, steam, steamhunters
+from . import exophase, steam, steamhunters, vgplaytime
 from .db import db, found
+from .images import add_photo_routes
 
 router = APIRouter(prefix="/api", tags=["video games"])
 log = logging.getLogger("othergames")
@@ -40,7 +41,9 @@ WEEKLY = timedelta(days=7)
 SELECT = """
 SELECT o.game_id, o.platform, o.platform || '-' || o.game_id AS app_id, o.source_id, o.name, o.page_url, o.hidden,
        o.last_played, o.steam_app_id, o.my_done, o.my_total, o.my_minutes, o.exo_minutes,
-       COALESCE(o.header_url, o.picture_url) AS header_url, o.picture_url,
+       CASE WHEN o.photo IS NOT NULL THEN '/api/videogames/other/' || o.game_id || '/photo?v='
+                 || (extract(epoch FROM o.photo_updated) * 1000)::bigint
+            ELSE COALESCE(o.header_url, o.picture_url) END AS header_url, o.picture_url, o.photo IS NOT NULL AS has_photo,
        o.sh_median_minutes, o.sh_fastest_minutes, o.sh_players_perfected, o.sh_players_started,
        round(100.0 * o.sh_players_perfected / NULLIF(o.sh_players_started, 0), 1) AS perfect_rate,
        CASE WHEN o.platform = 'ubisoft' THEN o.exo_done END AS challenges_done,
@@ -72,6 +75,7 @@ class GameIn(BaseModel):
     done: int | None = Field(None, ge=0)
     total: int | None = Field(None, ge=0)
     hours: float | None = Field(None, ge=0, le=100000)
+    minutes: int | None = Field(None, ge=0, le=6_000_000)   # playtime in minutes (instead of hours)
 
 
 class GamePatch(BaseModel):
@@ -79,6 +83,7 @@ class GamePatch(BaseModel):
     done: int | None = Field(None, ge=0)
     total: int | None = Field(None, ge=0)
     hours: float | None = Field(None, ge=0, le=100000)
+    minutes: int | None = Field(None, ge=0, le=6_000_000)
     hidden: bool | None = None
 
 
@@ -116,7 +121,7 @@ def sync_other() -> str:
             exophase.pause()
             with db() as conn:
                 for g in games:
-                    conn.execute("""
+                    saved = conn.execute("""
                         INSERT INTO vg_other_games (platform, source_id, name, picture_url, page_url, exo_done, exo_total,
                                                     exo_minutes, last_played, exo_completed_at)
                         VALUES (%(platform)s, %(source_id)s, %(name)s, %(picture_url)s, %(page_url)s, %(exo_done)s,
@@ -125,9 +130,11 @@ def sync_other() -> str:
                             name = EXCLUDED.name, picture_url = EXCLUDED.picture_url, page_url = EXCLUDED.page_url,
                             exo_done = EXCLUDED.exo_done, exo_total = EXCLUDED.exo_total,
                             exo_minutes = EXCLUDED.exo_minutes, last_played = EXCLUDED.last_played,
-                            exo_completed_at = EXCLUDED.exo_completed_at""",
+                            exo_completed_at = EXCLUDED.exo_completed_at
+                        RETURNING game_id, COALESCE(my_minutes, exo_minutes) AS minutes""",
                         {**g, "platform": platform, "last_played": _ts(g["last_played"]),
-                         "exo_completed_at": _ts(g["exo_completed_at"])})
+                         "exo_completed_at": _ts(g["exo_completed_at"])}).fetchone()
+                    vgplaytime.snapshot(conn, platform, f"{platform}-{saved['game_id']}", saved["minutes"])
             counts[NAMES[platform]] = len(games)
         detailed = sync_details(players)
     except exophase.Unavailable as e:
@@ -332,6 +339,7 @@ def _one(conn, game_id: int, with_list: bool = True) -> dict:
             FROM vg_other_achievements WHERE game_id = %s
             ORDER BY achieved DESC, unlocked_at DESC NULLS LAST, global_percent DESC NULLS LAST, sort_order""",
             (game_id,)).fetchall()
+        game["played"] = vgplaytime.history(conn, game["platform"], game["app_id"])
     return game
 
 
@@ -374,6 +382,13 @@ def get_game(game_id: int):
         return _one(conn, game_id)
 
 
+def _minutes(minutes: int | None, hours: float | None) -> int | None:
+    """Playtime as minutes: given in minutes, or in hours (0.5 = 30 min)."""
+    if minutes is not None:
+        return minutes
+    return round(hours * 60) if hours is not None else None
+
+
 def _check(done, total):
     if done is not None and total is not None and done > total:
         raise HTTPException(422, "You can't have more achievements than the game has.")
@@ -398,8 +413,9 @@ def add_game(body: GameIn):
         game_id = conn.execute(
             "INSERT INTO vg_other_games (platform, name, my_done, my_total, my_minutes, picture_url, page_url) "
             "VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING game_id",
-            (body.platform, name, body.done, body.total, round(body.hours * 60) if body.hours is not None else None,
+            (body.platform, name, body.done, body.total, _minutes(body.minutes, body.hours),
              picked and picked["picture"], picked and picked["page_url"])).fetchone()["game_id"]
+        vgplaytime.snapshot(conn, body.platform, f"{body.platform}-{game_id}", _minutes(body.minutes, body.hours))
     _find_and_list(game_id)
     with db() as conn:
         return _one(conn, game_id)
@@ -501,12 +517,18 @@ def update_game(game_id: int, body: GamePatch):
         total = sent.get("total", game["my_total"])
         _check(done, total)
         changes = {"name": sent.get("name"), "my_done": done, "my_total": total, "hidden": sent.get("hidden")}
-        if "hours" in sent:
-            changes["my_minutes"] = round(sent["hours"] * 60) if sent["hours"] is not None else None
+        if "minutes" in sent or "hours" in sent:
+            changes["my_minutes"] = _minutes(sent.get("minutes"), sent.get("hours"))
+            vgplaytime.snapshot(conn, game["platform"], game["app_id"],
+                                changes["my_minutes"] if changes["my_minutes"] is not None else game["exo_minutes"])
         sets = {k: v for k, v in changes.items() if k in ("my_done", "my_total", "my_minutes") or v is not None}
         conn.execute("UPDATE vg_other_games SET " + ", ".join(f"{k} = %({k})s" for k in sets) +
                      ", updated_at = now() WHERE game_id = %(id)s", {**sets, "id": game_id})
         return _one(conn, game_id)
+
+
+# Your own picture for a game (one added by hand has none - Fortnite isn't on Steam)
+add_photo_routes(router, "/videogames/other", "vg_other_games", "game_id", "Game")
 
 
 @router.delete("/videogames/other/{game_id}", status_code=204)

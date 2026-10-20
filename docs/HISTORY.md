@@ -1723,3 +1723,12 @@ DBeaver connection confirmed working (2026-10-11).
    below, the button is the primary one when nothing's found, a lower-case name gets capitals, and a hand-added
    Epic / Ubisoft game with no Steam version reads "Hours only". Hours are kept up to date in the game's panel (Epic doesn't
    publish playtime, and Exophase doesn't track Fortnite).
+4p. **Video games: playtime over time; time as hours and minutes; a picture for games added by hand** (2026-10-20). User:
+   "track the minutes across the board" (picked: playtime over time) - and adding a game asked only for hours, and Home and
+   the dashboards showed whole hours. 78_vg_playtime.sql + vgplaytime.py: each game's TOTAL is saved per day (Steam at every
+   sync and one-game sync, Exophase's at its sync, yours when you type it); a day's playing = that day's total less the
+   one before (seeded with the day's totals, so it counts from 2026-10-20). GET /videogames/playtime (each day, today /
+   this week / last 7 days / this month, most played lately), summary.played, a game's `played`. playtime() is now
+   "1,204 h 12 min" everywhere; a hand-added game takes hours + minutes (API: `minutes`). Home's third video games tile:
+   Gaming this week. A hand-added Epic / Ubisoft game says "No achievements" (was "Hours only") and can have your own
+   picture (vg_other_games.photo, add_photo_routes).

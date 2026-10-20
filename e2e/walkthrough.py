@@ -98,7 +98,7 @@ def home(page):
     expect(stats.filter(has_text="Supplies")).to_contain_text(str(TOTAL))
     for tile in ("Shelf of shame", "Board games", "Volleyball", "Next game"):
         expect(stats.filter(has_text=tile)).to_be_visible()
-    expect(stats).to_have_count(10 + CHESS + READING + HIKING + GARDEN + SHOOTING + TRAVEL)
+    expect(stats).to_have_count(11 + CHESS + READING + HIKING + GARDEN + SHOOTING + TRAVEL)
     expect(page.locator(".home-card", has_text="Recent activity").locator(".pill").first).to_be_visible()
     expect(page.locator(".home-card", has_text="Coming up")).to_be_visible()
     expect(page.locator(".quick-action")).to_have_count(14)       # + Log a chess game, Add a book, Log a hike, Add a plant, Start shooting, Plan a trip
@@ -1240,6 +1240,8 @@ def video_games(page):
     if page.locator(".goal-card").count():
         expect(page.locator(".home-card-title", has_text="Quick wins")).to_be_visible()
         expect(page.locator(".home-card-title", has_text="Epic and Ubisoft")).to_be_visible()
+        expect(page.locator(".vg-playtime")).to_contain_text("This week")          # playtime over time
+        expect(page.locator(".vg-playtime .chart")).to_be_visible()
     # Epic / Ubisoft games: the dashboard counts every platform; with all on, tapping Steam means
     # Steam alone (matches SteamHunters); a second platform can be added back; All turns them all on.
     toggles = page.get_by_role("group", name="Platforms to count")
@@ -1289,7 +1291,8 @@ def video_games(page):
     d.get_by_label("Hours played").fill("569")
     d.get_by_role("button", name="Add game").click()
     d = drawer(page)
-    expect(d.locator(".section-head")).to_contain_text("Hours only")
+    expect(d.locator(".section-head")).to_contain_text("No achievements")
+    expect(d.get_by_role("button", name="Add a photo")).to_be_visible()     # your own picture for it
     expect(d.get_by_label("Hours played")).to_have_value("569")
     d.get_by_role("button", name="Remove").click()
     expect(page.locator(".drawer")).to_have_count(0)

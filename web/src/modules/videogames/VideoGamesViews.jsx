@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api, shortDate, timeAgo } from '../../api.js'
+import { ColumnChart } from '../../components/charts.jsx'
 import { BellCurveIcon, ClockIcon, GamepadIcon, PuzzleIcon, TrophyIcon } from '../../components/icons.jsx'
 import { useApp } from '../../core/app-context.js'
 import Stat, { Change, StatSkeleton } from '../../core/Stat.jsx'
@@ -37,8 +38,9 @@ export function Dashboard() {
             <Stat to="/videogames/games" Icon={TrophyIcon} tone="purple" value={s.achievements.toLocaleString()}
               label="Achievements" sub={`${s.unlocked_this_month} this month`} change={<Change value={s.week.achievements} />} />
             <Stat to="/videogames/games" Icon={GamepadIcon} tone="teal" value={playtime(s.playtime_minutes)}
-              label="Played" sub={`${s.games} games`} />
+              label="Played" sub={`${s.games} games · ${playtime(s.played.this_week)} this week`} />
           </div>
+          <PlaytimeCard platforms={counting} />
 
           <div className="home-grid">
             <div className="home-stack">
@@ -83,6 +85,38 @@ export function Dashboard() {
           </div>
         </>
       )}
+    </section>
+  )
+}
+
+// Playtime over time: today, this week, this month; each day of the last 30; the most played lately.
+function PlaytimeCard({ platforms }) {
+  const { refreshKey, openPanel } = useApp()
+  const [p, setP] = useState(null)
+  const key = platforms?.join(',') ?? ''
+  useEffect(() => { api.videoGamePlaytime(30, key ? key.split(',') : null).then(setP).catch(() => setP(null)) }, [key, refreshKey])
+  if (!p) return null
+  const t = p.totals
+  const young = t.since && (Date.now() - new Date(`${t.since}T12:00:00`)) / 864e5 < 30
+  const rows = p.days.map((d) => ({ label: new Date(`${d.day}T12:00:00`).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }),
+    value: d.minutes, tip: `${new Date(`${d.day}T12:00:00`).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}: ${playtime(d.minutes)}` }))
+  return (
+    <section className="card home-card vg-playtime">
+      <h2 className="home-card-title">Playtime</h2>
+      <dl className="vg-played">
+        <div><dt>Today</dt><dd>{playtime(t.today)}</dd></div>
+        <div><dt>This week</dt><dd>{playtime(t.this_week)}</dd></div>
+        <div><dt>Last 7 days</dt><dd>{playtime(t.last_7_days)}</dd></div>
+        <div><dt>This month</dt><dd>{playtime(t.this_month)}</dd></div>
+      </dl>
+      <ColumnChart title="Minutes played each day, the last 30 days" rows={rows} valueLabel="minutes" tickEvery={5} height={150} />
+      {p.games.length > 0 && (
+        <ul className="list plain-list vg-played-games">{p.games.map((g) => (
+          <li key={`${g.platform}${g.app_id}`}><button type="button" className="row-button" onClick={() => openPanel('videogame', { id: g.app_id })}>
+            <span className="grow item-title">{g.name}</span><span className="muted small">{playtime(g.minutes)}</span></button></li>))}</ul>
+      )}
+      <p className="hint">{young ? `Counting since ${shortDate(t.since)}: Steam and Epic only give each game's total, so each sync saves it and the difference is what you played. `
+        : 'Each sync saves every game\'s total; the difference from day to day is what you played. '}Games you add by hand count when you change their time.</p>
     </section>
   )
 }
@@ -328,7 +362,7 @@ function GamesView({ chosen, other, switcher }) {
 // Home: two tiles.
 export function VideoGamesTiles() {
   const { data: s } = useSteamSummary()
-  if (!s) return <><StatSkeleton /><StatSkeleton /></>
+  if (!s) return <><StatSkeleton /><StatSkeleton /><StatSkeleton /></>
   return (
     <>
       <Stat to="/videogames/dashboard" Icon={TrophyIcon} tone="ok" value={s.perfect} label="Games at 100%"
@@ -336,6 +370,8 @@ export function VideoGamesTiles() {
       <Stat to="/videogames/dashboard" Icon={GamepadIcon} tone="purple" value={`${s.goal.percent}%`}
         change={s.week && <Change value={s.week.percent} unit="%" />}
         label="Profile completion" sub={s.goal.reached ? `goal ${s.goal.goal_percent}% reached` : `goal ${s.goal.goal_percent}% · ${s.goal.points_to_go} points to go`} />
+      <Stat to="/videogames/dashboard" Icon={ClockIcon} tone="teal" value={playtime(s.played.this_week)} label="Gaming this week"
+        sub={`${playtime(s.played.today)} today · ${playtime(s.playtime_minutes)} in all`} />
     </>
   )
 }
@@ -410,7 +446,7 @@ function GameTable({ games, onOpen, showPlatform = false }) {
                     <CompletionBar game={g} />
                   </>
                 ) : <span className="muted small">{g.has_achievements === false ? 'No achievements'
-                  : g.platform !== 'steam' && !g.source_id && !g.steam_app_id ? 'Hours only' : 'Not read yet'}</span>}
+                  : g.platform !== 'steam' && !g.source_id && !g.steam_app_id ? 'No achievements' : 'Not read yet'}</span>}
               </span>
               <span className="game-stats">
                 <Stat1 kind="time" value={g.playtime_minutes > 0 ? playtime(g.playtime_minutes) : null} />

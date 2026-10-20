@@ -45,7 +45,7 @@ AI via MCP server (stage 6) ---------------/
 DBeaver, psql, and the one-off import script.
 
 ## Where to look
-- **History, decisions and the reasons behind them: docs/HISTORY.md** (sections 1 - 4n; search it before changing
+- **History, decisions and the reasons behind them: docs/HISTORY.md** (sections 1 - 4p; search it before changing
   something old - most odd-looking code has a lesson behind it there). Plans: docs/ROADMAP.md. Caveats for ever going
   public: BEFORE_GOING_PUBLIC.md (**add a row whenever a new data source, scraper, copied content or single-user
   shortcut is added**).

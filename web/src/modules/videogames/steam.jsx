@@ -14,7 +14,12 @@ export const rarity = (percent) => {
     label: p <= 5 ? 'Ultra rare' : p <= 20 ? 'Rare' : null }
 }
 
-export const playtime = (minutes) => (minutes >= 600 ? `${Math.round(minutes / 60)} h` : duration(minutes))
+// Playtime as hours and minutes: "45 min", "3 h 5 min", "1,204 h 12 min".
+export const playtime = (minutes) => {
+  const m = Math.max(0, Math.round(minutes ?? 0))
+  if (m < 60) return duration(m)
+  return `${Math.floor(m / 60).toLocaleString()} h${m % 60 ? ` ${m % 60} min` : ''}`
+}
 
 // A game's picture from Steam; if Steam has none (or it won't load), a gamepad in its place.
 export function GamePicture({ game, className }) {
