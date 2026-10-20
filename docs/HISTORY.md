@@ -1759,3 +1759,12 @@ DBeaver connection confirmed working (2026-10-11).
    direction (VideoGamesViews SORTS); the same heading again flips it (arrow ▾/▴). Games with no number stay last both ways.
 4u. **Travel shipped to prod** (2026-10-20, user: "push travel to prod"). underConstruction taken off its manifest; its
    tables (77) were already in prod. Car is the only unfinished hobby left.
+4v. **The look rebuilt: "Dusk Grove"** (2026-10-20). User: "rebuild the look and feel - simple but luscious and lively, moody
+   natural colour, font, focus and feel". Researched first (Refactoring UI hierarchy, Laws of UX, WCAG 2.2 contrast / target
+   size / focus, motion timing + reduced motion). Kept every class and layout; changed the tokens and the key components:
+   forest-night dark / linen-and-moss light, one lichen-green tint, ember highlights; Fraunces (titles, big numbers) +
+   Manrope (text), bundled via @fontsource-variable (CSP font-src 'self' - no Google Fonts); light pooling in the page
+   corners + a faint SVG grain (body::before / ::after, fixed); cards with a lit top edge; gentle page / card entrances
+   and hover lifts. Each hobby has its own natural colour (data-hobby: sidebar icon, Home card glow, Hobbies card,
+   and <html data-hobby> tints the page's corner light). Every text colour checked >= 4.5:1 on its surface.
+   Text on a solid status colour uses --on-solid (dark text in dark mode, where the status colours are light).

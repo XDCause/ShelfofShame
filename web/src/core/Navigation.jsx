@@ -55,7 +55,7 @@ export function Sidebar() {
         ))}
         <p className="side-section">Hobbies</p>
         {MODULES.map((m) => (
-          <NavLink key={m.id} to={`/${m.id}`} className="side-link" title={m.what}>
+          <NavLink key={m.id} to={`/${m.id}`} className="side-link" title={m.what} data-hobby={m.id}>
             <m.Icon size={20} /><span>{m.name}{m.underConstruction && <UnderConstruction />}</span>
           </NavLink>
         ))}

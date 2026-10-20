@@ -8,7 +8,7 @@ export default function HobbiesPage() {
   return (
     <section className="page hobbies">
       {MODULES.map((m) => (
-        <section key={m.id} className="card hobby-card">
+        <section key={m.id} className="card hobby-card" data-hobby={m.id}>
           <Link to={`/${m.id}`} className="hobby-head">
             <span className="stat-icon tint"><m.Icon size={24} /></span>
             <span className="grow">

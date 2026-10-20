@@ -157,6 +157,11 @@ export default function App() {
     const name = page ? `${page.label} · ${module.name}` : core && core.path !== '/' ? `${core.label} · ${APP_NAME}` : APP_NAME
     document.title = appEnv === 'prod' ? name : `[${appEnv.toUpperCase()}] ${name}`
   }, [page, module, core, appEnv])
+  // The hobby you're in tints the light in the page's top corner (styles.css: Hobby colours).
+  useEffect(() => {
+    if (module) document.documentElement.dataset.hobby = module.id
+    else delete document.documentElement.dataset.hobby
+  }, [module])
   const envBadge = appEnv !== 'prod' && <span className="env-badge" title="A test copy - not your real data">{appEnv}</span>
 
   return (

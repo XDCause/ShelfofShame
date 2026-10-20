@@ -143,7 +143,7 @@ function Glance() {
   return (
     <section className="glance" aria-label="Your hobbies at a glance">
       {GLANCE.map((g) => (
-        <div key={g.id} className="glance-card card">
+        <div key={g.id} className="glance-card card" data-hobby={g.id}>
           <Link to={g.to} className="glance-head">
             <g.Icon size={18} /><span>{g.name}</span><ChevronIcon size={14} />
           </Link>
