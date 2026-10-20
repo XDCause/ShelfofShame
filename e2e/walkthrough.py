@@ -1281,8 +1281,10 @@ def video_games(page):
     # Epic: a game without achievements (like Fortnite) added by hand, tracked by its hours.
     d = drawer(page)
     d.get_by_role("group", name="Where to search").get_by_role("button", name="Epic Games").click()
-    d.get_by_label("Search Epic Games").fill(f"Hoursgame {MARK}")
-    d.get_by_role("button", name=re.compile("to your Epic Games games by hand")).click(timeout=30000)
+    d.get_by_label("Search Epic Games").fill(f"hoursgame {MARK}")
+    by_hand = d.get_by_role("button", name=re.compile("to your Epic Games games"))
+    expect(by_hand).to_contain_text("Hoursgame", timeout=30000)               # typed in lower case: a name's capitals
+    by_hand.click()
     d = drawer(page)
     d.get_by_label("Hours played").fill("569")
     d.get_by_role("button", name="Add game").click()

@@ -14,6 +14,11 @@ import { AchievementList, Compared } from './VideoGamePanel.jsx'
 // is tracked by its hours.
 const WHERE = [['steam', 'Steam'], ['ubisoft', 'Ubisoft'], ['epic', 'Epic Games']]
 const PLATFORM = Object.fromEntries(WHERE)
+// What you typed, as a name: "fortnite" -> "Fortnite" (typed with capitals already: left as it is).
+const niceName = (q) => {
+  const t = q.trim().replace(/\s+/g, ' ')
+  return t === t.toLowerCase() ? t.replace(/(^|[\s:-])(\p{L})/gu, (_, a, b) => a + b.toUpperCase()) : t
+}
 
 export default function FindGamePanel({ onClose }) {
   const [platform, setPlatform] = useState('steam')
@@ -68,7 +73,8 @@ export default function FindGamePanel({ onClose }) {
         {busy && <p className="muted small">Looking...</p>}
         {error && <p className="alert error small">{error}</p>}
         {results && !busy && results.length === 0 && (
-          <p className="muted small">{steam ? 'Nothing on Steam by that name. Try fewer words.' : `Exophase doesn't list a ${PLATFORM[platform]} game by that name.`}</p>
+          <p className="muted small">{steam ? 'Nothing on Steam by that name. Try fewer words.'
+            : `No ${PLATFORM[platform]} game by that name with achievements (Exophase only lists those) - fine for a game like Fortnite: add it below and track your hours.`}</p>
         )}
         {results?.length > 0 && (
           <ul className="list plain-list shop-results find-games">
@@ -89,8 +95,9 @@ export default function FindGamePanel({ onClose }) {
           </ul>
         )}
         {!steam && q.trim().length >= 2 && !busy && (
-          <button type="button" className="secondary find-by-hand" onClick={() => setAdding({ name: q.trim() })}>
-            + Add “{q.trim()}” to your {PLATFORM[platform]} games by hand</button>
+          <button type="button" className={`${results?.length === 0 || error ? 'primary' : 'secondary'} find-by-hand`}
+            onClick={() => setAdding({ name: niceName(q) })}>
+            + Add “{niceName(q)}” to your {PLATFORM[platform]} games (hours played)</button>
         )}
         <p className="hint">{steam ? "Steam's store search. Pick a game to see its achievements and what a 100% takes - no need to own it."
           : `Exophase's list of ${PLATFORM[platform]} games - it only has games with ${platform === 'ubisoft' ? 'challenges' : 'achievements'}. `

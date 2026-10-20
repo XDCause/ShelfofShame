@@ -1716,3 +1716,10 @@ DBeaver connection confirmed working (2026-10-11).
    Web: modules/travel (dashboard, trips, places map + countries, packing lists; the trip panel's tabs). Also: a
    `.tick-row` class for a plain labelled checkbox - `.check` is the round paint-checklist tick, and the kit-parts and
    DOPE ticks were wrongly using it.
+4o. **Video games: adding a game with no achievements (Fortnite) is clearer** (2026-10-20). User: "If I want to add a game like
+   Fortnite on Epic it isn't working - I want it for the play time." It did save, but read as a failure: Exophase (which only
+   lists games with achievements) found nothing and said so first, the add-by-hand button looked secondary, the name kept
+   its typed case ("fortnite") and the list said "Not read yet". Now: the no-results line says that's expected and to add it
+   below, the button is the primary one when nothing's found, a lower-case name gets capitals, and a hand-added
+   Epic / Ubisoft game with no Steam version reads "Hours only". Hours are kept up to date in the game's panel (Epic doesn't
+   publish playtime, and Exophase doesn't track Fortnite).

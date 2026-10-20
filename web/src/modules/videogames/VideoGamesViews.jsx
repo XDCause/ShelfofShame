@@ -409,7 +409,8 @@ function GameTable({ games, onOpen, showPlatform = false }) {
                       <span className="muted"> · {Number(g.percent)}%</span></span>
                     <CompletionBar game={g} />
                   </>
-                ) : <span className="muted small">{g.has_achievements === false ? 'No achievements' : 'Not read yet'}</span>}
+                ) : <span className="muted small">{g.has_achievements === false ? 'No achievements'
+                  : g.platform !== 'steam' && !g.source_id && !g.steam_app_id ? 'Hours only' : 'Not read yet'}</span>}
               </span>
               <span className="game-stats">
                 <Stat1 kind="time" value={g.playtime_minutes > 0 ? playtime(g.playtime_minutes) : null} />
