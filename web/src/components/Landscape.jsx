@@ -73,7 +73,8 @@ function pines(rand, pts, size, every) {
   return d
 }
 
-function Landscape({ scene = 'peaks', hue = '#84a85c', seed = 7, className = '' }) {
+// strip: a short, wide crop (a card's picture strip) shows the horizon rather than the foot of the hills.
+function Landscape({ scene = 'peaks', hue = '#84a85c', seed = 7, className = '', strip = false }) {
   const id = useId().replace(/:/g, '')
   const rand = random(seed * 9973 + scene.length * 131)
   const night = scene === 'night'
@@ -108,7 +109,7 @@ function Landscape({ scene = 'peaks', hue = '#84a85c', seed = 7, className = '' 
   const stars = night && Array.from({ length: 90 }, () => [rand() * W, rand() * H * 0.55, rand() * 1.4 + 0.3, rand() * 0.7 + 0.2])
 
   return (
-    <svg className={`landscape ${className}`} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">
+    <svg className={`landscape ${className}`} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio={strip ? 'xMidYMid slice' : 'xMidYMax slice'} aria-hidden="true" focusable="false">
       <defs>
         <linearGradient id={`sky${id}`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor={skyTop} />

@@ -12,7 +12,7 @@ export default function HobbiesPage() {
     <section className="page hobbies">
       {MODULES.map((m) => (
         <section key={m.id} className="card hobby-card" data-hobby={m.id} style={{ '--hue': m.hue }}>
-          <Link to={`/${m.id}`} className="hobby-art" tabIndex={-1} aria-hidden="true"><BannerArt area={m} photo={banners[m.id]} /></Link>
+          <Link to={`/${m.id}`} className="hobby-art" tabIndex={-1} aria-hidden="true"><BannerArt area={m} photo={banners[m.id]} strip /></Link>
           <Link to={`/${m.id}`} className="hobby-head">
             <span className="stat-icon tint"><m.Icon size={24} /></span>
             <span className="grow">

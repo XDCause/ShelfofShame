@@ -177,7 +177,7 @@ a:hover { text-decoration: underline; }
   .side-link { justify-content: center; padding: 8px; }
   .side-section { height: 0; margin: 10px 6px; overflow: hidden; border-top: 1px solid rgb(255 255 255 / 0.08); }
   .side-settings { justify-content: center; }
-  .nudge { display: none; }
+  .sidebar .nudge { display: none; }   /* (beats the nudge's own rule, which comes later) */
 }
 .page { display: flex; flex-direction: column; gap: 20px; animation: page-in var(--slow) var(--ease-out) both; }
 @keyframes page-in { from { opacity: 0; transform: translateY(6px); } }
@@ -1132,6 +1132,7 @@ button.mention:disabled { color: var(--muted); background: var(--fill); text-dec
 .hobby-card { display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
 /* The hobby's picture across the top of its card (yours, or its landscape). */
 .hobby-art { display: block; height: 92px; margin: -20px -20px 0; }
+@media (max-width: 480px) { .hobby-card .home-stat { flex-direction: column; align-items: flex-start; gap: 8px; } .hobby-card .stat-icon { width: 34px; height: 34px; } }
 .hobby-art svg, .hobby-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .hobby-head { display: flex; align-items: center; gap: 12px; color: inherit; }
 .hobby-head:hover { text-decoration: none; }

@@ -171,7 +171,7 @@ function Glance() {
       {GLANCE.map((g) => (
         <div key={g.id} className="glance-card card" data-hobby={g.id} style={{ '--hue': g.hue }}>
           <Link to={g.to} className="glance-head">
-            <span className="glance-art"><BannerArt area={g} photo={banners[g.id]} /></span>
+            <span className="glance-art"><BannerArt area={g} photo={banners[g.id]} strip /></span>
             <g.Icon size={18} /><span>{g.name}</span><ChevronIcon size={14} />
           </Link>
           <div className="glance-tiles"><g.Tiles /></div>

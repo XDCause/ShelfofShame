@@ -7,11 +7,11 @@ import Landscape from './Landscape.jsx'
 import { shrink } from './PhotoUpload.jsx'
 
 // The picture behind a banner: yours (placed where you put it), or a drawn landscape in the area's colour.
-export function BannerArt({ area, photo }) {
+export function BannerArt({ area, photo, strip = false }) {
   if (photo) {
     return <img className="banner-photo" src={photo.photo_url} alt="" style={{ objectPosition: `50% ${photo.focus_y}%` }} />
   }
-  return <Landscape scene={area.banner?.scene} seed={area.banner?.seed} hue={area.hue} />
+  return <Landscape scene={area.banner?.scene} seed={area.banner?.seed} hue={area.hue} strip={strip} />
 }
 
 // "Picture": choose a photo of your own for this banner, move it up or down, or go back to the drawing.
