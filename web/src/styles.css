@@ -18,6 +18,7 @@
   --separator: rgb(46 52 36 / 0.11);
   --fill: rgb(70 82 56 / 0.1);              /* tracks, chips */
   --fill-2: rgb(70 82 56 / 0.055);
+  --thumb-bg: #fff;                          /* behind a picture that doesn't fill its square (shop photos are on white) */
   /* Text */
   --text: #1d2620;
   --muted: #545949;                         /* 5.4:1 on parchment, 4.9:1 on a pill's fill */
@@ -90,6 +91,7 @@
   --separator: rgb(222 214 190 / 0.08);
   --fill: rgb(214 220 196 / 0.09);
   --fill-2: rgb(214 220 196 / 0.045);
+  --thumb-bg: #27322b;                       /* (white bars around a picture shouted in the dark) */
   --text: #ece3cf;                          /* parchment */
   --muted: #a7ae9c;                         /* sage */
   --faint: rgb(200 204 184 / 0.4);
@@ -445,7 +447,7 @@ tr.row.attention td:first-child { box-shadow: inset 3px 0 0 var(--low); }
 .item-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; color: var(--muted); font-size: 0.85rem; margin-top: 2px; }
 th.thumb-col, td.thumb-col { width: 60px; padding: 6px 4px 6px 12px; }
 /* Product shots are on white, so their frames stay white in dark mode too. */
-.thumb { display: block; width: 44px; height: 44px; object-fit: contain; background: #fff; border-radius: 11px; }
+.thumb { display: block; width: 44px; height: 44px; object-fit: contain; background: var(--thumb-bg); border-radius: 11px; }
 .thumb-empty { background: var(--fill); }
 .qty { display: inline-flex; align-items: center; gap: 6px; }
 .qty span { min-width: 1.5em; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -2744,11 +2746,12 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .home-hobbies { display: flex; flex-direction: column; }
 
 /* Travel's feature on Home: the next trip, its picture filling the card, the words at its foot. */
-.next-adventure { position: relative; isolation: isolate; overflow: hidden; padding: 0; min-height: 260px; display: flex; color: #f3ecdc; border: 0; }
+.next-adventure { position: relative; isolation: isolate; overflow: hidden; padding: 0; min-height: 260px; display: flex; color: #f3ecdc; border: 0;
+  flex-direction: column; justify-content: flex-end; }   /* the words at the bottom left, however Home lays the card out */
 .next-adventure-art { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; }
 .next-adventure-art svg { width: 100%; height: 100%; display: block; }
 .next-adventure::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgb(8 12 10 / 0.05) 30%, rgb(8 12 10 / 0.78)); }
-.next-adventure-text { align-self: flex-end; padding: 20px; }
+.next-adventure-text { align-self: stretch; padding: 20px 22px; }
 .next-adventure-eyebrow { margin: 0; font-size: var(--text-xs); font-weight: 650; letter-spacing: 0.16em; text-transform: uppercase; color: #e9c79a; }
 .next-adventure-name { margin: 4px 0 2px; font-size: 1.9rem; color: #f6efdf; }
 .next-adventure-when { margin: 0 0 14px; font-size: var(--text-sm); color: rgb(243 236 220 / 0.85); }
