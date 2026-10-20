@@ -506,6 +506,12 @@ export const api = {
   updateColourGroup: (id, data) => request(`/colour-groups/${id}`, send('PATCH', data)),
   deleteColourGroup: (id) => request(`/colour-groups/${id}`, send('DELETE')),
 
+  // Page banners (api/app/banners.py): a picture of your own per area ('home', 'journal', a hobby's id)
+  banners: () => request('/banners'),
+  setBanner: (area, blob) => request(`/banners/area/${area}/photo`, image('PUT', blob)),
+  moveBanner: (area, focusY) => request(`/banners/area/${area}`, send('PATCH', { focus_y: focusY })),
+  removeBanner: (area) => request(`/banners/area/${area}/photo`, send('DELETE')),
+
   // Settings
   settings: () => request('/settings'),
   // The weekly check of the websites the app reads

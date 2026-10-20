@@ -14,6 +14,9 @@ import PlantingPanel from './PlantingPanel.jsx'
 export default {
   id: 'gardening',
   name: 'Gardening',
+  // its colour (new leaf: sidebar icon, Home card, banner) and its banner (components/Landscape.jsx scenes)
+  hue: '#78b043',
+  banner: { scene: 'hills', seed: 27, tagline: 'Grow something every day.' },
   what: 'Balcony and windowsill garden: layout, plants, watering, photos, harvests, Bunnings',
   Icon: SproutIcon,
   home: { Tiles: GardenTiles },

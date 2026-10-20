@@ -1,6 +1,9 @@
 import { Link, useNavigate } from 'react-router'
 import { api, timeAgo } from '../api.js'
 import { BoxIcon, CalendarIcon, CartIcon, ChevronIcon, JournalIcon, PenIcon } from '../components/icons.jsx'
+import { BannerArt, BannerPicture } from '../components/PageBanner.jsx'
+import { CORE_AREAS } from './areas.js'
+import { useBanners } from './banners.js'
 import { MODULES } from '../modules/index.js'
 import { KIND_ICON, KIND_NAME, VERB_TONE } from './activityKinds.js'
 import { useApp } from './app-context.js'
@@ -25,44 +28,64 @@ const TAGLINES = [
 ]
 const tagline = () => TAGLINES[Math.floor(Date.now() / 86400000) % TAGLINES.length]
 
-// Home: today at a glance.
-//   hero            the date, a greeting and a line for the day, over a photo of what you've
-//                   been doing, with "Write today's entry"
-//   stat tiles      supplies, then each hobby's (one shared row)
-//   Recent activity beside Coming up (the calendar), Quick actions and the Journal
-//   then Running low and each hobby's own cards (Building now...)
-export default function Home() {
-  const { refreshKey } = useApp()
-  const { data: activity } = useShared(`activity-${refreshKey}`, () => api.activity(8))
+// Home's banner (drawn by App above the page, full width): the date, a greeting (with your name, if
+// Settings has it) and a line for the day over your Home picture or a drawn landscape, with
+// "Write today's entry".
+export function HomeHero({ area }) {
+  const { settings } = useApp()
+  const banners = useBanners()
   const newPage = useNewPage()
   const now = new Date()
-  const photo = activity?.find((a) => a.photo_url && a.kind !== 'supply') ?? activity?.find((a) => a.photo_url)
+  const today = now.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
+  return (
+    <header className="hero page-banner home-banner" style={{ '--hue': area.hue }}>
+      <div className="banner-art"><BannerArt area={area} photo={banners.home} /></div>
+      <div className="hero-text">
+        <p className="hero-date">{today}</p>
+        <h2>{greeting(now.getHours())}{settings?.your_name && `, ${settings.your_name}`}</h2>
+        <p className="hero-tagline">{tagline()}</p>
+        <button type="button" className="primary hero-write" onClick={() => newPage({ title: today })}>
+          Write today's entry <ChevronIcon size={16} />
+        </button>
+      </div>
+      <p className="hero-script" aria-hidden="true">Better things<br />outside of work.</p>
+      <BannerPicture area={{ ...area, name: 'Home' }} photo={banners.home} />
+    </header>
+  )
+}
+
+// Home: today, like the front page of a magazine about your week.
+//   (the banner above it: HomeHero)
+//   a row of what matters now: a hobby's feature (your next trip), recent activity, your goals
+//   Your hobbies: a card each, its picture and its numbers
+//   Coming up (the calendar), Quick actions, the journal, Running low and each hobby's own cards
+export default function Home() {
+  const { refreshKey } = useApp()
+  const { data: activity } = useShared(`activity-${refreshKey}`, () => api.activity(6))
+  const newPage = useNewPage()
   const cards = MODULES.filter((m) => m.home?.Cards)
+  const features = MODULES.filter((m) => m.home?.Feature)
 
   return (
     <section className="page home">
-      <header className="hero" style={photo ? { '--hero-image': `url("${photo.photo_url}")` } : undefined}>
-        <div className="hero-text">
-          <p className="hero-date">{now.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
-          <h2>{greeting(now.getHours())}</h2>
-          <p className="hero-tagline">{tagline()}</p>
-          <button type="button" className="primary" onClick={() => newPage({
-            title: now.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' }),
-          })}>Write today's entry</button>
-        </div>
-      </header>
-
       <SiteCheckWarning />
-      <Glance />
+      <div className="home-now">
+        {features.map((m) => <m.home.Feature key={m.id} />)}
+        <RecentActivity items={activity} />
+        <GoalsHome />
+      </div>
+
+      <section className="home-hobbies" aria-labelledby="home-hobbies">
+        <h2 id="home-hobbies" className="home-section-title">Your hobbies</h2>
+        <Glance />
+      </section>
 
       <div className="home-grid">
         <div className="home-column">
           <ComingUp />
-          <RecentActivity items={activity} />
+          <QuickActions newPage={newPage} />
         </div>
         <div className="home-column">
-          <QuickActions newPage={newPage} />
-          <GoalsHome />
           <JournalHome />
         </div>
       </div>
@@ -135,21 +158,25 @@ function QuickActions({ newPage }) {
 // you swipe through on a phone - so Home stays short. A hobby with nothing to show (not set up yet)
 // leaves its card out.
 const GLANCE = [
-  { id: 'supplies', name: 'Supplies', Icon: BoxIcon, to: '/supplies', Tiles: SuppliesTiles },
-  ...MODULES.filter((m) => m.home?.Tiles).map((m) => ({ id: m.id, name: m.name, Icon: m.Icon, to: `/${m.id}/${m.pages[0].path}`, Tiles: m.home.Tiles })),
+  { id: 'supplies', name: 'Supplies', Icon: BoxIcon, to: '/supplies', Tiles: SuppliesTiles, ...CORE_AREAS.supplies },
+  ...MODULES.filter((m) => m.home?.Tiles).map((m) => ({ id: m.id, name: m.name, Icon: m.Icon, to: `/${m.id}/${m.pages[0].path}`,
+    Tiles: m.home.Tiles, hue: m.hue, banner: m.banner })),
 ]
 
+// Each card: a strip of the hobby's picture (yours, or its landscape) under its name, then its numbers.
 function Glance() {
+  const banners = useBanners()
   return (
-    <section className="glance" aria-label="Your hobbies at a glance">
+    <div className="glance">
       {GLANCE.map((g) => (
-        <div key={g.id} className="glance-card card" data-hobby={g.id}>
+        <div key={g.id} className="glance-card card" data-hobby={g.id} style={{ '--hue': g.hue }}>
           <Link to={g.to} className="glance-head">
+            <span className="glance-art"><BannerArt area={g} photo={banners[g.id]} /></span>
             <g.Icon size={18} /><span>{g.name}</span><ChevronIcon size={14} />
           </Link>
           <div className="glance-tiles"><g.Tiles /></div>
         </div>
       ))}
-    </section>
+    </div>
   )
 }

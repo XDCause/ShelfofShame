@@ -11,6 +11,9 @@ import { Dashboard, GamesPage, VideoGamesTiles } from './VideoGamesViews.jsx'
 export default {
   id: 'videogames',
   name: 'Video games',
+  // its colour (dusk violet: sidebar icon, Home card, banner) and its banner (components/Landscape.jsx scenes)
+  hue: '#8f72d6',
+  banner: { scene: 'night', seed: 9, tagline: 'Every achievement, every hour.' },
   what: 'Steam achievements and 100% runs',
   Icon: GamepadIcon,
   home: { Tiles: VideoGamesTiles },

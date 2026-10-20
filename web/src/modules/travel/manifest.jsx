@@ -1,6 +1,6 @@
 import { BoxIcon, CalendarIcon, SuitcaseIcon, TrophyIcon } from '../../components/icons.jsx'
 import { BookingPanel, PlacePanel } from './TravelPanels.jsx'
-import { Dashboard, PackingListsView, PlacesView, TravelTiles, TripsView } from './TravelViews.jsx'
+import { Dashboard, NextAdventure, PackingListsView, PlacesView, TravelTiles, TripsView } from './TravelViews.jsx'
 import TripPanel from './TripPanel.jsx'
 
 // Travel (api/app/travel.py, travel_trip.py): trips - ideas, coming up, on now, been - each with its bookings, a day-by-day
@@ -10,9 +10,12 @@ import TripPanel from './TripPanel.jsx'
 export default {
   id: 'travel',
   name: 'Travel',
+  // its colour (lagoon: sidebar icon, Home card, banner) and its banner (components/Landscape.jsx scenes)
+  hue: '#2fa39a',
+  banner: { scene: 'coast', seed: 2, tagline: 'Somewhere new is waiting.' },
   what: 'Trips: bookings, plans, budget, packing, places and memories',
   Icon: SuitcaseIcon,
-  home: { Tiles: TravelTiles },
+  home: { Tiles: TravelTiles, Feature: NextAdventure },
   actions: [{ label: 'Plan a trip', Icon: SuitcaseIcon, run: (app) => app.openPanel('trip', {}) }],
   panels: { trip: TripPanel, tbooking: BookingPanel, tplace: PlacePanel },
   pages: [

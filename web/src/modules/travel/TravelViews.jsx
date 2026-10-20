@@ -3,7 +3,8 @@ import { Link } from 'react-router'
 import { api, shortDate } from '../../api.js'
 import { ColumnChart } from '../../components/charts.jsx'
 import Fold from '../../components/Fold.jsx'
-import { CalendarIcon, SuitcaseIcon, TargetIcon, TrophyIcon } from '../../components/icons.jsx'
+import { CalendarIcon, ChevronIcon, SuitcaseIcon, TargetIcon, TrophyIcon } from '../../components/icons.jsx'
+import Landscape from '../../components/Landscape.jsx'
 import { useApp } from '../../core/app-context.js'
 import EmptyState from '../../core/EmptyState.jsx'
 import Stat, { StatSkeleton } from '../../core/Stat.jsx'
@@ -26,6 +27,27 @@ export function TravelTiles() {
   if (!s.countries_been) return null
   return <Stat to="/travel/places" Icon={SuitcaseIcon} tone="teal" value={s.countries_been} label="Countries visited"
     sub={s.bucket_list ? `${plural(s.bucket_list, 'place')} on the bucket list` : null} />
+}
+
+// Home's feature: the trip you're on, or the next one - its picture (or a drawn coast), dates and a way in.
+export function NextAdventure() {
+  const { data: s } = useTravelSummary()
+  const { openPanel } = useApp()
+  const trip = s?.now[0] ?? s?.upcoming[0]
+  if (!trip) return null
+  return (
+    <section className="card home-card next-adventure" aria-labelledby="home-trip">
+      {trip.photo_url ? <img className="next-adventure-art" src={trip.photo_url} alt="" loading="lazy" />
+        : <span className="next-adventure-art"><Landscape scene="coast" seed={trip.trip_id + 40} hue="#2fa39a" /></span>}
+      <div className="next-adventure-text">
+        <p className="next-adventure-eyebrow">{s.now[0] ? 'Travelling now' : 'Next adventure'}</p>
+        <h2 id="home-trip" className="next-adventure-name">{trip.name}</h2>
+        <p className="next-adventure-when">{tripMeta(trip)}</p>
+        <button type="button" className="primary" onClick={() => openPanel('trip', { id: trip.trip_id })}>
+          View trip <ChevronIcon size={14} /></button>
+      </div>
+    </section>
+  )
 }
 
 function TripRow({ t }) {

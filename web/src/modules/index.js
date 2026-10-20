@@ -2,9 +2,13 @@
 //   id        its address: /<id>/<page path>
 //   name      what it's called (Board games); `what` says what it's for
 //   Icon      its icon in the sidebar and on the Hobbies page
+//   hue       its colour: a mid-tone hex (sidebar icon, Home card, the light in the corner, its drawn banner)
+//   banner    its banner: {scene, seed, tagline} (components/Landscape.jsx draws scene + seed when you
+//             haven't given the hobby a picture of your own)
 //   pages     [{path, label, Icon, render(app)}] - render gets the app context (core/app-context.js).
 //             Two or more pages show as tabs at the top of the hobby.
-//   home      its parts of Home: {Tiles (stat tiles, in Home's shared row), Cards (a card or two)}
+//   home      its parts of Home: {Tiles (its numbers in Your hobbies), Cards (a card or two), Feature (a card in
+//             the top row - travel's next trip)}
 //   actions   Home's quick actions: [{label, Icon, run(app)}]
 //   panels    side panels it adds: {type: Component}; any page opens one with app.openPanel(type, props)
 //   underConstruction  true = a placeholder for a hobby still to build (a spanner after its name). Only dev

@@ -45,12 +45,12 @@ AI via MCP server (stage 6) ---------------/
 DBeaver, psql, and the one-off import script.
 
 ## Where to look
-- **History, decisions and the reasons behind them: docs/HISTORY.md** (sections 1 - 4v; search it before changing
+- **History, decisions and the reasons behind them: docs/HISTORY.md** (sections 1 - 4w; the design system: docs/DESIGN.md; search it before changing
   something old - most odd-looking code has a lesson behind it there). Plans: docs/ROADMAP.md. Caveats for ever going
   public: BEFORE_GOING_PUBLIC.md (**add a row whenever a new data source, scraper, copied content or single-user
   shortcut is added**).
 - **API** (`api/app`, FastAPI; routes all start `/api`; main.py only wires routers - ORDER MATTERS where a fixed path
-  shares a prefix with `/{id}`): core - db (pool, enum lists that must match SQL CHECKs, insert_row / update_row /
+  shares a prefix with `/{id}`): core - banners (page pictures), db (pool, enum lists that must match SQL CHECKs, insert_row / update_row /
   found / tidy_text), activity, calendar, journal (+ journal_text, journal_actions, journal_drawings), goals, settings,
   spending, sitecheck, images, webphoto, lookups, wanted. Supplies hobby - supplies (+ kits: part_of), wishlist, products, catalog,
   paints, colours. Models - models, minis, build, warhammer, gundam. Board games - boardgames. Volleyball -
@@ -64,7 +64,7 @@ DBeaver, psql, and the one-off import script.
 - **Web** (`web/src`, React 19 + Vite): App.jsx (routes, panels via openPanel(type), openThing(kind, id)), api.js (every
   fetch, grouped by area), core/ (Home, Navigation, Goals, Journal, Calendar...), modules/<hobby>/manifest.jsx (pages,
   panels, Home tiles / cards, quick actions), components/ (shared), styles.css (one file, sections by comment).
-- **Database**: numbered idempotent files in db/init (01-75); migrate.ps1 applies pending ones.
+- **Database**: numbered idempotent files in db/init (01-80); migrate.ps1 applies pending ones.
 
 ## Quality gates (run them; they're fast)
 - `.\test_all.ps1` in dev = API tests (run_tests.ps1: fresh test DB from db\init, pytest) and the browser walk-through

@@ -21,11 +21,12 @@ router = APIRouter(prefix="/api", tags=["settings"])
 # ---------------------------------------------------------------------------
 # Settings (key -> value)
 # ---------------------------------------------------------------------------
-DEFAULTS = {"default_shop": "Hobbyrama"}
+DEFAULTS = {"default_shop": "Hobbyrama", "your_name": None}   # your_name: Home says "Good morning, <name>"
 
 
 class SettingsPatch(BaseModel):
     default_shop: str | None = Field(None, max_length=100)
+    your_name: str | None = Field(None, max_length=40)
 
 
 def get_setting(conn, key: str) -> str | None:

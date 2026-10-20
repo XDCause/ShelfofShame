@@ -11,6 +11,9 @@ import { AmmoView, Dashboard, DopeView, RiflesView, SessionsView, ShootingTiles 
 export default {
   id: 'shooting',
   name: 'Precision shooting',
+  // its colour (olive: sidebar icon, Home card, banner) and its banner (components/Landscape.jsx scenes)
+  hue: '#9aa33f',
+  banner: { scene: 'hills', seed: 31, tagline: 'Slow is smooth. Smooth is accurate.' },
   what: 'Rifles, ammo, range sessions, groups and your DOPE',
   Icon: CrosshairIcon,
   home: { Tiles: ShootingTiles },

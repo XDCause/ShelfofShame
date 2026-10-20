@@ -11,6 +11,9 @@ import { GamesView, GearView, VideosView, VolleyballTiles } from './VolleyballVi
 export default {
   id: 'volleyball',
   name: 'Volleyball',
+  // its colour (sand and sun: sidebar icon, Home card, banner) and its banner (components/Landscape.jsx scenes)
+  hue: '#d9a62e',
+  banner: { scene: 'coast', seed: 6, tagline: 'Serve, dig, spike, repeat.' },
   what: 'Games, training, videos, coaching notes and gear',
   Icon: BallIcon,
   home: { Tiles: VolleyballTiles },

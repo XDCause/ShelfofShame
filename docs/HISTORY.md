@@ -1768,3 +1768,21 @@ DBeaver connection confirmed working (2026-10-11).
    and hover lifts. Each hobby has its own natural colour (data-hobby: sidebar icon, Home card glow, Hobbies card,
    and <html data-hobby> tints the page's corner light). Every text colour checked >= 4.5:1 on its surface.
    Text on a solid status colour uses --on-solid (dark text in dark mode, where the status colours are light).
+4w. **The whole app redesigned: "moody botanical editorial"** (2026-10-20). User: a full product + visual redesign brief
+   (research first, audit, a real design system, every route, responsive, accessible) and a mockup: landscape photo
+   banners, an editorial serif, a pine sidebar, cream pills, picture cards. Research (NN/g heuristics, WCAG 2.2 AA, CLS /
+   images, type pairing) and the result are in **docs/DESIGN.md**. What changed:
+   - Tokens rebuilt (semantic roles; the sidebar has its own pine tokens in both themes; `--primary-bg` is the one
+     strong button: parchment pill on dark, pine on light). The 4v glows, corner light and big radii went - the brief
+     asked for atmosphere from imagery and type, not glows. Fonts: Playfair Display + Inter + Caveat (bundled).
+   - Banners: every top page and hobby opens with one (components/PageBanner.jsx; Home's HomeHero). Picture = yours
+     (new `banners` table, 80_banners.sql, api/app/banners.py; "Picture" menu: choose, nudge up/down, back to the
+     drawing) or components/Landscape.jsx - a seeded SVG landscape (peaks, hills, forest, coast, night) in the area's
+     hue, so nothing is downloaded and no media is in the repo. The nav bar floats clear over it and turns solid with
+     the page's name once you scroll (App: `scrolled`).
+   - Each hobby's `hue` and `banner` live in its manifest (core/areas.js for the core pages), not in CSS.
+   - Home: banner with the greeting (+ your name: settings `your_name`), a top row (travel's NextAdventure feature,
+     Recent activity, Goals) overlapping the banner's foot, Your hobbies as picture cards. Sidebar: the mountain mark,
+     Settings at its foot (the nav bar's gear is for phones only). Tabs: words with the current page a filled pill.
+   - Journal: a notes page is warm paper in both themes (local tokens on .journal-page; the editor is always light).
+   - Walk-through: a Banners step (name, a picture, moved, back to the drawing, the bar showing the name on scroll).

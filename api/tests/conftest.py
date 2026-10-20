@@ -28,7 +28,7 @@ def clean_database():
                      "colour_group_members, mixes, mix_parts, price_guide, journal_pages, tags, page_tags, "
                      "journal_links, journal_images, journal_drawings, calendar_events, board_games, board_game_plays, gear, "
                      "volleyball_games, volleyball_teams, volleyball_videos, vg_achievements, vg_games, vg_other_games, "
-                     "chess_games, chess_archives, books, reading_log, book_quotes, vg_friends, volleyball_coach, goals, site_checks, hikes, hike_photos, hike_gear, garden_spaces, garden_containers, garden_plantings, garden_logs, garden_photos, garden_tasks, garden_items, shooting_ranges, rifles, ammo, shooting_sessions, shooting_groups, shooting_shots, shooting_media, rifle_logs, dope_rows, trips, trip_places, travel_countries, vg_playtime "
+                     "chess_games, chess_archives, books, reading_log, book_quotes, vg_friends, volleyball_coach, goals, site_checks, hikes, hike_photos, hike_gear, garden_spaces, garden_containers, garden_plantings, garden_logs, garden_photos, garden_tasks, garden_items, shooting_ranges, rifles, ammo, shooting_sessions, shooting_groups, shooting_shots, shooting_media, rifle_logs, dope_rows, trips, trip_places, travel_countries, vg_playtime, banners "
                      "RESTART IDENTITY CASCADE")
         conn.execute("DELETE FROM settings WHERE key LIKE 'reading_goal_%%'")
         conn.execute("DELETE FROM garden_guides WHERE custom")
@@ -44,6 +44,7 @@ def clean_database():
                      "exo_synced_at = NULL, exo_error = NULL")
         # the seeded settings (db/init/15_settings.sql)
         conn.execute("UPDATE settings SET value = 'Hobbyrama' WHERE key = 'default_shop'")
+        conn.execute("DELETE FROM settings WHERE key = 'your_name'")
         conn.execute("""INSERT INTO price_guide (label, title_contains, paint_type, size, price, sort_order)
                         VALUES ('Panel Line Accent', 'PANEL LINE ACCENT', NULL, NULL, 10.95, 1),
                                ('Acrylic paint, 10ml', NULL, 'Acrylic', '10ml', 3.95, 2)""")

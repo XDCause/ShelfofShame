@@ -13,7 +13,9 @@ export default function SettingsPanel({ lookups, settings, onClose, onSettings, 
   return (
     <Drawer title="Settings" onClose={onClose}>
       <div className="settings">
-        <Fold title="Appearance" detail={THEMES.find(([k]) => k === readTheme())?.[1]}><Appearance /></Fold>
+        <Fold title="Appearance" detail={THEMES.find(([k]) => k === readTheme())?.[1]}>
+          <Appearance settings={settings} onSettings={onSettings} />
+        </Fold>
         <Fold title="Spending"><Spending /></Fold>
         <Fold title="Price guide" detail="your usual prices"><PriceGuide lookups={lookups} /></Fold>
         <Fold title="Default shop" detail={settings.default_shop}>
@@ -29,9 +31,20 @@ export default function SettingsPanel({ lookups, settings, onClose, onSettings, 
   )
 }
 
-// Light, dark, or whatever the device is set to. Remembered on this device.
-function Appearance() {
+// Light, dark, or whatever the device is set to (remembered on this device), and the name Home greets.
+function Appearance({ settings, onSettings }) {
   const [choice, setChoice] = useState(readTheme)
+  const [name, setName] = useState(settings.your_name ?? '')
+  const [saved, setSaved] = useState('')
+  const save = async () => {
+    if (name.trim() === (settings.your_name ?? '')) return
+    try {
+      onSettings(await api.updateSettings({ your_name: name }))
+      setSaved('Saved ✓')
+    } catch (e) {
+      setSaved(e.message)
+    }
+  }
   return (
     <>
       <div className="segmented" role="group" aria-label="Appearance">
@@ -41,6 +54,12 @@ function Appearance() {
         ))}
       </div>
       <p className="hint">System follows your device's light or dark setting.</p>
+      <label className="field settings-name">
+        <span className="field-label">Your name</span>
+        <input value={name} maxLength={40} onChange={(e) => setName(e.target.value)} onBlur={save}
+          onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()} placeholder="For Home's greeting" />
+      </label>
+      <p className="hint">Home says "Good morning, {name.trim() || 'you'}". Each page's picture is changed from its banner (Picture). {saved}</p>
     </>
   )
 }

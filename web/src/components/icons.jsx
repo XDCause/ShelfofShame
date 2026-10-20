@@ -149,3 +149,15 @@ export const UsersIcon = (p) => (
   <Icon {...p}><circle cx="9" cy="8.5" r="3.5" /><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5" />
     <path d="M15.5 5.2a3.3 3.3 0 0 1 0 6.6M17.5 14.8c2.2.6 3.6 2.4 4 5.2" /></Icon>
 )
+export const CameraIcon = (p) => (
+  <Icon {...p}><path d="M4 8.5A2 2 0 0 1 6 6.5h1.8L9.5 4h5l1.7 2.5H18a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
+    <circle cx="12" cy="12.5" r="3.6" /></Icon>
+)
+// The app's mark: two peaks under a low sun, drawn as one line (the sidebar, the phone's bar).
+export const LogoMark = ({ size = 28, ...p }) => (
+  <svg viewBox="0 0 32 24" width={size} height={size * 0.75} aria-hidden="true" fill="none" stroke="currentColor"
+    strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" {...p}>
+    <path d="M1.5 21.5 11 8l4.2 6 3.3-4.5 12 12z" /><path d="M8.2 12 11 14.6 13.4 12.6" /><circle cx="23.5" cy="5.5" r="2.6" />
+    <path d="M1.5 21.5h29" />
+  </svg>
+)

@@ -93,7 +93,7 @@ def watch(page, label):
 @step("Home: greeting, every hobby's tiles, Coming up, and the numbers open their pages")
 def home(page):
     page.goto(BASE)
-    expect(page.locator(".hero h2")).to_have_text(re.compile("^Good (morning|afternoon|evening)$"), timeout=15000)
+    expect(page.locator(".hero h2")).to_have_text(re.compile("^Good (morning|afternoon|evening)(, .+)?$"), timeout=15000)   # (+ your name, if set)
     stats = page.locator(".home-stat")
     expect(stats.filter(has_text="Supplies")).to_contain_text(str(TOTAL))
     for tile in ("Shelf of shame", "Board games", "Volleyball", "Next game"):
@@ -893,6 +893,42 @@ def journal_wishlist(page):
     expect(page.locator(".toast")).to_contain_text("added to your wishlist")
     wishes = page.request.get(f"{BASE}/api/wishlist").json()
     assert any("XF10" in w["name"] and (w["notes"] or "").startswith("From the journal") for w in wishes), wishes
+
+
+@step("Banners: your name in Home's greeting; a picture of your own on a page's banner, moved, then the drawing back")
+def banners(page):
+    go(page, "Home")
+    expect(page.locator(".home-banner .landscape")).to_have_count(1)            # no picture yet: a drawn landscape
+    page.get_by_role("button", name="Settings").click()
+    d = drawer(page)
+    d.locator("summary", has_text="Appearance").click()
+    d.get_by_label("Your name").fill("Sam")
+    d.get_by_label("Your name").press("Enter")
+    expect(d).to_contain_text("Saved")
+    page.keyboard.press("Escape")
+    expect(page.locator(".hero h2")).to_have_text(re.compile("^Good (morning|afternoon|evening), Sam$"))
+    page.goto(BASE + "/boardgames")
+    banner = page.locator(".page-banner")
+    expect(banner.locator(".banner-title")).to_have_text("Board games")
+    expect(banner.locator(".banner-tagline")).to_be_visible()
+    banner.get_by_label("Change the Board games picture").click()
+    banner.locator(".banner-picture-menu input[type=file]").set_input_files(
+        {"name": "table.png", "mimeType": "image/png", "buffer": PIXEL})
+    expect(banner.locator("img.banner-photo")).to_have_count(1)
+    expect(banner.locator(".landscape")).to_have_count(0)
+    banner.get_by_label("Change the Board games picture").click()
+    banner.get_by_role("button", name="Show more of the top").click()
+    expect(banner.locator("img.banner-photo")).to_have_attribute("style", re.compile("40%"))
+    banner.get_by_label("Change the Board games picture").click()
+    banner.get_by_role("button", name="Use the drawing again").click()
+    expect(banner.locator(".landscape")).to_have_count(1)
+    page.mouse.wheel(0, 600)                                                     # scrolled: the bar shows the page's name
+    expect(page.locator(".navbar.scrolled h1")).to_contain_text("Board games")
+    page.get_by_role("button", name="Settings").click()                          # tidy up: no name again
+    d.locator("summary", has_text="Appearance").click()
+    d.get_by_label("Your name").fill("")
+    d.get_by_label("Your name").press("Enter")
+    page.keyboard.press("Escape")
 
 
 @step("Settings: Appearance switches light and dark; Home's Wishlist action opens + Add")
@@ -2406,7 +2442,7 @@ with sync_playwright() as p:
                models, model_paste, add_model_hasegawa, add_model_trumpeter, undo, add_to_wishlist_button, duplicate_check, wishlist_panel, shop_tamiya, used_up,
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
                matches, used_on, gundam, bandai_lookup, warhammer, journal_write, journal_links, journal_from_model,
-               journal_suggestion, journal_todo, global_search, journal_wishlist, appearance,
+               journal_suggestion, journal_todo, global_search, journal_wishlist, banners, appearance,
                build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, warhammer_minis, gundam_range, board_game_kinds, board_game_elsewhere, volleyball_coach, video_game_friends, wishlist_shops, goals, supply_kit, hiking, gardening, shooting, travel, bunnings_button, settings_more, no_panel):
         fn(desk)
     ctx = browser.new_context(**p.devices["iPhone 13"], timezone_id=zone)

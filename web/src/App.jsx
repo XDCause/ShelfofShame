@@ -9,16 +9,18 @@ import InventoryView from './components/InventoryView.jsx'
 import ItemPanel from './components/ItemPanel.jsx'
 import ModelPanel from './components/ModelPanel.jsx'
 import Notice from './components/Notice.jsx'
+import PageBanner from './components/PageBanner.jsx'
 import SettingsPanel from './components/SettingsPanel.jsx'
 import WishlistPage from './components/WishlistPage.jsx'
 import { AppContext } from './core/app-context.js'
+import { areaFor, CORE_AREAS } from './core/areas.js'
 import CalendarPage from './core/calendar/CalendarPage.jsx'
 import EventPanel from './core/calendar/EventPanel.jsx'
 import GlobalSearch from './core/GlobalSearch.jsx'
 import GoalPage from './core/goals/GoalPage.jsx'
 import GoalsPage from './core/goals/GoalsPage.jsx'
 import HobbiesPage from './core/HobbiesPage.jsx'
-import Home from './core/Home.jsx'
+import Home, { HomeHero } from './core/Home.jsx'
 import JournalList from './core/journal/JournalList.jsx'
 import JournalPage from './core/journal/JournalPage.jsx'
 import { corePageFor, SectionTabs, Sidebar, TabBar } from './core/Navigation.jsx'
@@ -157,11 +159,22 @@ export default function App() {
     const name = page ? `${page.label} · ${module.name}` : core && core.path !== '/' ? `${core.label} · ${APP_NAME}` : APP_NAME
     document.title = appEnv === 'prod' ? name : `[${appEnv.toUpperCase()}] ${name}`
   }, [page, module, core, appEnv])
-  // The hobby you're in tints the light in the page's top corner (styles.css: Hobby colours).
+  // The area you're in (a hobby, the journal...): its banner, and its colour tints the light in the page's corner.
+  const area = areaFor(pathname)
+  const areaId = area?.id
   useEffect(() => {
+    document.documentElement.style.setProperty('--hue', area?.hue ?? CORE_AREAS.home.hue)
     if (module) document.documentElement.dataset.hobby = module.id
     else delete document.documentElement.dataset.hobby
-  }, [module])
+  }, [area?.hue, module])
+  // The bar over the banner is clear at the top of the page and solid (with the page's name) once you scroll.
+  const [scrolled, setScrolled] = useState(false)
+  useEffect(() => {
+    const check = () => setScrolled(window.scrollY > (areaId ? 150 : 4))
+    check()
+    window.addEventListener('scroll', check, { passive: true })
+    return () => window.removeEventListener('scroll', check)
+  }, [areaId])
   const envBadge = appEnv !== 'prod' && <span className="env-badge" title="A test copy - not your real data">{appEnv}</span>
 
   return (
@@ -169,7 +182,7 @@ export default function App() {
       <div className="app">
         <Sidebar />
         <div className="main-col">
-          <header className="navbar">
+          <header className={`navbar${area ? ' over-banner' : ''}${scrolled ? ' scrolled' : ''}`}>
             <div className="navbar-row">
               <h1>
                 {title}{envBadge}
@@ -181,7 +194,7 @@ export default function App() {
                     setPanel({ type: 'add', scan: null })
                     showToast("Couldn't find a barcode in that photo. Try again, or use \"Type a barcode\".")
                   }} />}
-                <button type="button" className="icon-btn" onClick={() => setPanel({ type: 'settings' })}
+                <button type="button" className="icon-btn navbar-settings" onClick={() => setPanel({ type: 'settings' })}
                   aria-label="Settings" title="Settings: spending, prices, backups, export, lists">
                   <GearIcon />
                 </button>
@@ -189,6 +202,8 @@ export default function App() {
             </div>
           </header>
 
+          {area && lookups && (areaId === 'home' ? <HomeHero area={area} />
+            : <PageBanner key={areaId} area={area} title={title} />)}
           <div className="content">
             {timer && (
               <button type="button" className="timer-banner" onClick={() => openModel(timer.model_id)}>

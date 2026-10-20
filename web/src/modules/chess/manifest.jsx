@@ -8,6 +8,9 @@ import { ChessTiles, Dashboard, GamesView, OpeningsView } from './ChessViews.jsx
 export default {
   id: 'chess',
   name: 'Chess',
+  // its colour (walnut: sidebar icon, Home card, banner) and its banner (components/Landscape.jsx scenes)
+  hue: '#a8825a',
+  banner: { scene: 'hills', seed: 14, tagline: 'One move at a time.' },
   what: 'chess.com ratings, games and openings; games over the board',
   Icon: ChessIcon,
   home: { Tiles: ChessTiles },

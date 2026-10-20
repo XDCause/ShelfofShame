@@ -10,10 +10,17 @@ from tests.conftest import FIXTURES
 
 # ---------------------------------------------------------------- default shop
 def test_default_shop_is_hobbyrama_and_can_change(client):
-    assert client.get("/api/settings").json() == {"default_shop": "Hobbyrama"}
+    assert client.get("/api/settings").json() == {"default_shop": "Hobbyrama", "your_name": None}
     assert client.patch("/api/settings", json={"default_shop": " Frontline Hobbies "}).json() == \
-        {"default_shop": "Frontline Hobbies"}
-    assert client.patch("/api/settings", json={"default_shop": ""}).json() == {"default_shop": None}
+        {"default_shop": "Frontline Hobbies", "your_name": None}
+    assert client.patch("/api/settings", json={"default_shop": ""}).json() == {"default_shop": None, "your_name": None}
+
+
+def test_your_name_for_the_greeting(client):
+    assert client.patch("/api/settings", json={"your_name": " Sam "}).json()["your_name"] == "Sam"
+    assert client.get("/api/settings").json()["your_name"] == "Sam"
+    assert client.patch("/api/settings", json={"your_name": ""}).json()["your_name"] is None
+    assert client.patch("/api/settings", json={"your_name": "x" * 41}).status_code == 422
 
 
 def test_buying_without_a_shop_uses_the_default(client, ids):

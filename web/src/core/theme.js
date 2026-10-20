@@ -14,7 +14,7 @@ export function applyTheme(choice = readTheme()) {
   const theme = choice === 'system' ? (media.matches ? 'dark' : 'light') : choice
   document.documentElement.dataset.theme = theme
   document.querySelectorAll('meta[name="theme-color"]').forEach((m) => {
-    m.content = theme === 'dark' ? '#0e1411' : '#eeeadf'
+    m.content = theme === 'dark' ? '#111915' : '#efe8d8'
   })
   window.dispatchEvent(new CustomEvent('themechange', { detail: theme }))
 }

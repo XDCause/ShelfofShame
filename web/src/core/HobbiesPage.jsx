@@ -1,14 +1,18 @@
 import { Link } from 'react-router'
 import { ChevronIcon } from '../components/icons.jsx'
+import { BannerArt } from '../components/PageBanner.jsx'
+import { useBanners } from './banners.js'
 import { UnderConstruction } from './Navigation.jsx'
 import { MODULES } from '../modules/index.js'
 
 // Every hobby, with its numbers: the phone's Hobbies tab (wide screens list them in the sidebar).
 export default function HobbiesPage() {
+  const banners = useBanners()
   return (
     <section className="page hobbies">
       {MODULES.map((m) => (
-        <section key={m.id} className="card hobby-card" data-hobby={m.id}>
+        <section key={m.id} className="card hobby-card" data-hobby={m.id} style={{ '--hue': m.hue }}>
+          <Link to={`/${m.id}`} className="hobby-art" tabIndex={-1} aria-hidden="true"><BannerArt area={m} photo={banners[m.id]} /></Link>
           <Link to={`/${m.id}`} className="hobby-head">
             <span className="stat-icon tint"><m.Icon size={24} /></span>
             <span className="grow">
