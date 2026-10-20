@@ -883,3 +883,20 @@ def test_an_epic_game_added_by_hand_ticks_its_steam_versions_list(client, exo):
     supra = next(x for x in client.get("/api/videogames/other").json()["games"] if x["name"] == "Supraland")
     assert supra["by_hand"] is False and supra["tickable"] is False      # Exophase's: synced, not ticked
     assert client.put(f"/api/videogames/other/{supra['game_id']}/achievements/501", json={"achieved": False}).status_code == 409
+
+
+def test_a_ubisoft_game_you_own_on_steam_is_counted_once(client, exo):
+    """Far Cry 5 bought on Steam opens Ubisoft Connect too: the Ubisoft copy is left out of every total."""
+    connect(client)
+    siege = next(g for g in client.get("/api/videogames/other").json()["games"] if g["platform"] == "ubisoft")
+    client.put(f"/api/videogames/other/{siege['game_id']}/achievements", json={"achieved": True})
+    ubi = lambda: client.get("/api/videogames/summary?platforms=ubisoft").json()  # noqa: E731
+    assert ubi()["achievements"] == 3 and siege["on_steam"] is False
+    with db() as conn:                                                    # ...then it turns up in your Steam library
+        conn.execute("INSERT INTO vg_games (app_id, name, playtime_minutes) VALUES (359550, 'Rainbow Six Siege X', 600)")
+    s = ubi()
+    assert (s["achievements"], s["games"]) == (0, 0)
+    other = client.get("/api/videogames/other").json()
+    assert next(g for g in other["games"] if g["game_id"] == siege["game_id"])["on_steam"] is True
+    assert "ubisoft" not in {p["platform"] for p in other["platforms"]}
+    assert client.get(f"/api/videogames/other/{siege['game_id']}").json()["achievements_done"] == 3   # your ticks are kept

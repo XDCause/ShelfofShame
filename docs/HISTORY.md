@@ -1742,3 +1742,12 @@ DBeaver connection confirmed working (2026-10-11).
    ALL_ACHIEVEMENTS skips it, games_where(counted_only)); its own progress and its playtime still show. Web: HandTicked
    (steam.jsx) - "*" after the progress in the list, the dashboard rows, 100% badges and the panel, with the note and the
    switch in the panel.
+4r. **Video games: a Ubisoft game you also own on Steam is counted once, as the Steam game** (2026-10-20). User: "I own Far
+   Cry 5 on Steam, and it's also put into the Ubisoft launcher - count it only in Steam, not duplicated." (Prod had four:
+   Far Cry 4 and 5, Ghost Recon Wildlands and Breakpoint - their achievements twice, and their hours, since Ubisoft
+   Connect also times Steam launches.) othergames.SELECT on_steam = Ubisoft and its steam_app_id is in vg_games; such a
+   game is left out of ALL_GAMES / ALL_ACHIEVEMENTS (totals, goal, stats, playtime), games_where, the per-platform numbers
+   and the Games list (it shows under Hidden, its panel says so and opens the Steam game). Nothing is deleted - ticks are
+   kept. Ubisoft only: Epic achievements are separate real unlocks (and none of the user's Epic games are on Steam).
+   Lesson: ALL_GAMES / ALL_ACHIEVEMENTS are pasted mid-line (FROM {ALL_GAMES} g WHERE ...) - an SQL "--" comment inside
+   them swallowed the rest of the line.

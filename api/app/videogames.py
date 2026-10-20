@@ -152,7 +152,10 @@ ALL_GAMES = f"""(
     SELECT platform, app_id, name, hidden, has_achievements AND counted,
            -- achievements you ticked yourself and chose not to count: not in the totals (the playtime still is)
            CASE WHEN counted THEN achievements_done END, CASE WHEN counted THEN achievements_total END,
-           CASE WHEN counted THEN completed_at END, playtime_minutes FROM ({othergames.SELECT}) o)"""
+           CASE WHEN counted THEN completed_at END, playtime_minutes FROM ({othergames.SELECT}) o
+    WHERE NOT on_steam)"""
+# (on_steam: a Ubisoft game you also own on Steam - counted once, as the Steam game; no SQL comments in these two:
+# they're pasted into the middle of lines, where a comment would swallow the rest)
 ALL_ACHIEVEMENTS = """(
     SELECT 'steam' AS platform, a.app_id::text AS app_id, g.name AS game, g.hidden AS game_hidden, a.api_name,
            a.name, a.description, a.icon, a.global_percent, a.achieved, a.unlocked_at
@@ -160,7 +163,8 @@ ALL_ACHIEVEMENTS = """(
     UNION ALL
     SELECT o.platform, o.platform || '-' || o.game_id, o.name, o.hidden, a.api_name, a.name, a.description,
            a.icon, a.global_percent, a.achieved, a.unlocked_at
-    FROM vg_other_achievements a JOIN vg_other_games o USING (game_id) WHERE o.counted)"""
+    FROM vg_other_achievements a JOIN vg_other_games o USING (game_id)
+    WHERE o.counted AND NOT (o.platform = 'ubisoft' AND EXISTS (SELECT 1 FROM vg_games s WHERE s.app_id = o.steam_app_id)))"""
 # Your unlocks on the chosen platforms, in games you haven't hidden.
 UNLOCKS = f"FROM {ALL_ACHIEVEMENTS} a WHERE a.platform = ANY(%(platforms)s) AND NOT a.game_hidden AND a.achieved"
 
@@ -183,8 +187,8 @@ def games_where(conn, platforms: list[str], where: str, sort, limit: int | None 
         rows += [with_pictures({**g, "platform": "steam"})
                  for g in conn.execute(f"SELECT * FROM ({GAME_SELECT}) x WHERE {where}", params).fetchall()]
     if params["others"]:
-        rows += conn.execute(f"SELECT * FROM ({othergames.SELECT}) x WHERE x.platform = ANY(%(others)s) AND {where}"
-                             + (" AND x.counted" if counted_only else ""), params).fetchall()
+        rows += conn.execute(f"SELECT * FROM ({othergames.SELECT}) x WHERE x.platform = ANY(%(others)s) AND NOT x.on_steam "
+                             f"AND {where}" + (" AND x.counted" if counted_only else ""), params).fetchall()
     rows.sort(key=sort)
     return rows[:limit] if limit else rows
 

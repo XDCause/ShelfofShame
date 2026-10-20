@@ -284,13 +284,15 @@ export function GamesPage() {
 }
 
 // The show-chips for Epic / Ubisoft games (Steam's are worked out by the API).
+// (A Ubisoft game you own on Steam is counted as the Steam game: it shows only under Hidden.)
+const shown = (g) => !g.hidden && !g.on_steam
 const OTHER_SHOWS = {
-  all: (g) => !g.hidden,
-  perfect: (g) => !g.hidden && g.completed_at,
-  started: (g) => !g.hidden && g.achievements_done > 0 && !g.completed_at,
-  untouched: (g) => !g.hidden && g.achievements_total > 0 && !g.achievements_done,
-  no_achievements: (g) => !g.hidden && !g.achievements_total,
-  hidden: (g) => g.hidden,
+  all: shown,
+  perfect: (g) => shown(g) && g.completed_at,
+  started: (g) => shown(g) && g.achievements_done > 0 && !g.completed_at,
+  untouched: (g) => shown(g) && g.achievements_total > 0 && !g.achievements_done,
+  no_achievements: (g) => shown(g) && !g.achievements_total,
+  hidden: (g) => g.hidden || g.on_steam,
 }
 
 // The games of the chosen platforms (Steam's from the API, filtered there; Epic / Ubisoft's filtered

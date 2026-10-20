@@ -14,7 +14,7 @@ import { CompletionBar, GamePicture, HandTicked, playtime, rarity } from './stea
 // Epic / Ubisoft games have ids like "ubisoft-12" (othergames.py): their achievements come from
 // Exophase (Epic) or from the game's Steam version, ticked off by you (Ubisoft).
 export default function VideoGamePanel({ id, onClose }) {
-  const { changed } = useApp()
+  const { changed, openPanel } = useApp()
   const other = typeof id === 'string' && /^(epic|ubisoft)-\d+$/.test(id)
   const otherId = other ? Number(id.split('-')[1]) : null
   const [game, setGame] = useState(null)
@@ -91,7 +91,12 @@ export default function VideoGamePanel({ id, onClose }) {
           {game.completed_at && <span className="pill ok">100%{game.by_hand && '*'} · {shortDate(game.completed_at)}</span>}
         </div>
         <CompletionBar game={game} />
-        {game.by_hand && (
+        {game.on_steam && (
+          <p className="alert low small vg-on-steam">You own this on Steam, so it's counted there (once) - not here.{' '}
+            <button type="button" className="plain small" onClick={() => { onClose(); openPanel('videogame', { id: game.steam_app_id }) }}>
+              Open the Steam game</button></p>
+        )}
+        {game.by_hand && !game.on_steam && (
           <div className="hand-ticked-note small">
             <span className="muted">* Ticked off by you: {ubisoft ? 'Ubisoft' : 'Epic'} doesn't sync this game's achievements.</span>
             <label className="tick-row">

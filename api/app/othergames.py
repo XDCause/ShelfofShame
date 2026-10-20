@@ -56,7 +56,10 @@ SELECT o.game_id, o.platform, o.platform || '-' || o.game_id AS app_id, o.source
        COALESCE(o.my_minutes, o.exo_minutes, 0) AS playtime_minutes, 0 AS dlc_count, false AS extra,
        -- achievements you tick (or type) yourself - a Ubisoft game, or an Epic one added by hand with its Steam
        -- version's list - not synced from the platform: shown with an asterisk; counted = in your totals or not
-       (o.platform = 'ubisoft' OR o.source_id IS NULL) AND d.total > 0 AS by_hand, (o.platform = 'ubisoft' OR o.source_id IS NULL) AND a.listed > 0 AS tickable, o.counted
+       (o.platform = 'ubisoft' OR o.source_id IS NULL) AND d.total > 0 AS by_hand, (o.platform = 'ubisoft' OR o.source_id IS NULL) AND a.listed > 0 AS tickable, o.counted,
+       -- a Ubisoft game you also own on Steam (Far Cry 5 bought on Steam opens Ubisoft Connect too): counted once, as
+       -- the Steam game - left out of every total, the dashboard and the list (it shows under Hidden)
+       o.platform = 'ubisoft' AND EXISTS (SELECT 1 FROM vg_games s WHERE s.app_id = o.steam_app_id) AS on_steam
 FROM vg_other_games o
 LEFT JOIN LATERAL (SELECT count(*)::int AS listed, count(*) FILTER (WHERE achieved)::int AS have,
                           min(global_percent) AS rarest_percent, max(unlocked_at) AS last_unlock
@@ -290,7 +293,7 @@ def summarise(games: list[dict]) -> list[dict]:
     many games still have no numbers."""
     out = []
     for platform, name in NAMES.items():
-        mine = [g for g in games if g["platform"] == platform and not g["hidden"]]
+        mine = [g for g in games if g["platform"] == platform and not g["hidden"] and not g["on_steam"]]
         if not mine:
             continue
         counted = [g for g in mine if g["achievements_total"] and g["counted"]]
