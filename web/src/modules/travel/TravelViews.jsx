@@ -142,9 +142,8 @@ export function Dashboard() {
           )}
           {s.recent.length > 0 && (
             <section className="card home-card">
-              <h2 className="home-card-title">Been</h2>
+              <h2 className="home-card-title">Been <Link to="/travel/trips" className="small">All trips →</Link></h2>
               <ul className="list plain-list">{s.recent.map((t) => <TripRow key={t.trip_id} t={t} />)}</ul>
-              <Link className="button plain small" to="/travel/trips">All trips →</Link>
             </section>
           )}
         </div>
