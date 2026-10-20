@@ -8,6 +8,8 @@ import JournalMentions from '../../core/journal/JournalMentions.jsx'
 import { BellCurveIcon, ClockIcon, HourglassIcon, TrophyIcon } from '../../components/icons.jsx'
 import { CompletionBar, GamePicture, HandTicked, playtime, rarity } from './steam.jsx'
 
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`
+
 // One game - Steam, Epic or Ubisoft, shown the same way: its picture, completion, every achievement
 // (unlocked first; locked ones greyed, hidden ones' descriptions kept secret) - split into the main
 // game and each DLC when Exophase says which are which - how other players did, links, and Hide.
@@ -21,6 +23,7 @@ export default function VideoGamePanel({ id, onClose }) {
   const [error, setError] = useState('')
   const [account, setAccount] = useState(null)
   const [show, setShow] = useState('all')
+  const [q, setQ] = useState('')                  // search the achievements: name and description
   const [syncing, setSyncing] = useState(false)
   const [synced, setSynced] = useState('')
   useEffect(() => {
@@ -57,7 +60,9 @@ export default function VideoGamePanel({ id, onClose }) {
   }
   const onTick = game.tickable ? async (a) => update(await api.tickOtherAchievement(otherId, a.api_name, !a.achieved)) : null
   const groups = dlcGroups(game.achievements)
-  const shows = (a) => show === 'all' || (show === 'got' ? a.achieved : !a.achieved)
+  const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean)
+  const matches = (a) => words.every((w) => `${a.name} ${a.description ?? ''} ${a.dlc ?? ''}`.toLowerCase().includes(w))
+  const shows = (a) => (show === 'all' || (show === 'got' ? a.achieved : !a.achieved)) && matches(a)
   const steamId = other ? game.steam_app_id : id
   const removable = other ? !game.source_id : game.extra
   const footer = (
@@ -135,6 +140,8 @@ export default function VideoGamePanel({ id, onClose }) {
       {game.achievements.length > 0 && (
         <section className="panel-section">
           <div className="achievement-tools">
+            <input type="search" className="search ach-search" value={q} onChange={(e) => setQ(e.target.value)}
+              placeholder="Search achievements..." aria-label="Search achievements" />
             <div className="segmented" role="group" aria-label="Show achievements">
               {[['all', 'All'], ['got', 'Unlocked'], ['left', 'Still to get']].map(([k, label]) => (
                 <button key={k} type="button" aria-pressed={show === k} onClick={() => setShow(k)}>{label}</button>
@@ -149,7 +156,9 @@ export default function VideoGamePanel({ id, onClose }) {
           </div>
           {game.tickable && <p className="hint">Tick the ones you have{ubisoft ? ' (Ubisoft Connect: the game\'s Achievements page)' : ''}. The list is the
             game's Steam version's; rarity is Steam players'.</p>}
-          {groups.length === 1 ? <AchievementList items={groups[0].items.filter(shows)} onTick={onTick} /> : (
+          {words.length > 0 && <p className="muted small">{plural(game.achievements.filter(shows).length, 'match', 'matches')}</p>}
+          {/* While searching: one list (a match in a folded DLC would be out of sight) */}
+          {groups.length === 1 || words.length > 0 ? <AchievementList items={game.achievements.filter(shows)} onTick={onTick} /> : (
             <div className="dlc-groups">
               {groups.map((g) => {
                 const items = g.items.filter(shows)

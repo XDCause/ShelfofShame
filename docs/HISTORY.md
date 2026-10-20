@@ -1751,3 +1751,7 @@ DBeaver connection confirmed working (2026-10-11).
    kept. Ubisoft only: Epic achievements are separate real unlocks (and none of the user's Epic games are on Steam).
    Lesson: ALL_GAMES / ALL_ACHIEVEMENTS are pasted mid-line (FROM {ALL_GAMES} g WHERE ...) - an SQL "--" comment inside
    them swallowed the rest of the line.
+4s. **Video games: search a game's achievements** (2026-10-20). User: "when selecting a game, a search window so I can search
+   for achievements". A search box beside All / Unlocked / Still to get in the game's panel: every word must be in the
+   achievement's name, description or DLC name (hidden ones' descriptions aren't sent, so they stay secret); it says
+   how many match, and while searching shows one list (a match inside a folded DLC group would be out of sight).

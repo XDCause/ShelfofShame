@@ -1320,6 +1320,11 @@ def video_games(page):
         row.click()
         expect(drawer(page).locator(".item-title, .section-head").first).to_be_visible()
         expect(drawer(page).get_by_role("button", name="Sync this game")).to_be_visible()   # not pressed: no Steam here
+        search = drawer(page).get_by_label("Search achievements")
+        if search.count():                                                     # search its achievements
+            search.fill("zzqq no such achievement")
+            expect(drawer(page)).to_contain_text("0 matches")
+            search.fill("")
         if drawer(page).locator(".compared").count():
             expect(drawer(page).locator(".compared")).to_contain_text("Compared with other players")
             shot(page, "d43_video_game_compared", full=False)
