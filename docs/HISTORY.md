@@ -1696,3 +1696,6 @@ DBeaver connection confirmed working (2026-10-11).
    take a progress callback so a one-game sync doesn't move the full sync's progress bar. Epic games:
    POST /videogames/other/{id}/sync (othergames.sync_one: Exophase's list and what you've earned); Ubisoft has no
    button (you tick those). Only failures come back as a note ("Synced, but SteamHunters didn't answer...").
+4l. **Precision shooting shipped to prod** (2026-10-20, user: "ship shooting to prod"). underConstruction taken off its
+   manifest; its tables were already in prod (73-75 apply with every promote). The club range is added in prod's data
+   only (the repo never names it).
