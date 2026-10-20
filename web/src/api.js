@@ -529,6 +529,15 @@ export const api = {
   updateColourGroup: (id, data) => request(`/colour-groups/${id}`, send('PATCH', data)),
   deleteColourGroup: (id) => request(`/colour-groups/${id}`, send('DELETE')),
 
+  // To-do list (api/app/todos.py): under the goals; a repeating one ticked off adds its next
+  todos: (show = 'open', limit = 200) => request(`/todos?show=${show}&limit=${limit}`),
+  todoSummary: (limit = 8) => request(`/todos/summary?limit=${limit}`),
+  addTodo: (data) => request('/todos', send('POST', data)),
+  updateTodo: (id, data) => request(`/todos/${id}`, send('PATCH', data)),
+  todoDone: (id) => request(`/todos/${id}/done`, send('POST')),
+  todoUndone: (id) => request(`/todos/${id}/undone`, send('POST')),
+  deleteTodo: (id) => request(`/todos/${id}`, send('DELETE')),
+
   // Page banners (api/app/banners.py): a picture of your own per area ('home', 'journal', a hobby's id)
   banners: () => request('/banners'),
   setBanner: (area, blob) => request(`/banners/area/${area}/photo`, image('PUT', blob)),

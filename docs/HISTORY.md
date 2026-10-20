@@ -1853,3 +1853,13 @@ DBeaver connection confirmed working (2026-10-11).
    hill and one floating: it must flag exactly that one) - a detector that silently finds nothing is worse than none. It
    also saves a gallery of every banner (e2e/out/banner_*.png, pc + phone, dark) for a look by eye: drawings can be wrong in
    ways no rule describes.
+5a. **To-do list, under the goals** (2026-10-20). User: Home's goals card wasn't right ("they are 3 year goals") - "change it
+   to a to-do list, and build that out under the goals as a new tab". 82_todos.sql + api/app/todos.py: a to-do has a title,
+   notes, a due day, high priority, a hobby, a goal it helps (the goal deleted -> the link goes, the to-do stays) and a
+   repeat (daily / weekly / monthly: ticked off, the next is added, due a step on from when it was due - never in the past:
+   todos.next_due, tested day by day incl. 31 Jan -> 28 Feb). Open ones come grouped (overdue, today, this week, later, no
+   day; high priority first within a day). Goals now has tabs, Goals | To-do (/goals/todo: Navigation GOAL_TABS; the
+   Goals banner stays on it - areas.areaFor). Home's card beside Recent activity is To do (core/todo/TodoHome): the next
+   seven, ticked off there (Undo in the toast), a quick add, and the tick boxes from journal pages (which moved off
+   Home's Journal card - one place for everything to do). A to-do's panel (TodoPanel) holds the details. Done to-dos stay
+   out of the activity feed on purpose (small tasks would crowd out the hobbies). GoalsHome.jsx went (unused).

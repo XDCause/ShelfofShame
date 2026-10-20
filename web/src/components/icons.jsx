@@ -161,3 +161,6 @@ export const LogoMark = ({ size = 28, ...p }) => (
     <path d="M1.5 21.5h29" />
   </svg>
 )
+export const CheckIcon = (p) => (
+  <Icon {...p}><rect x="3.5" y="3.5" width="17" height="17" rx="4" /><path d="m8 12.5 2.8 2.8L16.5 9" /></Icon>
+)

@@ -19,6 +19,8 @@ import EventPanel from './core/calendar/EventPanel.jsx'
 import GlobalSearch from './core/GlobalSearch.jsx'
 import GoalPage from './core/goals/GoalPage.jsx'
 import GoalsPage from './core/goals/GoalsPage.jsx'
+import TodoPage from './core/todo/TodoPage.jsx'
+import TodoPanel from './core/todo/TodoPanel.jsx'
 import HobbiesPage from './core/HobbiesPage.jsx'
 import Home, { HomeHero } from './core/Home.jsx'
 import JournalList from './core/journal/JournalList.jsx'
@@ -41,7 +43,7 @@ const APP_NAME = 'Off the Clock'
 // Also here: the Undo bar after any -/+, the running-timer banner, and Scan in the nav bar.
 
 // Panels opened by type with openPanel(type, props).
-const PANELS = { event: EventPanel, ...MODULE_PANELS }
+const PANELS = { event: EventPanel, todo: TodoPanel, ...MODULE_PANELS }
 
 // Old addresses from before supplies moved out of the models hobby keep working.
 function MovedTo({ to }) {
@@ -190,7 +192,8 @@ export default function App() {
               </h1>
               {lookups && <GlobalSearch />}
               <div className="navbar-actions">
-                {lookups && !panel && <ScanButtonNav onBarcode={scanned} onError={showToast}
+                {/* scanning finds or adds a supply: only on the supplies pages (2026-10-20, user) */}
+                {lookups && !panel && (pathname.startsWith('/supplies') || pathname.startsWith('/wishlist')) && <ScanButtonNav onBarcode={scanned} onError={showToast}
                   onUnreadable={() => {
                     setPanel({ type: 'add', scan: null })
                     showToast("Couldn't find a barcode in that photo. Try again, or use \"Type a barcode\".")
@@ -223,6 +226,7 @@ export default function App() {
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/goals" element={<GoalsPage />} />
+                  <Route path="/goals/todo" element={<TodoPage />} />
                   <Route path="/goals/:id" element={<GoalPage />} />
                   <Route path="/journal" element={<JournalList />} />
                   <Route path="/journal/:id" element={<JournalPage />} />

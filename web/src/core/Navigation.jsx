@@ -22,6 +22,8 @@ const CORE_PAGES = [
   { path: '/wishlist', label: 'Wishlist', Icon: CartIcon },
 ]
 const SUPPLY_PAGES = CORE_PAGES.slice(4)
+// Goals' own tabs: the goals, and the to-do list under them
+const GOAL_TABS = [{ path: '/goals', label: 'Goals' }, { path: '/goals/todo', label: 'To-do' }]
 const HOBBIES_PAGE = { path: '/hobbies', label: 'Hobbies', Icon: GridIcon }
 
 const under = (pathname, path) => pathname === path || pathname.startsWith(`${path}/`)
@@ -111,6 +113,13 @@ export function SectionTabs() {
     return (
       <nav className="section-tabs segmented" aria-label={`${module.name} pages`}>
         {module.pages.map((p) => <NavLink key={p.path} to={pageLink(module, p)}>{p.label}</NavLink>)}
+      </nav>
+    )
+  }
+  if (pathname === '/goals' || pathname === '/goals/todo') {
+    return (
+      <nav className="section-tabs segmented" aria-label="Goals pages">
+        {GOAL_TABS.map((p) => <NavLink key={p.path} to={p.path} end>{p.label}</NavLink>)}
       </nav>
     )
   }

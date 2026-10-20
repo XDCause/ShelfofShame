@@ -18,7 +18,7 @@ export function areaFor(pathname) {
   const module = moduleFor(pathname)
   if (module) return { id: module.id, name: module.name, hue: module.hue, banner: module.banner }
   const top = pathname.split('/')[1] || 'home'
-  if (!CORE_AREAS[top] || pathname.split('/').length > 2) return null
+  if (!CORE_AREAS[top] || (pathname.split('/').length > 2 && pathname !== '/goals/todo')) return null   // (To-do: a Goals tab)
   return { id: top, ...CORE_AREAS[top] }
 }
 

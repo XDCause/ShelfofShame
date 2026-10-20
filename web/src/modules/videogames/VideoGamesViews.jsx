@@ -387,11 +387,12 @@ export function VideoGamesTiles() {
   if (!s) return <><StatSkeleton /><StatSkeleton /></>
   return (
     <>
+      {/* three short lines each (the number, what it is, one detail) so the card lines up with the others; the
+          dashboard has the rest (the next game to finish, points to go) */}
       <Stat to="/videogames/dashboard" Icon={TrophyIcon} tone="ok" value={s.perfect} label="Games at 100%"
-        sub={s.closest[0] ? `next: ${s.closest[0].name}` : 'all platforms'} change={s.week && <Change value={s.week.perfect} />} />
+        sub={s.week?.perfect ? `${s.week.perfect > 0 ? '+' : ''}${s.week.perfect} this week` : 'all platforms'} />
       <Stat to="/videogames/dashboard" Icon={GamepadIcon} tone="purple" value={`${s.goal.percent}%`}
-        change={s.week && <Change value={s.week.percent} unit="%" />}
-        label="Profile completion" sub={s.goal.reached ? `goal ${s.goal.goal_percent}% reached` : `goal ${s.goal.goal_percent}% · ${s.goal.points_to_go} points to go`} />
+        label="Profile complete" sub={s.goal.reached ? `goal ${s.goal.goal_percent}% reached` : `goal ${s.goal.goal_percent}%`} />
     </>
   )
 }

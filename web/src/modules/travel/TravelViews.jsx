@@ -14,19 +14,39 @@ import { aud, codeFor, COUNTRIES, countryName, flag, PHASE_NAME, PHASE_TONE, plu
 // Travel's pages: the dashboard (the trip you're on or the next one, this year, countries, your passport), every
 // trip, places (a map of everywhere, countries been and wanted, the bucket list) and your packing lists.
 
+// Home: two numbers. With a trip on or coming up: the countdown (or where you are), then its packing (once it has a
+// list) or the countries you've been to. With none: countries visited and this year's trips.
 export function TravelTiles() {
   const { data: s } = useTravelSummary()
-  if (!s) return <StatSkeleton />
+  if (!s) return <><StatSkeleton /><StatSkeleton /></>
   const now = s.now[0]
   const next = s.upcoming[0]
-  if (now) return <Stat to="/travel/dashboard" Icon={SuitcaseIcon} tone="ok" value={when(now)} label={now.name} sub="Travelling now" />
-  if (next) {
-    return <Stat to="/travel/dashboard" Icon={SuitcaseIcon} tone="teal" value={next.starts_in === 1 ? 'Tomorrow' : plural(next.starts_in, 'day')}
-      label={`Until ${next.name}`} sub={shortDate(next.start_date)} />
+  const trip = now ?? next
+  const countries = (
+    <Stat to="/travel/places" Icon={TrophyIcon} tone="ok" value={s.countries_been} label="Countries visited"
+      sub={s.bucket_list ? `${s.bucket_list} on the bucket list` : `${plural(s.places_been, 'place')} been`} />
+  )
+  if (trip) {
+    return (
+      <>
+        {now ? <Stat to="/travel/dashboard" Icon={SuitcaseIcon} tone="ok" value={when(now)} label={now.name} sub="Travelling now" />
+          : <Stat to="/travel/dashboard" Icon={SuitcaseIcon} tone="teal" value={next.starts_in === 1 ? 'Tomorrow' : plural(next.starts_in, 'day')}
+            label={`Until ${next.name}`} sub={shortDate(next.start_date)} />}
+        {trip.packing_count > 0
+          ? <Stat to="/travel/trips" Icon={CalendarIcon} tone="tint" value={`${trip.packed_count}/${trip.packing_count}`} label="Packed"
+            sub={trip.packed_count === trip.packing_count ? 'all packed' : `for ${trip.name}`} />
+          : countries}
+      </>
+    )
   }
   if (!s.countries_been) return null
-  return <Stat to="/travel/places" Icon={SuitcaseIcon} tone="teal" value={s.countries_been} label="Countries visited"
-    sub={s.bucket_list ? `${plural(s.bucket_list, 'place')} on the bucket list` : null} />
+  return (
+    <>
+      {countries}
+      <Stat to="/travel/trips" Icon={CalendarIcon} tone="tint" value={s.this_year.trips} label={`Trips in ${s.year}`}
+        sub={`${plural(s.this_year.days, 'day')} away`} />
+    </>
+  )
 }
 
 // Home's feature: the trip you're on, or the next one - its picture (or a drawn coast), dates and a way in.

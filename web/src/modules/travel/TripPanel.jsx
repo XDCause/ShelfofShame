@@ -123,7 +123,7 @@ export default function TripPanel({ id = null, tab: askedTab = null, onClose }) 
       </section>
       <div className="segmented trip-tabs" role="tablist" aria-label="Trip">
         {TABS.map(([k, label]) => (
-          <button key={k} type="button" role="tab" aria-selected={shown === k} aria-pressed={shown === k} onClick={() => setTab(k)}>
+          <button key={k} type="button" role="tab" aria-selected={shown === k} onClick={() => setTab(k)}>
             {label}{k === 'packing' && t.packing_count > 0 ? ` ${t.packed_count}/${t.packing_count}` : ''}
           </button>
         ))}

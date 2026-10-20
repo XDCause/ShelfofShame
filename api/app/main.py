@@ -10,6 +10,7 @@ Hobby supplies (shared by every hobby):
     spending   spend + CSV exports
     settings   default shop, price guide, backups          lookups    brands / categories / locations
 Core (every hobby):
+    todos      the to-do list (under the goals): due days, priority, repeats, a goal or hobby each
     journal    Notion-style pages, tags, @mentions, photos, suggestions, to-dos
     journal_drawings  pen sketches and whiteboard pages (Excalidraw scenes, previews)
     activity   one feed of what you've done (stock, kits, plays, games, journal...)
@@ -40,7 +41,7 @@ from . import (activity, auth, banners, boardgames, bookseries, build, calendar,
                garden_items,
                gear, goals, hiking, journal, journal_drawings, shooting, shooting_sessions, shooting_shots, travel, travel_trip,
                gundam, lookups, minis, vgsync, models, othergames, products, reading, readimport, reading_recs, settings, sitecheck, spending, supplies, vbclips, vbcoach, vgfind, vgfriends, videogames, wanted, webphoto,
-               volleyball, warhammer, wishlist)
+               todos, volleyball, warhammer, wishlist)
 from .db import db
 
 # The walk-through's throwaway copy never asks the real outside sites (small shops among them): stand-ins answer.
@@ -64,7 +65,7 @@ async def lifespan(_app):
 
 app = FastAPI(title="Off the Clock API", docs_url="/api/docs", openapi_url="/api/openapi.json", lifespan=lifespan)
 
-for part in (activity, banners, goals, journal_drawings, journal, calendar, supplies, wishlist, products, catalog, models, minis, build, colours,
+for part in (activity, banners, goals, todos, journal_drawings, journal, calendar, supplies, wishlist, products, catalog, models, minis, build, colours,
              boardgames, volleyball, gear, vbclips, vbcoach, othergames, vgfind, vgfriends, videogames, chess, reading, readimport, hiking, garden, garden_doctor, garden_guide, garden_items, shooting, shooting_sessions, shooting_shots, travel, travel_trip, reading_recs, bookseries, warhammer, gundam, spending, settings, sitecheck, lookups, webphoto, wanted):
     app.include_router(part.router, dependencies=[Depends(auth.require_session)])   # signed in only (auth.py)
 app.include_router(auth.router)                  # signing in itself: each route checks what it needs

@@ -8,7 +8,7 @@ import { MODULES } from '../modules/index.js'
 import { KIND_ICON, KIND_NAME, VERB_TONE } from './activityKinds.js'
 import { useApp } from './app-context.js'
 import { ComingUp } from './calendar/CalendarPage.jsx'
-import GoalsHome from './goals/GoalsHome.jsx'
+import TodoHome from './todo/TodoHome.jsx'
 import JournalHome from './journal/JournalHome.jsx'
 import { useNewPage } from './journal/JournalList.jsx'
 import { SiteCheckWarning } from '../components/SiteChecks.jsx'
@@ -56,7 +56,7 @@ export function HomeHero({ area }) {
 
 // Home: today, like the front page of a magazine about your week.
 //   (the banner above it: HomeHero)
-//   a row of what matters now: a hobby's feature (your next trip), recent activity, your goals
+//   a row of what matters now: a hobby's feature (your next trip), recent activity, your to-do list
 //   Your hobbies: a card each, its picture and its numbers
 //   Coming up (the calendar), Quick actions, the journal, Running low and each hobby's own cards
 export default function Home() {
@@ -72,7 +72,7 @@ export default function Home() {
       <div className="home-now">
         {features.map((m) => <m.home.Feature key={m.id} />)}
         <RecentActivity items={activity} />
-        <GoalsHome />
+        <TodoHome />
       </div>
 
       <section className="home-hobbies" aria-labelledby="home-hobbies">

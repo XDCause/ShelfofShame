@@ -45,12 +45,12 @@ AI via MCP server (stage 6) ---------------/
 DBeaver, psql, and the one-off import script.
 
 ## Where to look
-- **History, decisions and the reasons behind them: docs/HISTORY.md** (sections 1 - 4z; the design system: docs/DESIGN.md; search it before changing
+- **History, decisions and the reasons behind them: docs/HISTORY.md** (sections 1 - 5a; the design system: docs/DESIGN.md; search it before changing
   something old - most odd-looking code has a lesson behind it there). Plans: docs/ROADMAP.md. Caveats for ever going
   public: BEFORE_GOING_PUBLIC.md (**add a row whenever a new data source, scraper, copied content or single-user
   shortcut is added**).
 - **API** (`api/app`, FastAPI; routes all start `/api`; main.py only wires routers - ORDER MATTERS where a fixed path
-  shares a prefix with `/{id}`): core - banners (page pictures), db (pool, enum lists that must match SQL CHECKs, insert_row / update_row /
+  shares a prefix with `/{id}`): core - banners (page pictures), todos (the to-do list), db (pool, enum lists that must match SQL CHECKs, insert_row / update_row /
   found / tidy_text), activity, calendar, journal (+ journal_text, journal_actions, journal_drawings), goals, settings,
   spending, sitecheck, images, webphoto, lookups, wanted. Supplies hobby - supplies (+ kits: part_of), wishlist, products, catalog,
   paints, colours. Models - models, minis, build, warhammer, gundam. Board games - boardgames. Volleyball -

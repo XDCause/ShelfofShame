@@ -68,10 +68,14 @@ TRAVEL = bool(_travel["now"] or _travel["upcoming"] or _travel["countries_been"]
 MARK = f"e2e{int(time.time())}"   # a word only this run's journal page contains
 
 
+NOW = {"step": "start"}   # the step running, so a browser error says where it happened
+
+
 def step(name):
     def wrap(fn):
         def run(page, *a):
             t = time.time()
+            NOW["step"] = name.split(":")[0]
             try:
                 fn(page, *a)
                 results.append((name, "PASS", f"{time.time() - t:.1f}s"))
@@ -116,6 +120,11 @@ def watch(page, label):
     # Every failed request names its address (the browser's own "Failed to load resource" line doesn't).
     page.on("response", lambda r: r.status >= 400 and not (r.status == 401 and "/api/auth/login" in r.url)
             and errors.append(f"[{label}] HTTP {r.status} {r.url}"))
+    # A request with no answer at all (net::ERR_FAILED, refused, reset) has no response either: name it and the step.
+    # Not counted: ERR_ABORTED (the page moved on before it came back) and ERR_BLOCKED_BY_ORB (an outside site's
+    # picture - the stand-ins' made-up addresses - that this offline copy can't fetch).
+    page.on("requestfailed", lambda r: not any(x in (r.failure or "") for x in ("ERR_ABORTED", "ERR_BLOCKED_BY_ORB"))
+            and errors.append(f"[{label}] {NOW['step']}: {r.method} {r.url} - {r.failure}"))
 
 
 # ---------------------------------------------------------------- desktop
@@ -127,9 +136,9 @@ def home(page):
     expect(stats.filter(has_text="Supplies")).to_contain_text(str(TOTAL))
     for tile in ("Shelf of shame", "Board games", "Volleyball", "Next game"):
         expect(stats.filter(has_text=tile)).to_be_visible()
-    # supplies 2, models 2, board games 2, volleyball 2, video games 2 = 10; chess (+ puzzles), reading, travel 1 each;
-    # hiking, gardening and shooting 2 each (2026-10-20: a second number each)
-    expect(stats).to_have_count(10 + CHESS + CHESS_PUZZLES + READING + 2 * HIKING + 2 * GARDEN + 2 * SHOOTING + TRAVEL)
+    # supplies 2, models 2, board games 2, volleyball 2, video games 2 = 10; chess (+ puzzles), reading 1 each;
+    # hiking, gardening, shooting and travel 2 each (2026-10-20: a second number each)
+    expect(stats).to_have_count(10 + CHESS + CHESS_PUZZLES + READING + 2 * HIKING + 2 * GARDEN + 2 * SHOOTING + 2 * TRAVEL)
     expect(page.locator(".home-card", has_text="Recent activity").locator(".pill").first).to_be_visible()
     expect(page.locator(".home-card", has_text="Coming up")).to_be_visible()
     expect(page.locator(".quick-action")).to_have_count(14)       # + Log a chess game, Add a book, Log a hike, Add a plant, Start shooting, Plan a trip
@@ -545,6 +554,8 @@ def desktop_tabs(page):
     expect(sidebar.locator("a.active")).to_have_text("Models")
     expect(page.locator(".section-tabs a[aria-current=page]")).to_have_text("Colours")
     expect(page).to_have_title(re.compile("Colours · Models"))
+    expect(page.get_by_role("button", name="Scan a barcode")).to_have_count(0)    # scanning is for supplies: only there
+    go(page, "Supplies")
     expect(page.get_by_role("button", name="Scan a barcode")).to_be_visible()
 
 
@@ -1689,6 +1700,46 @@ def volleyball_coach(page):
     expect(page.locator(".coach-card .item-title", has_text=re.compile("^Setter$"))).to_be_visible()
 
 
+@step("To-do: added on Home and on its tab, ticked off (undo), a repeating one brings its next, details in its panel")
+def todos(page):
+    go(page, "Home")
+    card = page.locator(".todo-home")
+    expect(card.get_by_role("heading", name=re.compile("To do"))).to_be_visible()
+    card.get_by_label("New to-do").fill(f"Buy primer {MARK}")
+    card.get_by_role("button", name="Add", exact=True).click()
+    expect(card.locator(".task-row", has_text=MARK)).to_be_visible()
+    card.get_by_label(f"Done: Buy primer {MARK}").click()                       # ticked off on Home...
+    expect(card.locator(".task-row.task-done", has_text=MARK)).to_be_visible()
+    page.locator(".toast").get_by_role("button", name="Undo").click()           # ...and undone
+    expect(card.locator(".task-row:not(.task-done)", has_text=MARK)).to_be_visible()
+    card.get_by_role("link", name=re.compile("All")).click()
+    expect(page).to_have_url(BASE + "/goals/todo")
+    expect(page.locator(".section-tabs a[aria-current=page]")).to_have_text("To-do")
+    page.get_by_label("New to-do").fill(f"Water the basil {MARK}")
+    page.get_by_label("Due (optional)").fill(page.evaluate("new Date().toLocaleDateString('en-CA')"))
+    page.get_by_role("button", name="Add", exact=True).click()
+    today = page.locator(".task-group-today")
+    expect(today.locator(".task-row", has_text="Water the basil")).to_be_visible()
+    today.locator(".task-open", has_text="Water the basil").click()             # its panel: make it repeat, daily
+    d = drawer(page)
+    d.get_by_label("Repeats").select_option("daily")
+    d.get_by_label("High priority").check()
+    d.get_by_label("Hobby").select_option("gardening")
+    d.get_by_role("button", name="Save").click()
+    expect(d).to_have_count(0)
+    row = today.locator(".task-row", has_text="Water the basil")
+    expect(row.locator(".task-high")).to_be_visible()
+    expect(row).to_contain_text("every day")
+    expect(row).to_contain_text("Gardening")
+    shot(page, "d61_todo", full=True)
+    row.get_by_role("checkbox").click()
+    expect(page.locator(".toast")).to_contain_text("Next one due tomorrow")
+    page.reload()
+    expect(page.locator(".task-group-week .task-row", has_text="Water the basil")).to_contain_text("Tomorrow")   # the next one
+    page.locator(".section-tabs").get_by_role("link", name="Goals", exact=True).click()   # the other tab: the goals
+    expect(page).to_have_url(BASE + "/goals")
+
+
 @step("Goals: a new goal with why / details, steps, a number and a progress note; done; deleted")
 def goals(page):
     go(page, "Goals")
@@ -2526,7 +2577,7 @@ with sync_playwright() as p:
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
                matches, used_on, gundam, bandai_lookup, warhammer, journal_write, journal_links, journal_from_model,
                journal_suggestion, journal_todo, global_search, journal_wishlist, banners, panel_focus, appearance,
-               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, warhammer_minis, gundam_range, board_game_kinds, board_game_elsewhere, volleyball_coach, video_game_friends, wishlist_shops, goals, supply_kit, hiking, gardening, shooting, travel, bunnings_button, settings_more, no_panel):
+               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, warhammer_minis, gundam_range, board_game_kinds, board_game_elsewhere, volleyball_coach, video_game_friends, wishlist_shops, goals, todos, supply_kit, hiking, gardening, shooting, travel, bunnings_button, settings_more, no_panel):
         fn(desk)
     ctx = signed_in(browser.new_context(**p.devices["iPhone 13"], timezone_id=zone, ignore_https_errors=True))
     mob = ctx.new_page()

@@ -651,7 +651,7 @@ th.col-value { width: 96px; }
 
 
 
-.home-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.home-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: stretch; }   /* cards side by side: the same height */
 .home-column { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .home-card-title { display: flex; align-items: center; gap: 9px; font-size: var(--text-lg); font-weight: 600; margin: 0 0 14px; }
 .home-card-title svg { color: var(--muted); }
@@ -2820,4 +2820,38 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
   .navbar-row > h1 { grid-column: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .navbar-row > .global-search { grid-column: 2; width: 100%; max-width: none; margin: 0; }
   .navbar-row > .navbar-actions { grid-column: 3; justify-self: end; }
+}
+
+/* ---------- To-do list (core/todo) ---------- */
+.task-list { margin-top: 4px; }
+.task-row { display: flex; align-items: center; gap: 12px; }
+.task-check { flex: none; width: 22px; height: 22px; min-height: 0; margin: 0; padding: 0; accent-color: var(--ok); cursor: pointer; }
+.task-open { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 4px 0;
+  border: 0; background: none; color: inherit; text-align: left; cursor: pointer; }
+.task-open:hover .item-title { color: var(--tint); }
+.task-done .item-title { text-decoration: line-through; color: var(--muted); }
+.task-high { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-right: 6px; border-radius: 50%;
+  background: var(--out-bg); color: var(--out); font-size: 0.75rem; font-weight: 800; vertical-align: 1px; }
+.task-when.late { color: var(--out); font-weight: 600; }
+.task-hobby { color: color-mix(in srgb, var(--hue) 70%, var(--text)); font-weight: 600; }
+.task-add { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 6px; }
+.task-add > input:first-child { flex: 1 1 14em; }
+.task-add > input[type='date'] { flex: 0 0 auto; }
+.task-group-overdue { border-color: color-mix(in srgb, var(--out) 35%, var(--border)); }
+.todo-home .home-card-title .pill { margin-left: 4px; }
+.todo-home .todos { margin-top: 14px; }
+.todo-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px 14px; }
+@media (pointer: coarse) { .task-check { width: 26px; height: 26px; } }
+
+/* ---------- Home's top row fits the screen (when its cards fit side by side) ----------
+   Next adventure, Recent activity and To do end at the bottom of the window: their height is the window's, less the
+   banner above them (its height less the 64 px the row overlaps it) and a margin. A list longer than that scrolls
+   inside its card, with a soft fade - the row never pushes past the bottom of the screen. */
+@media (min-width: 1200px) {     /* (wide enough for the row's cards side by side; narrower, they wrap and flow) */
+  .home .home-now { grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+    height: max(340px, calc(100vh - var(--nav-h) - clamp(260px, 30vw, 380px) + 64px - 24px)); }
+  .home-now > .card { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  .home-now > .card > .list { flex: 1; min-height: 0; overflow-y: auto; margin-right: -8px; padding: 0 8px 18px 0;
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent); }
+  .home-now > .card > .todos { flex: none; }
 }
