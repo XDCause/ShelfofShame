@@ -1,0 +1,171 @@
+/* ---------- Journal ---------- */
+.filters .chip-row { flex: 1; }
+.journal-cards { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.journal-card {
+  display: flex; align-items: flex-start; gap: 18px; padding: 16px 18px; border-radius: var(--radius);
+  background: var(--surface); border: 1px solid var(--border); color: inherit;
+  transition: border-color var(--fast), transform var(--medium) var(--ease-out);
+}
+.journal-card:hover { text-decoration: none; border-color: color-mix(in srgb, var(--text) 25%, transparent); transform: translateY(-1px); }
+.journal-card .grow { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; min-width: 0; }
+.journal-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; width: 100%; }
+.journal-card .item-title { font-family: var(--font-display); font-size: 1.15rem; font-weight: 600; }
+.date-block { display: flex; flex-direction: column; align-items: center; width: 44px; flex: none; line-height: 1.15; color: var(--muted); font-size: 0.78rem; }
+.date-block strong { font-family: var(--font-display); font-size: 1.6rem; color: var(--text); font-weight: 600; }
+.journal-thumb { flex: none; width: 108px; height: 76px; border-radius: 10px; object-fit: cover; background: var(--fill); }
+.journal-thumb.emoji { display: grid; place-items: center; font-size: 2rem; }
+.two-lines { white-space: normal !important; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+.journal-list .page-row {
+  display: flex; align-items: center; gap: 12px; width: 100%; color: inherit; text-decoration: none;
+}
+.journal-list .page-row:hover .item-title { color: var(--tint); }
+.page-icon { font-size: 1.3rem; width: 1.6em; text-align: center; flex: none; }
+.page-snippet { display: block; color: var(--muted); font-size: 0.87rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.page-tags { display: block; color: var(--tint); font-size: 0.8rem; margin-top: 1px; }
+.home-card > .secondary { margin-bottom: 4px; }
+.home-card-title a { margin-left: auto; font-weight: 500; }
+
+.journal-page {
+  --gutter-left: 60px;
+  max-width: 920px; margin: 0 auto; padding: 22px 40px 40px var(--gutter-left);
+  border-radius: 6px; border: 1px solid var(--border); box-shadow: var(--card-shadow);
+  background: var(--surface);
+}
+/* A notes page is a whole sheet: down to the foot of the screen, and you can click anywhere on it to write (user,
+   2026-10-21: a new page looked like a small card). Not wider than ~920px: longer lines are harder to read. */
+.journal-page:not(.whiteboard) { min-height: calc(100dvh - var(--nav-h) - 72px); }
+.journal-page:not(.whiteboard) .journal-editor .bn-editor { min-height: max(200px, calc(100dvh - var(--nav-h) - 330px)); }
+/* In the dark theme a notes page is a sheet of warm paper: dark ink, its own quiet colours. */
+:root[data-theme='dark'] .journal-page:not(.whiteboard) {
+  --text: #2a2a22; --muted: #6b6555; --faint: #a8a08a; --surface: #f3ecdc; --field: #faf5e9; --fill: rgb(70 60 40 / 0.09);
+  --fill-2: rgb(70 60 40 / 0.05); --separator: rgb(70 60 40 / 0.14); --border: rgb(70 60 40 / 0.16);
+  --tint: #3d6a2c; --tint-soft: rgb(61 106 44 / 0.12); --on-tint: #fff; --primary-bg: #24392b; --primary-text: #f6f0e1;
+  --ok: #256d4b; --ok-bg: rgb(37 109 75 / 0.12); --low: #7d4806; --low-bg: rgb(200 134 40 / 0.16);
+  --out: #a93b26; --out-bg: rgb(169 59 38 / 0.11); --purple: #6b4799; --purple-bg: rgb(107 71 153 / 0.11);
+  --teal: #245a72; --teal-bg: rgb(36 90 114 / 0.11);
+  color: var(--text); border-color: transparent; box-shadow: 0 30px 60px rgb(0 0 0 / 0.4);
+  color-scheme: light;
+}
+.journal-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; margin-bottom: 10px; }
+.journal-bar .plain { padding-left: 0; }
+.pin { display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem; }
+.pin input { min-height: 0; }
+.journal-head { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.journal-title {
+  flex: 1; min-width: 0; border: 0; background: transparent; padding: 4px 0; font-family: var(--font-display);
+  font-size: 2.3rem; font-weight: 600; color: var(--text);
+}
+.journal-title:focus { box-shadow: none; }
+.journal-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 10px 0 22px; }
+.journal-meta input[type='date'] { min-height: 32px; padding: 4px 8px; font-size: 0.9rem; }
+.tags-input { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.tags-input input { width: 8em; min-height: 32px; padding: 4px 10px; border-radius: 999px; font-size: 0.9rem; }
+.tag-chip { display: inline-flex; align-items: center; gap: 4px; color: var(--tint); background: var(--tint-soft); }
+.tag-chip button { border: 0; background: none; padding: 0 0 0 2px; color: inherit; font-size: 0.7rem; opacity: 0.7; }
+
+/* BlockNote, made to sit on the page: our font and colours, no box of its own. */
+.journal-editor { margin: 0 0 0 calc(-1 * var(--gutter-left)); min-height: 200px; }
+.journal-editor .bn-container {
+  --bn-font-family: inherit;
+  --bn-colors-editor-background: transparent;
+  --bn-colors-editor-text: var(--text);
+}
+.journal-editor .bn-editor { padding-inline: var(--gutter-left) 0; font-size: 1rem; background: transparent; }
+.mention {
+  display: inline-block; padding: 0 6px; border-radius: 6px; border: 0; font: inherit; font-weight: 500;
+  color: var(--tint); background: var(--tint-soft); cursor: pointer;
+}
+.mention-model { color: var(--purple); background: var(--purple-bg); }
+.mention-supply { color: var(--ok); background: var(--ok-bg); }
+button.mention:disabled { color: var(--muted); background: var(--fill); text-decoration: line-through; }
+.journal-links { display: grid; gap: 14px; margin-top: 24px; padding-top: 14px; border-top: 0.5px solid var(--separator); }
+.journal-links .list li { justify-content: space-between; }
+.journal-links .mention { text-align: left; }
+
+/* "@Sherman: Mark as In progress?  [Yes] [Not now]" */
+.suggestions { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; }
+.suggestion {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; padding: 10px 12px; border-radius: 12px;
+  background: var(--purple-bg);
+}
+.suggestion .grow { flex: 1 1 16em; }
+.suggestion .mention { display: inline; }
+/* The app's own input styling (height, padding) is for form fields, not the editor's check boxes. */
+.journal-editor input[type='checkbox'] { min-height: 0; padding: 0; width: auto; box-shadow: none; }
+
+/* To-dos gathered from every page */
+.todos .section-title { display: flex; align-items: center; gap: 6px; }
+.todo-list li { flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; }
+.todo { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 14em; cursor: pointer; }
+.todo input { width: 20px; height: 20px; min-height: 0; flex: none; }
+.todo.done span { color: var(--muted); text-decoration: line-through; }
+.todo-page { font-size: 0.8rem; color: var(--muted); }
+.home-card .todos { margin-top: 14px; }
+.home-journal-title { margin-top: 16px; }
+
+/* A hobby's own pages as tabs (and on phones, Supplies | Wishlist), sitting on the banner's faded foot in a frosted
+   pill - the picture comes further down to hold them, like Home's cards rising out of its banner (user, 2026-10-21:
+   tabs right against the picture's edge looked odd). The page you're on is a filled pill. Six tabs (Gardening) scroll
+   sideways rather than squash. */
+.section-tabs {
+  position: relative; z-index: 3; display: flex; gap: 4px; width: fit-content; max-width: 100%; margin: -56px 0 26px; padding: 5px;
+  overflow-x: auto; scrollbar-width: none; border-radius: 999px; border: 1px solid rgb(255 255 255 / 0.14);
+  background: rgb(12 18 14 / 0.66); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);   /* dark enough for its
+  words over any picture, or the page itself where the picture fades out (5:1 even on parchment) */
+}
+/* Every page's banner is the same height, so its name sits in the same spot on every page (user, 2026-10-21), with room
+   at its foot for the tabs - or, on a page without tabs, its search row, in the same place (Journal, Supplies). */
+.page-banner:not(.home-banner) { padding-bottom: 62px; }
+.section-tabs.phone-only { display: none; }
+.main-col:not(:has(.section-tabs:not(.phone-only))) main > * > .toolbar:first-child:has(> input[type='search']) {
+  position: relative; z-index: 3; margin-top: -56px; margin-bottom: 14px;
+}
+.main-col:not(:has(.section-tabs:not(.phone-only))) main > * > .toolbar:first-child > input[type='search'] {
+  border: 1px solid rgb(255 255 255 / 0.14); background: rgb(12 18 14 / 0.66); color: #f3ecdc;   /* frosted, like the tabs */
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+.main-col:not(:has(.section-tabs:not(.phone-only))) main > * > .toolbar:first-child > input[type='search']::placeholder { color: rgb(243 236 220 / 0.78); }
+@media (min-width: 701px) {   /* (on a phone the buttons wrap below the picture) */
+  .main-col:not(:has(.section-tabs:not(.phone-only))) main > * > .toolbar:first-child:has(> input[type='search']) > .secondary {
+    border: 1px solid rgb(255 255 255 / 0.14); background: rgb(12 18 14 / 0.66); color: #f3ecdc;
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  }
+}
+@media (min-width: 701px) {   /* the Wishlist's hobby row and Options sit on the picture too (on a phone its tabs are there) */
+  .main-col:not(:has(.section-tabs:not(.phone-only))) .wishlist-page > .inv-bar:first-child {
+    position: relative; z-index: 3; margin-top: -56px; margin-bottom: 14px; min-height: 42px;
+  }
+  .main-col:not(:has(.section-tabs:not(.phone-only))) .wishlist-page > .inv-bar:first-child .inv-menu > summary {
+    border: 1px solid rgb(255 255 255 / 0.14); background: rgb(12 18 14 / 0.66); color: #f3ecdc;
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  }
+}
+/* The Wishlist's hobbies look like the banner's tabs (user, 2026-10-21: "this style in wishlist ... with the hobbies"):
+   one frosted bar, the hobby you're on a filled pill. On a PC it's on the picture (above); on a phone just under it. */
+.wishlist-page > .inv-bar .inv-hobbies {
+  flex: 0 1 auto; flex-wrap: nowrap; gap: 4px; width: fit-content; max-width: 100%; padding: 5px; overflow-x: auto;
+  scrollbar-width: none; border-radius: 999px; border: 1px solid rgb(255 255 255 / 0.14); background: rgb(12 18 14 / 0.66);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+.wishlist-page > .inv-bar .inv-hobbies .chip-filter {
+  flex: none; min-height: 34px; padding: 6px 16px; border: 0; background: transparent; color: #f3ecdc; font-size: 0.9rem; font-weight: 550;
+}
+.wishlist-page > .inv-bar .inv-hobbies .chip-filter:hover { background: rgb(255 255 255 / 0.12); color: #fff; }
+.wishlist-page > .inv-bar .inv-hobbies .chip-filter[aria-pressed='true'] { background: var(--primary-bg); color: var(--primary-text); font-weight: 650; }
+.wishlist-page > .inv-bar .inv-hobbies .chip-count { color: inherit; }        /* (full strength: faded failed contrast) */
+.wishlist-page > .inv-bar > .inv-menu { margin-left: auto; }     /* (Options stays on the right: the bar is only as wide as its hobbies) */
+@media (max-width: 700px) {
+  .main-col:has(.section-tabs.phone-only) main > * > .toolbar:first-child:has(> input[type='search']) { margin-top: 0; }
+  .main-col:has(.section-tabs.phone-only) main > * > .toolbar:first-child > input[type='search'] {   /* (the tabs are there) */
+    border-color: transparent; background: var(--fill); color: inherit; backdrop-filter: none; -webkit-backdrop-filter: none;
+  }
+  .main-col:has(.section-tabs.phone-only) main > * > .toolbar:first-child > input[type='search']::placeholder { color: var(--muted); }
+}
+.segmented a {
+  flex: none; display: inline-flex; align-items: center; justify-content: center; padding: 6px 16px; border-radius: 999px;
+  color: var(--muted); font-size: 0.9rem; font-weight: 550; min-height: 34px; text-decoration: none;
+  transition: background var(--fast), color var(--fast);
+}
+.segmented a:hover { color: var(--text); background: var(--fill-2); text-decoration: none; }
+.segmented a[aria-current='page'] { background: var(--primary-bg); color: var(--primary-text); font-weight: 650; }

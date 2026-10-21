@@ -37,7 +37,7 @@ export function familyOf(hex) {
 }
 // For "sort by colour": by family, then hue, then lightness.
 export const colourKey = (hex) => {
-  if (!hex) return 999
+  if (!hex) return Number.MAX_SAFE_INTEGER        // (no colour: last - it was 999, between the reds and the oranges)
   const [h, , l] = hsl(hex)
   return FAMILIES.indexOf(familyOf(hex)) * 1000 + Math.round(h) + l
 }

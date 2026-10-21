@@ -1,6 +1,12 @@
 import { DiceIcon, TrophyIcon } from '../../components/icons.jsx'
-import { BoardGamesTiles, GamesView, PlaysView } from './BoardGamesViews.jsx'
-import GamePanel, { PlayPanel } from './GamePanel.jsx'
+import { BoardGamesTiles } from './HomeTiles.jsx'
+import { part } from '../lazy.js'
+
+// its pages and panels: loaded when first shown (modules/lazy.js)
+const GamesView = part(() => import('./BoardGamesViews.jsx'), 'GamesView')
+const PlaysView = part(() => import('./BoardGamesViews.jsx'), 'PlaysView')
+const GamePanel = part(() => import('./GamePanel.jsx'))
+const PlayPanel = part(() => import('./GamePanel.jsx'), 'PlayPanel')
 
 // Board games: your collection and every time you played. Pages live at /boardgames/<path>.
 // Plays show on the calendar; "played @Catan" in the journal offers to log one.

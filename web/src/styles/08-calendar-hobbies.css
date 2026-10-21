@@ -1,0 +1,99 @@
+/* ---------- Calendar ---------- */
+.calendar-head { align-items: center; }
+.calendar-month { flex: 1; margin: 0; font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+.calendar-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; align-items: start; }
+.month { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; padding: 10px; }
+.weekday { padding: 4px 6px 8px; font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.day {
+  display: flex; flex-direction: column; align-items: stretch; gap: 3px; min-width: 0; min-height: 92px; padding: 6px;
+  border: 1px solid transparent; border-radius: 10px; background: var(--fill-2); color: var(--text); text-align: left;
+  font-size: 0.75rem; transition: border-color 0.15s, background 0.15s;
+}
+.day:hover { border-color: color-mix(in srgb, var(--tint) 40%, transparent); }
+.day.other { background: transparent; }
+.day.other .day-num { color: var(--muted); font-weight: 500; }   /* another month's day: quieter, still readable (4.5:1+) */
+.day[aria-pressed='true'] { border-color: var(--tint); background: var(--tint-soft); }
+.day-num { font-size: 0.85rem; font-weight: 600; }
+.day.today .day-num {
+  display: inline-grid; place-items: center; align-self: flex-start; min-width: 24px; height: 24px; padding: 0 4px;
+  border-radius: 12px; background: var(--tint); color: var(--on-tint);
+}
+.day-event {
+  overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding: 1px 6px; border-radius: 6px;
+  color: var(--tone, var(--tint)); background: var(--tone-bg, var(--tint-soft)); font-weight: 600;
+}
+.day-time { font-weight: 500; opacity: 0.8; }
+.day-more { color: var(--muted); padding-left: 4px; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--tone, var(--muted)); }
+.day-detail { position: sticky; top: 76px; }
+.day-detail .section-title { margin-top: 14px; }
+.day-detail .home-card-title { margin-bottom: 4px; }
+.day-actions { margin-top: 14px; }
+.time-block {
+  flex: none; min-width: 64px; padding: 6px 8px; border-radius: 9px; text-align: center; font-size: 0.8rem; font-weight: 650;
+  color: var(--tone, var(--tint)); background: var(--tone-bg, var(--tint-soft));
+}
+.date-chip {
+  flex: none; display: flex; flex-direction: column; align-items: center; width: 44px; padding: 4px 0; border-radius: 10px;
+  line-height: 1.1; color: var(--tone, var(--tint)); background: var(--tone-bg, var(--tint-soft));
+}
+.date-chip small { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; }
+.date-chip strong { font-size: 1.15rem; }
+.event-day { padding-top: 12px; }
+.event-day .item-title { margin: 0 0 8px; }
+
+/* ---------- Hobbies page, hobby pages ---------- */
+.hobby-card { display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+/* The hobby's picture across the top of its card (yours, or its landscape). */
+.hobby-art { display: block; height: 92px; margin: -20px -20px 0; }
+@media (max-width: 480px) { .hobby-card .home-stat { flex-direction: column; align-items: flex-start; gap: 8px; } .hobby-card .stat-icon { width: 34px; height: 34px; } }
+/* A hobby dashboard's number tiles on a phone: two to a row leave ~150px each, and the icon took a third of that - the
+   words wrapped to three lines and were cut off. The icon is decoration: the words get the tile. */
+@media (max-width: 480px) { .page > .home-stats .stat-icon { display: none; } }
+.hobby-art svg, .hobby-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hobby-head { display: flex; align-items: center; gap: 12px; color: inherit; }
+.hobby-head:hover { text-decoration: none; }
+.hobby-head .item-title { font-size: 1.1rem; }
+.home-stats .home-stat.skeleton { min-height: 82px; }
+.big-icon { color: var(--faint); }
+.ellipsis { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.next-up { display: flex; align-items: center; gap: 14px; width: 100%; border: 1px solid var(--border); text-align: left; color: inherit; }
+.next-up .grow { display: flex; flex-direction: column; min-width: 0; }
+.mention-game { color: var(--teal); background: var(--teal-bg); }
+.mention-gear { color: var(--low); background: var(--low-bg); }
+.thumb-icon.game { --tone: var(--teal); --tone-bg: var(--teal-bg); }
+.thumb-icon.gear { --tone: var(--low); --tone-bg: var(--low-bg); }
+.play-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; }
+.play-row .item-title { display: flex; align-items: center; gap: 8px; }
+.play-row .grow { display: flex; flex-direction: column; min-width: 0; }
+.inline-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 12px; margin: 10px 0; padding: 12px; margin-bottom: 12px; border-radius: 12px; background: var(--fill-2); border: 1px solid var(--border); }
+.form-segmented { display: flex; margin: 4px 0 12px; }
+.form-segmented button { flex: 1; }
+.row-photo { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.row-photo .item-photo img { object-fit: cover; padding: 0; }
+
+.video-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.video-card { display: flex; flex-direction: column; overflow: hidden; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); box-shadow: var(--card-shadow); }
+.video-card.watched { opacity: 0.6; }
+.video-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.video-body { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px 12px; }
+.tick-label { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; }
+.tick-label input { width: 18px; height: 18px; min-height: 0; }
+
+@media (max-width: 1000px) {
+  .calendar-layout { grid-template-columns: minmax(0, 1fr); }
+  .day-detail { position: static; }
+}
+@media (max-width: 700px) {
+  .calendar-month { font-size: 1.2rem; }
+  .month { gap: 2px; padding: 6px; }
+  .day { min-height: 54px; padding: 4px; border-radius: 8px; }
+  .day-event { padding: 0; height: 4px; border-radius: 2px; background: var(--tone, var(--tint)); color: transparent; }
+  .day-more { display: none; }
+  .weekday { padding: 2px 2px 6px; font-size: 0.65rem; text-align: center; }
+  .home-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* The wishlist's buy bar sits beside the sidebar, not under it. */
+.buy-bar { position: fixed; left: var(--sidebar-w); right: 0; bottom: var(--tabbar-h); z-index: 20; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px 20px calc(12px + env(safe-area-inset-bottom, 0px)); background: var(--bar); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-top: 0.5px solid var(--separator); }
+@media (max-width: 700px) { .buy-bar { left: 0; } }

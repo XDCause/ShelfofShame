@@ -1,9 +1,12 @@
-import ColoursView from '../../components/ColoursView.jsx'
 import { DropsIcon, PlaneIcon, RobotIcon, ShieldIcon } from '../../components/icons.jsx'
-import ModelsView from '../../components/ModelsView.jsx'
 import { ModelsCards, ModelsTiles } from './ModelsHome.jsx'
-import GundamRange from './GundamRange.jsx'
-import WarhammerRange from './WarhammerRange.jsx'
+import { part } from '../lazy.js'
+
+// its pages and panels: loaded when first shown (modules/lazy.js)
+const ColoursView = part(() => import('../../components/ColoursView.jsx'))
+const ModelsView = part(() => import('../../components/ModelsView.jsx'))
+const GundamRange = part(() => import('./GundamRange.jsx'))
+const WarhammerRange = part(() => import('./WarhammerRange.jsx'))
 
 // Models: scale models, Gundam and Warhammer kits - the shelf of shame - and paint colours.
 // Pages live at /models/<path>. The paints themselves are hobby supplies (core, /supplies).

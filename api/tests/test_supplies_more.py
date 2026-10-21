@@ -134,10 +134,12 @@ def test_the_value_report_adds_up_each_hobby(client, make_supply):
     client.post("/api/gear", json={"name": "Shoes", "hobby": "volleyball", "price_paid": 180})
     client.post("/api/gear", json={"name": "Pads", "hobby": "volleyball"})                       # no price: listed, $0
     client.post("/api/shooting/ammo", json={"name": "Center-X", "rounds_bought": 500, "box_size": 50, "box_price": 20})
+    client.post("/api/gear", json={"name": "Rear bag", "hobby": "shooting", "price_paid": 45})      # (every hobby's gear counts)
     out = client.get("/api/supplies/value-report").json()
     by = {s["title"]: s for s in out["sections"]}
     assert by["Hobby supplies"]["total"] == 7.9 and by["Volleyball gear"]["total"] == 180 and by["Volleyball gear"]["unpriced"] == 1
-    assert by["Ammunition"]["total"] == 200 and out["total"] == 387.9
+    assert by["Shooting gear"]["total"] == 45
+    assert by["Ammunition"]["total"] == 200 and out["total"] == 432.9 and out["on"] == TODAY.isoformat()
 
 
 def test_maintenance_is_a_repeating_todo_on_the_tool(client, make_supply):

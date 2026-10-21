@@ -1,7 +1,12 @@
 import { BootIcon, TrophyIcon } from '../../components/icons.jsx'
-import { GearView } from '../volleyball/VolleyballViews.jsx'
-import HikePanel from './HikePanel.jsx'
-import { Dashboard, HikesView, HikingTiles } from './HikingViews.jsx'
+import { HikingTiles } from './HomeTiles.jsx'
+import { part } from '../lazy.js'
+
+// its pages and panels: loaded when first shown (modules/lazy.js)
+const GearView = part(() => import('../volleyball/VolleyballViews.jsx'), 'GearView')
+const HikePanel = part(() => import('./HikePanel.jsx'))
+const Dashboard = part(() => import('./HikingViews.jsx'), 'Dashboard')
+const HikesView = part(() => import('./HikingViews.jsx'), 'HikesView')
 
 // Hiking: your hikes (api/app/hiking.py) - imported from AllTrails as GPX files (or any GPS app's),
 // with distance, climb, times, per-km splits and the route worked out from the track - or logged by

@@ -31,10 +31,17 @@ class LinkError(Exception):
     """Why the page couldn't be read (said to the user)."""
 
 
+def refused(url: str) -> bool:
+    host = (urlsplit(url).hostname or "").lower()
+    return any(host == d or host.endswith("." + d) for d in REFUSED)
+
+
 def _get(url: str, limit: int = MAX_BYTES) -> tuple[str, str]:
     """(final url, text) - following redirects, each address checked."""
     with httpx.Client(headers=HEADERS, timeout=TIMEOUT, follow_redirects=False) as client:
         for _ in range(REDIRECTS + 1):
+            if refused(url):                                  # (at every redirect too, not just the link you pasted)
+                raise LinkError("The app doesn't read that site's pages.")
             try:
                 check_address(url)
             except Exception as e:  # its HTTPException: the same words for the user
@@ -99,11 +106,14 @@ def parse(html: str, url: str) -> dict:
         if product:
             out["title"] = str(product.get("name") or "").strip() or None
             offers = product.get("offers")
-            offer = offers[0] if isinstance(offers, list) and offers else offers if isinstance(offers, dict) else {}
+            offer = offers[0] if isinstance(offers, list) and offers else offers
+            offer = offer if isinstance(offer, dict) else {}            # (pages get these shapes wrong: skip, don't fail)
             out["price"] = _price(offer.get("price") or offer.get("lowPrice"))
-            out["currency"] = offer.get("priceCurrency")
+            out["currency"] = offer.get("priceCurrency") if isinstance(offer.get("priceCurrency"), str) else None
             image = product.get("image")
-            out["image"] = image[0] if isinstance(image, list) and image else image if isinstance(image, str) else None
+            image = image[0] if isinstance(image, list) and image else image
+            image = image.get("url") if isinstance(image, dict) else image   # (an ImageObject: its url)
+            out["image"] = image if isinstance(image, str) else None
             break
 
     def meta(*names):
@@ -127,8 +137,7 @@ def parse(html: str, url: str) -> dict:
 
 def peek(url: str) -> dict:
     """{title, price, currency, image, site, url} from one product page."""
-    host = (urlsplit(url).hostname or "").lower()
-    if any(host == d or host.endswith("." + d) for d in REFUSED):
+    if refused(url):
         raise LinkError("The app doesn't read that site's pages.")
     if not allowed(url):
         raise LinkError("That site asks apps not to read this page (its robots.txt) - type it in instead.")

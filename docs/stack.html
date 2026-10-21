@@ -1,0 +1,424 @@
+<title>Off the Clock Stack</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the app's own look (docs/DESIGN.md - pine, parchment, Playfair + Inter). A request-path diagram first, then
+   the parts of the app (core and each hobby, in its own colour), then the tools, grouped. All lists come from the
+   data block at the bottom (#stack-data); api/tests/test_docs.py checks it names every module, hobby and script. */
+:root {
+  --bg: #efe8d8; --surface: #faf6ec; --raised: #fffcf5; --line: rgb(46 52 36 / 0.14); --fill: rgb(70 82 56 / 0.09);
+  --text: #1d2620; --muted: #545949; --tint: #3d6a2c; --tint-soft: rgb(61 106 44 / 0.11); --ember: #b5552f;
+  --pine: #142019; --pine-text: #e9e1cd; --pine-muted: #98a08d; --wire: #8a8f78; --mark: rgb(200 134 40 / 0.28);
+  --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-ui: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111915; --surface: #17211b; --raised: #1d2a22; --line: rgb(233 225 205 / 0.12); --fill: rgb(233 225 205 / 0.07);
+    --text: #ece3cf; --muted: #a8ad9a; --tint: #abc99a; --tint-soft: rgb(171 201 154 / 0.13); --ember: #d9825a;
+    --pine: #0c130f; --pine-text: #ece3cf; --pine-muted: #8f977f; --wire: #6f7766; --mark: rgb(229 181 98 / 0.3);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111915; --surface: #17211b; --raised: #1d2a22; --line: rgb(233 225 205 / 0.12); --fill: rgb(233 225 205 / 0.07);
+  --text: #ece3cf; --muted: #a8ad9a; --tint: #abc99a; --tint-soft: rgb(171 201 154 / 0.13); --ember: #d9825a;
+  --pine: #0c130f; --pine-text: #ece3cf; --pine-muted: #8f977f; --wire: #6f7766; --mark: rgb(229 181 98 / 0.3);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.55 var(--font-ui); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 40px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 44px; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2rem, 5vw, 3rem); line-height: 1.1; }
+h2 { font-size: 1.6rem; }
+h3 { font-size: 1.1rem; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font: 600 0.72rem/1 var(--font-ui); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.mono { font-family: var(--font-mono); font-size: 0.84em; }
+header.top { display: flex; flex-direction: column; gap: 14px; }
+.lede { color: var(--muted); font-size: 1.05rem; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 22px; color: var(--muted); font-size: 0.9rem; }
+.facts b { color: var(--text); font-variant-numeric: tabular-nums; font-weight: 600; }
+section { display: flex; flex-direction: column; gap: 16px; }
+.section-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; }
+
+/* the diagram */
+.diagram { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.diagram svg { display: block; width: 100%; min-width: 760px; height: auto; }
+.n-box { fill: var(--raised); stroke: var(--line); stroke-width: 1.2; }
+.n-pine { fill: var(--pine); stroke: none; }
+.n-title { font: 600 15px var(--font-display); fill: var(--text); }
+.n-pine-title { font: 600 15px var(--font-display); fill: var(--pine-text); }
+.n-text { font: 12px var(--font-ui); fill: var(--muted); }
+.n-pine-text { font: 12px var(--font-ui); fill: var(--pine-muted); }
+.n-port { font: 500 11.5px var(--font-mono); fill: var(--tint); }
+.n-pine-port { font: 500 11.5px var(--font-mono); fill: #c9dcb9; }
+.wire { stroke: var(--wire); stroke-width: 1.6; fill: none; }
+.wire.dash { stroke-dasharray: 5 5; }
+.arrow { fill: var(--wire); }
+.w-label { font: 500 11px var(--font-ui); fill: var(--muted); }
+.zone { fill: none; stroke: var(--line); stroke-dasharray: 3 5; stroke-width: 1.2; }
+.zone-label { font: 600 10.5px var(--font-ui); letter-spacing: 0.1em; fill: var(--muted); text-transform: uppercase; }
+
+/* search */
+.find { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.find input { flex: 1 1 260px; min-width: 0; font: inherit; padding: 10px 14px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--raised); color: var(--text); }
+.find input:focus-visible { outline: 2px solid var(--tint); outline-offset: 2px; }
+.find .count { color: var(--muted); font-size: 0.88rem; font-variant-numeric: tabular-nums; }
+
+/* parts of the app */
+.parts { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 14px; }
+.part { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px;
+  display: flex; flex-direction: column; gap: 10px; min-width: 0; border-top: 3px solid var(--hue, var(--tint)); }
+.part-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.part-head .where { color: var(--muted); font-size: 0.8rem; }
+.part p.what { color: var(--muted); font-size: 0.9rem; }
+.row { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 8px; align-items: start; }
+.row > span:first-child { font: 600 0.68rem/2.1 var(--font-ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip { font: 500 0.78rem/1 var(--font-mono); padding: 5px 8px; border-radius: 6px; background: var(--fill); color: var(--text);
+  white-space: nowrap; }
+.chip.site { background: var(--tint-soft); color: var(--tint); font-family: var(--font-ui); font-weight: 600; }
+.chip.none { background: none; color: var(--muted); font-family: var(--font-ui); padding-left: 0; }
+.wip { font: 600 0.7rem/1 var(--font-ui); color: var(--ember); letter-spacing: 0.04em; }
+
+/* tools */
+.tools { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 14px; }
+.group { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: flex;
+  flex-direction: column; gap: 8px; min-width: 0; }
+.group p.what { color: var(--muted); font-size: 0.88rem; }
+.tool { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; padding: 8px 0; border-top: 1px solid var(--line); }
+.tool:first-of-type { border-top: 0; }
+.tool b { font-weight: 600; }
+.tool .ver { font: 500 0.78rem var(--font-mono); color: var(--tint); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tool .use { grid-column: 1 / -1; color: var(--muted); font-size: 0.86rem; }
+mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0 1px; }
+.hide { display: none !important; }
+
+.keep { background: var(--pine); color: var(--pine-text); border-radius: 14px; padding: 22px 24px; display: flex; flex-direction: column; gap: 10px; }
+.keep h2 { color: var(--pine-text); }
+.keep p, .keep li { color: var(--pine-muted); max-width: 80ch; }
+.keep code { font-family: var(--font-mono); font-size: 0.85em; color: #c9dcb9; }
+.keep ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+@media (prefers-reduced-motion: no-preference) { .part, .group { transition: opacity 140ms ease; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <span class="eyebrow">Off the Clock · how it's built</span>
+    <h1>The stack, end to end</h1>
+    <p class="lede">Every piece of software the app runs on, how a tap on your phone reaches the database and back, which
+      outside sites each hobby asks, and the tools that build, test and back it all up.</p>
+    <div class="facts" id="facts"></div>
+  </header>
+
+  <section aria-labelledby="path-title">
+    <div class="section-head"><h2 id="path-title">How a request travels</h2>
+      <span class="eyebrow">three containers on this PC · Docker Desktop</span></div>
+    <div class="diagram" role="img" aria-label="Your devices reach the web container (nginx, HTTPS on 8443) over the home Wi-Fi or Tailscale. It serves the React app and passes /api requests to the api container (FastAPI on 8000), the only thing that talks to the db container (PostgreSQL 17 on 5433). The API also asks outside sites. Backups go from the database to the backups folder, then the network drive and Google Drive. Changes are made in the dev copy, tested, and promoted to prod; both branches go to GitHub.">
+      <svg viewBox="0 0 1120 600" xmlns="http://www.w3.org/2000/svg">
+        <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path class="arrow" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+        <!-- the PC -->
+        <rect class="zone" x="250" y="18" width="852" height="372" rx="16"/>
+        <text class="zone-label" x="268" y="40">This PC · Windows 11 · prod and dev side by side</text>
+        <!-- devices -->
+        <rect class="n-box" x="18" y="70" width="190" height="130" rx="12"/>
+        <text class="n-title" x="34" y="98">Your devices</text>
+        <text class="n-text" x="34" y="122">PC, phone, tablet</text>
+        <text class="n-text" x="34" y="140">a browser, signed in</text>
+        <text class="n-text" x="34" y="158">(password + authenticator</text>
+        <text class="n-text" x="34" y="176">or a passkey)</text>
+        <!-- web -->
+        <rect class="n-box" x="282" y="70" width="230" height="130" rx="12"/>
+        <text class="n-title" x="298" y="98">web · nginx 1.27</text>
+        <text class="n-port" x="298" y="120">https :8443 (dev :8444)</text>
+        <text class="n-text" x="298" y="142">serves the React app</text>
+        <text class="n-text" x="298" y="160">(built by Vite), passes</text>
+        <text class="n-text" x="298" y="178">/api/... to the API</text>
+        <!-- api -->
+        <rect class="n-pine" x="566" y="70" width="240" height="130" rx="12"/>
+        <text class="n-pine-title" x="582" y="98">api · FastAPI</text>
+        <text class="n-pine-port" x="582" y="120">:8000 (dev :8001)</text>
+        <text class="n-pine-text" x="582" y="142" id="d-api">Python 3.13 · modules</text>
+        <text class="n-pine-text" x="582" y="160">every route needs sign-in</text>
+        <text class="n-pine-text" x="582" y="178">the only way to the data</text>
+        <!-- db -->
+        <rect class="n-box" x="860" y="70" width="222" height="130" rx="12"/>
+        <text class="n-title" x="876" y="98">db · PostgreSQL 17</text>
+        <text class="n-port" x="876" y="120">:5433 (dev :5434)</text>
+        <text class="n-text" x="876" y="142" id="d-db">migrations in db/init</text>
+        <text class="n-text" x="876" y="160">photos stored inside it</text>
+        <text class="n-text" x="876" y="178">DBeaver for a look</text>
+        <!-- request wires -->
+        <path class="wire" d="M208,135 L280,135" marker-end="url(#arr)"/>
+        <text class="w-label" x="214" y="124">Wi-Fi /</text>
+        <text class="w-label" x="214" y="154">Tailscale</text>
+        <path class="wire" d="M512,135 L564,135" marker-end="url(#arr)"/>
+        <text class="w-label" x="520" y="124">/api</text>
+        <path class="wire" d="M806,135 L858,135" marker-end="url(#arr)"/>
+        <text class="w-label" x="812" y="124">SQL</text>
+        <!-- outside sites -->
+        <rect class="n-box" x="566" y="250" width="240" height="112" rx="12"/>
+        <text class="n-title" x="582" y="278">Outside sites</text>
+        <text class="n-text" x="582" y="300" id="d-sites">sites, one module each</text>
+        <text class="n-text" x="582" y="318">polite: one look-up when asked,</text>
+        <text class="n-text" x="582" y="336">a weekly check, stand-ins in tests</text>
+        <path class="wire dash" d="M686,200 L686,248" marker-end="url(#arr)"/>
+        <text class="w-label" x="694" y="230">httpx</text>
+        <!-- backups -->
+        <rect class="n-box" x="860" y="250" width="222" height="112" rx="12"/>
+        <text class="n-title" x="876" y="278">backups folder</text>
+        <text class="n-text" x="876" y="300">nightly 2 am, read back,</text>
+        <text class="n-text" x="876" y="318">test-restored weekly</text>
+        <text class="n-text" x="876" y="336">+ your videos</text>
+        <path class="wire" d="M971,200 L971,248" marker-end="url(#arr)"/>
+        <text class="w-label" x="979" y="230">pg_dump</text>
+        <!-- off the PC -->
+        <rect class="n-box" x="860" y="440" width="104" height="104" rx="12"/>
+        <text class="n-title" x="872" y="468">Network</text>
+        <text class="n-title" x="872" y="486">drive</text>
+        <text class="n-text" x="872" y="508">on the modem</text>
+        <text class="n-text" x="872" y="526">+ videos</text>
+        <rect class="n-box" x="978" y="440" width="104" height="104" rx="12"/>
+        <text class="n-title" x="990" y="468">Google</text>
+        <text class="n-title" x="990" y="486">Drive</text>
+        <text class="n-text" x="990" y="508">gpg-encrypted</text>
+        <text class="n-text" x="990" y="526">~200 MB of 15 GB</text>
+        <path class="wire" d="M930,362 L912,438" marker-end="url(#arr)"/>
+        <path class="wire dash" d="M1012,362 L1030,438" marker-end="url(#arr)"/>
+        <text class="w-label" x="1036" y="408">prod only</text>
+        <!-- dev and prod -->
+        <rect class="n-box" x="282" y="250" width="110" height="112" rx="12"/>
+        <text class="n-title" x="296" y="278">dev copy</text>
+        <text class="n-port" x="296" y="298">branch dev</text>
+        <text class="n-text" x="296" y="318">every change</text>
+        <text class="n-text" x="296" y="336">made here first</text>
+        <rect class="n-box" x="430" y="250" width="100" height="112" rx="12"/>
+        <text class="n-title" x="444" y="278">prod</text>
+        <text class="n-port" x="444" y="298">branch main</text>
+        <text class="n-text" x="444" y="318">your real</text>
+        <text class="n-text" x="444" y="336">data</text>
+        <path class="wire" d="M392,306 L428,306" marker-end="url(#arr)"/>
+        <text class="w-label" x="282" y="384">promote.ps1: tests, backup, merge, migrate</text>
+        <rect class="n-box" x="282" y="440" width="248" height="104" rx="12"/>
+        <text class="n-title" x="298" y="468">Tests on throwaway copies</text>
+        <text class="n-text" x="298" y="490">API tests · web tests · the</text>
+        <text class="n-text" x="298" y="508">walk-through and the screen audit</text>
+        <text class="n-text" x="298" y="526">(outside sites answered by stand-ins)</text>
+        <path class="wire dash" d="M337,362 L337,438" marker-end="url(#arr)"/>
+        <rect class="n-box" x="18" y="250" width="190" height="112" rx="12"/>
+        <text class="n-title" x="34" y="278">GitHub</text>
+        <text class="n-text" x="34" y="300">public repo: code and</text>
+        <text class="n-text" x="34" y="318">notes only (no data,</text>
+        <text class="n-text" x="34" y="336">keys or backups)</text>
+        <path class="wire dash" d="M282,320 L210,320" marker-end="url(#arr)"/>
+        <text class="w-label" x="220" y="312">push</text>
+        <rect class="n-box" x="18" y="440" width="190" height="104" rx="12"/>
+        <text class="n-title" x="34" y="468">Claude Code</text>
+        <text class="n-text" x="34" y="490">builds in the dev copy,</text>
+        <text class="n-text" x="34" y="508">runs the checks, promotes</text>
+        <text class="n-text" x="34" y="526">when you say so</text>
+        <path class="wire dash" d="M208,470 Q250,420 300,364" marker-end="url(#arr)"/>
+      </svg>
+    </div>
+  </section>
+
+  <div class="find">
+    <input type="search" id="q" placeholder="Find a module, site, tool or script (e.g. openmeteo, Vitest, backup)" aria-label="Find in the stack">
+    <span class="count" id="count" aria-live="polite"></span>
+  </div>
+
+  <section aria-labelledby="parts-title">
+    <div class="section-head"><h2 id="parts-title">The parts of the app</h2>
+      <span class="eyebrow">web folder · API modules · outside sites</span></div>
+    <p class="lede" style="font-size:0.95rem">The core every hobby shares, then each hobby in its own colour. Each hobby's pages load
+      only when you open it; its Home tiles load up front.</p>
+    <div class="parts" id="parts"></div>
+  </section>
+
+  <section aria-labelledby="tools-title">
+    <div class="section-head"><h2 id="tools-title">The tools</h2>
+      <span class="eyebrow">exact versions, pinned</span></div>
+    <div class="tools" id="tools"></div>
+  </section>
+
+  <section class="keep" aria-labelledby="keep-title">
+    <h2 id="keep-title">Keeping this map current</h2>
+    <p>Everything listed above comes from one data block at the bottom of <code>docs/stack.html</code>. When something is
+      added, it goes there too:</p>
+    <ol>
+      <li>A new API module, hobby or script: add it to the data. <code>api/tests/test_docs.py</code> fails until every
+        module in <code>api/app</code>, every hobby in <code>web/src/modules</code> and every <code>.ps1</code> script is on this map.</li>
+      <li>A new outside site: add it to <code>sites</code> and to the parts that use it (and a stand-in, and a row in
+        BEFORE_GOING_PUBLIC.md).</li>
+      <li>A new tool or a version change: update its line in <code>tools</code> (check-updates.ps1 lists what's newer).</li>
+      <li>A change to how requests travel: redraw the diagram (the SVG near the top).</li>
+    </ol>
+  </section>
+</div>
+
+<!-- The map's data. api/tests/test_docs.py reads it: every api/app module, every web/src/modules folder and every script
+     must be named here. "parts": core areas and hobbies; "sites": outside sites by key; "tools": groups of tools. -->
+<script type="application/json" id="stack-data">
+{
+  "updated": "2026-10-22",
+  "parts": [
+    {"name": "Home", "where": "core/Home.jsx", "what": "The day, every hobby's numbers, recent activity, what's coming up, goals that need a nudge, anything the System check wants you to see.",
+     "api": ["activity", "banners", "images", "webphoto"], "sites": []},
+    {"name": "Goals and to-dos", "where": "core/goals, core/todo", "what": "Big goals for a year or three, counted by hand or by the app, habits, steps; the to-do list in your own order.",
+     "api": ["goals", "goal_sources", "todos"], "sites": []},
+    {"name": "Journal", "where": "core/journal", "what": "Pages (BlockNote), @mentions, moods, notebooks, templates, reviews, drawings (Excalidraw), map, insights, print.",
+     "api": ["journal", "journal_text", "journal_actions", "journal_drawings", "journal_more"], "sites": ["openmeteo"]},
+    {"name": "Calendar", "where": "core/calendar", "what": "Month, week, agenda and year; repeats, quick add in plain words, countdowns, checklists, weather, Queensland holidays.",
+     "api": ["calendar", "calendar_more", "holidays"], "sites": ["openmeteo"]},
+    {"name": "Supplies", "where": "components/InventoryView.jsx, core/supplies", "what": "Everything you own for every hobby; barcodes, stock history, shelf life, places and QR labels, stocktake, shopping, value report.",
+     "api": ["supplies", "supplies_more", "owned", "products", "catalog", "tamiya_catalog", "catalog_import", "paints", "colours", "lookups"],
+     "sites": ["tamiya", "hasegawa", "hlj", "trumpeter", "stedi"]},
+    {"name": "Wishlist", "where": "components/WishlistPage.jsx, wishExtras.jsx", "what": "Everything you want, by shop or hobby; tick when bought, prices, saving up, add from a shop link, the gift list.",
+     "api": ["wishlist", "wanted", "wanted_more", "linkpeek", "ucp", "goodgames", "bluesky"], "sites": ["goodgames", "bluesky", "anyshop"]},
+    {"name": "Settings, System and sign-in", "where": "components/SettingsPanel.jsx, core/auth", "what": "Spending, prices, backups, exports, the weekly website check, the System panel; password, authenticator, passkeys, devices.",
+     "api": ["settings", "system", "spending", "sitecheck", "auth", "main", "db", "stand_ins"], "sites": []},
+    {"name": "Models", "hobby": "models", "hue": "#d0704f", "where": "modules/models", "what": "Scale models, Gundam and Warhammer: the stash, build steps, paint checklists, lookups, colours and mixes, timer, build log.",
+     "api": ["models", "minis", "build", "warhammer", "gundam"], "sites": ["tamiya", "hasegawa", "hlj", "trumpeter", "goodgames"]},
+    {"name": "Board games", "hobby": "boardgames", "hue": "#c0588a", "where": "modules/boardgames", "what": "Your games and every play: who played, who won, how long.",
+     "api": ["boardgames"], "sites": ["gameology", "goodgames"]},
+    {"name": "Volleyball", "hobby": "volleyball", "hue": "#d9a62e", "where": "modules/volleyball", "what": "Games and training, videos and clips, coaching notes, gear.",
+     "api": ["volleyball", "gear", "vbclips", "vbcoach"], "sites": ["bluesky"]},
+    {"name": "Video games", "hobby": "videogames", "hue": "#8f72d6", "where": "modules/videogames", "what": "Steam achievements and 100% runs, other platforms, friends, time played.",
+     "api": ["videogames", "vgsync", "vgplaytime", "othergames", "vgfind", "vgfriends", "steam", "steamhunters", "exophase"], "sites": ["steam", "steamhunters", "exophase"]},
+    {"name": "Chess", "hobby": "chess", "hue": "#a8825a", "where": "modules/chess", "what": "chess.com ratings, games with a board replay, openings; games over the board.",
+     "api": ["chess", "chesscom"], "sites": ["chesscom"]},
+    {"name": "Reading", "hobby": "reading", "hue": "#4f8fc9", "where": "modules/reading", "what": "Books, a reading log, series, quotes, suggestions.",
+     "api": ["reading", "readimport", "reading_recs", "bookseries", "openlibrary"], "sites": ["openlibrary"]},
+    {"name": "Travel", "hobby": "travel", "hue": "#2fa39a", "where": "modules/travel", "what": "Trips: bookings, plans, budget in any currency, packing, places and memories.",
+     "api": ["travel", "travel_trip", "frankfurter"], "sites": ["frankfurter", "openmeteo"]},
+    {"name": "Precision shooting", "hobby": "shooting", "hue": "#9aa33f", "where": "modules/shooting", "what": "Rifles, ammo, ranges, sessions, groups, each shot, the live board, your DOPE.",
+     "api": ["shooting", "shooting_sessions", "shooting_shots", "shotmath"], "sites": []},
+    {"name": "Hiking", "hobby": "hiking", "hue": "#4f9e62", "where": "modules/hiking", "what": "Hikes from GPX files: distance, climb, routes on a map (Leaflet), splits, landmarks and photos nearby, gear.",
+     "api": ["hiking", "gpx", "overpass", "wikimedia"], "sites": ["overpass", "wikimedia"]},
+    {"name": "Gardening", "hobby": "gardening", "hue": "#78b043", "where": "modules/gardening", "what": "A balcony garden: layout, plants, watering and feeding, logs and photos, harvests, a plant guide and doctor.",
+     "api": ["garden", "garden_logs", "garden_today", "garden_guide", "garden_doctor", "garden_items", "bunnings", "openmeteo"], "sites": ["bunnings", "openmeteo"]},
+    {"name": "Building my car", "hobby": "car", "hue": "#7f97a6", "where": "modules/car", "what": "A modified Toyota 86. A placeholder for now.", "wip": true,
+     "api": [], "sites": []}
+  ],
+  "sites": {
+    "tamiya": "Tamiya (tamiya.com)", "hasegawa": "Hasegawa", "hlj": "HobbyLink Japan", "trumpeter": "Trumpeter", "stedi": "Stedi (UCP)",
+    "goodgames": "Good Games (UCP)", "bluesky": "Blue Sky Athletics (UCP)", "gameology": "Gameology", "steam": "Steam Web API",
+    "steamhunters": "SteamHunters (API)", "exophase": "Exophase", "chesscom": "chess.com API", "openlibrary": "Open Library",
+    "overpass": "OpenStreetMap Overpass", "wikimedia": "Wikimedia Commons", "bunnings": "Bunnings (one page)", "openmeteo": "Open-Meteo",
+    "frankfurter": "Frankfurter (rates)", "anyshop": "any shop page you paste"
+  },
+  "tools": [
+    {"group": "Runs the app", "what": "Three containers on this PC, started by Docker Desktop.", "items": [
+      ["Docker Desktop + Compose", "", "the three containers, restarted after a reboot"],
+      ["nginx", "1.27.5", "HTTPS with the app's own certificate, the React files, /api passed on; security headers"],
+      ["Python", "3.13.16", "the API"],
+      ["FastAPI + uvicorn", "0.143.0 · 0.54.0", "the API's routes"],
+      ["PostgreSQL", "17.11", "the database; every change is a numbered db/init file"],
+      ["psycopg + pool", "3.3.6 · 3.2.6", "the API's connection to PostgreSQL"],
+      ["Tailscale", "", "the app away from home, privately (never Funnel or port-forwarding)"]]},
+    {"group": "The web app", "what": "Built once by Node, then just files nginx serves.", "items": [
+      ["React + React Router", "19.1.0 · 7.18.4", "the pages"],
+      ["Vite", "6.4.4", "builds the app; hobbies split into their own files"],
+      ["Node", "22.23.3", "only to build (and test) - never runs in the app"],
+      ["BlockNote + Mantine", "0.54.2 · 8.3.18", "the journal editor"],
+      ["Excalidraw", "0.18.1", "drawings and whiteboards"],
+      ["Leaflet", "1.9.4", "hike and travel maps"],
+      ["chess.js · ZXing", "1.4.0 · 0.21.3", "chess replays · barcode reading"],
+      ["Inter, Playfair Display, Caveat", "Fontsource", "the type, served from the app itself"]]},
+    {"group": "The API's helpers", "what": "Python packages in api/requirements.txt.", "items": [
+      ["httpx + BeautifulSoup", "0.28.1 · 4.13.4", "asking outside sites, reading their pages"],
+      ["argon2-cffi · pyotp · webauthn", "25.1.0 · 2.10.0 · 3.0.1", "password hashes, authenticator codes, passkeys"],
+      ["segno", "1.6.6", "QR codes (authenticator set-up, place labels)"]]},
+    {"group": "Checks and tests", "what": "Run by test_all.ps1 and on every build; promote.ps1 needs them all.", "items": [
+      ["pytest", "9.0.3", "the API tests, on a fresh test database (robustness, web calls, docs too)"],
+      ["Vitest + jsdom + Testing Library", "5.0.5 · 26.1.0 · 16.3.0", "the web code's own tests"],
+      ["Playwright", "1.47.0", "the walk-through: clicks through the app like a person"],
+      ["axe-core", "via axe-playwright 0.1.8", "accessibility (WCAG 2.2 AA) in the screen audit"],
+      ["ESLint", "9.30.1", "web mistakes and React traps; any warning stops the build"],
+      ["pyflakes · pip-audit · npm audit", "", "Python mistakes; known security problems in packages"],
+      ["CSS clash check · bundle-size check", "web/scripts", "on every web build"]]},
+    {"group": "Scripts", "what": "PowerShell 5.1, in the app's folder (ASCII only).", "items": [
+      ["start.ps1", "", "start the app (and make the HTTPS certificate the first time)"],
+      ["dev.ps1", "", "rebuild the dev copy; -Refresh copies prod's data in"],
+      ["promote.ps1", "", "dev to prod: tests, backup, merge, migrate, rebuild; -Push to GitHub"],
+      ["migrate.ps1", "", "apply the db/init files a copy hasn't had"],
+      ["backup.ps1", "", "back up, read back, weekly test restore, copies elsewhere"],
+      ["setup-offsite.ps1 · restore-offsite.ps1", "", "the encrypted Google Drive copy: set up, and get one back"],
+      ["check-updates.ps1", "", "monthly: newer versions and security problems"],
+      ["test_all.ps1", "", "every check side by side (~9 min)"],
+      ["run_tests.ps1 · run_web_tests.ps1 · run_e2e.ps1", "", "the API tests · the web tests · the walk-through and audit"],
+      ["make-cert.ps1 · set-password.ps1", "", "the app's HTTPS certificate · your sign-in password"],
+      ["sample-data.ps1 · showcase.ps1", "", "made-up data for dev · how the look has changed"],
+      ["scripts/common.ps1 · scripts/offsite.ps1", "", "shared by the scripts above"]]},
+    {"group": "Working on it", "what": "Where the code lives and how changes reach your real data.", "items": [
+      ["Git + GitHub", "public repo", "dev and main branches; never data, keys or backups"],
+      ["Claude Code", "", "builds and checks changes in the dev copy"],
+      ["VS Code · DBeaver", "", "reading the code · looking at the database"],
+      ["gpg", "Git for Windows", "encrypts the Google Drive copies (AES-256)"],
+      ["Google Drive for desktop", "", "syncs the encrypted copies to your Drive"],
+      ["Windows Task Scheduler", "", "the 2 am backup"]]}
+  ]
+}
+</script>
+
+<script>
+(() => {
+  const data = JSON.parse(document.getElementById('stack-data').textContent)
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+  const apiCount = new Set(data.parts.flatMap((p) => p.api)).size
+  const siteCount = Object.keys(data.sites).filter((k) => k !== 'anyshop').length
+  const hobbies = data.parts.filter((p) => p.hobby)
+  document.getElementById('d-api').textContent = `Python 3.13 · ${apiCount} modules`
+  document.getElementById('d-sites').textContent = `${siteCount} sites, one module each`
+  document.getElementById('facts').innerHTML = [
+    [data.parts.length - hobbies.length, 'core areas'], [hobbies.length, 'hobbies'], [apiCount, 'API modules'],
+    [siteCount, 'outside sites'], [data.tools.reduce((n, g) => n + g.items.length, 0), 'tools and scripts'],
+  ].map(([n, w]) => `<span><b>${n}</b> ${w}</span>`).join('') + `<span>map updated <b>${esc(data.updated)}</b></span>`
+
+  const chips = (list, cls = '') => list.length
+    ? list.map((x) => `<span class="chip ${cls}">${esc(cls === 'site' ? data.sites[x] ?? x : x)}</span>`).join('')
+    : '<span class="chip none">none</span>'
+  document.getElementById('parts').innerHTML = data.parts.map((p) => `
+    <article class="part" style="${p.hue ? `--hue:${p.hue}` : ''}" data-text="${esc([p.name, p.where, p.what, ...p.api, ...p.sites.map((s) => data.sites[s])].join(' ').toLowerCase())}">
+      <div class="part-head"><h3>${esc(p.name)}</h3>${p.wip ? '<span class="wip">dev only</span>' : `<span class="where mono">${esc(p.hobby ? 'hobby' : 'core')}</span>`}</div>
+      <p class="what">${esc(p.what)}</p>
+      <div class="row"><span>Web</span><div class="chips"><span class="chip">${esc(p.where)}</span></div></div>
+      <div class="row"><span>API</span><div class="chips">${chips(p.api)}</div></div>
+      <div class="row"><span>Asks</span><div class="chips">${chips(p.sites, 'site')}</div></div>
+    </article>`).join('')
+  document.getElementById('tools').innerHTML = data.tools.map((g) => `
+    <article class="group" data-text="${esc([g.group, g.what, ...g.items.flat()].join(' ').toLowerCase())}">
+      <h3>${esc(g.group)}</h3><p class="what">${esc(g.what)}</p>
+      ${g.items.map(([name, ver, use]) => `<div class="tool" data-text="${esc([name, ver, use].join(' ').toLowerCase())}">
+        <b>${esc(name)}</b><span class="ver">${esc(ver)}</span><span class="use">${esc(use)}</span></div>`).join('')}
+    </article>`).join('')
+
+  const q = document.getElementById('q')
+  const count = document.getElementById('count')
+  const find = () => {
+    const words = q.value.trim().toLowerCase().split(/\s+/).filter(Boolean)
+    for (const el of document.querySelectorAll('.part, .group, .tool')) {
+      const hit = !words.length || words.every((w) => el.dataset.text.includes(w))
+      el.classList.toggle('hide', !hit && !el.classList.contains('tool'))
+      if (el.classList.contains('tool')) el.style.opacity = !words.length || hit ? '' : '0.35'
+    }
+    // a group shows when any of its tools match
+    for (const g of document.querySelectorAll('.group')) {
+      if (words.length && [...g.querySelectorAll('.tool')].some((t) => words.every((w) => t.dataset.text.includes(w)))) g.classList.remove('hide')
+    }
+    count.textContent = words.length ? `${document.querySelectorAll('.part:not(.hide), .group:not(.hide)').length} match` : ''
+  }
+  q.addEventListener('input', find)
+  try { const saved = sessionStorage.getItem('stack-q'); if (saved) { q.value = saved; find() } } catch { /* fine */ }
+  q.addEventListener('change', () => { try { sessionStorage.setItem('stack-q', q.value) } catch { /* fine */ } })
+})()
+</script>

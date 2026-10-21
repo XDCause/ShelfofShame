@@ -1,10 +1,22 @@
 import { BoxIcon, GridIcon, SproutIcon, TrophyIcon } from '../../components/icons.jsx'
-import { ContainerFormPanel, ContainerPanel, GuidePanel, ItemPanel, NewGuidePanel, SpacePanel } from './GardenPanels.jsx'
-import { GardenTiles, HarvestsView, PlantsView, TodayView } from './GardenViews.jsx'
-import DoctorView from './DoctorView.jsx'
-import { GuideView, SuppliesView } from './GuideView.jsx'
-import { LayoutView } from './LayoutView.jsx'
-import PlantingPanel from './PlantingPanel.jsx'
+import { GardenTiles } from './HomeTiles.jsx'
+import { part } from '../lazy.js'
+
+// its pages and panels: loaded when first shown (modules/lazy.js)
+const ContainerFormPanel = part(() => import('./GardenPanels.jsx'), 'ContainerFormPanel')
+const ContainerPanel = part(() => import('./GardenPanels.jsx'), 'ContainerPanel')
+const GuidePanel = part(() => import('./GardenPanels.jsx'), 'GuidePanel')
+const ItemPanel = part(() => import('./GardenPanels.jsx'), 'ItemPanel')
+const NewGuidePanel = part(() => import('./GardenPanels.jsx'), 'NewGuidePanel')
+const SpacePanel = part(() => import('./GardenPanels.jsx'), 'SpacePanel')
+const HarvestsView = part(() => import('./GardenViews.jsx'), 'HarvestsView')
+const PlantsView = part(() => import('./GardenViews.jsx'), 'PlantsView')
+const TodayView = part(() => import('./GardenViews.jsx'), 'TodayView')
+const DoctorView = part(() => import('./DoctorView.jsx'))
+const GuideView = part(() => import('./GuideView.jsx'), 'GuideView')
+const SuppliesView = part(() => import('./GuideView.jsx'), 'SuppliesView')
+const LayoutView = part(() => import('./LayoutView.jsx'), 'LayoutView')
+const PlantingPanel = part(() => import('./PlantingPanel.jsx'))
 
 // Gardening, for an apartment (api/app/garden.py, garden_guide.py, garden_items.py): your balcony,
 // windowsills and shelves drawn to scale with your pots on them; each plant's stage, watering, feeding,

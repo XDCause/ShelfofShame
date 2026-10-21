@@ -135,7 +135,10 @@ def parse(text: str, now: date) -> dict:
         mon = MONTH_WORD[m.group(2) or m.group(3) or m.group(5)]
         dd = int(m.group(1) or m.group(4) or 0)
         year = now.year + (mon < now.month)
-        out["repeat_until"] = date(year, mon, dd) if dd else date(year, mon, months.monthrange(year, mon)[1])
+        try:
+            out["repeat_until"] = date(year, mon, dd) if dd else date(year, mon, months.monthrange(year, mon)[1])
+        except ValueError:                                   # "until 31 Feb": no such day - just no end
+            pass
     # times: a range first ("7-9pm", "from 6:30 to 8"), then one time ("at 7pm", "19:00", "noon")
     tm = r"(\d{1,2})(?::(\d{2}))?\s*(am|pm)?"
     m = re.search(rf"(?:\bfrom\s+|\bat\s+|@\s*)?\b{tm}\s*(?:-|–|to|until|till)\s*{tm}(?=\W)", low)

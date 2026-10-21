@@ -3,6 +3,7 @@
 Backups are the same files backup.ps1 makes (pg_dump custom format, hobby_inventory_<time>.dump,
 newest 14 kept, logged to backup.log): the backups folder is shared with this container.
 """
+import json
 import os
 import re
 import subprocess
@@ -143,6 +144,17 @@ def _log(message: str):
         f.write(f"{datetime.now():%Y-%m-%d %H:%M:%S}  {message}\n")
 
 
+def _status(part: str, values: dict):
+    """One part of backups/status.json (backup.ps1 writes the same file; Settings > System reads it)."""
+    path = BACKUP_DIR / "status.json"
+    try:
+        status = json.loads(path.read_text(encoding="utf-8-sig"))
+    except (OSError, ValueError):
+        status = {}
+    status[part] = values
+    path.write_text(json.dumps(status, indent=2, ensure_ascii=True), encoding="ascii")
+
+
 def _backups() -> list[Path]:
     return sorted((p for p in BACKUP_DIR.glob("hobby_inventory_*.dump") if BACKUP_NAME.match(p.name)),
                   reverse=True)
@@ -172,12 +184,19 @@ def back_up_now():
         ["pg_dump", "-h", os.environ.get("DB_HOST", "db"), "-p", os.environ.get("DB_PORT", "5432"),
          "-U", os.environ["POSTGRES_USER"], "-d", os.environ["POSTGRES_DB"], "-Fc", "-f", str(BACKUP_DIR / name)],
         env=env, capture_output=True, text=True, timeout=300)
+    now = datetime.now().isoformat(timespec="seconds")
+    if done.returncode == 0:              # read it back, like backup.ps1: Postgres can list what's in it
+        listed = subprocess.run(["pg_restore", "--list", str(BACKUP_DIR / name)], capture_output=True, text=True, timeout=120)
+        if listed.returncode != 0 or "TABLE DATA public supplies" not in listed.stdout:
+            done = subprocess.CompletedProcess(done.args, 1, "", "the new backup can't be read back (pg_restore --list)")
     if done.returncode != 0:
         problem = (done.stderr.strip().splitlines() or ["pg_dump returned an error"])[-1]
         _log(f"FAILED (from the app): {problem}")
+        _status("backup", {"at": now, "ok": False, "message": problem})
         raise HTTPException(500, f"The backup failed: {problem}")
     size = (BACKUP_DIR / name).stat().st_size
-    _log(f"OK: {name} ({round(size / 1024)} KB) - from the app")
+    _log(f"OK: {name} ({round(size / 1024)} KB, read back and checked) - from the app")
+    _status("backup", {"at": now, "ok": True, "name": name, "kb": round(size / 1024), "message": "read back and checked"})
     for old in _backups()[KEEP:]:
         old.unlink()
         _log(f"Removed old backup {old.name}")

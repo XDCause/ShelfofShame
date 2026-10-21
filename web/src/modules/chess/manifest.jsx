@@ -1,6 +1,12 @@
 import { ChessIcon, GridIcon, TrophyIcon } from '../../components/icons.jsx'
-import ChessGamePanel from './ChessGamePanel.jsx'
-import { ChessTiles, Dashboard, GamesView, OpeningsView } from './ChessViews.jsx'
+import { ChessTiles } from './HomeTiles.jsx'
+import { part } from '../lazy.js'
+
+// its pages and panels: loaded when first shown (modules/lazy.js)
+const ChessGamePanel = part(() => import('./ChessGamePanel.jsx'))
+const Dashboard = part(() => import('./ChessViews.jsx'), 'Dashboard')
+const GamesView = part(() => import('./ChessViews.jsx'), 'GamesView')
+const OpeningsView = part(() => import('./ChessViews.jsx'), 'OpeningsView')
 
 // Chess: your chess.com games (the official public API, api/app/chess.py - synced daily) and games
 // over the board, logged by hand. Pages live at /chess/<path>; games show on the calendar (one

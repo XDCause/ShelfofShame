@@ -8,4 +8,10 @@ export default defineConfig({
   server: {
     proxy: { '/api': 'http://localhost:8000' },
   },
+  // The web code's own tests (run_web_tests.ps1, part of test_all.ps1): src/**/*.test.{js,jsx} in a pretend browser
+  // (jsdom). They never reach the API - each test fakes the api.js calls it needs.
+  test: {
+    environment: 'jsdom',
+    include: ['src/**/*.test.{js,jsx}'],
+  },
 })

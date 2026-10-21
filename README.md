@@ -1,88 +1,63 @@
 # Off the Clock
 
 A self-hosted home for your hobbies, built as a full-stack learning project. Runs entirely in
-Docker on your own PC; no accounts or subscriptions.
+Docker on your own PC: one account (yours), no subscriptions, nothing in the cloud.
 
-It's one app with a **core** every hobby shares (Home, Journal, Calendar, hobby **Supplies** and the
-**Wishlist**) and a **module per hobby** (Models, Board games, Volleyball), each with its own pages
-(`/<module>/<page>`, shown as tabs at the top of the hobby). Wide screens have a sidebar; phones
-have five tabs: Home, Journal, Calendar, Supplies (with the wishlist) and Hobbies. More hobbies
-(scuba, woodworking, pottery...): see [docs/ROADMAP.md](docs/ROADMAP.md).
+It's one app with a **core** every hobby shares and a **module per hobby**, each with its own pages
+(`/<module>/<page>`, shown as tabs on the hobby's banner). Wide screens have a sidebar; phones have
+five tabs: Home, Journal, Calendar, Supplies (with the wishlist) and Hobbies. Ideas for later: see
+[docs/ROADMAP.md](docs/ROADMAP.md).
 
-- **Home**: a hero banner (the day, a greeting, a line for the day, over a photo of what you've
-  been working on) with "Write today's entry"; each hobby's stat tiles; **Recent activity** (one feed
-  of what you bought, used, started, finished, logged and wrote, with coloured pills); **Quick
-  actions**; the journal's to-dos and latest pages; **Building now** (build-step bars) and **Running
-  low** (fill bars from each supply's condition).
-- **Look**: light and deep-navy dark themes (Settings > Appearance: System / Light / Dark), a
-  sidebar with a daily nudge, and a search box in the top bar (Ctrl+K) for kits, supplies and
-  journal pages.
-- **Journal**: Notion-style pages (BlockNote editor): type `/` for headings, lists, to-dos, quotes,
-  tables and photos; type `@` to mention a model, a supply or another page (a pill that opens it).
-  Pages save as you type, have a date, an emoji, tags and a pin; search and tag filters. A model's
-  or supply's panel lists the pages that mention it, with "+ Write about it".
-- **Calendar**: a month of planned events (one-off, weekly or fortnightly, with "Not on this day" for
-  a skipped week) and what happened each day (from the activity feed: kits, supplies, plays,
-  volleyball games, journal pages). Tap a day for the detail, "+ Event on this day" or "Write about
-  this day". A volleyball event offers **Log the result**. Home shows what's **Coming up**.
-- **Board games**: your games (Owned / Wanted / Borrowed / Gone, players, time, rating, box photo)
-  and every play (who played, who won, how long). "Played @Catan" in the journal offers "Log a play".
-- **Volleyball**: games and training with results (sets won and lost), your gear (condition, photo)
-  and video links (YouTube thumbnails), all on the calendar and in Recent activity.
-- **Drawing (pen, whiteboard)**: "+ Whiteboard" makes a page that is one endless canvas
-  (Excalidraw): pen strokes with pressure, shapes, arrows, text, pictures; pan and zoom. With a pen
-  (S Pen on a Galaxy Tab) it switches to pen mode by itself: the pen draws, fingers pan and zoom.
-  In a normal page, `/` Drawing adds a sketch: its picture sits in the page, tap it to draw full
-  screen. Everything saves by itself; words written on a canvas are searchable.
-- **Handwriting into text** on a Samsung tablet: use **Samsung Internet** (not Chrome) with S Pen to
-  text turned on (Settings > Advanced features > S Pen): write with the pen straight onto a journal
-  page and it becomes typed text. In Chrome the S Pen only brings up the keyboard.
-  A page's **Full screen** button gives a big writing page: no sidebar or bars, big lines, room to
-  write below the last line (Exit full screen, Esc or the back gesture to leave).
-- **Mood**: the face beside a page's title is how the day felt: Great 😄, Good 🙂, Okay 😐, Meh 😕 or
-  Rough 😢, plus up to five words (proud, tired... or your own). It shows on the page's card, as
-  a face on that day in the Calendar, and as **Your week** (the last seven days) on Home; the
-  journal list can show just one mood's days. The list groups pages by **Day** (with the day's mood)
-  or **Month**, and each card says what it is (Journal / Whiteboard) in its corner.
-- **Video games** (Steam achievement hunting): a dashboard of games at 100%, games in progress,
-  achievements and hours; **Closest to 100%**, **Recently unlocked** and **Rarest you have** (with
-  the % of players who have each); your latest 100%s; every game with a completion bar (filter,
-  search, sort); a game's achievements (hidden ones kept secret until unlocked). Data comes from the
-  official Steam Web API: set `STEAM_API_KEY` in `.env` and connect your profile name once. It
-  syncs by itself once a day (only games played since the last sync) or with **Sync now**.
-- **Journal -> actions**: write "Just bought @Sherman and started it right away" and the page
-  offers "Sherman: Mark as In progress?" (Yes / Not now); "primed @Zero" offers the build step;
-  "I want to buy new @XF-10 for a new project" offers "Add to wishlist?".
-  Nothing changes without a tap. Check-list items (`/` Check List) on every page form one **To do**
-  list, on the Journal page and Home, ticked off without opening the page.
+## The core
 
-## Shelf of Shame (model kits)
+- **Home**: the day and a greeting over a photo of what you've been doing, each hobby's numbers,
+  **Recent activity** (one feed of everything you bought, used, played, logged and wrote), quick
+  actions, what's coming up, to-dos and goals that need a nudge.
+- **Goals**: big-picture goals for a year or three, with why they matter, a plan, steps (to-dos) and
+  progress - counted by hand or by the app itself (books finished, km hiked, a chess rating...).
+  Habits, yes / no goals, goals inside bigger ones, and whether you're on track. A **To-do** list
+  you can put in your own order.
+- **Journal**: Notion-style pages (type `/` for blocks, `@` to mention a kit, a game, a book...),
+  mood and mood words, tags, notebooks, templates, a weekly / monthly review, a prompt for a blank
+  page, place and weather, private pages, lined / grid / dot paper, whiteboards and sketches
+  (Excalidraw, pen pressure, S Pen), "On this day", and Calendar, Map and Insights views. Print or
+  save as PDF. What you write can offer to update things ("primed @Zero" offers the build step).
+- **Calendar**: Month, Week, Agenda and Year views. Events that repeat (weekly, every N weeks, chosen
+  weekdays, monthly, "the 2nd Saturday", yearly), quick add in plain words ("Volleyball Tue 7-9pm at
+  Sports hall weekly"), countdowns, checklists of what to bring, weather on upcoming events,
+  Queensland public holidays, dated to-dos and goals, drag to move, and what actually happened each
+  day.
+- **Supplies**: everything you own for every hobby - pick a hobby, then its kinds (Models: paints,
+  weathering, glue...; Volleyball and Hiking: gear; Shooting: rifles and ammo; Gardening: supplies
+  and seeds). Barcode scanning, Tamiya lookups, +/- with Undo and stock history, shelf life once
+  opened, colour swatches, set aside for a build, warranties, receipts and manuals. Tools: **places**
+  that nest (rack > drawer > box) with printable **QR labels**, **shopping mode**, **stocktake** and a
+  **value report** for insurance.
+- **Wishlist**: everything you want, from every hobby, by shop or by hobby. Tick it when you buy it
+  (with Undo and a history of what you paid), what it's for, a target price, saving up, prices seen,
+  "check the shop now" (Blue Sky, Good Games), add from a shop link, and a gift list to share.
+- **Look**: light and dark themes, a drawn landscape banner per page (or your own photo), search
+  everything with Ctrl+K.
 
-- **Inventory**: search, filter, sort, grouped into drop-downs (by category, condition, brand...; remembered), photos, +/- with Undo, per-item stock history, "used on"
-  (which models need it), colour matches, and "used up, not replacing it" removal
-- **Wishlist**: phone-friendly shopping list; tick things off in the shop, then move them into
-  inventory in one go. **Shop Tamiya** searches ~1,000 Tamiya products and adds one in a tap
-- **Barcode scanning** from a phone photo (decoded in the browser), with a built-in catalogue
-  of Tamiya Acrylic Mini paint barcodes
-- **Tamiya lookup**: type an item number or paint code (e.g. `XF-76`) to fill in the name,
-  photo, size, paint type, finish and your usual price
-- **Models (kit stash)**: Wanted / In stash / In progress / On hold / Finished / Gone, what you
-  paid, a "shelf of shame" total, a paint checklist (ticked automatically for paints you own,
-  suggests a matching paint you do own), paints picked straight from a Tamiya kit's own paint
-  list, a timer and time log, and a build log with photos
-- **Hobbies**: scale models, Warhammer and Gundam. Each has its own build steps (Gundam: Built,
-  Panel lined, Decals, Top coat), Gundam kits have a grade (HG = 1/144, MG = 1/100...), Warhammer
-  boxes have an army and count the minis painted ("3 of 10")
-- **Kit lookups**: Tamiya and Hasegawa from their own sites; **Bandai via HobbyLink Japan
-  (hlj.com)** by the code on the box (`G5057403`), the box barcode, or a name. Name, grade, scale
-  and box photo filled in
-- **Colours**: matches between Tamiya ranges (same code, same colour name), your own matches
-  between any brands, and mixes ("XF-62 + XF-2 (3:1)") that work on model paint lists
-- **Settings**: spending (lifetime / year / month), price guide, default shop, backups (back up
-  now, download), CSV export for Excel, Tamiya catalogue refresh, brands / categories / locations
-- Styled after Apple's Human Interface Guidelines (sidebar on wide screens, tab bar and sheets on
-  phones, dark mode)
-- Nightly backups (also copied to the network drive), 383 automated API tests and a 70-step browser walkthrough
+## The hobbies
+
+| Hobby | What it does |
+|---|---|
+| **Models** (Shelf of Shame) | Scale models, Gundam and Warhammer: the stash and its cost, build steps, a paint checklist (ticked for paints you own), Tamiya / Hasegawa / Bandai (HLJ) / Trumpeter lookups, colour matches and mixes, a build timer and a build log with photos |
+| **Board games** | Your games and every play (who played, who won, how long); "Played @Catan" in the journal offers to log it |
+| **Volleyball** | Games and training with results, videos and clips, coaching notes, gear |
+| **Video games** | Steam achievements and 100% runs (official Steam Web API), other platforms, friends |
+| **Chess** | chess.com ratings, games and openings; games over the board |
+| **Reading** | Books, a reading log, series, recommendations (Open Library) |
+| **Travel** | Trips: bookings, plans, budget, packing lists, places and memories |
+| **Precision shooting** | Rifles, ammo, range sessions, groups, each shot, and your DOPE |
+| **Hiking** | Hikes from GPX files: distance, climb, routes on a map, splits |
+| **Gardening** | A balcony / windowsill garden: layout, plants, watering, photos, harvests, a plant guide and doctor |
+| *Building my car* | Under construction - shows in the dev copy only |
+
+Behind it: nightly backups (also copied to the network drive), hundreds of automated API tests, and
+a browser walk-through of every page that ends with an accessibility and layout audit at five
+screen sizes in both themes.
 
 Three Docker containers:
 
@@ -140,99 +115,22 @@ their container names and ports from that copy's `.env`.
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for where the app is heading (journal, calendar, more hobbies).
 
-## API endpoints
+## The API
 
-Grouped as in `api/app/` (one module per part of the app):
+Every route starts with `/api` and needs you signed in. The full, always-current list - every
+route, what it takes and what it answers - is the API's own page: **http://localhost:8000/api/docs**
+("Try it out" runs one; sign in to the app in the same browser first). The code is in `api/app/`,
+one module per part of the app:
 
-| Method | Path | Does |
-|---|---|---|
-| **activity.py** (core) | | |
-| GET | `/api/activity?limit=&since=&until=` | What you've done: stock, kits, build log, time, journal, plays, volleyball, gear |
-| **journal_drawings.py** (core) | | |
-| POST | `/api/journal/{page_id}/drawings` | A new sketch for a Drawing block |
-| GET / PUT / DELETE | `/api/journal/drawings/{id}` | A drawing's scene (strokes, shapes) / save it / delete a sketch |
-| PUT | `/api/journal/drawings/{id}/files` | Pictures on the canvas (each sent once, merged in) |
-| GET / PUT | `/api/journal/drawings/{id}/preview` | Its PNG picture |
-| **videogames.py** (+ steam.py) | | |
-| GET / PUT | `/api/videogames/account` | The Steam profile followed, its last sync, the sync running now / set the profile (then a full sync) |
-| POST | `/api/videogames/sync?full=` | Sync now (in the background) |
-| GET | `/api/videogames/summary` | Dashboard: totals, closest to 100%, recent unlocks, rarest, latest 100%s |
-| GET / PATCH | `/api/videogames[?show=]`, `/api/videogames/{app_id}` | Games / one game with its achievements / hide it |
-| **calendar.py** (core) | | |
-| GET | `/api/calendar?start=&end=` | `events` (repeats expanded) and what `happened` each day |
-| GET | `/api/calendar/upcoming?limit=` | The next events from today |
-| POST / GET / PATCH / DELETE | `/api/calendar/events[/{id}]` | Events; POST `.../{id}/skip {day}` = not on that day |
-| **boardgames.py** | | |
-| GET / POST | `/api/board-games` | Games; `/summary`, `/plays` (every play) |
-| GET / PATCH / DELETE | `/api/board-games/{id}` | One game with its plays; `/photo` GET / PUT / DELETE |
-| POST, PATCH / DELETE | `/api/board-games/{id}/plays`, `/api/board-game-plays/{id}` | Plays |
-| **volleyball.py** | | |
-| GET / POST, GET / PATCH / DELETE | `/api/volleyball/games[/{id}]` | Games and training; `/api/volleyball/summary` |
-| GET / POST, GET / PATCH / DELETE | `/api/gear[/{id}]` | Gear; `/photo` GET / PUT / DELETE |
-| GET / POST, PATCH / DELETE | `/api/volleyball/videos[/{id}]` | Video links |
-| **journal.py** (core) | | |
-| GET/POST | `/api/journal?q=&tag=&mention=model:3` | Pages (newest first, pinned on top) / start a page |
-| GET/PATCH/DELETE | `/api/journal/{id}` | One page with its blocks, tags, mentions and "mentioned in" |
-| GET | `/api/journal/tags`, `/api/journal/mentionable?q=` | Tags in use / what `@` can mention |
-| GET | `/api/journal/moods?start=&end=` | Each day's mood (from that day's page) |
-| GET · PATCH | `/api/journal/todos?done=` · `/api/journal/{id}/todos/{block}` | Check-list items from every page / tick one `{"checked": true}` |
-| POST | `/api/journal/{id}/suggestions/apply`, `.../dismiss` | Do (or wave away) a suggestion `{"key": ...}` |
-| POST | `/api/journal/images` · GET `/api/journal/images/{id}` | A photo in a page (image as the body) |
-| **supplies.py** | | |
-| GET | `/api/supplies?q=&category=&brand=&status=&location=` | Search / filter (each with `used_on` models) |
-| GET | `/api/supplies/low-stock` | Everything Low or Out |
-| GET/PATCH | `/api/supplies/{id}` | One supply / change some fields |
-| POST | `/api/supplies` | Add a supply |
-| POST | `/api/supplies/{id}/adjust` | `{"delta": -1}` = used one, `{"delta": 2}` = bought two |
-| DELETE | `/api/supplies/{id}?also_wishlist=true` | Remove (used up, not replacing it) |
-| POST | `/api/supplies/{id}/wishlist` | Put one supply on the wishlist |
-| GET | `/api/supplies/{id}/history`, `/api/history` | Quantity changes (with the price at the time) |
-| **wishlist.py** | | |
-| GET/POST | `/api/wishlist` | Wishlist, with photos and "you own N" / add an item |
-| PATCH/DELETE | `/api/wishlist/{id}` | Edit (`{"got_it": true}` ticks it off) / remove |
-| POST | `/api/wishlist/{id}/buy`, `/api/wishlist/buy-ticked` | Bought: move to inventory (blank shop = your default shop) |
-| POST | `/api/wishlist/restock` | Everything Out or Low onto the wishlist |
-| **products.py** | | |
-| GET | `/api/lookup/tamiya/{item}` | Product details + photo from tamiya.com (cached after first time) |
-| GET | `/api/lookup/hasegawa/{code}` | Hasegawa kit by series code (`JT86`) or item number (`09086`) |
-| GET | `/api/lookup/bandai/{code}` | Bandai kit from hlj.com by box code (`G5057403`), barcode, HLJ code or name (`{"choices": [...]}` if several match) |
-| GET | `/api/scan/{barcode}` | Identify an item from its barcode (known / catalog / Tamiya / unknown) |
-| PUT | `/api/product-barcode` | Remember a barcode `{"brand_id", "product_code", "barcode"}` |
-| PUT/DELETE | `/api/product-photo?brand_id=&product_code=` | Your own photo for any item (image as the body) |
-| GET | `/api/product-images/{id}` | A cached product photo |
-| **catalog.py** (Shop Tamiya) | | |
-| GET | `/api/catalog/search?q=panel line black` | Search the Tamiya catalogue |
-| POST | `/api/catalog/{product_code}/wishlist` | Onto the wishlist (details + photo fetched in the background) |
-| GET | `/api/catalog/info` · POST `/api/catalog/refresh` | Size / refresh from tamiya.com (~3 min, in the background) |
-| **models.py** | | |
-| GET/POST | `/api/models` | List / add kits |
-| GET | `/api/models/summary` | Shelf of shame (unbuilt kits and their cost), counts per status, hours |
-| GET/PATCH/DELETE | `/api/models/{id}` | One kit with its checklist, sessions and build log; `hobby`, `stage`, `grade`, `faction`, `figures` / `figures_done`, `brand_name` (a new brand) |
-| POST | `/api/models/{id}/paints` | Add paints: `XF-76 Grey Green\tExterior`, or a mix `XF-62 + XF-2 (3:1)` |
-| PATCH/DELETE | `/api/model-paints/{id}` | Edit / remove a checklist line |
-| GET/POST | `/api/models/{id}/kit-paints` | Tamiya's "Colors required" for the kit / add the ones you picked |
-| POST | `/api/models/{id}/wishlist` | Missing paints (and missing parts of mixes) onto the wishlist |
-| **build.py** | | |
-| POST | `/api/models/{id}/timer/start`, `.../timer/stop` · GET `/api/timer` | Time tracking (one timer at a time) |
-| POST | `/api/models/{id}/sessions` · DELETE `/api/model-sessions/{id}` | Time added by hand |
-| POST | `/api/models/{id}/log` · PATCH/DELETE `/api/model-log/{id}` | Build log entries |
-| PUT/GET | `/api/model-log/{id}/photo` | A build log photo |
-| **colours.py** | | |
-| GET | `/api/colours/matches?brand_id=&product_code=` | Same code / same name / your matches |
-| GET/POST, PATCH/DELETE | `/api/colour-groups`, `/api/colour-groups/{id}` | Your own matches (any brand) |
-| GET/POST, PATCH/DELETE | `/api/mixes`, `/api/mixes/{id}` | Mixes `{"recipe": "XF-62 + XF-2 (3:1)"}` |
-| **spending.py** | | |
-| GET | `/api/spending` | Lifetime / year / month spend, latest purchases, kits |
-| GET | `/api/export/{inventory,wishlist,models,model-paints,history}.csv` | CSV for Excel |
-| **settings.py** | | |
-| GET/PATCH | `/api/settings` | Default shop |
-| GET/POST, PATCH/DELETE | `/api/price-guide`, `/api/price-guide/{id}` | Your usual prices |
-| GET/POST | `/api/backups` · GET `/api/backups/{name}` | List / back up now / download |
-| **lookups.py** | | |
-| GET | `/api/lookups` | Brands, categories, locations (with usage counts) + fixed choice lists |
-| POST/DELETE | `/api/lookups/{brands,categories,locations}[/{id}]` | Add / remove a list entry |
+| Area | Modules |
+|---|---|
+| Core | `activity`, `goals` (+ `goal_sources`), `todos`, `journal` (+ `journal_text`, `journal_actions`, `journal_drawings`, `journal_more`), `calendar` (+ `calendar_more`, `holidays`), `banners`, `images`, `webphoto`, `settings`, `system` (Settings > System), `spending`, `sitecheck`, `auth`; `main` wires them up, `db` is the shared database helpers |
+| Supplies and wishlist | `supplies` (+ `supplies_more`, `owned`), `wishlist`, `wanted` (+ `wanted_more`, `linkpeek`), `products`, `catalog` (+ `tamiya_catalog`, `catalog_import`), `paints`, `colours`, `lookups` |
+| Hobbies | `models`, `minis`, `build`, `warhammer`, `gundam`; `boardgames`; `volleyball`, `gear`, `vbclips`, `vbcoach`; `videogames`, `vgsync`, `vgplaytime`, `othergames`, `vgfind`, `vgfriends`; `chess`; `reading`, `readimport`, `reading_recs`, `bookseries`; `travel`, `travel_trip`; `shooting`, `shooting_sessions`, `shooting_shots`, `shotmath`; `hiking`, `gpx`; `garden` (+ `garden_logs`, `garden_today`), `garden_guide`, `garden_doctor`, `garden_items` |
+| Outside sites (one each, polite, faked in tests) | `tamiya`, `hasegawa`, `hlj`, `trumpeter`, `stedi`, `ucp` (+ `goodgames`, `bluesky`), `gameology`, `steam`, `steamhunters`, `exophase`, `chesscom`, `openlibrary`, `overpass`, `wikimedia`, `bunnings`, `openmeteo`, `frankfurter` (exchange rates); `stand_ins` answers for all of them in the walk-through |
 
-Try them interactively at http://localhost:8000/api/docs ("Try it out").
+The web app's side is `web/src/api.js` (every call it makes, grouped the same way); a test checks
+that each of its calls is a real route.
 
 ## Signing in and HTTPS
 
@@ -268,7 +166,7 @@ start.ps1 and promote.ps1 run it).
 
 1. Install and start Docker Desktop.
 2. Copy `.env.example` to `.env` and set `POSTGRES_PASSWORD`.
-3. Run `.\start.ps1`
+3. Run `.\start.ps1` (it makes the HTTPS certificate on the first run), then `.\set-password.ps1` to set your sign-in
 4. Create the Python environment and import the spreadsheet:
 
 ```powershell
@@ -300,7 +198,14 @@ SUP-0001... numbering.
 | Update the Shop Tamiya product list (~1,000 products, ~3 min) | Settings > Tamiya catalogue > Refresh (or `docker exec hobby-inventory-api python -m app.tamiya_catalog`) |
 | Back up now (also runs nightly at 2 am) | Settings > Backups > Back up now, or `.\backup.ps1` (keeps the newest 14 in `backups\`) |
 | Back up and copy elsewhere | `.\backup.ps1 -CopyTo "D:\Backups"` |
-| Run the automated tests (never touches real data) | `.\run_tests.ps1` (or `.\run_tests.ps1 -k wishlist`) |
+| Test-restore the newest backup now (it also happens weekly by itself) | `.\backup.ps1 -TestRestore` |
+| **Encrypted copy to Google Drive** (once; prod folder) | install Google Drive for desktop, then `.\setup-offsite.ps1` |
+| Get a Google Drive copy back | `.\restore-offsite.ps1 -File "G:\My Drive\Off the Clock backups\<file>.dump.gpg"` |
+| How it's all doing (backups, syncs, disk, updates) | Settings > System (Home shows anything that needs a look) |
+| Check for updates (monthly; dev folder) | `.\check-updates.ps1` |
+| **Run every check** (API tests + web tests + walk-through + audit, side by side, ~9 min; in dev) | `.\test_all.ps1` |
+| Run the web code's own tests (about a minute) | `.\run_web_tests.ps1` |
+| Run the automated API tests (never touches real data) | `.\run_tests.ps1` (`-k wishlist` for some; `-Coverage` shows untested lines) |
 | Click through the whole app in a browser (desktop + iPhone) | `.\run_e2e.ps1` (on its own throwaway copy of the app and data - yours is never touched; screenshots in `e2e\out\`) |
 
 ## Restoring a backup
@@ -312,21 +217,20 @@ docker cp .\backups\hobby_inventory_YYYYMMDD_HHMMSS.dump hobby-inventory-db:/tmp
 docker exec hobby-inventory-db pg_restore -U hobby -d hobby_inventory --clean --if-exists /tmp/restore.dump
 ```
 
-The nightly backup is the Windows scheduled task **"Shelf of Shame backup"** (Task Scheduler);
-results are logged in `backups\backup.log`.
+The nightly backup is the Windows scheduled task **"Shelf of Shame backup"** (Task Scheduler). Each backup is read
+back to check it, and once a week one is restored for real into a throwaway database and every table's rows
+compared; results are in `backups\backup.log` and Settings > System. The encrypted Google Drive copies keep the last
+7 days, one a week for 4 weeks and one a month for 6 months (about 200 MB; videos stay on the network drive).
 
 Useful psql commands: `\dt` list tables, `\dv` list views, `\d supplies` describe a table, `\q` quit.
 
-## Important: init scripts only run once
+## Changing the database
 
-`db/init/*.sql` runs **only when the data volume `hobby_pgdata` is empty**, i.e. the very
-first start. Editing those files later does nothing to an existing database. To apply
-changes, either run the SQL yourself (DBeaver/psql) or wipe and rebuild (above). Once your
-real data is in, back it up before wiping:
-
-```powershell
-docker exec hobby-inventory-db pg_dump -U hobby -d hobby_inventory > backup.sql
-```
+`db/init/*.sql` builds a new, empty database the first time it starts. After that, a change is a
+**new numbered file** in `db/init` that's safe to run twice (`IF NOT EXISTS`, guarded constraints);
+`.\migrate.ps1` applies the files a copy hasn't had yet and records each in `schema_migrations`
+(`promote.ps1` runs it for prod). Editing an old file does nothing to an existing database. Never
+`docker compose down -v` (it deletes the data) without a backup first.
 
 ## Connecting (DBeaver etc.)
 

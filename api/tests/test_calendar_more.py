@@ -214,3 +214,15 @@ def test_video_game_time_is_each_days_change_not_the_running_total(client):
             conn.execute("INSERT INTO vg_playtime (platform, app_id, day, minutes) VALUES ('steam', '730', %s, %s)", (D(days), total))
     out = {r["hobby"]: r for r in client.get(f"/api/calendar/balance?start={D(-1)}&end={D(0)}").json()}
     assert out["videogames"]["done_minutes"] == 90
+
+
+def test_quick_add_with_a_day_that_doesnt_exist_has_no_end():
+    got = calendar_more.parse("Volleyball weekly until 31 Feb", WED)     # (was a 500: date(2027, 2, 31))
+    assert got["repeats"] == "weekly" and got["repeat_until"] is None and got["title"] == "Volleyball"
+
+
+@pytest.mark.parametrize("text", ["at", "every", "7-", "until may", "on the last friday", "12:99", "at 25", "for 3 hours",
+                                  "in 999 days", "31/31/31", "noon noon noon", "every 0 weeks", "@@@@", "tues tues every tues"])
+def test_quick_add_never_fails_on_odd_words(text):
+    got = calendar_more.parse(text, WED)                                 # odd words: a best guess, never an error
+    assert got["title"] and got["starts_on"]

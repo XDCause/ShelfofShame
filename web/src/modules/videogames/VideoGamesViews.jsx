@@ -3,7 +3,7 @@ import { api, shortDate, timeAgo } from '../../api.js'
 import { ColumnChart } from '../../components/charts.jsx'
 import { BellCurveIcon, ClockIcon, GamepadIcon, PuzzleIcon, TrophyIcon } from '../../components/icons.jsx'
 import { useApp } from '../../core/app-context.js'
-import Stat, { Change, StatSkeleton } from '../../core/Stat.jsx'
+import Stat, { Change } from '../../core/Stat.jsx'
 import { OtherPlatformsCard, PLATFORMS, PlatformToggles, useCounting, useOtherGames } from './OtherPlatforms.jsx'
 import {
   CompletionBar, GamePicture, HandTicked, playtime, rarity, SteamSetup, SyncBar, SyncButton, useSteamAccount, useSteamSummary,
@@ -381,21 +381,6 @@ function GamesView({ chosen, other, switcher }) {
   )
 }
 
-// Home: two tiles.
-export function VideoGamesTiles() {
-  const { data: s } = useSteamSummary()
-  if (!s) return <><StatSkeleton /><StatSkeleton /></>
-  return (
-    <>
-      {/* three short lines each (the number, what it is, one detail) so the card lines up with the others; the
-          dashboard has the rest (the next game to finish, points to go) */}
-      <Stat to="/videogames/dashboard" Icon={TrophyIcon} tone="ok" value={s.perfect} label="Games at 100%"
-        sub={s.week?.perfect ? `${s.week.perfect > 0 ? '+' : ''}${s.week.perfect} this week` : 'all platforms'} />
-      <Stat to="/videogames/dashboard" Icon={GamepadIcon} tone="purple" value={`${s.goal.percent}%`}
-        label="Profile complete" sub={s.goal.reached ? `goal ${s.goal.goal_percent}% reached` : `goal ${s.goal.goal_percent}%`} />
-    </>
-  )
-}
 
 // What each number is: an icon, a name and what it means (headers, tooltips, the key).
 const COLUMNS = {

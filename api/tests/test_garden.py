@@ -3,7 +3,7 @@ the plant guide, supplies and seeds, Bunnings links (a made-up page here) and we
 import json
 from datetime import date, timedelta
 
-from app import bunnings, garden, openmeteo
+from app import bunnings, garden_today, openmeteo
 from app.db import db
 
 JPEG = b"\xff\xd8\xff\xe0" + b"0" * 200
@@ -230,11 +230,11 @@ def test_items_from_bunnings_wanted_and_sowing(client, monkeypatch):
 def test_weather_tips(client, monkeypatch):
     days = [{"day": "2026-01-10", "max": 36, "min": 24, "rain_mm": 8, "rain_chance": 90, "gusts": 65, "uv": 12},
             {"day": "2026-01-11", "max": 22, "min": 4, "rain_mm": 0, "rain_chance": 0, "gusts": 20, "uv": 3}]
-    tips = garden.weather_tips(days, [{"name": "Balcony", "kind": "Balcony", "covered": False}])
+    tips = garden_today.weather_tips(days, [{"name": "Balcony", "kind": "Balcony", "covered": False}])
     kinds = [(t["day"], t["kind"]) for t in tips]
     assert kinds == [("Today", "heat"), ("Today", "wind"), ("Today", "rain"), ("Today", "uv"), ("Tomorrow", "cold")]
     assert "Balcony" in tips[2]["text"]
-    assert [t["kind"] for t in garden.weather_tips(days[:1], [{"name": "Shelf", "kind": "Indoor", "covered": True}])] == ["heat"]
+    assert [t["kind"] for t in garden_today.weather_tips(days[:1], [{"name": "Shelf", "kind": "Indoor", "covered": True}])] == ["heat"]
     assert client.get("/api/garden/today").json()["weather"] is None                  # no place set
     monkeypatch.setattr(openmeteo, "_get", lambda url, params: {
         "results": [{"name": "Brisbane", "admin1": "Queensland", "country": "Australia", "latitude": -27.46794, "longitude": 153.02809}]}
@@ -248,9 +248,9 @@ def test_weather_tips(client, monkeypatch):
     assert w["place"] == "Brisbane" and w["days"][0]["max"] == 31 and w["tips"][0]["kind"] == "heat"
     assert (w["days"][0]["sky"], w["days"][0]["icon"]) == ("Sunny", "☀️")
     assert openmeteo.sky(63) == ("Rain", "🌧️") and openmeteo.sky(3)[0] == "Cloudy" and openmeteo.sky(None) == (None, None)
-    storm = garden.weather_tips([{"code": 96}], [{"name": "Balcony", "kind": "Balcony", "covered": False}])
+    storm = garden_today.weather_tips([{"code": 96}], [{"name": "Balcony", "kind": "Balcony", "covered": False}])
     assert storm[0]["kind"] == "storm" and "hail" in storm[0]["text"]
-    assert garden.weather_tips([{"code": 95}], [{"name": "Shelf", "kind": "Indoor", "covered": True}]) == []
+    assert garden_today.weather_tips([{"code": 95}], [{"name": "Shelf", "kind": "Indoor", "covered": True}]) == []
     assert client.put("/api/garden/settings", json={"climate": "Polar"}).status_code == 422
 
 

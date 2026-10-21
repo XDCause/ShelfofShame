@@ -1,0 +1,49 @@
+/* ---------- Sidebar extras, top-bar search ---------- */
+.brand {
+  position: relative; display: flex; align-items: center; gap: 11px; margin: 4px 10px 20px; color: var(--side-text);
+  font-family: var(--font-display); font-size: 1.28rem; font-weight: 600; white-space: nowrap;
+}
+.brand:hover { text-decoration: none; }
+.brand-mark { flex: none; color: #cfe3c2; }
+/* The dev copy says so - beside the name in the sidebar, or in the corner where the sidebar has no name (phone, tablet). */
+.brand-env, .env-tag {
+  padding: 2px 8px; border-radius: 999px; background: #e0a35a; color: #1d1a12; font-family: var(--font-ui);
+  font-size: 0.72rem; font-weight: 750; letter-spacing: 0.04em; text-transform: capitalize; line-height: 1.5;
+}
+.brand-env { position: absolute; left: 20px; top: -7px; padding: 0 5px; font-size: 0.6rem; box-shadow: 0 0 0 2px var(--side-bg, #16201a); }   /* a badge on the logo: the name never has to make room */
+.env-tag { display: none; position: fixed; z-index: 60; top: calc(env(safe-area-inset-top, 0px) + 10px); left: 10px;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.3); pointer-events: none; }
+@media (max-width: 1000px) { .env-tag { display: block; } }
+@media (min-width: 701px) and (max-width: 1000px) { .env-tag { left: calc(var(--sidebar-w) + 10px); } }
+.nudge {
+  display: flex; gap: 10px; align-items: flex-start; margin: auto 2px 8px; padding: 12px; border-radius: var(--radius-sm);
+  border: 1px solid rgb(255 255 255 / 0.07); background: rgb(255 255 255 / 0.03); font-size: 0.8rem; color: var(--side-muted);
+}
+.nudge svg { flex: none; color: #e5b562; margin-top: 1px; }
+.nudge strong { display: block; color: var(--side-text); font-size: 0.85rem; }
+
+.navbar h1 { margin-right: 0; }
+.global-search { position: relative; flex: 1; max-width: 460px; margin: 0 auto; }
+.search-toggle { display: none; }
+.search-box {
+  display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 10px 0 14px; border-radius: 999px;
+  background: var(--fill); color: var(--muted); border: 1px solid transparent; transition: background 0.15s, border-color 0.15s, box-shadow 0.2s;
+}
+.search-box:focus-within { background: var(--field); border-color: var(--tint); box-shadow: 0 0 0 3px var(--tint-soft); }
+.search-box input { flex: 1; min-width: 0; min-height: 0; padding: 0; border: 0; background: transparent; box-shadow: none !important; }
+.search-box kbd {
+  padding: 1px 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface);
+  font: inherit; font-size: 0.72rem; color: var(--muted); white-space: nowrap;
+}
+.search-results {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 40; list-style: none; margin: 0; padding: 6px;
+  border-radius: 16px; border: 1px solid var(--border); background: var(--elevated); box-shadow: var(--shadow);
+  animation: pop-in 0.18s var(--ease-out);
+}
+@keyframes pop-in { from { opacity: 0; transform: translateY(-4px) scale(0.99); } }
+.search-results button {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 8px; border: 0; border-radius: 9px;
+  background: none; color: inherit; text-align: left;
+}
+.search-results li[aria-selected='true'] button { background: var(--tint-soft); }
+.search-results .thumb { width: 32px; height: 32px; border-radius: 8px; }

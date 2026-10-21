@@ -1,8 +1,17 @@
 import { BallIcon, ShoeIcon, VideoIcon, WhistleIcon } from '../../components/icons.jsx'
-import { CoachNotePanel, CoachView } from './Coach.jsx'
-import { GearPanel } from './GearPanel.jsx'
-import { TeamPanel, VideoPanel, VolleyballGamePanel } from './VolleyballPanels.jsx'
-import { GamesView, GearView, VideosView, VolleyballTiles } from './VolleyballViews.jsx'
+import { VolleyballTiles } from './HomeTiles.jsx'
+import { part } from '../lazy.js'
+
+// its pages and panels: loaded when first shown (modules/lazy.js)
+const CoachNotePanel = part(() => import('./Coach.jsx'), 'CoachNotePanel')
+const CoachView = part(() => import('./Coach.jsx'), 'CoachView')
+const GearPanel = part(() => import('./GearPanel.jsx'), 'GearPanel')
+const TeamPanel = part(() => import('./VolleyballPanels.jsx'), 'TeamPanel')
+const VideoPanel = part(() => import('./VolleyballPanels.jsx'), 'VideoPanel')
+const VolleyballGamePanel = part(() => import('./VolleyballPanels.jsx'), 'VolleyballGamePanel')
+const GamesView = part(() => import('./VolleyballViews.jsx'), 'GamesView')
+const GearView = part(() => import('./VolleyballViews.jsx'), 'GearView')
+const VideosView = part(() => import('./VolleyballViews.jsx'), 'VideosView')
 
 // Volleyball: games and training (with results), your gear, videos (clips, highlights) and Coach
 // (drills, things to fix, positions). Pages live at

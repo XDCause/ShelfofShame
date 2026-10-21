@@ -1,0 +1,68 @@
+/* ---------- Charts (components/charts.jsx) ----------
+   One series in the accent colour; thin columns (<= 24px) with 4px rounded tops on one baseline,
+   a 2px gap between columns, hairline gridlines; axis and value text in text colours, never the
+   series colour. */
+.chart { margin: 0; }
+.chart-sub { margin: -8px 0 12px; }
+.chart-plot { position: relative; margin: 24px 0 0 34px; }   /* (room above the tallest column for its number) */
+.chart-grid { position: absolute; inset: 0; pointer-events: none; }
+.chart-gridline { position: absolute; left: 0; right: 0; border-top: 1px solid var(--separator); }
+.chart-gridline > span {
+  position: absolute; right: calc(100% + 6px); top: -0.6em; font-size: 0.7rem; color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.chart-columns { position: absolute; inset: 0; display: flex; align-items: flex-end; gap: 2px; }
+.chart-slot {
+  position: relative; flex: 1; height: 100%; display: flex; align-items: flex-end; justify-content: center;
+  border-radius: 6px; outline: none;
+}
+.chart-slot:hover, .chart-slot:focus-visible { background: var(--fill-2); }
+.chart-column {
+  position: relative; display: block; width: 100%; max-width: 24px; min-height: 0;
+  border-radius: 4px 4px 0 0; background: var(--tint);
+}
+.chart-cap {
+  position: absolute; bottom: calc(100% + 3px); left: 50%; transform: translateX(-50%);
+  font-size: 0.72rem; font-weight: 600; color: var(--text); white-space: nowrap;
+}
+.chart-tip {
+  position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); z-index: 5;
+  padding: 6px 10px; border-radius: 8px; background: var(--elevated); border: 1px solid var(--border);
+  box-shadow: var(--shadow); font-size: 0.8rem; white-space: nowrap; color: var(--text); pointer-events: none;
+}
+.chart-tip span { color: var(--muted); }
+.chart-labels { display: flex; gap: 2px; margin: 6px 0 0 34px; }
+.chart-labels span {
+  flex: 1; min-width: 0; text-align: center; font-size: 0.7rem; color: var(--muted); line-height: 1.15;
+  overflow-wrap: anywhere;            /* "Under 10%" next to "10-24%": two lines when narrow, not on top of each other */
+}
+.chart-table { margin-top: 12px; font-size: 0.85rem; }
+.chart-table summary { cursor: pointer; color: var(--tint); }
+.chart-table table { width: 100%; margin-top: 8px; border-collapse: collapse; }
+.chart-table th, .chart-table td { padding: 4px 8px; text-align: left; border-bottom: 1px solid var(--separator); }
+.chart-table td:last-child, .chart-table th:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+.bar-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.bar-row {
+  display: grid; grid-template-columns: minmax(0, 34%) minmax(0, 1fr); align-items: center; gap: 12px; width: 100%;
+  padding: 4px 6px; border: 0; border-radius: 8px; background: none; color: var(--text); text-align: left;
+}
+.bar-row:hover:not(:disabled) { background: var(--fill-2); }
+.bar-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.88rem; }
+.bar-track { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.bar-fill { display: block; height: 14px; min-width: 2px; border-radius: 0 4px 4px 0; background: var(--tint); }
+.bar-value { flex: none; font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.stats .wide-card { grid-column: 1 / -1; }
+@media (max-width: 700px) {
+  .bar-row { grid-template-columns: minmax(0, 40%) minmax(0, 1fr); }
+  .chart-labels span { font-size: 0.62rem; }
+}
+.goal-card p { margin: 0; }
+
+/* A game compared with other players: your time beside the median and fastest times to 100%. */
+.compared p { margin: 6px 0 0; }
+.time-bars { list-style: none; margin: 0 0 4px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.time-bars li { display: grid; grid-template-columns: 70px minmax(0, 1fr); align-items: center; gap: 10px; }
+.time-label { font-size: 0.85rem; }
+.time-track { height: 10px; border-radius: 5px; background: var(--fill); overflow: hidden; }
+.time-fill { display: block; height: 100%; border-radius: 0 4px 4px 0; background: var(--muted); }
+.time-fill.you { background: var(--tint); }

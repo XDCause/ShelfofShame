@@ -44,15 +44,18 @@ Write-Host "  $($files.Count) db\init files ok ($($files[0].Name) ... $($files[-
 Write-Host 'Running tests...' -ForegroundColor Cyan
 $pytestArgs = @('-q')
 if ($k) { $pytestArgs += @('-k', $k) }
+# What the tests see, read-only besides the code: db\init (a test can run a migration file as it is), web\src\api.js
+# (test_web_calls: every call is a real route) and the notes (test_docs: they keep up with the code).
+$mounts = @('-v', "${PSScriptRoot}\api:/app", '-v', "${PSScriptRoot}\db\init:/db/init:ro",
+            '-v', "${PSScriptRoot}\web\src\api.js:/web/api.js:ro", '-v', "${PSScriptRoot}\CLAUDE.md:/docs/CLAUDE.md:ro",
+            '-v', "${PSScriptRoot}\README.md:/docs/README.md:ro", '-v', "${PSScriptRoot}\docs:/docs/docs:ro",
+            '-v', "${PSScriptRoot}:/repo:ro")    # (test_docs: the scripts and hobby folders docs/stack.html must name)
 if ($Coverage) {
     $cmd = "pip install -q --disable-pip-version-check pytest-cov==6.1.1 && python -m pytest $($pytestArgs -join ' ') " +
            "--cov=app --cov-report=term-missing:skip-covered > /app/coverage.txt; s=`$?; tail -70 /app/coverage.txt; exit `$s"
-    docker compose run --rm --no-deps --name "$Prefix-tests" `
-        -e "POSTGRES_DB=$testDb" -v "${PSScriptRoot}\api:/app" -v "${PSScriptRoot}\db\init:/db/init:ro" api sh -c $cmd
+    docker compose run --rm --no-deps --name "$Prefix-tests" -e "POSTGRES_DB=$testDb" @mounts api sh -c $cmd
 } else {
-    docker compose run --rm --no-deps --name "$Prefix-tests" `
-        -e "POSTGRES_DB=$testDb" -v "${PSScriptRoot}\api:/app" -v "${PSScriptRoot}\db\init:/db/init:ro" `
-        api python -m pytest @pytestArgs      # (db\init too: a test can run a migration file as it is)
+    docker compose run --rm --no-deps --name "$Prefix-tests" -e "POSTGRES_DB=$testDb" @mounts api python -m pytest @pytestArgs
 }
 $result = $LASTEXITCODE
 

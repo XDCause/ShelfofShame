@@ -13,6 +13,7 @@ import GoalNudges from './goals/GoalNudges.jsx'
 import JournalHome from './journal/JournalHome.jsx'
 import { useNewPage } from './journal/JournalList.jsx'
 import { SiteCheckWarning } from '../components/SiteChecks.jsx'
+import { SystemWarning } from '../components/SystemStatus.jsx'
 import { RunningLow, SuppliesTiles } from './SuppliesHome.jsx'
 import { useShared } from './useShared.js'
 
@@ -69,6 +70,7 @@ export default function Home() {
 
   return (
     <section className="page home">
+      <SystemWarning />
       <SiteCheckWarning />
       <div className="home-now">
         {features.map((m) => <m.home.Feature key={m.id} />)}

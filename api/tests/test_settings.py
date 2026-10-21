@@ -1,6 +1,7 @@
 """Settings: default shop, price guide, backups, CSV exports and the catalogue refresh."""
 import csv
 import io
+import json
 
 import pytest
 
@@ -94,7 +95,9 @@ def test_back_up_now_list_and_download(client, backup_dir):
     assert (backup_dir / name).stat().st_size > 1000          # a real pg_dump of the test database
     listing = client.get("/api/backups").json()
     assert listing["available"] and [b["name"] for b in listing["backups"]] == [name]
-    assert listing["log"][0].endswith(f"OK: {name} ({round(made.json()['size'] / 1024)} KB) - from the app")
+    assert listing["log"][0].endswith(f"OK: {name} ({round(made.json()['size'] / 1024)} KB, read back and checked) - from the app")
+    status = json.loads((backup_dir / "status.json").read_text())                 # (Settings > System reads it)
+    assert status["backup"]["ok"] is True and status["backup"]["name"] == name
 
     download = client.get(f"/api/backups/{name}")
     assert download.status_code == 200 and download.content[:5] == b"PGDMP"   # pg_dump's custom format

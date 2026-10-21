@@ -1,0 +1,122 @@
+/* ---------- Supplies: every hobby's kit (components/InventoryView: a hobby, then its kinds; user, 2026-10-21) ---------- */
+.inv-page { display: flex; flex-direction: column; gap: 12px; }        /* each part its own breathing room */
+.inv-page > .toolbar { margin-bottom: 2px; }
+.inv-page .chip-rows { display: flex; flex-direction: column; gap: 8px; }
+.inv-page > .filters { margin: 0; }
+.inv-clear { align-self: flex-start; }
+.inv-bar { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.inv-bar .inv-hobbies { flex: 1; min-width: 0; }
+.inv-menu { position: relative; flex: none; }
+.inv-menu > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; min-height: 36px; padding: 6px 14px;
+  border-radius: 999px; font-size: 0.88rem; font-weight: 600; white-space: nowrap; }
+.inv-menu > summary::-webkit-details-marker { display: none; }
+.inv-menu-body { position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; width: min(300px, 86vw); display: flex; flex-direction: column;
+  gap: 10px; padding: 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 18px 40px rgb(0 0 0 / 0.28); }
+.inv-menu-body label { display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; font-weight: 600; color: var(--muted); }
+.inv-menu-body select { width: 100%; }
+.inv-menu-body > .plain { align-self: flex-start; padding-left: 0; text-align: left; }
+.inv-warn { color: var(--low); font-weight: 650; }
+.inv-hobby { display: flex; flex-direction: column; gap: 10px; }
+.inv-hobby + .inv-hobby { margin-top: 10px; }
+.inv-hobby-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 4px 0 6px; border-bottom: 1px solid var(--separator); }
+.inv-hobby-fold { display: inline-flex; align-items: baseline; gap: 10px; padding: 0; border: 0; background: none; color: var(--text); font: inherit; }
+button.inv-hobby-fold { cursor: pointer; }
+.inv-chevron { display: inline-block; color: var(--muted); transition: transform var(--fast); }
+.inv-hobby-fold[aria-expanded='false'] .inv-chevron { transform: rotate(-90deg); }
+.inv-hobby-title { font-family: var(--font-display); font-size: 1.3rem; font-weight: 600; }
+
+/* ---------- Supplies extras (components/supplyExtras, core/supplies/SuppliesTools, InventoryView) ----------
+   Colour swatches, row tags, select several, the item panel's shelf life / set aside / forecast / maintenance / warranty,
+   and the tools: places and labels, a place, shopping mode, stocktake, the value report (user, 2026-10-21). */
+.sw-dot { display: inline-block; flex: none; border-radius: 50%; vertical-align: -2px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.25); }
+.inv-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 2px 0; }
+.inv-tag-warn { color: var(--low); background: var(--low-bg); }
+.inv-pick-col { width: 36px; }
+.inv-pick-col input { width: 18px; height: 18px; min-height: 0; }
+tr.row.picked td { background: var(--tint-soft); }
+.inv-menu-head { margin: 6px 0 0; font-size: var(--text-xs); font-weight: 650; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.inv-tools { display: flex; flex-direction: column; gap: 6px; }
+.inv-tools a { font-weight: 600; }
+.inv-bulk { position: sticky; bottom: 12px; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 10px 14px;
+  border-radius: 14px; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 12px 30px rgb(0 0 0 / 0.28); }
+.inv-bulk select { width: auto; min-height: 34px; padding: 4px 28px 4px 10px; font-size: 0.85rem; }
+@media (max-width: 700px) { .inv-bulk { bottom: calc(var(--tabbar-h, 64px) + 10px); } }
+/* the item panel */
+.sx-forecast { margin: 0; }
+.sx-warn { color: var(--low); font-weight: 600; }
+.sx-colour { display: flex; align-items: center; gap: 8px; }
+.sx-colour input[type='color'] { width: 44px; height: 34px; min-height: 0; padding: 2px; }
+.sx-warranty { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-bottom: 10px; }
+.sx-files, .sx-maint { display: flex; flex-direction: column; gap: 8px; }
+.sx-file-list, .sx-maint-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.sx-file-list li, .sx-maint-list li { display: flex; align-items: center; gap: 8px; }
+.sx-file-add, .sx-maint-add { display: flex; flex-wrap: wrap; gap: 6px; }
+.sx-file-add select, .sx-maint-add select { width: auto; }
+.sx-maint-add input:first-child { flex: 1 1 180px; }
+/* the tools' pages */
+.sx-title { margin: 0; font-family: var(--font-display); font-size: 1.4rem; }
+.sx-back { padding-left: 0; }
+.sx-btnlink { display: inline-flex; align-items: center; min-height: 40px; padding: 8px 16px; border-radius: 999px; text-decoration: none; }
+.sx-inline { display: flex; flex-wrap: wrap; gap: 6px; }
+.sx-places { margin: 0; padding: 8px 12px; list-style: none; display: flex; flex-direction: column; }
+.sx-places li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 6px 0 6px calc(var(--depth) * 26px);
+  border-bottom: 1px solid var(--separator); }
+.sx-places li:last-child { border-bottom: 0; }
+.sx-pick input { width: 18px; height: 18px; min-height: 0; }
+.sx-place-name { font-weight: 600; }
+.sx-place-add { flex-basis: 100%; padding: 4px 0 2px 28px; }
+.sx-labels { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+.sx-label { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px; border: 1px dashed var(--border);
+  border-radius: 10px; background: #fff; color: #111; text-align: center; break-inside: avoid; }
+.sx-label img { width: 140px; height: 140px; }
+.sx-label figcaption { display: flex; flex-direction: column; font-size: 0.85rem; }
+.sx-label figcaption strong { font-size: 1.05rem; }
+.sx-shop-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; }
+.sx-shop-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--separator); }
+.sx-shop-row:last-child { border-bottom: 0; }
+.sx-shop-row.done strong { text-decoration: line-through; color: var(--muted); }
+.sx-tick { flex: none; width: 34px; height: 34px; min-height: 0; padding: 0; border-radius: 50%; border: 2px solid var(--border);
+  background: var(--surface); color: var(--on-tint); font-weight: 700; }
+.sx-tick[aria-pressed='true'] { background: var(--ok); border-color: var(--ok); }
+.sx-count-card { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; max-width: 460px; margin: 0 auto; width: 100%; }
+.sx-count-card h3 { margin: 0; font-size: 1.3rem; }
+.sx-count-card p { margin: 0; }
+.sx-count-photo { width: 160px; height: 160px; display: grid; place-items: center; }
+.sx-count-photo img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 10px; }
+.sx-count-qty { display: flex; align-items: center; gap: 22px; margin: 8px 0; }
+.sx-count-qty strong { font-size: 2.4rem; min-width: 2ch; }
+.sx-count-actions { justify-content: center; }
+.sx-count-done { text-align: center; }
+.sx-report-head { padding: 6px 0; }
+.sx-report-part .table { width: 100%; }
+@media print {
+  .sx-noprint { display: none !important; }
+  .sx-report-part, .sx-label { box-shadow: none; }
+}
+
+/* ---------- Wishlist extras (components/wishExtras, WishlistPage): notes on cards, ticking any card, details, links,
+   history, the gift list (user, 2026-10-21) ---------- */
+.wx-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin-top: 4px; }
+.wx-wait { color: var(--low); background: var(--low-bg); }
+.wx-good { color: var(--ok); background: var(--ok-bg); }
+.wx-warn { color: var(--out); background: var(--out-bg); }
+.wx-good-text { color: var(--ok); font-weight: 600; }
+.wx-saved { display: flex; align-items: center; gap: 6px; flex-basis: 100%; }
+.wx-saved-bar { display: block; flex: 1; height: 6px; border-radius: 999px; background: var(--fill); overflow: hidden; }
+.wx-saved-bar.big { height: 10px; margin: 4px 0 8px; }
+.wx-saved-bar i { display: block; height: 100%; background: var(--ok); border-radius: 999px; }
+.wx-prices { margin: 0 0 8px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.wx-link input { flex: 1 1 220px; }
+.wx-found { display: flex; flex-direction: column; gap: 10px; }
+.wx-found img { max-width: 100%; max-height: 200px; object-fit: contain; align-self: center; background: #fff; border-radius: 10px; }
+.wx-history td, .wx-history th { white-space: nowrap; }
+.wx-gift-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.shop-section.first { margin-top: 0; }
+.wanted-card.got { opacity: 0.55; }
+.wanted-card.got .item-title { text-decoration: line-through; }
+.wanted-tick { position: absolute; top: 10px; left: 10px; z-index: 2; width: 40px; height: 40px; min-height: 0; padding: 0; border-radius: 50%;
+  border: 2px solid var(--faint); background: rgb(255 255 255 / 0.92); color: var(--on-solid); font-size: 1.2rem; font-weight: 700; }   /* = .tick span */
+.wanted-tick[aria-pressed='true'] { background: var(--ok); border-color: var(--ok); }
+.wanted-extra { padding: 0 12px; }
+.wanted-links { display: flex; align-items: center; gap: 10px; padding: 4px 12px 10px; }
+.wanted-links > a, .wanted-links > button { display: inline-flex; align-items: center; min-height: 32px; }

@@ -50,9 +50,10 @@ Plan for the database:
 - **The calendar reads every module's dated rows through one view** (`v_calendar`), so a new
   module appears on it by adding to the view.
 
-Plan for the code:
-- `api/app/modules/<name>/` (routes, SQL, tests) and `web/src/modules/<name>/` (pages,
-  panels).
+Plan for the code (as built: the web side got its module folders; the API stayed one flat
+`api/app/` with a file or a few per hobby - simpler to find things, and main.py wires them up):
+- `web/src/modules/<name>/` (pages, panels) and `api/app/<name>.py` (routes, SQL), tests in
+  `api/tests/test_<name>.py`.
 - **A module manifest** (name, icon, colour, pages, calendar sources, Home widgets) is the only
   thing the core needs to know, so adding a hobby means adding a folder.
 
@@ -68,6 +69,7 @@ Plan for the code:
 ## Phases
 
 Each phase is built and tested in the dev copy, then promoted (`promote.ps1`).
+The numbers in brackets are HISTORY entries (those before 3zzt are in HISTORY-early.md).
 
 | # | Phase | Notes |
 |---|---|---|
@@ -83,6 +85,16 @@ Each phase is built and tested in the dev copy, then promoted (`promote.ps1`).
 | 5b | **Drawing in the journal** | DONE 2026-10-14 (in dev): whiteboard pages and `/` Drawing sketches (Excalidraw, pen pressure, pen mode). Handwriting -> text in pages: Samsung S Pen to text works in **Samsung Internet** (not Chrome) |
 | 5c | **Handwriting -> text on a canvas** | LATER (user's preference: **AI on this PC**, e.g. a local Ollama vision model - free and private, ~30-90 s per page on this CPU). A "Convert to text" button on a sketch / whiteboard. Considered: MyScript (what reMarkable uses; cloud, free monthly quota, needs keys), Claude vision (cloud, paid per use), Chrome's Handwriting Recognition API (not confirmed on Android) |
 | 5d | **Video games** | DONE 2026-10-14 (in dev): Steam achievements dashboard from the official Steam Web API (daily sync), activity / calendar / journal links |
+| 5e | **Chess** | DONE 2026-10-14: chess.com ratings, games with a board replay, openings; games over the board (HISTORY-early 3zj) |
+| 5f | **Reading** | DONE 2026-10-14: progress, a reading log, yearly goal and stats, ISBN lookups, series, "For you" picks (3zl, 3zzb) |
+| 5g | **Goals and to-dos** | DONE 2026-10-16, rebuilt 2026-10-21: counted by the app, paced, habits, goals inside goals, to-dos in your own order (3zzr, 5a, 5d - 5f) |
+| 5h | **Hiking** | DONE 2026-10-16: AllTrails / GPX import, maps, photos, landmarks, gear (3zzv - 3zzx) |
+| 5i | **Gardening** | DONE 2026-10-18: layout, plants, care, harvests, plant guide and doctor, Bunnings (3zzz) |
+| 5j | **Precision shooting** | DONE 2026-10-19, in prod 2026-10-20: rifles, ammo, sessions, groups, shot by shot, live board, DOPE (4f - 4h, 4l) |
+| 5k | **Travel** | DONE 2026-10-20: bookings, plans, budget, packing, places and memories (4n, 4u) |
+| 5l | **Signing in and HTTPS** | DONE 2026-10-20: one account, password + authenticator or passkey, self-signed HTTPS (4y) |
+| 5m | **Calendar, Supplies and Wishlist grow** | DONE 2026-10-21: views, quick add, holidays; every hobby's supplies, places + QR labels; tick bought, prices, gift list (5h - 5l) |
+| 5n | **Building my car** | A placeholder (dev only) until it's built |
 | 6+ | Scuba, woodworking, pottery... | One module at a time |
 
 ## Before going public

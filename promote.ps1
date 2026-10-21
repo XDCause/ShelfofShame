@@ -44,9 +44,10 @@ $before = git rev-parse --short HEAD
 $devTree = Get-TreeHash $DevRoot 'dev^{tree}'      # the dev commit's code, notes (*.md) left out
 $api = Get-Stamp 'api' $DevRoot
 $e2e = Get-Stamp 'e2e' $DevRoot
-$passed = ($api[0] -eq $devTree) -and ($Quick -or $e2e[0] -eq $devTree)
+$web = Get-Stamp 'web' $DevRoot               # (the web code's own tests, run_web_tests.ps1)
+$passed = ($api[0] -eq $devTree) -and ($Quick -or ($e2e[0] -eq $devTree -and $web[0] -eq $devTree))
 if ($passed -and -not $Retest) {
-    $when = if ($Quick) { $api[1] } else { @($api[1], $e2e[1]) | Sort-Object | Select-Object -First 1 }
+    $when = if ($Quick) { $api[1] } else { @($api[1], $e2e[1], $web[1]) | Sort-Object | Select-Object -First 1 }
     Step "Tests: already passed on exactly this code in dev (since $when) - not run again (-Retest to run them)"
 } else {
     Step 'Tests on the dev copy (API tests and browser walk-through side by side)'

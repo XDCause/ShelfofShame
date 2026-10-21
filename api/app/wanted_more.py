@@ -17,7 +17,6 @@ Wanted) - so everything here is keyed by (kind, ref) (89_wishlist_more.sql):
 The weekly site check also refreshes wanted Blue Sky gear's price and stock (refresh_weekly). Good Games is paused there
 (the user's call: a small shop), so a board game is only checked when you ask.
 """
-from datetime import date
 from decimal import Decimal
 from typing import Literal
 
@@ -25,7 +24,7 @@ from fastapi import APIRouter, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 
 from . import bluesky, goodgames, linkpeek
-from .db import db, found, insert_row
+from .db import GEAR_HOBBIES, db, found, insert_row
 from .ucp import ShopError
 
 router = APIRouter(prefix="/api", tags=["wishlist"])
@@ -55,10 +54,10 @@ def record_price(conn, kind: str, ref: int, price, source: str):
     """A price seen - kept unless it's the same as the last one from the same source today."""
     if price is None:
         return
-    last = conn.execute("SELECT price, source, seen_at::date AS day FROM wanted_prices WHERE kind = %s AND ref = %s "
-                        "ORDER BY seen_at DESC LIMIT 1", (kind, ref)).fetchone()
+    last = conn.execute("SELECT price, source, seen_at::date = current_date AS today FROM wanted_prices "
+                        "WHERE kind = %s AND ref = %s ORDER BY seen_at DESC, price_id DESC LIMIT 1", (kind, ref)).fetchone()   # (Brisbane's today)
     if last and Decimal(str(last["price"])) == Decimal(str(price)).quantize(Decimal("0.01")) and last["source"] == source \
-            and last["day"] == date.today():
+            and last["today"]:
         return
     conn.execute("INSERT INTO wanted_prices (kind, ref, price, source) VALUES (%s, %s, %s, %s)", (kind, ref, price, source))
 
@@ -82,7 +81,7 @@ def extras():
                 FROM {table} t
                 LEFT JOIN wanted_extras e ON e.kind = %(k)s AND e.ref = t.{key}
                 LEFT JOIN LATERAL (SELECT price, source, seen_at FROM wanted_prices p WHERE p.kind = %(k)s AND p.ref = t.{key}
-                                   ORDER BY seen_at DESC LIMIT 1) lp ON true
+                                   ORDER BY seen_at DESC, price_id DESC LIMIT 1) lp ON true
                 WHERE {wanted}""", {"k": kind}).fetchall()   # (its own columns: got_it, status, condition)
             for r in rows:
                 now = r["last_price"] if r["last_price"] is not None else r["price"]
@@ -148,7 +147,7 @@ def prices(kind: Kind, ref: int):
     with db() as conn:
         _row(conn, kind, ref)
         return conn.execute("SELECT price::float8 AS price, source, seen_at FROM wanted_prices WHERE kind = %s AND ref = %s "
-                            "ORDER BY seen_at", (kind, ref)).fetchall()
+                            "ORDER BY seen_at, price_id", (kind, ref)).fetchall()   # (the same moment: the order they came)
 
 
 # ---------------------------------------------------------------- asking the shop
@@ -287,7 +286,7 @@ class LinkSave(BaseModel):
     kind: Literal["wish", "model", "game", "gear", "garden"]
     name: str = Field(min_length=1, max_length=200)
     price: Decimal | None = Field(None, ge=0, max_digits=10, decimal_places=2)
-    hobby: Literal["volleyball", "hiking"] | None = None    # gear's hobby
+    hobby: Literal[tuple(GEAR_HOBBIES)] | None = None       # gear's hobby
     category_id: int | None = None                         # a supply's category
     site: str | None = Field(None, max_length=120)
 

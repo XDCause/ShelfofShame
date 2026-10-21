@@ -17,6 +17,7 @@ problem page (outlined in red: /out/audit_*.png). Exits 1 if it finds anything n
     python /e2e/ui_audit.py              # everything
     python /e2e/ui_audit.py /models      # only pages whose address starts with this
 """
+import base64
 import http.cookiejar
 import json
 import os
@@ -241,10 +242,25 @@ MARK = """(rects) => { for (const [x, y, w, h] of rects) { const d = document.cr
   document.body.append(d) } }"""
 
 
+# Anything not from the app's own copy (https://web) - book covers, video thumbnails, shop pictures - gets a stand-in
+# answer: a 1-pixel picture for images, an empty reply for the rest. The tests never ask outside sites (CLAUDE.md), and
+# an outage elsewhere (Open Library's covers, 2026-10-22) mustn't fail the run.
+OUTSIDE = re.compile(r"^https?://(?!web(?::\d+)?/)")
+ONE_PIXEL = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==")
+
+
+def offline(route):
+    if route.request.resource_type == "image":
+        route.fulfill(status=200, content_type="image/png", body=ONE_PIXEL)
+    else:
+        route.fulfill(status=204, body="")
+
+
 def signed_in_context(browser, **kw):
     """A browser context signed in with this copy's password (run_e2e.ps1 sets E2E_PASSWORD): a session of its own."""
     token = os.environ.get("E2E_TOKEN")               # (an existing session instead - looking at a copy without its password)
     ctx = browser.new_context(ignore_https_errors=True, **kw)
+    ctx.route(OUTSIDE, offline)                        # (no outside site, ever)
     if token:                                          # (E2E_COOKIE: its name in that copy - auth.COOKIE)
         ctx.add_cookies([{"name": os.environ.get("E2E_COOKIE", "otc_session"), "value": token, "url": BASE, "secure": True, "httpOnly": True, "sameSite": "Strict"}])
         return ctx
@@ -257,6 +273,7 @@ def signed_in_context(browser, **kw):
                                        headers={"Content-Type": "application/json"}))
     cookie = next(c for c in jar if c.name.startswith("otc_session"))     # otc_session, otc_session_dev...: auth.COOKIE
     ctx = browser.new_context(ignore_https_errors=True, **kw)
+    ctx.route(OUTSIDE, offline)
     ctx.add_cookies([{"name": cookie.name, "value": cookie.value, "url": BASE, "secure": True, "httpOnly": True, "sameSite": "Strict"}])
     return ctx
 
@@ -336,6 +353,7 @@ def worker(size_name):
             # the sign-in screen (a device that isn't signed in): it's a page too
             stranger = browser.new_context(viewport={"width": w, "height": h}, is_mobile=touch and w < 700, has_touch=touch,
                                            device_scale_factor=1, bypass_csp=True, ignore_https_errors=True)
+            stranger.route(OUTSIDE, offline)
             stranger.add_init_script(f"localStorage.setItem('offtheclock.theme', '{theme}')")
             door = stranger.new_page()
             door.goto(BASE)

@@ -1,0 +1,154 @@
+/* ---------- The games list: a table on a PC, cards on a phone ---------- */
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.game-table { --game-cols: 120px minmax(0, 2fr) minmax(170px, 1.5fr) 92px 92px 96px; }
+.game-key { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 0 0 8px; }
+.game-key span, .game-head-cell, .game-stat { display: inline-flex; align-items: center; gap: 6px; }
+.game-head {
+  display: grid; grid-template-columns: var(--game-cols); gap: 16px; align-items: end; padding: 0 14px 6px;
+  font-size: 0.78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em;
+}
+.game-head-cell { padding: 4px 0; border: 0; background: none; color: inherit; font: inherit; text-transform: inherit; letter-spacing: inherit; cursor: pointer; text-align: left; }
+.game-head-cell:hover, .game-head-cell[aria-pressed='true'] { color: var(--text); }
+.game-rows { list-style: none; margin: 0; padding: 0; border-radius: var(--radius); overflow: hidden; background: var(--surface); border: 1px solid var(--border); }
+.game-rows li + li { border-top: 1px solid var(--separator); }
+.game-row {
+  display: grid; grid-template-columns: var(--game-cols); gap: 16px; align-items: center; width: 100%;
+  padding: 10px 14px; border: 0; background: none; color: var(--text); text-align: left;
+}
+.game-row:hover { background: var(--fill-2); }
+.game-table .game-capsule { width: 120px; height: 56px; }
+.game-name { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.game-name .item-title { font-size: 0.98rem; font-weight: 600; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.game-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.game-progress { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.game-progress .fill-bar { max-width: none; margin: 0; }
+.game-progress-text { font-size: 0.88rem; font-variant-numeric: tabular-nums; }
+.game-stat { font-size: 0.92rem; font-variant-numeric: tabular-nums; }
+.game-stat svg { color: var(--muted); flex: none; }
+.game-stat.none { color: var(--faint); }
+/* On a PC the three stats are table cells (their wrapper steps aside); on narrower screens each game
+   is a card - picture beside the name and bar, then the three stats as one even row of chips. */
+.game-stats { display: contents; }
+@media (max-width: 900px) {
+  .game-head { display: none; }
+  .game-row { grid-template-columns: 96px minmax(0, 1fr); grid-template-areas: "pic name" "pic progress" "stats stats"; gap: 6px 12px; }
+  .game-table .game-capsule { grid-area: pic; width: 96px; height: 45px; }
+  .game-name { grid-area: name; }
+  .game-progress { grid-area: progress; }
+  .game-stats { grid-area: stats; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 2px; }
+  .game-stat { justify-content: center; padding: 4px 8px; border-radius: 999px; background: var(--fill-2); font-size: 0.82rem; }
+}
+/* The game panel's comparison: icon tiles. */
+.compare-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+@media (max-width: 700px) { .compare-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.compare-tile { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 12px; background: var(--fill-2); }
+.compare-tile strong { display: block; font-size: 1.15rem; line-height: 1.2; }
+.compare-tile .stat-icon { width: 38px; height: 38px; border-radius: 11px; }
+.time-fill.median { background: var(--purple); }
+.time-fill.fastest { background: var(--teal); }
+
+/* The Games tab's pinned block: stays under the top bar (56px + the phone's notch) while the list
+   scrolls, on the page background so the rows slide under it. */
+.games-pinned {
+  position: sticky; top: calc(56px + env(safe-area-inset-top, 0px)); z-index: 20;
+  display: flex; flex-direction: column; gap: 10px; margin: -6px 0 0; padding: 6px 0 4px;
+  background: var(--bg); border-bottom: 1px solid var(--separator);
+}
+.games-pinned .game-head { padding-bottom: 2px; }
+/* On a PC the headings carry the icons, so the rows don't repeat them (or the key). */
+@media (min-width: 901px) {
+  .game-key { display: none; }
+  .game-row .game-stat svg { display: none; }
+  .game-rows { border-top-left-radius: 0; border-top-right-radius: 0; }
+}
+@media (max-width: 900px) {
+  .games-pinned .game-key { margin: 0; }
+}
+/* Phones: too tall to pin (it would cover half the screen), so it scrolls with the page. */
+@media (max-width: 700px) { .games-pinned { position: static; margin: 0; border-bottom: 0; } }
+
+/* A game's achievements split into the main game and each DLC (from Exophase). */
+.dlc-split { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 6px 0 0; }
+.dlc-split strong { font-weight: 600; }
+.dlc-groups { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.dlc-group .fold-title { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.dlc-group .fold-detail { display: flex; align-items: center; gap: 8px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.dlc-group .fold-detail .fill-bar { width: 64px; margin-top: 0; }
+.dlc-group .fold-body { padding: 0 0 4px; }
+.dlc-groups .hint { margin: 2px 0 0; }
+.dlc-badge { display: inline-flex; align-items: center; gap: 3px; }
+
+/* "+7": how much a number changed in the last 7 days, beside it. */
+.delta { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 999px; vertical-align: middle;
+  font-size: 0.72rem; font-weight: 600; line-height: 1.5; font-variant-numeric: tabular-nums; letter-spacing: 0; }
+.delta.up { color: var(--ok); background: var(--ok-bg); }
+.delta.down { color: var(--low); background: var(--low-bg); }
+.delta.none { color: var(--muted); background: var(--fill); }
+.goal-percent .delta { font-size: 0.8rem; }
+
+/* Streak pill beside a heading. */
+.streak-pill { margin-left: 8px; font-size: 0.75rem; vertical-align: middle; }
+
+/* A month's recap on the Stats page. */
+.recap-head { display: flex; align-items: center; gap: 8px; }
+.recap-head .home-card-title { margin: 0; min-width: 9em; text-align: center; }
+.recap-head button { min-width: 36px; font-size: 1.3rem; line-height: 1; }
+.recap-numbers { display: flex; flex-wrap: wrap; gap: 8px 28px; margin: 12px 0 16px; }
+.recap-numbers > span { display: flex; flex-direction: column; color: var(--muted); font-size: 0.85rem; }
+.recap-numbers strong { color: var(--text); font-size: 1.6rem; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.recap-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.recap .section-title { margin: 0 0 8px; }
+.recap .perfect-grid { margin-top: 4px; }
+@media (max-width: 700px) { .recap-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* The unlock calendar: one square a day, weeks across. One blue, darker with more unlocks (in dark
+   mode, brighter); steps checked for neighbouring contrast (dataviz validator, deltaE >= 15). */
+:root { --heat-0: var(--fill); --heat-1: #d3e4bd; --heat-2: #a3c77c; --heat-3: #6c9a42; --heat-4: #3b641f; }
+:root[data-theme='dark'] { --heat-1: #24381f; --heat-2: #3f6a2e; --heat-3: #74a54b; --heat-4: #b8da80; }
+.heatmap-scroll { overflow-x: auto; padding-bottom: 4px; }
+/* The calendar fills its card: each week a share of the width (at least 11px - narrower cards scroll). */
+.heatmap { display: flex; flex-direction: column; gap: 4px; min-width: max-content; width: 100%; }
+.heatmap-months, .heatmap-grid { display: flex; gap: 3px; }
+.heatmap-months span, .heatmap-week { flex: 1 1 0; min-width: 11px; max-width: 22px; }
+.heatmap-months span { font-size: 0.65rem; color: var(--muted); white-space: nowrap; overflow: visible; }
+.heatmap-week { display: flex; flex-direction: column; gap: 3px; }
+.heatmap-day { display: block; width: 100%; aspect-ratio: 1; height: auto; border-radius: 2px; background: var(--heat-0); }
+.heatmap-day.l1 { background: var(--heat-1); }
+.heatmap-day.l2 { background: var(--heat-2); }
+.heatmap-day.l3 { background: var(--heat-3); }
+.heatmap-day.l4 { background: var(--heat-4); }
+.heatmap-grid .heatmap-day:hover { outline: 2px solid var(--text); outline-offset: 1px; }
+.heatmap-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+.heatmap-key { display: inline-flex; align-items: center; gap: 3px; }
+.heatmap-key .heatmap-day { margin: 0 1px; width: 11px; height: 11px; }
+
+/* Epic and Ubisoft games (OtherPlatforms.jsx). */
+.platform-toggles { margin: 0 0 12px; }
+.platform-toggles .chip-filter:disabled { opacity: 1; cursor: default; }
+.other-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 10px 0; }
+.other-form .other-fields { grid-template-columns: 2fr repeat(3, minmax(0, 1fr)); }
+.other-fields label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: var(--muted); }
+.other-fields input { color: var(--text); }
+@media (max-width: 700px) {
+  .other-fields, .other-form .other-fields { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* The game panel for Ubisoft games: tick off achievements, hours played. */
+.achievement-tools { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.ach-tick { flex: none; width: 28px; height: 28px; min-height: 0; padding: 0; border-radius: 50%; border: 2px solid var(--separator);
+  background: transparent; color: #fff; font-weight: 700; line-height: 1; cursor: pointer; }
+.ach-tick.on { background: var(--ok); border-color: var(--ok); }
+.ach-tick:focus-visible { outline: 2px solid var(--tint); outline-offset: 2px; }
+.hours-played { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 6px 0 0; }
+.hours-played input { width: 90px; color: var(--text); }
+
+/* A line chart (charts.jsx LineChart): one series in the accent colour, 2px, recessive grid. */
+.line-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; cursor: crosshair; }
+.line-path { fill: none; stroke: var(--tint); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.line-cross { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.line-dot { position: absolute; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: var(--tint);
+  border: 2px solid var(--surface); pointer-events: none; }
+.line-dot.on { width: 12px; height: 12px; margin: -6px 0 0 -6px; }
+.line-tip { top: 4px; transform: translateX(-50%); bottom: auto; }
+.line-labels { display: flex; justify-content: space-between; margin: 6px 0 0 34px; font-size: 0.72rem; color: var(--muted); }
+.mention-chess { color: var(--teal); background: var(--teal-bg); }

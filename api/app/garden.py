@@ -12,17 +12,18 @@
     tasks       your own reminders, once or repeating
     today       what needs water / feed, what's ready to pick, tasks due, and weather tips for the balcony
     harvests    every harvest, with totals per plant and per month
+Logs, photos and tasks: garden_logs.py. Today, the summary and harvests: garden_today.py.
 Plant guides and what to sow now: garden_guide.py. Supplies, seeds and Bunnings: garden_items.py.
 """
 import re
 from datetime import date, timedelta
 
-from fastapi import APIRouter, HTTPException, Query, Request, Response
+from fastapi import APIRouter, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 
 from . import openmeteo
 from .db import db, found, insert_row, tidy_text, update_row
-from .images import add_photo_routes, photo_response, read_photo
+from .images import add_photo_routes
 
 router = APIRouter(prefix="/api", tags=["gardening"])
 
@@ -594,23 +595,9 @@ def today(conn) -> date:
 
 
 # ---------------------------------------------------------------------------------------------
-# Logs and photos
 # ---------------------------------------------------------------------------------------------
-class LogFields(BaseModel):
-    kind: str | None = Field(None, pattern=_lit(LOG_KINDS))
-    happened_on: date | None = None
-    text: str | None = Field(None, max_length=10000)
-    amount: float | None = Field(None, ge=0, le=1000000)
-    unit: str | None = Field(None, max_length=20)
-    tags: list[str] | None = Field(None, max_length=20)
-
-
-class LogIn(LogFields):
-    planting_id: int | None = None
-    container_id: int | None = None
-    space_id: int | None = None
-
-
+# Shared with garden_logs.py and garden_today.py: the log and task SELECTs
+# ---------------------------------------------------------------------------------------------
 LOG_SELECT = """
 SELECT l.log_id, l.planting_id, l.container_id, l.space_id, l.kind, l.happened_on, l.text, l.amount::float8 AS amount, l.unit,
        l.tags, l.created_at,
@@ -618,128 +605,9 @@ SELECT l.log_id, l.planting_id, l.container_id, l.space_id, l.kind, l.happened_o
                                  ORDER BY ph.photo_id) FROM garden_photos ph WHERE ph.log_id = l.log_id), '[]') AS photos
 FROM garden_logs l"""
 
-
 def logs_for(conn, column: str, value: int, limit: int = 200) -> list[dict]:
     return conn.execute(LOG_SELECT + f" WHERE l.{column} = %s ORDER BY l.happened_on DESC, l.log_id DESC LIMIT %s",
                         (value, limit)).fetchall()
-
-
-def after_log(conn, log: dict):
-    """What a log means for its plant: watered / fed dates, stage changes, a repotting date."""
-    p = log["planting_id"]
-    if p:
-        if log["kind"] == "Watered":
-            conn.execute("UPDATE garden_plantings SET last_watered_on = GREATEST(COALESCE(last_watered_on, %(d)s), %(d)s) "
-                         "WHERE planting_id = %(p)s", {"d": log["happened_on"], "p": p})
-        elif log["kind"] == "Fed":
-            conn.execute("UPDATE garden_plantings SET last_fed_on = GREATEST(COALESCE(last_fed_on, %(d)s), %(d)s) "
-                         "WHERE planting_id = %(p)s", {"d": log["happened_on"], "p": p})
-        moves = {"Sprouted": ("Sprouted", ("Planned", "Sown")),
-                 "Flowered": ("Flowering", ("Planned", "Sown", "Sprouted", "Seedling", "Growing")),
-                 "Harvested": ("Harvesting", ("Planned", "Sown", "Sprouted", "Seedling", "Growing", "Flowering", "Fruiting"))}
-        if log["kind"] in moves:
-            stage, before = moves[log["kind"]]
-            conn.execute("UPDATE garden_plantings SET stage = %s WHERE planting_id = %s AND stage = ANY(%s)", (stage, p, list(before)))
-    if log["kind"] == "Repotted" and log["container_id"]:
-        conn.execute("UPDATE garden_containers SET potted_on = %s WHERE container_id = %s", (log["happened_on"], log["container_id"]))
-
-
-def fetch_log(conn, log_id: int) -> dict:
-    return found(conn.execute(LOG_SELECT + " WHERE l.log_id = %s", (log_id,)).fetchone(), "Note")
-
-
-@router.post("/garden/logs", status_code=201)
-def add_log(body: LogIn):
-    data = tidy_text({k: v for k, v in body.model_dump().items() if v is not None}, required=())
-    if not (data.get("planting_id") or data.get("container_id") or data.get("space_id")):
-        raise HTTPException(422, "Say what it's about: a plant, a container or a space.")
-    data["tags"] = [t.strip()[:40] for t in data.get("tags") or [] if t.strip()]
-    with db() as conn:
-        log_id = insert_row(conn, "garden_logs", data, "log_id")
-        log = fetch_log(conn, log_id)
-        after_log(conn, log)
-        return log
-
-
-@router.patch("/garden/logs/{log_id}")
-def update_log(log_id: int, body: LogFields):
-    data = tidy_text(body.model_dump(exclude_unset=True), required=())
-    for required in ("kind", "happened_on"):
-        if required in data and data[required] is None:
-            raise HTTPException(422, f"{required.replace('_', ' ').capitalize()} can't be empty.")
-    if "tags" in data:
-        data["tags"] = [t.strip()[:40] for t in data["tags"] or [] if t.strip()]
-    with db() as conn:
-        fetch_log(conn, log_id)
-        update_row(conn, "garden_logs", "log_id", log_id, data)
-        return fetch_log(conn, log_id)
-
-
-@router.delete("/garden/logs/{log_id}", status_code=204)
-def delete_log(log_id: int):
-    with db() as conn:
-        found(conn.execute("DELETE FROM garden_logs WHERE log_id = %s RETURNING log_id", (log_id,)).fetchone(), "Note")
-    return Response(status_code=204)
-
-
-@router.post("/garden/logs/{log_id}/photos", status_code=201)
-async def add_photo(log_id: int, request: Request):
-    """A photo (the body, shrunk by the browser) on a note. A photo never changes: a new one gets a new id."""
-    image, image_type = await read_photo(request)
-    with db() as conn:
-        fetch_log(conn, log_id)
-        photo_id = insert_row(conn, "garden_photos", {"log_id": log_id, "image": image, "image_type": image_type}, "photo_id")
-        return {"photo_id": photo_id, "url": f"/api/garden/photos/{photo_id}"}
-
-
-@router.get("/garden/photos/{photo_id}")
-def get_photo(photo_id: int):
-    with db() as conn:
-        row = found(conn.execute("SELECT image, image_type FROM garden_photos WHERE photo_id = %s", (photo_id,)).fetchone(), "Photo")
-    return photo_response(row["image"], row["image_type"])
-
-
-@router.delete("/garden/photos/{photo_id}", status_code=204)
-def delete_photo(photo_id: int):
-    with db() as conn:
-        found(conn.execute("DELETE FROM garden_photos WHERE photo_id = %s RETURNING photo_id", (photo_id,)).fetchone(), "Photo")
-    return Response(status_code=204)
-
-
-@router.get("/garden/photos")
-def list_photos(planting_id: int | None = None, container_id: int | None = None, space_id: int | None = None,
-                limit: int = Query(60, ge=1, le=500)):
-    """Photos, newest first: of one plant, container or space - or all of them (the garden's gallery)."""
-    with db() as conn:
-        return conn.execute("""
-            SELECT ph.photo_id, '/api/garden/photos/' || ph.photo_id AS url, l.log_id, l.kind, l.happened_on, l.text,
-                   l.planting_id, l.container_id, l.space_id, p.name AS planting_name
-            FROM garden_photos ph JOIN garden_logs l USING (log_id) LEFT JOIN garden_plantings p ON p.planting_id = l.planting_id
-            WHERE (%(p)s::int IS NULL OR l.planting_id = %(p)s) AND (%(c)s::int IS NULL OR l.container_id = %(c)s)
-              AND (%(s)s::int IS NULL OR l.space_id = %(s)s)
-            ORDER BY l.happened_on DESC, ph.photo_id DESC LIMIT %(n)s""",
-                            {"p": planting_id, "c": container_id, "s": space_id, "n": limit}).fetchall()
-
-
-# ---------------------------------------------------------------------------------------------
-# Tasks (your own reminders)
-# ---------------------------------------------------------------------------------------------
-class TaskFields(BaseModel):
-    planting_id: int | None = None
-    container_id: int | None = None
-    space_id: int | None = None
-    due_on: date | None = None
-    repeat_days: int | None = Field(None, ge=1, le=365)
-    notes: str | None = Field(None, max_length=2000)
-
-
-class TaskIn(TaskFields):
-    title: str = Field(min_length=1, max_length=200)
-
-
-class TaskPatch(TaskFields):
-    title: str | None = Field(None, min_length=1, max_length=200)
-
 
 TASK_SELECT = """
 SELECT t.task_id, t.title, t.planting_id, t.container_id, t.space_id, t.due_on, t.repeat_days, t.notes, t.done_on,
@@ -748,160 +616,3 @@ FROM garden_tasks t
 LEFT JOIN garden_plantings p ON p.planting_id = t.planting_id
 LEFT JOIN garden_containers c ON c.container_id = t.container_id
 LEFT JOIN garden_spaces s ON s.space_id = t.space_id"""
-
-
-@router.get("/garden/tasks")
-def list_tasks(include_done: bool = False):
-    with db() as conn:
-        return conn.execute(TASK_SELECT + (" " if include_done else " WHERE t.done_on IS NULL ")
-                            + "ORDER BY t.done_on IS NOT NULL, t.due_on, lower(t.title)").fetchall()
-
-
-@router.post("/garden/tasks", status_code=201)
-def add_task(body: TaskIn):
-    data = tidy_text({k: v for k, v in body.model_dump().items() if v is not None}, required=("title",))
-    with db() as conn:
-        task_id = insert_row(conn, "garden_tasks", data, "task_id")
-        return conn.execute(TASK_SELECT + " WHERE t.task_id = %s", (task_id,)).fetchone()
-
-
-@router.patch("/garden/tasks/{task_id}")
-def update_task(task_id: int, body: TaskPatch):
-    data = tidy_text(body.model_dump(exclude_unset=True), required=("title",))
-    if "due_on" in data and data["due_on"] is None:
-        raise HTTPException(422, "Due on can't be empty.")
-    with db() as conn:
-        found(conn.execute("SELECT 1 FROM garden_tasks WHERE task_id = %s", (task_id,)).fetchone(), "Reminder")
-        update_row(conn, "garden_tasks", "task_id", task_id, data)
-        return conn.execute(TASK_SELECT + " WHERE t.task_id = %s", (task_id,)).fetchone()
-
-
-@router.post("/garden/tasks/{task_id}/done")
-def task_done(task_id: int):
-    """Done: a repeating reminder moves on to its next date (from today); a one-off is ticked off."""
-    with db() as conn:
-        t = found(conn.execute("SELECT * FROM garden_tasks WHERE task_id = %s", (task_id,)).fetchone(), "Reminder")
-        if t["repeat_days"]:
-            conn.execute("UPDATE garden_tasks SET due_on = current_date + repeat_days WHERE task_id = %s", (task_id,))
-        else:
-            conn.execute("UPDATE garden_tasks SET done_on = current_date WHERE task_id = %s", (task_id,))
-        about = t["planting_id"] or t["container_id"] or t["space_id"]
-        if about:
-            insert_row(conn, "garden_logs", {"planting_id": t["planting_id"], "container_id": t["container_id"],
-                                             "space_id": t["space_id"], "kind": "Note", "text": f"Done: {t['title']}"}, "log_id")
-        return conn.execute(TASK_SELECT + " WHERE t.task_id = %s", (task_id,)).fetchone()
-
-
-@router.delete("/garden/tasks/{task_id}", status_code=204)
-def delete_task(task_id: int):
-    with db() as conn:
-        found(conn.execute("DELETE FROM garden_tasks WHERE task_id = %s RETURNING task_id", (task_id,)).fetchone(), "Reminder")
-    return Response(status_code=204)
-
-
-# ---------------------------------------------------------------------------------------------
-# Today, weather tips, summary, timeline, harvests
-# ---------------------------------------------------------------------------------------------
-def weather_tips(days: list[dict], spaces: list[dict]) -> list[dict]:
-    """Plain advice for pots on a balcony from the next two days' forecast."""
-    tips = []
-    open_air = [s["name"] for s in spaces if not s["covered"] and s["kind"] not in ("Indoor", "Shelf", "Grow tent", "Windowsill")]
-    outdoor = any(s["kind"] not in ("Indoor", "Shelf", "Grow tent", "Windowsill") for s in spaces) or not spaces
-    for d, when in zip(days[:2], ("Today", "Tomorrow")):
-        hot, gusts, rain, low, uv = d.get("max"), d.get("gusts"), d.get("rain_mm"), d.get("min"), d.get("uv")
-        if outdoor and (d.get("code") or 0) >= 95:
-            tips.append({"day": when, "kind": "storm", "text": "Storms" + (" with hail" if d["code"] >= 96 else "") +
-                         " forecast: bring hanging baskets and light pots inside or against the wall, and cover seedlings."})
-        if hot is not None and hot >= 35:
-            tips.append({"day": when, "kind": "heat", "text": f"Very hot ({hot:.0f}°): water pots early in the morning and again in the "
-                         "evening; move seedlings and lettuce into shade."})
-        elif hot is not None and hot >= 30:
-            tips.append({"day": when, "kind": "heat", "text": f"Hot ({hot:.0f}°): check pots morning and evening - small pots and "
-                         "hanging baskets dry out first."})
-        if outdoor and gusts is not None and gusts >= 60:
-            tips.append({"day": when, "kind": "wind", "text": f"Strong gusts up to {gusts:.0f} km/h: move light pots and tall plants "
-                         "against the wall or inside, and take down hanging baskets."})
-        elif outdoor and gusts is not None and gusts >= 45:
-            tips.append({"day": when, "kind": "wind", "text": f"Windy (gusts {gusts:.0f} km/h): pots dry out faster; stake tall plants."})
-        if open_air and rain is not None and rain >= 5:
-            tips.append({"day": when, "kind": "rain", "text": f"Rain ({rain:.0f} mm): {', '.join(open_air)} may not need watering."})
-        if low is not None and low <= 5:
-            tips.append({"day": when, "kind": "cold", "text": f"Cold night ({low:.0f}°): bring basil, chillies and other tender "
-                         "plants inside or against the wall."})
-        if outdoor and uv is not None and uv >= 11:
-            tips.append({"day": when, "kind": "uv", "text": "Extreme UV: shade seedlings from the midday sun."})
-    return tips
-
-
-def weather(conn) -> dict | None:
-    s = garden_settings(conn)
-    if s["lat"] is None:
-        return None
-    spaces = conn.execute("SELECT name, kind, covered FROM garden_spaces").fetchall()
-    try:
-        days = openmeteo.forecast(s["lat"], s["lon"])
-    except openmeteo.WeatherError as e:
-        return {"place": s["place_name"], "error": str(e), "days": [], "tips": []}
-    return {"place": s["place_name"], "error": None, "days": days, "tips": weather_tips(days, spaces)}
-
-
-@router.get("/garden/today")
-def garden_today():
-    """What needs doing: watering and feeding due (oldest first), ready to harvest, your reminders, weather tips."""
-    with db() as conn:
-        current = conn.execute(PLANTING_SELECT + " WHERE p.stage NOT IN ('Planned', 'Done', 'Died') ORDER BY s.sort NULLS LAST, c.name, p.name").fetchall()
-        d = today(conn)
-        tasks = conn.execute(TASK_SELECT + " WHERE t.done_on IS NULL AND t.due_on <= current_date + 2 ORDER BY t.due_on").fetchall()
-        planned = conn.execute(PLANTING_SELECT + " WHERE p.stage = 'Planned' ORDER BY p.started_on").fetchall()
-        return {
-            "today": d,
-            "water": sorted([p for p in current if p["water_due_on"] and p["water_due_on"] <= d], key=lambda p: p["water_due_on"]),
-            "feed": sorted([p for p in current if p["feed_due_on"] and p["feed_due_on"] <= d], key=lambda p: p["feed_due_on"]),
-            "harvest": [p for p in current if p["harvest_ready"]],
-            "tasks": tasks, "planned": planned,
-            "weather": weather(conn),
-            "growing": len(current),
-        }
-
-
-@router.get("/garden/summary")
-def garden_summary():
-    """For Home: plants growing, how many need water, ready to pick, reminders due, harvests this year."""
-    with db() as conn:
-        current = conn.execute(PLANTING_SELECT + " WHERE p.stage NOT IN ('Planned', 'Done', 'Died')").fetchall()
-        d = today(conn)
-        return {
-            "growing": len(current),
-            "need_water": sum(1 for p in current if p["water_due_on"] and p["water_due_on"] <= d),
-            "need_feed": sum(1 for p in current if p["feed_due_on"] and p["feed_due_on"] <= d),
-            "ready": sum(1 for p in current if p["harvest_ready"]),
-            "tasks_due": conn.execute("SELECT count(*) AS n FROM garden_tasks WHERE done_on IS NULL AND due_on <= current_date").fetchone()["n"],
-            "harvests_this_year": conn.execute("SELECT count(*) AS n FROM garden_logs WHERE kind = 'Harvested' "
-                                               "AND happened_on >= date_trunc('year', current_date)").fetchone()["n"],
-            "spaces": conn.execute("SELECT count(*) AS n FROM garden_spaces").fetchone()["n"],
-        }
-
-
-@router.get("/garden/harvests")
-def harvests(year: int | None = Query(None, ge=1900, le=2200)):
-    """Every harvest (newest first), with totals per plant and per month, by unit."""
-    with db() as conn:
-        y = year or today(conn).year
-        rows = conn.execute(LOG_SELECT.replace("FROM garden_logs l", ", p.name AS planting_name, p.variety FROM garden_logs l "
-                                               "JOIN garden_plantings p ON p.planting_id = l.planting_id")
-                            + " WHERE l.kind = 'Harvested' AND extract(year FROM l.happened_on) = %s "
-                            "ORDER BY l.happened_on DESC, l.log_id DESC", (y,)).fetchall()
-    by_plant: dict = {}
-    by_month: dict = {}
-    for r in rows:
-        unit = r["unit"] or "times"
-        amount = r["amount"] if r["amount"] is not None else 1
-        key = (r["planting_name"], unit)
-        by_plant[key] = by_plant.get(key, 0) + amount
-        mkey = (r["happened_on"].strftime("%Y-%m"), unit)
-        by_month[mkey] = by_month.get(mkey, 0) + amount
-    years = list(range(y - 3, y + 1))
-    return {"year": y, "years": years, "harvests": rows,
-            "by_plant": sorted([{"name": n, "unit": u, "amount": round(a, 2)} for (n, u), a in by_plant.items()],
-                               key=lambda x: (-x["amount"], x["name"])),
-            "by_month": [{"month": m, "unit": u, "amount": round(a, 2)} for (m, u), a in sorted(by_month.items())]}

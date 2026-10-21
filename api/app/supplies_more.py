@@ -10,7 +10,6 @@
 Included before supplies.py's router: /supplies/stocktake etc. would otherwise be read as /supplies/{supply_id}.
 """
 import io
-from datetime import date
 from decimal import Decimal
 from typing import Literal
 
@@ -18,7 +17,7 @@ import segno
 from fastapi import APIRouter, HTTPException, Query, Request, Response
 from pydantic import BaseModel, Field
 
-from .db import db, found, stock_reason, update_row
+from .db import GEAR_HOBBIES, db, found, stock_reason, update_row
 from .settings import get_setting
 from .supplies import SUPPLY_SELECT, auto_wishlist, stock_status
 from .shooting import AMMO_SELECT, ammo_row
@@ -169,13 +168,14 @@ def shop():
     out within a month (from how fast you use them)."""
     with db() as conn:
         default = get_setting(conn, "default_shop") or "Hobbyrama"
+        now = conn.execute("SELECT current_date AS d").fetchone()["d"]          # Brisbane's today (the API runs on UTC)
         wishes = conn.execute("""SELECT w.wish_id, w.name, w.product_code, w.qty_wanted, w.size, b.name AS brand, c.name AS category,
                                         w.est_price::float8 AS price, w.priority
                                  FROM wishlist w LEFT JOIN brands b USING (brand_id) LEFT JOIN categories c USING (category_id)
                                  WHERE NOT w.got_it ORDER BY c.name, w.name""").fetchall()
         low = conn.execute(SUPPLY_SELECT + f" WHERE v.stock_status <> 'OK' AND NOT {ON_WISHLIST} ORDER BY v.category, s.name").fetchall()
         soon = [r for r in conn.execute(SUPPLY_SELECT + " WHERE v.stock_status = 'OK' ORDER BY s.name").fetchall()
-                if r["out_by"] and (r["out_by"] - date.today()).days <= 31]
+                if r["out_by"] and (r["out_by"] - now).days <= 31]
     return {"shop": default, "wishlist": wishes, "low": low, "soon": soon}
 
 
@@ -295,8 +295,8 @@ def value_report():
         add("boardgames", "Board games", conn.execute(
             "SELECT name, NULL AS detail, 1 AS qty, price_paid AS value FROM board_games WHERE status NOT IN ('Wanted', 'Gone') "
             "ORDER BY name").fetchall())
-        for hobby, title in (("volleyball", "Volleyball gear"), ("hiking", "Hiking gear")):
-            add(hobby, title, conn.execute(
+        for hobby in GEAR_HOBBIES:                     # (every hobby that has gear: volleyball, hiking, shooting)
+            add(hobby, f"{hobby.capitalize()} gear", conn.execute(
                 "SELECT name, concat_ws(' · ', kind, brand) AS detail, 1 AS qty, price_paid AS value FROM gear "
                 "WHERE hobby = %s AND condition NOT IN ('Wanted', 'Retired') ORDER BY name", (hobby,)).fetchall())
         add("shooting", "Rifles", conn.execute(
@@ -310,7 +310,8 @@ def value_report():
         add("gardening", "Garden supplies", conn.execute(
             "SELECT name, kind AS detail, COALESCE(qty, 1) AS qty, price * COALESCE(qty, 1) AS value FROM garden_items "
             "WHERE status IN ('Have', 'Running low') ORDER BY kind, name").fetchall())
+        now = conn.execute("SELECT current_date AS d").fetchone()["d"]
     sections = [s for s in sections if s["count"]]
     total = round(sum(s["total"] for s in sections), 2)
-    return {"on": date.today(), "total": total, "sections": sections, "unpriced": sum(s["unpriced"] for s in sections),
+    return {"on": now, "total": total, "sections": sections, "unpriced": sum(s["unpriced"] for s in sections),
             "money": str(Decimal(str(total)))}

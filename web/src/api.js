@@ -607,6 +607,7 @@ export const api = {
   settings: () => request('/settings'),
   // The weekly check of the websites the app reads
   siteChecks: () => request('/site-checks'),
+  system: () => request('/system'),
   runSiteChecks: () => request('/site-checks/run', send('POST')),
   updateSettings: (data) => request('/settings', send('PATCH', data)),
   priceGuide: () => request('/price-guide'),

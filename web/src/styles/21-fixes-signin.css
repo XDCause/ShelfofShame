@@ -1,0 +1,65 @@
+/* ---------- Touch targets (tests: e2e/ui_audit.py "small") ----------
+   On a touch screen every small link and toggle is at least 24 px tall (WCAG 2.2 target size). */
+@media (pointer: coarse) {
+  .home-card-title a, .model-links a, .panel-section > a.small, .chart-table > summary, .more-menu > summary,
+  .link-title, .link-plain, .section-head a.small { display: inline-flex; align-items: center; min-height: 28px; }
+}
+
+/* ---------- Fixes found by the UI audit (e2e/ui_audit.py) ---------- */
+.item-cell .item-title { overflow-wrap: anywhere; }                  /* a long supply name on a 320 px phone */
+.toolbar > .summary.grow { flex: 1 1 14em; }                         /* the count wraps above its button, not under it */
+.sidebar .brand { min-height: 40px; }                                /* the logo is a link: a full-size target */
+.day-event .day-time { opacity: 1; }                                 /* (faded, a calendar event's time was 2.9:1) */
+:root[data-theme='dark'] .tabbar a { color: #b4baa8; }               /* the tab bar's labels over the page: 5:1 */
+/* A long word with no spaces (a name, a code) wraps rather than poking out of its box. */
+.item-title, .item-meta, .cover-card, .journal-card .grow, .page-row .grow { overflow-wrap: anywhere; }
+@media (max-width: 480px) { td.item-cell { min-width: 0; } td.item-cell .item-meta > *, td.item-cell .item-meta .condition, td.item-cell .item-meta .badge { white-space: normal; flex-wrap: wrap; overflow-wrap: anywhere; min-width: 0; } }
+@media (pointer: coarse) { button.tag, .list button.tag { min-height: 26px; } }
+
+/* ---------- Signing in (core/auth) ----------
+   A drawn landscape behind a parchment card: the password (then the authenticator's code) or a passkey. */
+.signin { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; position: relative; isolation: isolate; }
+.signin-art { position: fixed; inset: 0; z-index: -1; }
+.signin-art svg { width: 100%; height: 100%; display: block; }
+.signin-art::after { content: ''; position: absolute; inset: 0; background: rgb(8 12 10 / 0.35); }
+.signin-card {
+  width: min(400px, 100%); padding: 28px; border-radius: var(--radius); background: var(--elevated); color: var(--text);
+  border: 1px solid var(--border); box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 14px;
+}
+.signin-brand { display: flex; align-items: center; gap: 10px; margin: 0; font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; color: var(--tint); }
+.signin-title { margin: 0; font-size: var(--text-2xl); }
+.signin-form { display: flex; flex-direction: column; gap: 12px; }
+.signin-form .primary { min-height: 44px; }
+.signin-or { display: flex; align-items: center; gap: 10px; margin: 0; color: var(--muted); font-size: var(--text-sm); }
+.signin-or::before, .signin-or::after { content: ''; flex: 1; border-top: 1px solid var(--separator); }
+.signin-passkey { min-height: 44px; }
+.signin-command { margin: 0; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--fill); font-size: 0.95rem; }
+
+/* Settings > Security */
+.security { display: flex; flex-direction: column; gap: 18px; align-items: flex-start; }
+.security-part { width: 100%; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.security-part .section-title { margin: 0; }
+.security-form { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 420px; }
+.security-list { width: 100%; }
+.totp-qr { width: 200px; padding: 8px; background: #fff; border-radius: var(--radius-sm); }
+.totp-qr svg { width: 100%; height: auto; display: block; }
+.totp-secret { word-break: break-all; }
+.recovery-codes { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.recovery-list { list-style: none; margin: 0; padding: 12px 16px; display: grid; grid-template-columns: repeat(2, auto); gap: 4px 24px;
+  background: var(--fill-2); border-radius: var(--radius-sm); }
+
+/* ---------- The sidebar's parts, and the nav bar's three columns ----------
+   The sidebar is exactly the window's height: the logo and main pages at the top and the nudge and Settings at the
+   bottom stay put; only the hobbies between them scroll when the window is short. */
+.sidebar > nav { display: flex; flex-direction: column; gap: 1px; flex: 1; min-height: 0; }
+.side-hobbies { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 1px;
+  margin: 0 -12px; padding: 0 12px 10px; scrollbar-width: thin;
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 22px), transparent); }   /* (a soft edge: there's more below) */
+.sidebar .nudge { margin-top: 12px; flex: none; }
+/* The nav bar on a computer: the page's name | the search box, centred on the page | the buttons. */
+@media (min-width: 701px) {
+  .navbar-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 480px) minmax(0, 1fr); }
+  .navbar-row > h1 { grid-column: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .navbar-row > .global-search { grid-column: 2; width: 100%; max-width: none; margin: 0; }
+  .navbar-row > .navbar-actions { grid-column: 3; justify-self: end; }
+}

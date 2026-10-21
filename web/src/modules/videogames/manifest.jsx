@@ -1,9 +1,15 @@
 import { GamepadIcon, GridIcon, TrophyIcon, UsersIcon } from '../../components/icons.jsx'
-import { FriendPanel, FriendsView } from './Friends.jsx'
-import FindGamePanel from './FindGamePanel.jsx'
-import StatsView from './StatsView.jsx'
-import VideoGamePanel from './VideoGamePanel.jsx'
-import { Dashboard, GamesPage, VideoGamesTiles } from './VideoGamesViews.jsx'
+import { VideoGamesTiles } from './HomeTiles.jsx'
+import { part } from '../lazy.js'
+
+// its pages and panels: loaded when first shown (modules/lazy.js)
+const FriendPanel = part(() => import('./Friends.jsx'), 'FriendPanel')
+const FriendsView = part(() => import('./Friends.jsx'), 'FriendsView')
+const FindGamePanel = part(() => import('./FindGamePanel.jsx'))
+const StatsView = part(() => import('./StatsView.jsx'))
+const VideoGamePanel = part(() => import('./VideoGamePanel.jsx'))
+const Dashboard = part(() => import('./VideoGamesViews.jsx'), 'Dashboard')
+const GamesPage = part(() => import('./VideoGamesViews.jsx'), 'GamesPage')
 
 // Video games: Steam achievement hunting, a dashboard for 100% runs. Pages live at
 // /videogames/<path>. Data comes from the official Steam Web API (api/app/steam.py), synced daily;

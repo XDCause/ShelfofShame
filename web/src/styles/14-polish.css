@@ -1,0 +1,190 @@
+/* ---------- Review 2026-10-15: layout polish ---------- */
+/* Stat tiles share out the whole row (no empty columns at the end); inside a hobby's card on the
+   Hobbies page they stay tile-sized. */
+.hobby-card .home-stats { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+@media (max-width: 700px) { .home-stats, .hobby-card .home-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Your own photos (board games, gear) fill the card; product shots keep their white frame. */
+.model-photo.cover { background: var(--fill); }
+.model-photo.cover img { object-fit: cover; padding: 0; }
+
+/* Journal: filters on the left, Day | Month and Sort on the right. */
+.filters { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-bottom: 10px; }
+.filters-spacer { flex: 1; }
+
+/* Calendar: an icon per kind of thing that happened that day. */
+.day-dots { display: flex; flex-wrap: wrap; gap: 2px; margin-top: auto; padding-top: 2px; align-items: center; min-width: 0; }
+.day-icon { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 4px;
+  color: var(--tone, var(--muted)); background: var(--tone-bg, var(--fill)); }
+.day-more-kinds { font-size: 0.65rem; color: var(--muted); }
+
+/* Chess: which colour you played - a round piece, not a square (it looked like a checkbox). */
+.chess-colour { flex: none; width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--muted); }
+.chess-colour.white { background: #fff; }
+.chess-colour.black { background: #1f2937; border-color: #1f2937; }
+:root[data-theme='dark'] .chess-colour.black { border-color: var(--muted); }
+
+@media (max-width: 700px) {
+  /* The page title stays on one line (long ones are cut short) under the big phone heading size. */
+  .navbar h1 { font-size: 1.35rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Journal on a phone: search full width, the two buttons share the next row, filters scroll. */
+  .page > .toolbar:has(+ .filters) .search { flex: 1 1 100%; }
+  .page > .toolbar:has(+ .filters) button { flex: 1 1 0; }
+  .filters .mood-filter { order: 3; }
+  .filters .chip-filter { flex: none; }
+  .filters-spacer { display: none; }
+  /* Chess openings: the bar alone in the heading (the numbers were printing over each other). */
+  .opening .wdl-text { display: none; }
+  .opening .opening-name { flex: 1 1 auto; }
+  .opening .wdl { flex: 0 0 72px; }
+  /* Video games list: smaller toolbar buttons, so the three fit without wrapping onto two rows. */
+  .games-pinned .toolbar button { padding: 8px 12px; font-size: 0.9rem; }
+}
+/* "Nothing here yet" boxes: a dashed outline, so an empty list doesn't look like content. */
+.empty.card { background: transparent; border: 1.5px dashed var(--border); box-shadow: none; padding: 32px 24px; }
+.filters > .chip-row { flex: none; }      /* tags and moods sit side by side on the left */
+
+/* ---------- Hobby colours ----------
+   Each hobby has its own natural colour (manifest `hue`, set as --hue where it's used; always beside its name
+   and icon, never on its own): its sidebar icon, its Home card, its Hobbies card, its drawn banner and the
+   breath of colour at the top of its pages. --hue-ink mixes it with the text colour so it reads in both themes. */
+[data-hobby] { --hue-ink: color-mix(in srgb, var(--hue) 72%, var(--text)); }
+.side-link[data-hobby] svg { color: color-mix(in srgb, var(--hue) 70%, #f3ecdc); }
+.side-link[data-hobby].active { background: color-mix(in srgb, var(--hue) 22%, transparent); }
+.side-link[data-hobby].active::before { background: color-mix(in srgb, var(--hue) 70%, #f3ecdc); }
+.hobby-card[data-hobby] .stat-icon { color: var(--hue-ink); background: color-mix(in srgb, var(--hue) 18%, transparent); }
+
+
+
+
+
+
+
+
+
+
+/* ---------- Home: each hobby's numbers in its own card ---------- */
+.glance { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+.glance-card {
+  display: flex; flex-direction: column; gap: 0; padding: 0; min-width: 0; overflow: hidden;
+  transition: transform var(--medium) var(--ease-out), border-color var(--fast);
+}
+.glance-card:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--hue) 45%, transparent); }
+.glance-card:not(:has(.glance-tiles > *)) { display: none; }      /* a hobby with nothing to show yet */
+.glance-art { position: absolute; inset: 0; z-index: -1; overflow: hidden; }
+.glance-art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgb(8 12 10 / 0) 20%, rgb(8 12 10 / 0.62)); }
+.glance-art svg, .glance-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.glance-head svg { flex: none; }
+.glance-head > svg:first-of-type { color: color-mix(in srgb, var(--hue) 55%, #fff); }
+.glance > .glance-card { animation: page-in 0.5s var(--ease-out) both; }
+.glance > .glance-card:nth-child(2) { animation-delay: 40ms; }
+.glance > .glance-card:nth-child(3) { animation-delay: 80ms; }
+.glance > .glance-card:nth-child(4) { animation-delay: 120ms; }
+.glance > .glance-card:nth-child(5) { animation-delay: 160ms; }
+.glance > .glance-card:nth-child(6) { animation-delay: 200ms; }
+.glance > .glance-card:nth-child(n+7) { animation-delay: 240ms; }
+.glance-head {
+  position: relative; isolation: isolate; display: flex; align-items: flex-end; gap: 8px; min-height: 84px; padding: 12px 16px;
+  color: #f3ecdc; font-family: var(--font-display); font-size: 1.12rem; font-weight: 600;
+}
+.glance-head > span:not(.glance-art) { flex: 1; text-shadow: 0 1px 10px rgb(0 0 0 / 0.5); }
+.glance-head:hover { color: #fff; text-decoration: none; }
+.glance-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px 16px; padding: 14px 16px 16px; }
+/* Inside a card the tiles are just the numbers: the card says which hobby. */
+.glance-tiles .home-stat { padding: 0; border: 0; background: none; box-shadow: none; min-height: 0; gap: 0; }
+.glance-tiles .home-stat:hover { background: none; }
+.glance-tiles .home-stat:hover strong { color: var(--hue-ink); }
+.glance-tiles .stat-icon { display: none; }
+.glance-tiles .home-stat strong { font-size: 1.45rem; }
+.glance-tiles .home-stat.skeleton { min-height: 56px; border-radius: 10px; background: var(--fill); }
+@media (max-width: 700px) {
+  /* One row you swipe through, a card and a bit showing (so it's clear there's more). */
+  .glance { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 10px;
+    margin-inline: calc(-1 * var(--gutter)); padding: 2px var(--gutter) 8px; scrollbar-width: none; }
+  .glance::-webkit-scrollbar { display: none; }
+  .glance-card { flex: 0 0 78%; scroll-snap-align: start; }
+}
+
+/* ---------- Empty pages: an icon, what goes here, the button to add the first one ---------- */
+.empty-state { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center;
+  padding: 40px 24px; border: 1.5px dashed var(--border); border-radius: var(--radius); }
+.empty-state .empty-icon { display: grid; place-items: center; width: 60px; height: 60px; border-radius: 18px;
+  color: var(--tint); background: var(--tint-soft); margin-bottom: 4px; }
+.empty-state .empty-title { margin: 0; font-size: 1.1rem; }
+.empty-state p { margin: 0 0 6px; max-width: 46ch; }
+/* A computer: hobby cards wrap, and the last row's cards stretch to fill it (no half-empty row). */
+@media (min-width: 701px) {
+  .glance { display: flex; flex-wrap: wrap; }
+  .glance-card { flex: 1 1 250px; }
+}
+
+/* ---------- Reading: For you (suggestions from Open Library) ---------- */
+.recs-head { display: flex; align-items: flex-start; gap: 12px; justify-content: space-between; }
+.recs-head p { margin: 0; max-width: 70ch; }
+.recs-head button { flex: none; }
+.recs-section { display: flex; flex-direction: column; gap: 2px; margin-top: 18px; }
+.recs-section-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.recs-section-head .home-card-title { margin: 0; }
+.recs-grid { margin-top: 8px; }
+.rec-card .book-cover { display: block; }
+.rec-card .book-card-text { flex: 1; }
+.rec-rating .stars { font-size: 0.85em; }
+.rec-actions { display: flex; flex-direction: column; gap: 4px; }
+.rec-actions button { width: 100%; }
+@media (max-width: 700px) {
+  .recs-head { flex-direction: column; }
+  /* Each section is a row you swipe through (a card and a bit showing), so the page stays short. */
+  .recs-grid { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 10px; margin-inline: calc(-1 * var(--gutter));
+    padding: 2px var(--gutter) 8px; scrollbar-width: none; }
+  .recs-grid::-webkit-scrollbar { display: none; }
+  .recs-grid > li { flex: 0 0 42%; scroll-snap-align: start; }
+}
+.section-tabs a { white-space: nowrap; }
+.section-tabs a:not([aria-current='page']) { color: #f3ecdc; }                  /* light words on the frosted dark */
+.section-tabs a:not([aria-current='page']):hover { background: rgb(255 255 255 / 0.12); color: #fff; }
+
+/* ---------- Reading: series ---------- */
+.series-meta { color: var(--purple, var(--muted)); font-weight: 600; margin: 0; }
+.series-list { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.series-list li { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 10px; }
+.series-list li.this { background: var(--tint-soft); }
+.series-list .series-num { width: 2.4em; flex: none; text-align: right; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+.series-list .grow { display: flex; flex-direction: column; min-width: 0; }
+.series-list .item-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- Models: Warhammer range (Good Games) ---------- */
+.wh-armies { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 14px; }
+.wh-armies .chips { flex: 1 1 420px; }
+.wh-other { display: flex; gap: 8px; flex: 0 1 340px; }
+.wh-other input { flex: 1; min-width: 0; }
+.chip-mark { color: #e0a100; }
+.wh-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 16px; margin-bottom: 12px; }
+.wh-title { margin: 0; font-size: 1.3rem; }
+.wh-head p { margin: 2px 0 0; }
+.wh-tools { display: flex; align-items: center; gap: 10px; }
+.wh-grid { list-style: none; margin: 0; padding: 0; }
+.wh-card.mine { border-color: color-mix(in srgb, var(--ok) 55%, var(--border)); }
+.wh-code, .wh-stock { position: absolute; top: 10px; padding: 3px 9px; border-radius: 999px; font-size: 0.75rem; font-weight: 700;
+  box-shadow: 0 0 0 1.5px #fff, 0 1px 4px rgb(0 0 0 / 0.25); }
+.wh-code { left: 10px; background: #1f2937; color: #fff; font-variant-numeric: tabular-nums; }
+.wh-stock { right: 10px; color: #fff; }
+.wh-stock.in { background: #15803d; }
+.wh-stock.out { background: #6b7280; }
+@container (max-width: 200px) { .wh-stock { top: 40px; } }   /* a narrow card: the stock under the grade, not on it */
+.wh-card .model-photo { container-type: inline-size; }
+.wh-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 6px; }
+@media (max-width: 700px) {
+  .wh-armies .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .wh-other { flex: 1 1 100%; }
+  .wh-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .wh-card .model-body { padding: 10px; }
+}
+
+/* ---------- Models: Gundam (Good Games) ---------- */
+.gundam-search { margin-bottom: 14px; }
+.gundam-search .search { flex: 1 1 280px; }
+.wh-grades { margin: -2px 0 12px; }
+@media (max-width: 700px) {
+  .gundam-search .search { flex-basis: 100%; }
+  .wh-grades { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+}

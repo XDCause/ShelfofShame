@@ -1,0 +1,91 @@
+/* ---------- Drawing: sketches in pages, whiteboard pages (core/journal/DrawingCanvas.jsx) ---------- */
+/* Excalidraw fills whatever box it's given, so each box has a definite height. */
+.drawing-embedded, .drawing-overlay { display: flex; flex-direction: column; }
+.drawing-embedded {
+  height: max(460px, calc(100dvh - 230px)); margin-top: 12px; overflow: hidden;
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface);
+}
+.drawing-overlay { position: fixed; inset: 0; z-index: 60; background: var(--bg); }
+.drawing-bar {
+  display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 6px 12px;
+  padding-top: calc(6px + env(safe-area-inset-top, 0px)); border-bottom: 1px solid var(--border); background: var(--bar);
+}
+.drawing-title { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.drawing-surface { position: relative; flex: 1; min-height: 0; }
+.drawing-surface .excalidraw { --color-primary: var(--tint); }
+.journal-page.whiteboard { max-width: none; padding: 14px 18px 18px; }
+/* A sketch inside a notes page: its preview, tapped to draw. */
+.drawing-block {
+  display: grid; place-items: center; width: 100%; min-height: 140px; margin: 4px 0; padding: 8px; cursor: pointer;
+  border: 1px dashed var(--border); border-radius: 12px; background: #fff; color: var(--muted);
+}
+.drawing-block:hover { border-color: var(--tint); }
+.drawing-block img { display: block; max-width: 100%; max-height: 520px; object-fit: contain; }
+.drawing-empty { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--tint); }
+
+/* ---------- Writing with a pen ---------- */
+/* Touch screens (a tablet): taller lines and slightly bigger text, easier to write on. */
+@media (pointer: coarse) {
+  .journal-editor .bn-editor { font-size: 1.12rem; }
+  .journal-editor .bn-block-content { padding-block: 6px; }
+}
+/* Full screen writing mode (journal page's "Full screen"): just the page, wide, with big lines
+   and a big blank area below the last line - writing there lands in the page too. */
+body.writing-mode .sidebar, body.writing-mode .navbar, body.writing-mode .tabbar,
+body.writing-mode .section-tabs, body.writing-mode .timer-banner { display: none !important; }
+body.writing-mode .app { display: block; }
+body.writing-mode .content { max-width: none; padding: 0; }
+body.writing-mode main { padding-bottom: 0; }
+body.writing-mode .journal-page {
+  --gutter-left: 56px; max-width: 1200px; min-height: 100dvh; margin: 0 auto; border-radius: 0; border-block: 0;
+  padding-top: max(12px, env(safe-area-inset-top, 0px));
+}
+body.writing-mode .journal-editor .bn-editor { font-size: 1.45rem; line-height: 1.7; min-height: 70dvh; padding-bottom: 40dvh; }
+body.writing-mode .journal-editor .bn-block-content { padding-block: 10px; }
+body.writing-mode .journal-title { font-size: 2.2rem; }
+
+/* ---------- Mood (core/journal/MoodPicker.jsx, moods.js) ---------- */
+.mood { position: relative; flex: none; }
+.mood-face {
+  display: grid; place-items: center; width: 48px; height: 48px; padding: 0; border: 0; border-radius: 14px;
+  font-size: 1.9rem; line-height: 1; background: var(--tone-bg, var(--fill)); cursor: pointer;
+}
+.mood-face.empty { opacity: 0.35; background: transparent; }
+.mood-face.empty:hover { opacity: 0.7; }
+.mood-panel {
+  position: absolute; top: calc(100% + 8px); left: 0; z-index: 30; width: min(440px, calc(100vw - 32px));
+  display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 16px;
+  border: 1px solid var(--border); background: var(--elevated); box-shadow: var(--shadow);
+}
+.mood-question { margin: 0; font-weight: 650; }
+.mood-choices { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.mood-choice {
+  display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 2px; border: 1px solid transparent;
+  border-radius: 12px; background: var(--fill-2); color: var(--text); font-size: 0.78rem; font-weight: 600;
+}
+.mood-choice-face { font-size: 1.8rem; line-height: 1.1; }
+.mood-choice[aria-pressed='true'] { background: var(--tone-bg); border-color: var(--tone); color: var(--tone); }
+.mood-words { gap: 6px; }
+.mood-words input { width: 110px; min-height: 30px; padding: 4px 10px; border-radius: 999px; font-size: 0.85rem; }
+.mood-line { margin: 0; font-size: 0.85rem; font-weight: 600; color: var(--tone, var(--muted)); }
+.mood-filter { flex: none; gap: 4px; }
+.mood-filter .chip-filter { padding-inline: 8px; font-size: 1.05rem; }
+.your-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; margin-bottom: 14px; }
+.week-day {
+  display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0; border-radius: 10px;
+  background: var(--tone-bg, var(--fill-2)); color: var(--muted); font-size: 0.72rem; font-weight: 600;
+}
+.week-day:hover { text-decoration: none; outline: 1px solid var(--tone, var(--border)); }
+.week-face { font-size: 1.35rem; line-height: 1.2; }
+.week-day.empty .week-face { color: var(--faint); }
+.day-top { display: flex; align-items: center; justify-content: space-between; }
+.day-mood { font-size: 0.95rem; line-height: 1; }
+@media (max-width: 700px) {
+  .mood-face { width: 40px; height: 40px; font-size: 1.6rem; }
+  .day-mood { font-size: 0.75rem; }
+}
+
+/* Journal list: what kind of page (and pinned) in the card's corner; a day's heading with its mood. */
+.card-pills { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; flex: none; }
+.day-heading { display: flex; align-items: center; gap: 8px; }
+.day-heading .pill { text-transform: none; letter-spacing: 0; }

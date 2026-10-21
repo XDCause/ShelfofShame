@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router'
 import { api } from './api.js'
 import { readBarcode } from './barcode.js'
@@ -233,6 +233,8 @@ export default function App() {
 
             <main>
               {!lookups ? (!error && <p className="muted loading">Loading...</p>) : (
+                // (a hobby's pages load the first time they're shown: modules/lazy.js)
+                <Suspense fallback={<p className="muted loading">Loading...</p>}>
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/goals" element={<GoalsPage />} />
@@ -269,6 +271,7 @@ export default function App() {
                   ))}
                   <Route path="*" element={<p className="empty card">There's no page here. <Link to="/">Go home</Link></p>} />
                 </Routes>
+                </Suspense>
               )}
             </main>
           </div>
@@ -353,5 +356,9 @@ function ScanButtonNav({ onBarcode, onUnreadable, onError }) {
 // A panel from PANELS (an event, a board game...): `panel` is {type, ...its props}.
 function ModulePanel({ panel: { type, ...props }, onClose }) {
   const Panel = PANELS[type]
-  return <Panel key={`${type}-${props.id ?? 'new'}-${props.day ?? ''}`} {...props} onClose={onClose} />
+  return (    // (a hobby's panel loads the first time it opens: nothing shows for that moment)
+    <Suspense fallback={null}>
+      <Panel key={`${type}-${props.id ?? 'new'}-${props.day ?? ''}`} {...props} onClose={onClose} />
+    </Suspense>
+  )
 }

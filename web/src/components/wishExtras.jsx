@@ -83,7 +83,10 @@ export function WantedPanel({ kind, wantedRef: ref, name, onClose }) {
         <label className="field">
           <span className="field-label">Tell me when it's under</span>
           <input type="number" min="0" step="0.01" defaultValue={x.target_price ?? ''} placeholder="$"
-            onBlur={(e) => run(() => api.setWantedExtras(kind, ref, { target_price: e.target.value === '' ? null : e.target.value }))} />
+            onBlur={(e) => {                              // (only when it changed: a tab through the form saves nothing)
+              const v = e.target.value === '' ? null : Number(e.target.value)
+              if (v !== (x.target_price ?? null)) run(() => api.setWantedExtras(kind, ref, { target_price: v }))
+            }} />
         </label>
         {x.below_target && <p className="field small wx-good-text">It's {money(x.last_price ?? x.price)} - under your target ✓</p>}
       </section>
@@ -122,7 +125,7 @@ export function WantedPanel({ kind, wantedRef: ref, name, onClose }) {
 
 // ---------------------------------------------------------------- add from a link
 const AS = [['wish', 'A supply (paint, glue, tools…)'], ['model', 'A kit'], ['game', 'A board game'], ['gear:volleyball', 'Volleyball gear'],
-  ['gear:hiking', 'Hiking gear'], ['garden', 'For the garden']]
+  ['gear:hiking', 'Hiking gear'], ['gear:shooting', 'Shooting gear'], ['garden', 'For the garden']]
 const PHOTO_PATH = { gear: (id) => `/gear/${id}`, game: (id) => `/board-games/${id}`, garden: (id) => `/garden/items/${id}` }
 
 export function LinkPanel({ onClose }) {

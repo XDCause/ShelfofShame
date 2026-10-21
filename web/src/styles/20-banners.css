@@ -1,0 +1,103 @@
+/* ---------- Banners (components/PageBanner.jsx, Home's HomeHero) ----------
+   Full width across the page column, starting under the clear nav bar. The picture (yours, or a drawn
+   landscape) is darkened on the left for the words and fades into the page at the bottom, so the content
+   below seems to rise out of it. */
+.page-banner {
+  position: relative; isolation: isolate; overflow: hidden; margin-top: calc(-1 * var(--nav-h));
+  min-height: calc(var(--nav-h) + clamp(150px, 17vw, 210px)); padding-top: calc(var(--nav-h) + 12px); color: #f3ecdc;
+  display: flex; flex-direction: column; justify-content: flex-end;
+}
+.banner-art { position: absolute; inset: 0; z-index: -2; }
+.banner-art svg, .banner-photo { width: 100%; height: 100%; object-fit: cover; display: block; }
+.page-banner::after {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    linear-gradient(180deg, rgb(8 12 10 / 0.55) 0, rgb(8 12 10 / 0) calc(var(--nav-h) + 40px)),
+    linear-gradient(90deg, rgb(8 12 10 / 0.6) 0, rgb(8 12 10 / 0.18) 50%, rgb(8 12 10 / 0) 75%),
+    linear-gradient(0deg, var(--bg) 0, color-mix(in srgb, var(--bg) 0%, transparent) var(--banner-fade, 46%));
+}
+:root:not([data-theme='dark']) .page-banner { --banner-fade: 18%; }   /* a short fade into parchment, not a grey band */
+.banner-text, .home-banner .hero-text {
+  width: 100%; max-width: var(--column); margin: 0 auto; padding: 0 var(--gutter) 40px;
+}
+.banner-eyebrow, .hero-date {
+  margin: 0 0 6px; font-size: var(--text-xs); font-weight: 650; letter-spacing: 0.16em; text-transform: uppercase; color: #e9c79a;
+}
+.banner-title {
+  margin: 0; font-family: var(--font-display); font-size: clamp(2rem, 3.6vw, var(--text-3xl)); font-weight: 600; line-height: 1.08;
+  text-shadow: 0 2px 24px rgb(0 0 0 / 0.35);
+}
+.banner-tagline { margin: 8px 0 0; font-size: 1.02rem; color: rgb(243 236 220 / 0.86); max-width: 52ch; }
+/* "Picture": a small pill top right of the banner, its menu below it. */
+.banner-picture { position: absolute; right: max(var(--gutter), calc((100% - var(--column)) / 2 + var(--gutter))); bottom: 44px; z-index: 2; }
+.banner-picture summary {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 4px 12px; border-radius: 999px; cursor: pointer;
+  list-style: none; font-size: var(--text-xs); font-weight: 600; color: rgb(243 236 220 / 0.85);
+  background: rgb(12 18 14 / 0.38); border: 1px solid rgb(255 255 255 / 0.16);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); transition: background var(--fast), color var(--fast);
+}
+.banner-picture summary::-webkit-details-marker { display: none; }
+.banner-picture summary:hover, .banner-picture[open] summary { background: rgb(12 18 14 / 0.62); color: #fff; }
+.banner-picture-menu {
+  position: absolute; right: 0; top: calc(100% + 6px); display: flex; flex-direction: column; min-width: 220px; padding: 6px;
+  border-radius: var(--radius); background: var(--elevated); border: 1px solid var(--border); box-shadow: var(--shadow); color: var(--text);
+  animation: pop-in 0.16s var(--ease-out);
+}
+.banner-picture-menu button {
+  border: 0; background: none; text-align: left; padding: 9px 10px; border-radius: var(--radius-sm); font-size: var(--text-sm); color: inherit;
+}
+.banner-picture-menu button:hover:not(:disabled) { background: var(--fill); }
+
+/* Home's banner: taller, the greeting big, a handwritten line on the right, and the next row of cards
+   overlapping its foot. */
+.home-banner { min-height: calc(var(--nav-h) + clamp(260px, 30vw, 380px)); }
+.home-banner .hero-text { padding-bottom: 96px; }
+.home-banner h2 {
+  margin: 0; font-size: clamp(2.3rem, 4.4vw, var(--text-4xl)); font-weight: 600; line-height: 1.05; color: #f6efdf;
+  text-shadow: 0 2px 28px rgb(0 0 0 / 0.35);
+}
+.hero-tagline { margin: 10px 0 20px; font-size: 1.05rem; color: rgb(243 236 220 / 0.88); max-width: 46ch; }
+.hero-write { background: #ece3cf; color: #17211b; }
+.hero-write svg { margin-right: -4px; }
+.hero-script {
+  position: absolute; right: max(var(--gutter), calc((100% - var(--column)) / 2 + var(--gutter))); top: calc(var(--nav-h) + 30px);
+  margin: 0; font-family: var(--font-script); font-size: clamp(1.5rem, 2.4vw, 2.1rem); line-height: 1.05; text-align: right;
+  color: rgb(246 239 223 / 0.88); transform: rotate(-6deg); text-shadow: 0 2px 14px rgb(0 0 0 / 0.4);
+}
+.home-banner .banner-picture { bottom: 96px; }
+.home .home-now { margin-top: -64px; position: relative; z-index: 1; }
+.home-now { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); align-items: stretch; }
+.home-now > .card { min-width: 0; }
+.home-section-title { margin: 6px 0 12px; font-size: var(--text-xl); font-weight: 600; }
+.home-hobbies { display: flex; flex-direction: column; }
+
+/* Travel's feature on Home: the next trip, its picture filling the card, the words at its foot. */
+.next-adventure { position: relative; isolation: isolate; overflow: hidden; padding: 0; min-height: 260px; display: flex; color: #f3ecdc; border: 0;
+  flex-direction: column; justify-content: flex-end; }   /* the words at the bottom left, however Home lays the card out */
+.next-adventure-art { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; }
+.next-adventure-art svg { width: 100%; height: 100%; display: block; }
+.next-adventure::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgb(8 12 10 / 0.05) 30%, rgb(8 12 10 / 0.78)); }
+.next-adventure-text { align-self: stretch; padding: 20px 22px; }
+.next-adventure-eyebrow { margin: 0; font-size: var(--text-xs); font-weight: 650; letter-spacing: 0.16em; text-transform: uppercase; color: #e9c79a; }
+.next-adventure-name { margin: 4px 0 2px; font-size: 1.9rem; color: #f6efdf; }
+.next-adventure-when { margin: 0 0 14px; font-size: var(--text-sm); color: rgb(243 236 220 / 0.85); }
+.next-adventure .primary { background: #ece3cf; color: #17211b; min-height: 34px; padding: 6px 14px; }
+
+/* The settings link at the foot of the sidebar. */
+.side-settings { margin-top: 4px; cursor: pointer; }
+
+@media (max-width: 700px) {
+  .page-banner { min-height: calc(var(--nav-h) + 128px); }
+  .banner-text, .home-banner .hero-text { padding-bottom: 26px; }
+  .banner-tagline { font-size: 0.92rem; }
+  .page-banner { padding-top: calc(var(--nav-h) + 44px); }
+  .banner-picture { bottom: auto; top: calc(var(--nav-h) + 4px); right: var(--gutter); }
+  .banner-picture summary span { display: none; }
+  .home-banner { min-height: calc(var(--nav-h) + 250px); }
+  .home-banner .hero-text { padding-bottom: 72px; }
+  .home-banner .banner-picture { bottom: auto; }
+  .hero-script { display: none; }
+  .home .home-now { margin-top: -48px; }
+  .section-tabs { margin-bottom: 14px; }
+}
+@media (prefers-reduced-motion: reduce) { .glance-card:hover, .model-card:hover, .home-stat:hover, .journal-card:hover { transform: none; } }

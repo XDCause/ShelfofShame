@@ -1,0 +1,266 @@
+/* ---- Chess (modules/chess) ---- */
+.chess-replay { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 14px; align-items: start; }
+.chess-board { grid-row: span 2; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); aspect-ratio: 1; border-radius: 6px;
+  overflow: hidden; container-type: inline-size; box-shadow: 0 0 0 1px var(--border); }
+.chess-board .sq { position: relative; display: flex; align-items: center; justify-content: center; }
+.chess-board .sq.light { background: #efdcb9; }
+.chess-board .sq.dark { background: #b58863; }
+.chess-board .sq.moved.light { background: #f3e483; }
+.chess-board .sq.moved.dark { background: #d2b84f; }
+.chess-board .pc { font-size: 10.5cqw; line-height: 1; font-family: "Segoe UI Symbol", "Noto Sans Symbols 2", "DejaVu Sans", sans-serif; user-select: none; }
+.chess-board .pc.w { color: #fff; text-shadow: 0 0 1px #000, 0 0 1px #000, 0 1px 1px #000; }
+.chess-board .pc.b { color: #1d1d1d; text-shadow: 0 0 1px #fff8; }
+.chess-board .coord { position: absolute; font-size: 2.2cqw; font-weight: 600; opacity: 0.75; color: #5a3d22; }
+.chess-board .coord.rank { top: 2px; left: 3px; }
+.chess-board .coord.file { bottom: 1px; right: 3px; }
+.chess-controls { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.chess-controls button { min-width: 40px; }
+.chess-ply { flex: 1 0 5em; text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.chess-moves { list-style: none; margin: 0; padding: 8px; max-height: 340px; overflow: auto; columns: 2; column-gap: 12px;
+  background: var(--fill-2); border-radius: 8px; font-size: 0.88rem; }
+.chess-moves li { display: flex; gap: 4px; align-items: baseline; break-inside: avoid; }
+.chess-moves li > .muted { width: 2.2em; text-align: right; font-variant-numeric: tabular-nums; }
+.chess-moves button { min-height: 0; padding: 1px 5px; border-radius: 4px; color: var(--text); }
+.chess-moves button.on { background: var(--tint); color: var(--on-tint); }
+@media (max-width: 700px) {
+  .chess-replay { grid-template-columns: minmax(0, 1fr); }
+  .chess-board { grid-row: auto; }
+  .chess-moves { max-height: 180px; }
+}
+.chess-facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; margin: 10px 0 0; font-size: 0.9rem; }
+.chess-facts dt { color: var(--muted); }
+.chess-facts dd { margin: 0; }
+.chess-row { display: flex; align-items: center; gap: 12px; }
+.chess-row .grow { display: flex; flex-direction: column; min-width: 0; }
+.chess-colour.white { background: #fff; }
+.chess-colour.black { background: #222; }
+.chess-rating { display: flex; flex-direction: column; align-items: flex-end; font-variant-numeric: tabular-nums; }
+.rating-up { color: var(--ok); font-size: 0.82rem; font-weight: 600; }
+.rating-down { color: var(--out); font-size: 0.82rem; font-weight: 600; }
+.chess-avatar { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; flex: none; }
+.chess-chart-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 8px; }
+.chess-chart-head .home-card-title { margin: 0; flex: 1; }
+.chip-gap { width: 12px; flex: none; }
+.chess-form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 10px; }
+.chess-form-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: var(--muted); }
+.chess-form-grid input, .chess-form-grid select { color: var(--text); }
+.chess-form .field { margin: 10px 0; }
+@media (max-width: 700px) { .chess-form-grid { grid-template-columns: minmax(0, 1fr); } }
+.openings { display: flex; flex-direction: column; gap: 8px; }
+.opening .fold-title { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.opening-name { flex: 0 1 260px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wdl { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; font-weight: 400; }
+.wdl-bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; gap: 2px; }
+.wdl-win { background: var(--ok); }
+.wdl-draw { background: var(--muted); opacity: 0.6; }
+.wdl-loss { background: var(--out); }
+.wdl-text { font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.opening-variation { font-size: 0.88rem; }
+
+/* Reading: covers (Open Library's, or a plain coloured book with the title), the book grid,
+   stars, the reading-now cards, quotes. */
+.book-cover { width: 64px; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 4px 8px 8px 4px; flex: none;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.25); background: var(--fill); }
+.book-cover.small { width: 40px; }
+.book-cover.tiny { width: 28px; }
+.book-cover.large { width: 120px; }
+.cover-blank { display: flex; flex-direction: column; gap: 4px; padding: 6px; overflow: hidden; color: #fff;
+  background: linear-gradient(160deg, hsl(var(--cover-hue) 45% 42%), hsl(var(--cover-hue) 50% 28%));
+  font-size: 0.62rem; font-weight: 650; line-height: 1.15; text-align: left; }
+.cover-blank span { display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+.book-cover.small.cover-blank span, .book-cover.tiny.cover-blank span { display: none; }
+.book-grid { list-style: none; margin: 12px 0; padding: 0; display: grid; gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.book-card { display: flex; flex-direction: column; gap: 8px; width: 100%; height: 100%; padding: 10px; text-align: left;
+  border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text); }
+.book-card:hover { border-color: color-mix(in srgb, var(--tint) 45%, var(--border)); }
+.book-card .book-cover { width: 100%; }
+.book-card-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.book-card .item-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.book-progress { display: flex; flex-direction: column; gap: 4px; }
+/* Shown stars: a grey row of five with the gold row on top, cut to the rating's width (so halves work). */
+.stars { position: relative; display: inline-block; color: #e0a100; letter-spacing: 1px; white-space: nowrap; line-height: 1.2; }
+.stars.small { font-size: 0.8rem; }
+.stars-off { color: var(--fill); }
+.stars-on { position: absolute; inset: 0 auto 0 0; overflow: hidden; }
+.stars-input { display: inline-flex; align-items: center; gap: 2px; }
+.stars-input button.half { background: linear-gradient(90deg, #e0a100 50%, var(--fill) 50%); -webkit-background-clip: text;
+  background-clip: text; color: transparent; }
+.stars-value { margin-left: 6px; color: var(--muted); font-weight: 600; min-width: 2ch; }
+.stars-input button { font-size: 1.7rem; line-height: 1; padding: 2px 4px; min-height: 44px; border: 0; background: none;
+  color: var(--fill); cursor: pointer; }
+.stars-input button.on { color: #e0a100; }
+.reading-now { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
+.reading-now-item { display: flex; gap: 14px; align-items: flex-start; }
+.reading-now-item .book-cover { width: 76px; }
+.reading-now-item > .grow { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.cover-button { padding: 0; border: 0; background: none; cursor: pointer; }
+.link-title { padding: 0; border: 0; background: none; color: var(--text); font: inherit; font-weight: 650; text-align: left; cursor: pointer; }
+.link-title:hover { color: var(--tint); }
+.progress-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+.progress-form label { display: flex; flex-direction: column; gap: 3px; font-size: 0.8rem; color: var(--muted); }
+.progress-form input { width: 110px; }
+.progress-form.compact input { width: 84px; }
+.progress-form .alert { flex-basis: 100%; }
+.progress-end { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-weight: 600; }
+/* One row of covers (no lone book on a second row); scrolls sideways when they don't fit. */
+.cover-row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(84px, 1fr); gap: 10px; margin-bottom: 8px;
+  overflow-x: auto; scroll-snap-type: x mandatory; }
+.cover-row > * { scroll-snap-align: start; }
+.cover-card { display: flex; flex-direction: column; gap: 4px; padding: 0; border: 0; background: none; color: var(--text); text-align: left; cursor: pointer; }
+.cover-card .book-cover { width: 100%; }
+.cover-card-title { font-size: 0.78rem; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.book-head { display: flex; gap: 16px; align-items: flex-start; }
+.book-head .grow { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.book-head p { margin: 0; }
+.book-author { font-size: 1.05rem; font-weight: 600; }
+.book-results .row-button.static { cursor: default; }
+.book-results .row-button.static:hover { background: none; }
+.book-form { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); align-items: end; }
+.book-form label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: var(--muted); }
+.book-form .button-row, .book-form .alert { grid-column: 1 / -1; }
+.reading-log li { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+.quote-form { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.quote-form input[type=number] { width: 90px; }
+.quote-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.quote-list li { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: start; }
+.quote-list .icon-btn { grid-row: 1 / span 2; grid-column: 2; }
+blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--tint); font-style: italic; white-space: pre-wrap; }
+.quote-wall { list-style: none; margin: 12px 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); }
+.quote-wall li { display: flex; flex-direction: column; gap: 10px; padding: 16px; }
+.quote-wall blockquote { font-size: 1.02rem; line-height: 1.5; }
+.goal-of { font-size: 1rem; font-weight: 500; color: var(--muted); letter-spacing: 0; }
+.goodreads-import { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.empty-start { display: flex; flex-direction: column; gap: 10px; }
+.mention-book { color: var(--teal); background: var(--teal-bg); }
+@media (max-width: 700px) {
+  .book-grid { grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
+  .book-cover.large { width: 88px; }
+}
+
+/* A build step that was skipped (no detailing on a snap-fit kit): a dashed ring and a dash. */
+.steps li.skipped .step-dot { background: none; color: var(--muted); box-shadow: inset 0 0 0 1.5px var(--muted);
+  outline: 1.5px dashed var(--surface); outline-offset: -1.5px; }
+.steps li.skipped .step-name { color: var(--muted); font-style: italic; }
+.steps li.skipped .step-name::after { content: ' · skipped'; font-size: 0.75em; }
+.step-bar span.skip { background: repeating-linear-gradient(90deg, var(--fill) 0 3px, transparent 3px 5px); }
+
+/* Badges over a photo (kit, board game and gear cards). A photo can be any colour, so these are
+   solid with white text, a thin white ring and a shadow - never the see-through tints the same
+   badges use on plain backgrounds. Fixed colours, not theme tokens: the photo is the same in light
+   and dark mode. Each passes 4.5:1 with white text. !important beats the status / tone colours. */
+.model-photo > .status-badge, .model-photo > .timer-dot {
+  --badge: #334155;
+  background: var(--badge) !important; color: #fff !important;
+  box-shadow: 0 0 0 1.5px rgb(255 255 255 / 0.85), 0 2px 6px rgb(0 0 0 / 0.35);
+}
+.model-photo > .status-badge:is(.s-wanted, .purple) { --badge: #6d28d9; }
+.model-photo > .status-badge:is(.s-in-progress, .tint) { --badge: #3d6b22; }
+.model-photo > .status-badge:is(.s-on-hold, .low) { --badge: #b45309; }
+.model-photo > .status-badge:is(.s-finished, .ok) { --badge: #15803d; }
+.model-photo > .status-badge.out, .model-photo > .timer-dot { --badge: #b91c1c; }
+.model-photo > .status-badge.teal { --badge: #0f766e; }
+.model-photo > .status-badge.s-gone { --badge: #52525b; }
+.photo-pick { display: inline-flex; flex-wrap: wrap; gap: 8px; }
+/* The paste / link box pops up under the photo buttons (they often sit in a narrow column). */
+.photo-pick-wrap { position: relative; display: inline-flex; }
+.paste-box {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 20; width: min(440px, calc(100vw - 48px));
+  display: flex; flex-direction: column; gap: 6px; padding: 12px; text-align: left;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+}
+.paste-row { display: flex; gap: 6px; }
+.paste-row input { flex: 1; min-width: 0; }
+.paste-box .alert { margin: 0; }
+
+/* Build-log photos: a grid of squares (one photo shows bigger), each with a ✕; the photos picked
+   for a new entry show the same way under the form until it's added. */
+.log-photos { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+.log .log-photos li { position: relative; padding: 0; border: 0; }
+.log-photos li { position: relative; }
+.log-photos img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; margin: 0 !important;
+  max-height: none !important; border-radius: 10px; background: var(--fill); }
+.log-photos.one { grid-template-columns: minmax(0, 360px); }
+.log-photos.one img { aspect-ratio: auto; max-height: 320px !important; object-fit: contain; }
+.log-photos.picked { margin: 10px 0 0; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); }
+.photo-remove { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; padding: 0; border: 0;
+  border-radius: 999px; background: rgb(0 0 0 / 0.6); color: #fff; font-size: 0.75rem; line-height: 26px; cursor: pointer; }
+
+/* A paint's own "+ Wishlist" in a model's checklist: a tag you can press. */
+.tag.wish-btn { border: 0; cursor: pointer; color: var(--tint); background: var(--tint-soft); font-weight: 600; }
+.tag.wish-btn:hover { background: color-mix(in srgb, var(--tint) 22%, transparent); }
+
+/* A build-log entry's Edit and ✕, and the entry while it's being changed. */
+.log-actions { display: inline-flex; align-items: center; gap: 4px; }
+.log-edit { margin-top: 6px; }
+
+/* Volleyball: your teams, as tappable chips with where they play. */
+.teams-card { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.team-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.team-chip { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 8px 12px; text-align: left;
+  border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text); }
+.team-chip:hover { border-color: color-mix(in srgb, var(--tint) 45%, var(--border)); }
+.team-chip .muted { flex-basis: 100%; }
+.team-chip.retired { opacity: 1; border-style: dashed; color: var(--muted); }   /* (faded with opacity it failed contrast) */
+
+/* Board games: finding one at Gameology; a game's categories and mechanisms. */
+.shop-results .thumb { width: 52px; height: 52px; object-fit: contain; border-radius: 8px; flex: none; background: #fff; }
+.shop-results .row-button.static { cursor: default; }
+.shop-results .row-button.static:hover { background: none; }
+.shop-results .item-title .pill { margin-left: 6px; }
+.game-tags p { margin: 0 0 6px; }
+
+/* Volleyball games: seasons (one card per team) across the page, form + head to head beside them on a
+   computer, below them on a phone. Each game is one row: date, what, result. */
+.vb-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
+.vb-seasons { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.vb-side { display: flex; flex-direction: column; gap: 16px; position: sticky; top: calc(72px + env(safe-area-inset-top)); }
+.vb-season { padding: 0; overflow: hidden; }
+.vb-season-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 14px 18px;
+  border-bottom: 1px solid var(--border); }
+.vb-season-head .grow { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.vb-season-head h2 { margin: 0; }
+.vb-rows { list-style: none; margin: 0; padding: 0; }
+.vb-rows li + li { border-top: 1px solid var(--separator); }
+.vb-row { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; align-items: center; gap: 14px; width: 100%;
+  padding: 10px 18px; border: 0; background: none; color: var(--text); text-align: left; cursor: pointer; }
+.vb-row:hover { background: var(--fill); }
+.vb-date { display: flex; flex-direction: column; line-height: 1.2; white-space: nowrap; }
+.vb-date strong { font-variant-numeric: tabular-nums; }
+.vb-date span { font-size: 0.78rem; color: var(--muted); }
+.vb-what { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.vb-what .item-meta { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.form-dots { display: inline-flex; gap: 3px; }
+.form-dot { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 5px; font-size: 0.62rem;
+  font-weight: 700; color: #fff; background: #64748b; }
+.form-dots.big .form-dot { width: 24px; height: 24px; font-size: 0.75rem; border-radius: 6px; }
+.form-dot.f-W { background: #15803d; }
+.form-dot.f-L { background: #b91c1c; }
+.form-dot.f-D { background: #b45309; }
+.h2h li { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
+@media (max-width: 1000px) {
+  .vb-layout { grid-template-columns: minmax(0, 1fr); }
+  .vb-side { position: static; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+}
+@media (max-width: 700px) {
+  .vb-row { grid-template-columns: 58px minmax(0, 1fr) auto; gap: 10px; padding: 10px 14px; }
+  .vb-season-head { padding: 12px 14px; }
+  .vb-season-head .form-dots { flex-basis: 100%; }     /* its own line under the team's details */
+}
+
+/* Volleyball videos: uploaded ones play in the app; the card shows a frame of the video. */
+.video-thumb { display: grid; place-items: center; aspect-ratio: 16 / 9; background: #000; position: relative; padding: 0; border: 0; width: 100%; cursor: pointer; }
+.video-thumb video { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+.play-mark { position: absolute; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 999px;
+  background: rgb(0 0 0 / 0.55); color: #fff; font-size: 1.3rem; padding-left: 4px; }
+.video-player { display: block; width: 100%; max-height: 60vh; border-radius: 12px; background: #000; }
+.video-pick { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.upload-progress { width: 100%; display: flex; flex-direction: column; gap: 6px; }
+
+/* Which platform a game is on (the Games list, when more than one platform is shown). */
+.pill.platform-steam { color: #1b2838; background: rgb(102 192 244 / 0.25); }
+.pill.platform-epic { color: var(--text); background: var(--fill); }
+.pill.platform-ubisoft { color: #1d4ed8; background: rgb(37 99 235 / 0.14); }
+:root[data-theme='dark'] .pill.platform-steam { color: #c7d5e0; }
+:root[data-theme='dark'] .pill.platform-ubisoft { color: #93c5fd; }

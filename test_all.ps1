@@ -1,4 +1,4 @@
-# Run the API tests and the browser tests at the same time (they use separate databases: hobby_inventory_test and
+# Run the API tests, the web code's own tests (run_web_tests.ps1) and the browser tests at the same time (they use separate databases: hobby_inventory_test and
 # the throwaway copies' own), then show both outputs. ~6 minutes: the API tests (~2), and the walk-through and the UI
 # audit side by side on two throwaway copies (~5-6).
 #
@@ -27,7 +27,10 @@ function Start-Suite([string]$script, [string]$name, [string[]]$extra = @()) {
 
 $started = Get-Date
 $suites = @(Start-Suite 'run_tests.ps1' 'api')
-if (-not $Quick) { $suites += Start-Suite 'run_e2e.ps1' 'e2e' @(if ($NoAudit) { '-NoAudit' }) }
+if (-not $Quick) {
+    $suites += Start-Suite 'run_web_tests.ps1' 'web'
+    $suites += Start-Suite 'run_e2e.ps1' 'e2e' @(if ($NoAudit) { '-NoAudit' })
+}
 Write-Host ("Running " + (($suites | ForEach-Object { $_.Name }) -join ' and ') + ' side by side...') -ForegroundColor Cyan
 
 $failed = @()

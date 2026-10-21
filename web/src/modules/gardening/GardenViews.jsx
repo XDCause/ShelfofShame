@@ -3,11 +3,10 @@ import { Link } from 'react-router'
 import { api, shortDate } from '../../api.js'
 import { BarList, ColumnChart } from '../../components/charts.jsx'
 import Fold from '../../components/Fold.jsx'
-import { BoxIcon, SproutIcon } from '../../components/icons.jsx'
+import { SproutIcon } from '../../components/icons.jsx'
 import { useApp } from '../../core/app-context.js'
 import EmptyState from '../../core/EmptyState.jsx'
-import Stat, { StatSkeleton } from '../../core/Stat.jsx'
-import { PhotoViewer, StagePill, daysFrom, dueText, isDue, plantEmoji, useGardenSummary } from './gardenParts.jsx'
+import { PhotoViewer, StagePill, daysFrom, dueText, isDue, plantEmoji } from './gardenParts.jsx'
 import { TaskRow } from './PlantingPanel.jsx'
 
 // The Gardening hobby's pages: Today (what needs doing, weather tips, what to sow), Plants (a list or a
@@ -15,19 +14,6 @@ import { TaskRow } from './PlantingPanel.jsx'
 
 const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
 
-export function GardenTiles() {
-  const { data: s } = useGardenSummary()
-  if (!s) return <StatSkeleton />
-  if (!s.growing && !s.spaces) return null
-  return (
-    <>
-      <Stat to="/gardening/today" Icon={SproutIcon} tone="ok" value={s.growing} label="Plants growing"
-        sub={[s.need_water ? `${s.need_water} need water` : 'all watered', s.ready && `${s.ready} ready to pick`].filter(Boolean).join(' · ')} />
-      <Stat to="/gardening/harvests" Icon={BoxIcon} tone="low" value={s.harvests_this_year} label={`Harvests in ${new Date().getFullYear()}`}
-        sub={s.tasks_due ? `${s.tasks_due} reminder${s.tasks_due === 1 ? '' : 's'} due` : 'no reminders due'} />
-    </>
-  )
-}
 
 // ---------------------------------------------------------------------------------------------
 // Today

@@ -1,8 +1,19 @@
 import { CrosshairIcon, TargetIcon, TrophyIcon } from '../../components/icons.jsx'
-import { GearView } from '../volleyball/VolleyballViews.jsx'
-import { startShooting } from './ShootingLive.jsx'
-import { AmmoPanel, RangePanel, RiflePanel, SessionPanel } from './ShootingPanels.jsx'
-import { AmmoView, Dashboard, DopeView, RiflesView, SessionsView, ShootingTiles } from './ShootingViews.jsx'
+import { ShootingTiles } from './HomeTiles.jsx'
+import { part } from '../lazy.js'
+
+// its pages and panels: loaded when first shown (modules/lazy.js)
+const GearView = part(() => import('../volleyball/VolleyballViews.jsx'), 'GearView')
+const startShooting = (app) => import('./ShootingLive.jsx').then((m) => m.startShooting(app))
+const AmmoPanel = part(() => import('./ShootingPanels.jsx'), 'AmmoPanel')
+const RangePanel = part(() => import('./ShootingPanels.jsx'), 'RangePanel')
+const RiflePanel = part(() => import('./ShootingPanels.jsx'), 'RiflePanel')
+const SessionPanel = part(() => import('./ShootingPanels.jsx'), 'SessionPanel')
+const AmmoView = part(() => import('./ShootingViews.jsx'), 'AmmoView')
+const Dashboard = part(() => import('./ShootingViews.jsx'), 'Dashboard')
+const DopeView = part(() => import('./ShootingViews.jsx'), 'DopeView')
+const RiflesView = part(() => import('./ShootingViews.jsx'), 'RiflesView')
+const SessionsView = part(() => import('./ShootingViews.jsx'), 'SessionsView')
 
 // Precision shooting (api/app/shooting.py, shooting_sessions.py, shotmath.py): smallbore / rimfire and long-range
 // rifle with factory ammo. Rifles and scopes (round count, cleaning due, Queensland Permit to Acquire), ammunition

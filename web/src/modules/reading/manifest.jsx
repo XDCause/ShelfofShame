@@ -1,8 +1,15 @@
 import { BookIcon, GridIcon, QuoteIcon, SparkleIcon, TrophyIcon } from '../../components/icons.jsx'
-import BookPanel from './BookPanel.jsx'
-import { AddBookPanel } from './readingParts.jsx'
-import { BooksView, Dashboard, QuotesView, ReadingTiles, StatsView } from './ReadingViews.jsx'
-import { RecsView } from './RecsView.jsx'
+import { ReadingTiles } from './HomeTiles.jsx'
+import { part } from '../lazy.js'
+
+// its pages and panels: loaded when first shown (modules/lazy.js)
+const BookPanel = part(() => import('./BookPanel.jsx'))
+const AddBookPanel = part(() => import('./readingParts.jsx'), 'AddBookPanel')
+const BooksView = part(() => import('./ReadingViews.jsx'), 'BooksView')
+const Dashboard = part(() => import('./ReadingViews.jsx'), 'Dashboard')
+const QuotesView = part(() => import('./ReadingViews.jsx'), 'QuotesView')
+const StatsView = part(() => import('./ReadingViews.jsx'), 'StatsView')
+const RecsView = part(() => import('./RecsView.jsx'), 'RecsView')
 
 // Reading: your books (api/app/reading.py) - found on Open Library by title, author or a scanned
 // ISBN, or imported from Goodreads - with the page you're on, a yearly goal, stars, reviews and

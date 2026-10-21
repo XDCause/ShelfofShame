@@ -2,18 +2,12 @@ import { useEffect, useState } from 'react'
 import { api, clock, dayDate, shortDate } from '../../api.js'
 import { BallIcon, CalendarIcon, ShoeIcon, VideoIcon } from '../../components/icons.jsx'
 import { useApp } from '../../core/app-context.js'
-import Stat, { StatSkeleton } from '../../core/Stat.jsx'
-import { useShared } from '../../core/useShared.js'
 import { gameTitle, resultTone, score, youtubeId } from './VolleyballPanels.jsx'
 import EmptyState from '../../core/EmptyState.jsx'
+import { useVolleyball } from './HomeTiles.jsx'
 
 const GEAR_TONE = { Wanted: 'purple', New: 'ok', Good: 'ok', Worn: 'low', 'Needs replacing': 'out', Retired: '' }
 
-function useVolleyball() {
-  const { refreshKey } = useApp()
-  return useShared(`volleyball-${refreshKey}`, () => Promise.all([api.volleyballSummary(), api.upcoming(20)])
-    .then(([summary, upcoming]) => ({ summary, next: upcoming.filter((e) => e.hobby === 'volleyball') })))
-}
 
 // Games and training: this year's record, the next one on the calendar, then every game.
 export function GamesView() {
@@ -371,19 +365,3 @@ export function VideosView() {
   )
 }
 
-// Home: two tiles.
-export function VolleyballTiles() {
-  const { data } = useVolleyball()
-  if (!data) return <><StatSkeleton /><StatSkeleton /></>
-  const { summary, next } = data
-  const n = next[0]
-  return (
-    <>
-      <Stat to="/volleyball/games" Icon={BallIcon} tone="low" value={`${summary.won}–${summary.lost}`} label="Volleyball"
-        sub={`won–lost this year`} />
-      <Stat to="/calendar" Icon={CalendarIcon} tone="teal"
-        value={n ? dayDate(n.day).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric' }) : '—'}
-        label="Next game" sub={n ? [clock(n.start_time), n.location].filter(Boolean).join(' · ') || n.title : 'nothing planned'} />
-    </>
-  )
-}

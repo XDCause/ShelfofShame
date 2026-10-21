@@ -6,32 +6,17 @@ import Fold from '../../components/Fold.jsx'
 import { BootIcon, MountainIcon, TimerIcon, TrophyIcon } from '../../components/icons.jsx'
 import { useApp } from '../../core/app-context.js'
 import EmptyState from '../../core/EmptyState.jsx'
-import Stat, { StatSkeleton } from '../../core/Stat.jsx'
+import Stat from '../../core/Stat.jsx'
 import { Stars } from '../reading/readingParts.jsx'
 import { GpxImport, hikeMeta, hikeTime, km, metres, pace, useHikingSummary } from './hikingParts.jsx'
+import { plural } from './HomeTiles.jsx'
 
 // The Hiking hobby's pages: a dashboard (this year, km per month, personal bests, latest hikes)
 // and every hike (search, year, import more).
 
-const plural = (n, one, many = `${one}s`) => `${n.toLocaleString()} ${n === 1 ? one : many}`
 const monthName = (ym, long = false) => new Date(`${ym}-15T12:00:00`)
   .toLocaleDateString('en-AU', long ? { month: 'long', year: 'numeric' } : { month: 'short' })
 
-export function HikingTiles() {
-  const { data: s } = useHikingSummary()
-  if (!s) return <StatSkeleton />
-  if (!s.all_time.hikes) return null
-  const y = s.this_year
-  const top = s.bests?.highest?.max_ele_m
-  return (
-    <>
-      <Stat to="/hiking/dashboard" Icon={MountainIcon} tone="ok" value={`${y.km.toFixed(1)} km`} label={`Hiked in ${s.year}`}
-        sub={`${plural(y.hikes, 'hike')}${s.recent[0] ? ` · last ${shortDate(s.recent[0].hiked_on)}` : ''}`} />
-      <Stat to="/hiking/dashboard" Icon={BootIcon} tone="teal" value={metres(y.ascent_m)} label={`Climbed in ${s.year}`}
-        sub={top ? `highest point ${metres(top)}` : 'uphill, all hikes'} />
-    </>
-  )
-}
 
 export function Dashboard() {
   const { data: s, error } = useHikingSummary()

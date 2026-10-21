@@ -7,6 +7,7 @@ import Fold from './Fold.jsx'
 import ListsManager from './ListsManager.jsx'
 import PriceGuide from './PriceGuide.jsx'
 import SiteChecks from './SiteChecks.jsx'
+import SystemStatus from './SystemStatus.jsx'
 import Spending from './Spending.jsx'
 
 // Settings, opened from the gear: every section is closed until you tap it.
@@ -23,6 +24,7 @@ export default function SettingsPanel({ lookups, settings, onClose, onSettings, 
         <Fold title="Default shop" detail={settings.default_shop}>
           <DefaultShop settings={settings} onSettings={onSettings} />
         </Fold>
+        <Fold title="System" detail="syncs, disk, updates"><SystemStatus /></Fold>
         <Fold title="Backups"><Backups /></Fold>
         <Fold title="Export to CSV" detail="for Excel"><Exports /></Fold>
         <Fold title="Tamiya catalogue" detail="for Shop Tamiya"><Catalogue /></Fold>

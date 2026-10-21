@@ -1,0 +1,86 @@
+/* ---------- Home ---------- */
+/* (Home's banner is in "Banners" below.) */
+
+
+
+
+
+
+
+
+.home-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: stretch; }   /* cards side by side: the same height */
+.home-column { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.home-card-title { display: flex; align-items: center; gap: 9px; font-size: var(--text-lg); font-weight: 600; margin: 0 0 14px; }
+.home-card-title svg { color: var(--muted); }
+.home-card-title a { margin-left: auto; font-weight: 500; }
+.home-card .section-title { margin-top: 18px; }
+
+/* Stat tiles: a coloured icon square, the number, what it is. */
+.home-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.home-stat {
+  display: flex; align-items: center; gap: 14px; min-width: 0; padding: 16px; border-radius: var(--radius);
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--card-shadow); color: var(--text);
+  transition: border-color var(--fast), transform var(--medium) var(--ease-out);
+}
+.home-stat:hover { text-decoration: none; border-color: color-mix(in srgb, var(--text) 25%, transparent); transform: translateY(-2px); }
+.stat-icon { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: 12px; }
+
+.stat-text { display: flex; flex-direction: column; min-width: 0; }
+.home-stat strong {
+  font-family: var(--font-display); font-size: 1.6rem; font-weight: 600; line-height: 1.1; letter-spacing: -0.01em;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.home-stat-label { font-size: 0.85rem; font-weight: 600; }
+.home-stat .muted { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Coloured pills, icon squares and tiles share one set of tones. */
+.pill {
+  display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 999px; white-space: nowrap;
+  font-size: 0.76rem; font-weight: 650; color: var(--muted); background: var(--fill);
+}
+.tint { --tone: var(--tint); --tone-bg: var(--tint-soft); }
+.ok { --tone: var(--ok); --tone-bg: var(--ok-bg); }
+.low { --tone: var(--low); --tone-bg: var(--low-bg); }
+.out { --tone: var(--out); --tone-bg: var(--out-bg); }
+.purple { --tone: var(--purple); --tone-bg: var(--purple-bg); }
+.teal { --tone: var(--teal); --tone-bg: var(--teal-bg); }
+.pill:is(.tint, .ok, .low, .out, .purple, .teal), .stat-icon, .thumb-icon { color: var(--tone, var(--muted)); background: var(--tone-bg, var(--fill)); }
+.thumb-icon { display: grid; place-items: center; }
+.thumb-icon.model { --tone: var(--purple); --tone-bg: var(--purple-bg); }
+.thumb-icon.supply { --tone: var(--ok); --tone-bg: var(--ok-bg); }
+.thumb-icon.page { --tone: var(--teal); --tone-bg: var(--teal-bg); }
+
+/* Lists inside a home card: no box of their own, a hairline between rows. */
+.plain-list { background: transparent !important; }
+.plain-list li { padding: 8px 0; }
+.plain-list li + li::before { left: 56px; }
+.plain-list .row-button { align-items: center; min-height: 32px; } /* a one-line row is still easy to tap */
+.plain-list .row-button:disabled { opacity: 1; cursor: default; }
+/* Long names end in "..." instead of widening the page (a button in a flex row won't shrink below
+   its content unless told it may). */
+.plain-list .row-button { min-width: 0; }
+.plain-list .grow { min-width: 0; }
+.activity .item-title, .plain-list .item-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.quick-actions { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; }
+.quick-action {
+  display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 6px; border-radius: var(--radius);
+  border: 1px solid var(--border); background: var(--fill-2); color: var(--text); font-size: 0.85rem; font-weight: 550;
+  transition: background var(--fast), border-color var(--fast);
+}
+.quick-action svg { color: var(--tint); }
+.quick-action:hover { background: var(--tint-soft); border-color: color-mix(in srgb, var(--tint) 35%, transparent); }
+
+
+/* Build steps as a row of segments; fill bars for supplies. */
+.step-bar { display: flex; gap: 3px; margin-top: 6px; max-width: 220px; }
+.step-bar span { flex: 1; height: 5px; border-radius: 3px; background: var(--fill); }
+.step-bar span.on { background: var(--tint); }
+.low-row { display: flex; justify-content: space-between; gap: 8px; }
+.fill-bar { display: block; height: 6px; margin-top: 6px; border-radius: 3px; background: var(--fill); overflow: hidden; max-width: 260px; }
+.fill-bar > span { display: block; height: 100%; border-radius: 3px; background: var(--tone); transition: width 0.3s; }
+td .fill-bar { width: 90px; height: 4px; margin-top: 5px; }
+.panel-section > .fill-bar { max-width: none; height: 8px; margin: 0 0 12px; }
+
+.change { min-width: 2.2em; font-weight: 600; font-variant-numeric: tabular-nums; }
+.chevron { flex: none; color: var(--faint); }

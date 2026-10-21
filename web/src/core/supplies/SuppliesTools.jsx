@@ -160,6 +160,15 @@ export function PlacePage() {
 // ---------------------------------------------------------------- shopping mode
 // One screen for a trip to the shop: your wishlist, then what's Low / Out and what'll run out soon. A tick buys it
 // (adds it to your supplies, takes it off the wishlist).
+function ShopRow({ name, detail, done, onTick }) {
+  return (
+    <li className={done ? 'sx-shop-row done' : 'sx-shop-row'}>
+      <button type="button" className="sx-tick" aria-pressed={done} disabled={done} onClick={onTick} aria-label={`Bought ${name}`}>{done ? '✓' : ''}</button>
+      <span className="grow"><strong>{name}</strong>{detail && <span className="muted small"> {detail}</span>}</span>
+    </li>
+  )
+}
+
 export function ShopMode() {
   const { refreshKey, changed, showToast } = useApp()
   const [list, setList] = useState(null)
@@ -169,12 +178,6 @@ export function ShopMode() {
     try { await fn(); setDone((d) => [...d, key]); showToast(`Bought: ${name}`); changed() } catch (e) { showToast(e.message) }
   }
   if (!list) return <p className="muted loading">Loading...</p>
-  const Row = ({ k, name, detail, onTick }) => (
-    <li className={done.includes(k) ? 'sx-shop-row done' : 'sx-shop-row'}>
-      <button type="button" className="sx-tick" aria-pressed={done.includes(k)} disabled={done.includes(k)} onClick={onTick} aria-label={`Bought ${name}`}>{done.includes(k) ? '✓' : ''}</button>
-      <span className="grow"><strong>{name}</strong>{detail && <span className="muted small"> {detail}</span>}</span>
-    </li>
-  )
   const empty = !list.wishlist.length && !list.low.length && !list.soon.length
   return (
     <section className="page sx-page sx-shop">
@@ -183,7 +186,7 @@ export function ShopMode() {
       {list.wishlist.length > 0 && (
         <div className="card"><h3 className="home-card-title">On your wishlist · {list.wishlist.length}</h3>
           <ul className="sx-shop-list">{list.wishlist.map((w) => (
-            <Row key={`w${w.wish_id}`} k={`w${w.wish_id}`} name={w.name}
+            <ShopRow key={`w${w.wish_id}`} done={done.includes(`w${w.wish_id}`)} name={w.name}
               detail={[w.brand, w.product_code, w.qty_wanted > 1 && `×${w.qty_wanted}`, w.price != null && money(w.price)].filter(Boolean).join(' · ')}
               onTick={() => tick(`w${w.wish_id}`, () => api.buyWish(w.wish_id), w.name)} />
           ))}</ul></div>
@@ -191,14 +194,14 @@ export function ShopMode() {
       {list.low.length > 0 && (
         <div className="card"><h3 className="home-card-title">Low or out · {list.low.length}</h3>
           <ul className="sx-shop-list">{list.low.map((s) => (
-            <Row key={`s${s.supply_id}`} k={`s${s.supply_id}`} name={s.name} detail={[s.brand, s.product_code, s.stock_status].filter(Boolean).join(' · ')}
+            <ShopRow key={`s${s.supply_id}`} done={done.includes(`s${s.supply_id}`)} name={s.name} detail={[s.brand, s.product_code, s.stock_status].filter(Boolean).join(' · ')}
               onTick={() => tick(`s${s.supply_id}`, () => api.adjustQty(s.supply_id, 1), s.name)} />
           ))}</ul></div>
       )}
       {list.soon.length > 0 && (
         <div className="card"><h3 className="home-card-title">Likely to run out this month · {list.soon.length}</h3>
           <ul className="sx-shop-list">{list.soon.map((s) => (
-            <Row key={`s${s.supply_id}`} k={`s${s.supply_id}`} name={s.name} detail={`about ${shortDate(s.out_by)}`}
+            <ShopRow key={`s${s.supply_id}`} done={done.includes(`s${s.supply_id}`)} name={s.name} detail={`about ${shortDate(s.out_by)}`}
               onTick={() => tick(`s${s.supply_id}`, () => api.adjustQty(s.supply_id, 1), s.name)} />
           ))}</ul></div>
       )}
@@ -209,7 +212,7 @@ export function ShopMode() {
 // ---------------------------------------------------------------- stocktake
 // One item at a time, the least recently counted first: still the same, one less, empty, or type the count.
 export function Stocktake() {
-  const { changed } = useApp()
+  const { changed, showToast } = useApp()
   const [items, setItems] = useState(null)
   const [i, setI] = useState(0)
   const [n, setN] = useState(0)
@@ -218,7 +221,12 @@ export function Stocktake() {
   const item = items?.[i]
   useEffect(() => { if (item) setN(item.qty_on_hand) }, [item])
   const save = async (qty) => {
-    await api.countSupply(item.supply_id, qty)
+    try {
+      await api.countSupply(item.supply_id, qty)
+    } catch (e) {
+      showToast(`Not saved: ${e.message}`)               // (stays on this one, to try again)
+      return
+    }
     setCounted((c) => c + 1)
     changed()
     setI((x) => x + 1)

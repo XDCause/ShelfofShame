@@ -132,7 +132,7 @@ try {
 
         docker rm -f $server 2>$null | Out-Null
         docker run -d --name $server --network $net --network-alias pages -v "${dist}:/html:ro" `
-            -v "${work}\pages.conf:/etc/nginx/conf.d/default.conf:ro" -v "${Root}\certs:/certs:ro" nginx:1.27-alpine | Out-Null
+            -v "${work}\pages.conf:/etc/nginx/conf.d/default.conf:ro" -v "${Root}\certs:/certs:ro" nginx:1.27.5-alpine | Out-Null
         Start-Sleep 2
         Remove-Item "$out\$($v.Key)" -Recurse -Force -ErrorAction SilentlyContinue
         docker run --rm --network $net --ipc=host -e "E2E_PASSWORD=$password" -e 'API_BASE=https://web' -e "PATHS=$($v.Paths)" `
