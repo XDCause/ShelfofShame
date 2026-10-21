@@ -4,7 +4,7 @@ import { api } from '../../api.js'
 import { TargetIcon } from '../../components/icons.jsx'
 import { useApp } from '../app-context.js'
 import EmptyState from '../EmptyState.jsx'
-import { dueText, groupGoals, hobbyName, periodChoices, periodLabel, ProgressBar, progressText, STATUS } from './goalParts.jsx'
+import { dueText, groupGoals, hobbyName, PaceBadge, periodChoices, periodLabel, ProgressBar, progressText, STATUS } from './goalParts.jsx'
 
 const SHOWS = [['active', 'Active'], ['paused', 'Paused'], ['done', 'Done'], ['dropped', 'Dropped'], ['', 'All']]
 
@@ -90,32 +90,38 @@ function GoalSection({ section: s, thisYear }) {
   return (
     <section className={`goal-section${past ? ' past' : ''}`} aria-label={title}>
       <h2 className="goal-section-title">{s.timeframe ? title : 'Other goals'}
-        {s.timeframe && <span className="muted small">{done} of {s.goals.length} done</span>}</h2>
+        {s.timeframe && <span className={done ? 'goal-section-done' : 'muted small'}>{done > 0 && '🏆 '}{done} of {s.goals.length} reached</span>}</h2>
       <ul className="goal-grid">{s.goals.map((g) => <GoalCard key={g.goal_id} goal={g} />)}</ul>
     </section>
   )
 }
 
-// The title always comes first (a row of pills above it put titles at different heights side by side).
+// The title always comes first (a row of pills above it put titles at different heights side by side). Then where
+// it's at: on track or not, the bar, the next step, and - if it's been a while - how long it's been still.
 function GoalCard({ goal: g }) {
   const due = dueText(g)
   const progress = progressText(g)
+  const quiet = g.still_for != null && g.still_for >= 21
   return (
     <li>
       <Link to={`/goals/${g.goal_id}`} className={`goal-tile card ${g.status}`}>
-        <span className="goal-title">{g.title}</span>
+        <span className="goal-title">{g.status === 'done' && <span aria-hidden="true">🏆 </span>}{g.title}</span>
         <span className="goal-tile-top">
           {g.pinned && <span className="pill purple">Pinned</span>}
           <span className="pill">{g.hobby ? hobbyName(g.hobby) : 'Life in general'}</span>
           {g.status !== 'active' && <span className={`pill ${STATUS[g.status].tone}`}>{STATUS[g.status].label}</span>}
+          <PaceBadge goal={g} />
           {due && <span className={`goal-due ${g.days_left != null && g.days_left < 0 ? 'late' : ''}`}>{due}</span>}
         </span>
+        {g.parent_title && <span className="goal-part-of">Part of {g.parent_title}</span>}
         {g.why && <span className="goal-why">{g.why}</span>}
         <ProgressBar goal={g} />
         {(progress || g.progress != null) && (
-          <span className="item-meta">{[progress, g.progress != null && `${Math.round(g.progress * 100)}%`].filter(Boolean).join(' · ')}</span>
+          <span className="item-meta">{[progress, g.progress != null && !g.habit && `${Math.round(g.progress * 100)}%`,
+            g.source && 'counts itself', g.habit?.streak > 1 && `${g.habit.streak} ${g.habit.every}s in a row`].filter(Boolean).join(' · ')}</span>
         )}
         {g.next_step && g.status === 'active' && <span className="goal-next"><span className="muted">Next:</span> {g.next_step}</span>}
+        {quiet && <span className="goal-quiet">No movement for {Math.round(g.still_for / 7)} weeks</span>}
       </Link>
     </li>
   )

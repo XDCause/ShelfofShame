@@ -178,7 +178,7 @@ for n, (colour, opp, result, opening, rating) in enumerate([("white", "J. Smith"
                                                             ("black", "P. Kaur", "win", "French Defence", 1150),
                                                             ("white", "D. Novak", "win", "London System", 1210)]):
     post("/chess/games", {"played_on": day(-6 - n * 6), "time_class": "rapid", "colour": colour, "opp_name": opp, "result": result,
-                          "opp_rating": rating, "my_rating": 1200 + n * 8, "rated": True, "event": "Club night", "opening": opening})
+                          "opp_rating": rating, "my_rating": 1236 - n * 9, "rated": True, "event": "Club night", "opening": opening})
 
 # ---------------------------------------------------------------- reading
 print("reading", flush=True)
@@ -261,12 +261,21 @@ post("/travel/packing-lists", {"name": "Overseas basics", "items": [
 
 # ---------------------------------------------------------------- goals, to-dos, calendar, journal
 print("goals, to-dos, calendar, journal", flush=True)
-for title, hobby, unit, start, target, current in [("Finish three kits this year", "models", "kits", 0, 3, 1),
-                                                    ("Reach 1400 rapid", "chess", "rating", 1200, 1400, 1240),
-                                                    ("Read 24 books", "reading", "books", 0, 24, 9),
-                                                    ("Hike 300 km", "hiking", "km", 0, 300, 112)]:
-    post("/goals", {"title": title, "hobby": hobby, "unit": unit, "start_value": start, "target_value": target,
-                    "current_value": current, "status": "active", "timeframe": "year"})
+# Goals that count themselves from the hobbies, one you update, habits, and a 3-year goal with a year's goal inside it
+outdoors = post("/goals", {"title": "Get outdoors more", "timeframe": "three_years", "why": "Weekends outside, not on the couch."})
+for title, source, target in [("Read 24 books", "books_finished", 24), ("Hike 300 km", "km_hiked", 300),
+                              ("Reach 1400 rapid", "chess_rapid", 1400), ("Finish three kits this year", "kits_finished", 3)]:
+    post("/goals", {"title": title, "source": source, "target_value": target, "timeframe": "year",
+                    "parent_id": outdoors["goal_id"] if outdoors and source == "km_hiked" else None})
+post("/goals", {"title": "Play chess twice a week", "kind": "habit", "habit_times": 2, "source": "chess_games", "timeframe": "year"})
+sketch = post("/goals", {"title": "Sketch twice a week", "kind": "habit", "habit_times": 2, "hobby": "models", "timeframe": "year"})
+if sketch:
+    for d in (-15, -13, -8, -6, -1):
+        post(f"/goals/{sketch['goal_id']}/updates", {"day": day(d)})
+post("/goals", {"title": "Plan the Japan trip", "hobby": "travel", "target_date": day(40), "why": "Cherry blossom season.",
+                "steps": ["Book flights", "Book the ryokan in Kyoto", "Buy a rail pass", "Pack the camera"]})
+post("/goals", {"title": "Lose 3 kg before summer", "unit": "kg", "start_value": 82, "target_value": 79, "current_value": 81.2,
+                "started_on": day(-40), "target_date": day(50)})
 for title, due, pr, hobby in [("Prime the Sherman's tracks", 0, "high", "models"), ("Book Japan rail pass", 3, "normal", "travel"),
                               ("Re-pot the strawberries", 1, "normal", "gardening"), ("Clean the rimfire", -1, "normal", "shooting"),
                               ("Pick next book club read", 6, "normal", "reading")]:

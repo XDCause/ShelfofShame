@@ -83,16 +83,15 @@ export const api = {
   saveDrawingPreview: (id, blob) => request(`/journal/drawings/${id}/preview`, image('PUT', blob)),
   uploadJournalImage: (blob, pageId) => request(`/journal/images${pageId ? `?page_id=${pageId}` : ''}`, image('POST', blob)),
 
-  // Goals (core): details, steps, a number to track and dated progress notes
+  // Goals (core): details, its to-dos, a number to track (or counted from a hobby), pace, habits, progress notes
   goals: (status) => request(`/goals${status ? `?status=${status}` : ''}`),
   getGoal: (id) => request(`/goals/${id}`),
   addGoal: (goal) => request('/goals', send('POST', goal)),
   updateGoal: (id, changes) => request(`/goals/${id}`, send('PATCH', changes)),
   deleteGoal: (id) => request(`/goals/${id}`, send('DELETE')),
-  addGoalStep: (id, text) => request(`/goals/${id}/steps`, send('POST', { text })),
-  updateGoalStep: (stepId, changes) => request(`/goal-steps/${stepId}`, send('PATCH', changes)),
-  deleteGoalStep: (stepId) => request(`/goal-steps/${stepId}`, send('DELETE')),
-  orderGoalSteps: (id, stepIds) => request(`/goals/${id}/steps/order`, send('PUT', { step_ids: stepIds })),
+  goalSources: () => request('/goals/sources'),
+  goalNudges: () => request('/goals/nudges'),
+  goalCheckinSeen: () => request('/goals/checkin-seen', send('POST')),
   addGoalUpdate: (id, note) => request(`/goals/${id}/updates`, send('POST', note)),
   deleteGoalUpdate: (updateId) => request(`/goal-updates/${updateId}`, send('DELETE')),
 

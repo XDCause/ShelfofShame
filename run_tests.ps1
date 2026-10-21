@@ -48,11 +48,11 @@ if ($Coverage) {
     $cmd = "pip install -q --disable-pip-version-check pytest-cov==6.1.1 && python -m pytest $($pytestArgs -join ' ') " +
            "--cov=app --cov-report=term-missing:skip-covered > /app/coverage.txt; s=`$?; tail -70 /app/coverage.txt; exit `$s"
     docker compose run --rm --no-deps --name "$Prefix-tests" `
-        -e "POSTGRES_DB=$testDb" -v "${PSScriptRoot}\api:/app" api sh -c $cmd
+        -e "POSTGRES_DB=$testDb" -v "${PSScriptRoot}\api:/app" -v "${PSScriptRoot}\db\init:/db/init:ro" api sh -c $cmd
 } else {
     docker compose run --rm --no-deps --name "$Prefix-tests" `
-        -e "POSTGRES_DB=$testDb" -v "${PSScriptRoot}\api:/app" `
-        api python -m pytest @pytestArgs
+        -e "POSTGRES_DB=$testDb" -v "${PSScriptRoot}\api:/app" -v "${PSScriptRoot}\db\init:/db/init:ro" `
+        api python -m pytest @pytestArgs      # (db\init too: a test can run a migration file as it is)
 }
 $result = $LASTEXITCODE
 

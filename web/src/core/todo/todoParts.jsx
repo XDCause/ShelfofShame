@@ -67,7 +67,8 @@ export function TaskRow({ t, done, onTick, compact = false }) {
 }
 
 // One line to add a to-do: its words, and (optionally) a day. More (notes, a hobby, a goal, repeats) in its panel.
-export function QuickAdd({ onAdded, placeholder = 'Add a to-do...', withDay = true }) {
+// extra: fields every one added here gets (a goal's page: its goal_id and hobby).
+export function QuickAdd({ onAdded, placeholder = 'Add a to-do...', withDay = true, extra = null }) {
   const [title, setTitle] = useState('')
   const [due, setDue] = useState('')
   const [error, setError] = useState('')
@@ -75,11 +76,11 @@ export function QuickAdd({ onAdded, placeholder = 'Add a to-do...', withDay = tr
     e.preventDefault()
     if (!title.trim()) return
     try {
-      await api.addTodo({ title: title.trim(), due_on: due || null })
+      const added = await api.addTodo({ ...extra, title: title.trim(), due_on: due || null })
       setTitle('')
       setDue('')
       setError('')
-      onAdded?.()
+      onAdded?.(added)
     } catch (err) {
       setError(err.message)
     }

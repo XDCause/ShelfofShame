@@ -5,7 +5,9 @@
 #
 # Neither runs against this copy's own app. Each gets a THROWAWAY copy next to it, started from:
 #   - the images this copy is running (so it tests exactly what .\dev.ps1 built), and
-#   - a fresh pg_dump of this copy's database (your real data, read only),
+#   - a fresh pg_dump of your real data, read only: prod's database when this is dev and prod is running (dev may
+#     hold made-up sample data - sample-data.ps1 - and the walk-through expects the real thing), else this copy's;
+#     then this copy's newer db\init files are applied to it (dev can be ahead of prod),
 # with no daily syncs, stand-ins for every outside site, and its own password (a new one each run: the copy's account
 # is reset - yours is never used or seen). Two copies because the walk-through changes data while the audit is
 # looking at pages: separate copies keep both steady, and lets them run at the same time.
@@ -62,7 +64,10 @@ foreach ($c in $copies) { docker rm -f "$($c.Name)-run" 2>$null | Out-Null; Remo
 # Your videos, as hard links (same files, no copying, no extra space): deleting a link in the
 # walk-through leaves your file alone.
 Remove-Item .e2e\media\* -Recurse -Force -ErrorAction SilentlyContinue
-$mediaRoot = (Resolve-Path media -ErrorAction SilentlyContinue).Path
+# Whose data: prod's when this is dev and prod is up (see the top), else this copy's.
+$source, $mediaFrom = $DbContainer, 'media'
+if ($AppEnv -eq 'dev' -and (Test-Healthy 'hobby-inventory-db')) { $source, $mediaFrom = 'hobby-inventory-db', (Join-Path ($Root -replace '-dev$', '') 'media') }
+$mediaRoot = (Resolve-Path $mediaFrom -ErrorAction SilentlyContinue).Path
 if ($mediaRoot) {
     Get-ChildItem $mediaRoot -File -Recurse | Where-Object { $_.Extension -ne '.part' } | ForEach-Object {
         $link = Join-Path '.e2e\media' $_.FullName.Substring($mediaRoot.Length + 1)     # media\videos\x.mp4 -> .e2e\media\videos\x.mp4
@@ -72,14 +77,14 @@ if ($mediaRoot) {
 }
 
 # 1. A copy of this copy's data (pg_dump only reads).
-Write-Host "Copying $AppEnv's data for the walk-through..." -ForegroundColor Cyan
-docker exec $DbContainer pg_dump -U $DbUser -d $DbName -Fc -f /tmp/e2e.dump
+Write-Host "Copying the data in $source for the walk-through..." -ForegroundColor Cyan
+docker exec $source pg_dump -U $DbUser -d $DbName -Fc -f /tmp/e2e.dump
 if ($LASTEXITCODE -ne 0) { Write-Host 'Copying the data failed.' -ForegroundColor Red; exit 1 }
 # Saved under a backup's name in the copies' backups folder, so Settings > Backups has one to list.
 Remove-Item .e2e\backups\* -Force -ErrorAction SilentlyContinue
 $dump = ".e2e\backups\hobby_inventory_$(Get-Date -Format 'yyyyMMdd_HHmmss').dump"
-docker cp "${DbContainer}:/tmp/e2e.dump" $dump | Out-Null
-docker exec $DbContainer rm -f /tmp/e2e.dump | Out-Null
+docker cp "${source}:/tmp/e2e.dump" $dump | Out-Null
+docker exec $source rm -f /tmp/e2e.dump | Out-Null
 
 $result = 1
 try {
@@ -97,6 +102,8 @@ try {
             psql -U $DbUser -d $DbName -q -v ON_ERROR_STOP=1 -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;' | Out-Null
         docker exec -e 'PGOPTIONS=-c client_min_messages=warning' "$n-db" pg_restore -U $DbUser -d $DbName --no-owner /tmp/data.dump
         if ($LASTEXITCODE -ne 0) { throw "Loading the data into $n failed." }
+        powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'migrate.ps1') -Container "$n-db" | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "Bringing $n's data up to this code's db\init failed." }
         $password | docker exec -i "$n-api" python -m app.auth set-password --stdin --reset-authenticator --sign-out-everywhere | Out-Null
         if ($LASTEXITCODE -ne 0) { throw "Setting $n's password failed." }
     }

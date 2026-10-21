@@ -1892,3 +1892,34 @@ DBeaver connection confirmed working (2026-10-11).
    API render as they were. Also: dev and prod on one host shared a cookie jar (cookies ignore the port), so signing in
    to one signed out the other - the cookie name now follows APP_ENV (auth.COOKIE). The user asked for full test runs
    at their discretion, not after every change (CLAUDE.md Quality gates).
+5d. **Goals rebuilt: counted, paced, habits, bigger goals, to-dos, nudges, celebrated** (2026-10-21). User asked for a
+   desktop review of Goals against other goal products, then "build all 8" (answers: steps merge into to-dos; warm but
+   quiet celebration; nudges after 3 weeks). 83_goal_tracking.sql + goals.py + goal_sources.py:
+   - Counts itself: goals.source - books finished, pages, hikes, km, metres climbed, kits finished, build-log entries,
+     plays, volleyball games, chess games, chess rating (each class), games at 100% (in the period or all-time),
+     achievements, hours played, shooting sessions, rounds, harvests, trips, journal pages. Each is one query giving
+     (day, amount): sum (in the goal's time), total (all-time) or level (latest; the one before the start = where you
+     began). "Now" is worked out on every read, never stored; typed values are ignored while a source is set.
+     test_every_source_counts_without_error runs every query on a fresh database (a wrong column only shows there).
+   - Pace: an even line from the start (1 Jan of a timeframe goal, else started_on) to the day aimed for: ahead /
+     on track (within 5%) / behind, where you'd be by now, and a month's (a week's, in the last 60 days) worth to finish.
+   - Habits (kind 'habit'): habit_times a week / month, counted from a source or one per progress note ("Did it today"
+     posts one with no words); weeks from Monday; streak (this period doesn't break it until it's over); last 12 bars.
+   - Bigger goals: parent_id, one level (a year's goal under a 3-year one); a goal with nothing of its own to measure
+     moves with its goals' average (progress_from 'goals').
+   - Steps -> to-dos: copied once (todos.from_step, unique; ticked stay done; order by created time; titles cut to 200);
+     goal_steps kept untouched as a safety net, nothing reads it. The goal page's Next up adds to-dos with goal_id + hobby
+     (QuickAdd extra). Deleting a goal leaves its to-dos (as before for to-dos linked to a goal).
+   - Nudges: GET /goals/nudges - active goals still for 21+ days (last note, to-do done, source event; from started_on)
+     and, in a month's first week with no notes, a check-in prompt (dismissed per month: settings.goals_checkin_seen).
+     Home shows them under the top row (above it would push the laptop-sized row off the screen).
+   - The page reads first: a hero (big number, pace, chart - svg stretched to the card, so the dot is an HTML span or it
+     squashes - or a habit's bars), Mark as reached (a burst of leaves/confetti unless reduced motion, then a "You did
+     it" banner and Write about it -> a journal page tagged goals), Next up, notes, why, details; Set up (open for a new
+     goal) holds when / hobby / dates / part of / target or habit / what it counts / status; Pin and Delete under ⋯.
+   Also: the walk-through now copies PROD's data when run from dev (dev may hold sample data; the walk-through expects
+   the real thing) and migrates the copy to dev's db\init (migrate.ps1 -Container); run_tests mounts db\init read-only
+   (a test runs 83 as written, twice). Prod's real data surfaced: the garden plan was 52px too wide (scale ignored its
+   26px margins), pots drawn to scale too small to tap (28px floor; the level label only with room), white on amber 2:1
+   (dark text now), an un-underlined link in a sentence; the walk-through assumed its Warhammer kit was the only one;
+   the Dev pill clipped the brand at laptop width (a badge on the logo now).

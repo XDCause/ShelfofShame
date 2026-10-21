@@ -9,6 +9,7 @@ import { KIND_ICON, KIND_NAME, VERB_TONE } from './activityKinds.js'
 import { useApp } from './app-context.js'
 import { ComingUp } from './calendar/CalendarPage.jsx'
 import TodoHome from './todo/TodoHome.jsx'
+import GoalNudges from './goals/GoalNudges.jsx'
 import JournalHome from './journal/JournalHome.jsx'
 import { useNewPage } from './journal/JournalList.jsx'
 import { SiteCheckWarning } from '../components/SiteChecks.jsx'
@@ -74,6 +75,7 @@ export default function Home() {
         <RecentActivity items={activity} />
         <TodoHome />
       </div>
+      <GoalNudges />
 
       <section className="home-hobbies" aria-labelledby="home-hobbies">
         <h2 id="home-hobbies" className="home-section-title">Your hobbies</h2>

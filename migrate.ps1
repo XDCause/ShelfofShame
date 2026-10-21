@@ -2,14 +2,16 @@
 #
 #   .\migrate.ps1            # apply every file the database hasn't had yet, in order
 #   .\migrate.ps1 -List      # just show what's applied and what's pending
+#   .\migrate.ps1 -Container hobby-e2e-db   # another copy's database (run_e2e.ps1: its throwaway copies)
 #
 # The table schema_migrations (db\init\17_schema_migrations.sql) lists the files a database has
 # had. Each pending file runs in its own psql session and stops at the first error; it's only
 # recorded once it succeeded. Back up first (promote.ps1 does) - this changes the database.
 # Works in prod and dev: names come from .env (scripts\common.ps1).
-param([switch]$List)
+param([switch]$List, [string]$Container)
 
 . "$PSScriptRoot\scripts\common.ps1"
+if ($Container) { $DbContainer = $Container }
 Set-Location -Path $Root
 $quiet = @('-e', 'PGOPTIONS=-c client_min_messages=warning')
 

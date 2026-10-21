@@ -108,8 +108,8 @@ def go(page, name):
     if name in SECTION_TABS:
         go(page, SECTION_TABS[name])
         page.locator(".section-tabs").get_by_role("link", name=name, exact=True).click()
-    else:
-        page.get_by_role("link", name=name, exact=True).click()
+    else:      # (the navigation's own link: a page can have another with the same name - Home's Supplies card)
+        page.locator(".sidebar, .tabbar").get_by_role("link", name=name, exact=True).click()
 
 
 SECTION_TABS = {"Colours": "Models", "Plays": "Board games", "Gear": "Volleyball", "Videos": "Volleyball"}
@@ -810,9 +810,11 @@ def warhammer(page):
     page.keyboard.press("Escape")
     hobby = page.locator(".hobby-filter")
     expect(hobby).to_contain_text("Gundam")
-    hobby.get_by_role("button", name=re.compile("^Warhammer")).click()
-    expect(page.locator(".model-card")).to_have_count(1)
-    expect(page.locator(".model-card")).to_contain_text("1 of 10 minis painted")
+    chip = hobby.get_by_role("button", name=re.compile("^Warhammer"))
+    chip.click()
+    # Just the Warhammer kits: as many cards as the chip says (your own Warhammer kits are in the copied data too)
+    expect(page.locator(".model-card")).to_have_count(int(re.search(r"(\d+)\s*$", chip.inner_text()).group(1)))
+    expect(page.locator(".model-card", has_text="Intercessors")).to_contain_text("1 of 10 minis painted")
     shot(page, "d24_hobbies", full=False)
     hobby.get_by_role("button", name=re.compile("^All")).click()
 
@@ -1752,36 +1754,43 @@ def todos(page):
     expect(page).to_have_url(BASE + "/goals")
 
 
-@step("Goals: a new goal with why / details, steps, a number and a progress note; done; deleted")
+@step("Goals: a new goal - why, details, its to-dos, a number, a progress note, on track; reached (celebrated); deleted")
 def goals(page):
     go(page, "Goals")
     page.get_by_role("button", name="+ New goal").first.click()
     page.get_by_label("What's the goal?").fill(f"Finish three kits {MARK}")
     page.get_by_role("button", name="Add", exact=True).click()
     expect(page.get_by_label("Goal", exact=True)).to_have_value(f"Finish three kits {MARK}")
-    expect(page.get_by_label("When")).to_have_value(re.compile(r"^year:\d{4}$"))           # new goals: this year's
-    expect(page.locator(".goal-top .goal-due")).to_contain_text(re.compile("31 Dec|Due in|Due today"))   # aims for 31 December
+    expect(page.get_by_label("When")).to_have_value(re.compile(r"^year:\d{4}$"))           # new goals: this year's (Set up open)
+    expect(page.locator(".goal-hero .goal-due")).to_contain_text(re.compile("31 Dec|Due in|Due today"))   # aims for 31 December
+    expect(page.get_by_label("What it counts").locator("option", has_text=re.compile("^Books finished$"))).to_have_count(1)   # can count itself
     page.get_by_label("Why it matters").fill("The stash keeps growing.")
     page.get_by_label("Details").click()                             # leaving a box saves it
     page.get_by_label("Details").fill("One a month. Zero first.")
-    page.get_by_label("New step").fill("Finish the Zero")
-    page.get_by_label("New step").press("Enter")
-    page.get_by_label("New step").fill("Prime the Sherman")
-    page.get_by_label("New step").press("Enter")
-    expect(page.locator(".goal-steps li")).to_have_count(2)
+    todo = page.locator(".goal-next-up").get_by_label("New to-do")
+    todo.fill("Finish the Zero")
+    todo.press("Enter")
+    expect(page.locator(".goal-next-up .task-row")).to_have_count(1)
+    todo.fill("Prime the Sherman")
+    todo.press("Enter")
+    expect(page.locator(".goal-next-up .task-row")).to_have_count(2)
     page.get_by_label("Done: Finish the Zero").check()
-    expect(page.locator(".goal-big-percent")).to_have_text("50%")
-    page.get_by_role("button", name="Track a number").click()
-    page.get_by_label("Counting").fill("kits")
+    expect(page.locator(".goal-hero .goal-big-number")).to_have_text("50%")             # its to-dos measure it
+    expect(page.locator(".goal-next-up")).to_contain_text("1 of 2 done")
+    page.get_by_label("Unit").fill("kits")
     page.get_by_label("Target").fill("3")
+    page.get_by_label("Target").press("Tab")
     page.get_by_label("Progress note").fill("Zero done, decals went on well")
     page.get_by_label("Number now").fill("1")
     page.get_by_role("button", name="Add note").click()
     expect(page.locator(".goal-notes li")).to_contain_text("1 kits · Zero done")
-    expect(page.locator(".goal-big-percent")).to_have_text("33%")            # the number wins over the steps
+    expect(page.locator(".goal-hero .goal-big-percent")).to_have_text("33%")            # the number wins over the to-dos
+    expect(page.locator(".goal-hero .goal-pace")).to_have_text(re.compile("Ahead|On track|Behind"))   # against an even pace
+    expect(page.locator(".goal-chart svg")).to_be_visible()
     shot(page, "d60_goal", full=True)
-    page.get_by_role("group", name="Status").get_by_role("button", name="Done").click()
-    expect(page.locator(".goal-top .goal-due")).to_contain_text("Reached")
+    page.get_by_role("button", name="Mark as reached").click()
+    expect(page.locator(".goal-reached")).to_contain_text("You did it")
+    expect(page.locator(".goal-hero .goal-due")).to_contain_text("Reached")
     page.get_by_role("link", name="‹ All goals").click()
     page.locator(".chip-filter", has_text="Done").click()
     tile = page.locator(".goal-tile", has_text=MARK)
@@ -1794,10 +1803,15 @@ def goals(page):
     tile_goal = page.request.get(f"{BASE}/api/goals?status=done").json()["goals"]
     goal_id = next(g["goal_id"] for g in tile_goal if MARK in g["title"])
     page.goto(f"{BASE}/goals/{goal_id}")
+    page.get_by_label("More for this goal").click()
     page.once("dialog", lambda d: d.accept())
     page.get_by_role("button", name="Delete goal").click()
     expect(page).to_have_url(re.compile(r"/goals$"))
     expect(page.locator(".goal-tile", has_text=MARK)).to_have_count(0)
+    # Its to-dos stay on the list: tidy them away
+    for t in page.request.get(f"{BASE}/api/todos?show=open").json() + page.request.get(f"{BASE}/api/todos?show=done").json():
+        if t["title"] in ("Finish the Zero", "Prime the Sherman") and t["goal_id"] is None:
+            page.request.delete(f"{BASE}/api/todos/{t['todo_id']}")
 
 
 def gpx_file(name):

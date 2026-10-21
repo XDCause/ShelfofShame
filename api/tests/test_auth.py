@@ -9,7 +9,6 @@ import secrets
 
 import cbor2
 import pyotp
-import pytest
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec
 from fastapi.testclient import TestClient

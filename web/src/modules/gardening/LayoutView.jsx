@@ -76,7 +76,8 @@ function Plan({ space, onChanged }) {
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
-  const scale = Math.min(width / space.width_cm, 520 / space.depth_cm)
+  // (the plan has a 26px margin each side for the railing / window label: it fits the space left, not the whole width)
+  const scale = Math.max(0.1, Math.min((width - 52) / space.width_cm, 520 / space.depth_cm))
   const px = (cm) => cm * scale
   const today = localToday()
 
@@ -148,10 +149,13 @@ function Plan({ space, onChanged }) {
           const ready = plants.some((p) => p.harvest_ready)
           const warn = plants.some((p) => p.warnings?.length)
           const label = `${c.name}: ${plants.length ? plants.map((p) => p.name).join(', ') : 'empty'}${thirsty ? ', needs water' : ''}${ready ? ', ready to pick' : ''}`
+          // a pot drawn to scale on a phone can be tiny: never smaller than a finger's tap (28px), and its level
+          // ("Railing") only where there's room for it beside the name
+          const [w, h] = [Math.max(px(c.width_cm), 28), Math.max(px(c.depth_cm), 28)]
           return (
             <button key={c.container_id} type="button" aria-label={label}
               className={['garden-pot', c.shape, thirsty && 'thirsty', ready && 'ready'].filter(Boolean).join(' ')}
-              style={{ left: px(c.x_cm), top: px(c.y_cm), width: px(c.width_cm), height: px(c.depth_cm) }}
+              style={{ left: px(c.x_cm), top: px(c.y_cm), width: w, height: h }}
               onPointerDown={(e) => start(e, c, 'move')} onPointerUp={() => end(c)} onKeyDown={(e) => keys(e, c)}
               onClick={(e) => { if (e.detail === 0) openPanel('gcontainer', { id: c.container_id }) }}>
               <span className="garden-pot-plants" aria-hidden="true">
@@ -160,7 +164,7 @@ function Plan({ space, onChanged }) {
               </span>
               <span className="garden-pot-name">{c.name}</span>
               <span className="garden-pot-flags" aria-hidden="true">{thirsty && '💧'}{ready && '✂️'}{warn && '⚠️'}</span>
-              {c.level !== 'Floor' && <span className="garden-pot-level">{c.level}</span>}
+              {c.level !== 'Floor' && h >= 48 && w >= 60 && <span className="garden-pot-level">{c.level}</span>}
               <span className="garden-pot-resize" onPointerDown={(e) => start(e, c, 'size')} onPointerUp={() => end(c)} aria-hidden="true" />
             </button>
           )
