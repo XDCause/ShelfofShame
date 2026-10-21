@@ -1750,7 +1750,7 @@ def todos(page):
     expect(page.locator(".toast")).to_contain_text("Next one due tomorrow")
     page.reload()
     expect(page.locator(".task-group-week .task-row", has_text="Water the basil")).to_contain_text("Tomorrow")   # the next one
-    page.locator(".section-tabs").get_by_role("link", name="Goals", exact=True).click()   # the other tab: the goals
+    page.locator(".section-tabs").get_by_role("link", name="Big picture", exact=True).click()   # the other tab: the goals
     expect(page).to_have_url(BASE + "/goals")
 
 

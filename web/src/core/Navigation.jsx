@@ -23,7 +23,8 @@ const CORE_PAGES = [
 ]
 const SUPPLY_PAGES = CORE_PAGES.slice(4)
 // Goals' own tabs: the goals, and the to-do list under them
-const GOAL_TABS = [{ path: '/goals', label: 'Goals' }, { path: '/goals/todo', label: 'To-do' }]
+// (not "Goals" under the page's own "Goals" banner)
+const GOAL_TABS = [{ path: '/goals', label: 'Big picture' }, { path: '/goals/todo', label: 'To-do' }]
 const HOBBIES_PAGE = { path: '/hobbies', label: 'Hobbies', Icon: GridIcon }
 
 const under = (pathname, path) => pathname === path || pathname.startsWith(`${path}/`)

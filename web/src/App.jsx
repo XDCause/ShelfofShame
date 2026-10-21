@@ -211,6 +211,8 @@ export default function App() {
           {area && lookups && (areaId === 'home' ? <HomeHero area={area} />
             : <PageBanner key={areaId} area={area} title={title} />)}
           <div className="content">
+            {/* the tabs first: they sit on the banner's foot (styles.css .section-tabs) */}
+            <SectionTabs />
             {timer && (
               <button type="button" className="timer-banner" onClick={() => openModel(timer.model_id)}>
                 <TimerIcon size={18} /> Working on <strong>{timer.name}</strong>
@@ -222,7 +224,6 @@ export default function App() {
               <Notice type={flash.type} onClose={clearFlash}>{flash.text}</Notice>
             )}
 
-            <SectionTabs />
             <main>
               {!lookups ? (!error && <p className="muted loading">Loading...</p>) : (
                 <Routes>
