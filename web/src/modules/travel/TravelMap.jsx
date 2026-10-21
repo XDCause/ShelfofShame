@@ -20,8 +20,9 @@ const TONES = { Been: '--ok', Planned: '--tint', Want: '--purple' }
 const remembered = () => { try { return localStorage.getItem('travel-map-base') || 'map' } catch { return 'map' } }
 const colour = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#0a84ff'
 
+// legend: a key of your own instead of Been / Going / Want (the journal's map).
 export default function TravelMap({ places = [], photos = [], route = false, picking = false, picked = null, onPick, onPlace,
-  onPhoto, label = 'Map of places' }) {
+  onPhoto, label = 'Map of places', legend = null }) {
   const box = useRef(null)
   const map = useRef(null)
   const tiles = useRef(null)
@@ -101,13 +102,13 @@ export default function TravelMap({ places = [], photos = [], route = false, pic
       </div>
       <div ref={box} className="travel-map-box" role="region" aria-label={label} />
       <figcaption className="travel-map-key">
-        {route ? <span><i className="travel-key-stop" /> Stops, in order</span> : (
+        {legend ?? (route ? <span><i className="travel-key-stop" /> Stops, in order</span> : (
           <>
             <span><i className="travel-key-been" /> Been</span>
             <span><i className="travel-key-planned" /> Going</span>
             <span><i className="travel-key-want" /> Want to go</span>
           </>
-        )}
+        ))}
         {photos.some((p) => p.lat != null) && <span><i className="travel-key-photo" /> Your photo</span>}
         <span className="muted">{picking ? 'Tap the map where it is' : 'Zoom with + / −'}</span>
       </figcaption>

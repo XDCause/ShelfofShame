@@ -1948,3 +1948,25 @@ DBeaver connection confirmed working (2026-10-11).
    the To-do page's No day group. Undated ones on Next up have a grip: drag (pointer events, so mouse and finger) or
    focus it and press up / down. Lesson: following the drag on the grip itself (setPointerCapture) lost the pointer as
    soon as React moved the rows, so the drop never fired; the window follows a drag now, the order kept in a ref.
+5h. **Banners and the journal grows** (2026-10-21).
+   - Banners: every page's banner is one height, so its name sits in the same spot everywhere; a page without tabs puts
+     its search row where the tabs sit (frosted like them; Journal, Supplies on PCs). New drawn extras, all natural
+     (user: no buildings): trees, moon, rays, meadow, rainbow, and a mesa scene (Shooting); Chess, Gardening and Supplies
+     got their own looks. Journal's All chip now clears the mood too. A notes page is a whole sheet (to the screen's foot).
+   - The journal, from a scan of Day One, Apple Journal, Notion and reMarkable (user picked all but voice notes and AI):
+     tabs Pages | Calendar | Map | Insights. 86_journal_more.sql: journal_notebooks, journal_templates; pages get
+     notebook_id, place (name, lat, lon), weather (JSONB), paper (plain / lined / grid / dot), private.
+     api/app/journal_more.py (router before journal's): on-this-day (earlier years' pages + what you did), today (the
+     activity feed's day, for "Write about today"), calendar (+ streaks: today or yesterday back, and the longest),
+     insights (weekly mood, mood on each hobby's days vs usual - 3 mood days needed - mood words), review (a week /
+     month by hobby, goals), notebooks, templates, weather (openmeteo.day_weather: their forecast API keeps 92 days;
+     the page's place, else Gardening's "where you are"), places (the map), export (print).
+   - Web: core/journal/blocks.js (BlockNote blocks in code, built-in templates, prompts, Today / review pages),
+     JournalExtras.jsx (Today, On this day - also on Home's journal card -, Templates menu, notebooks, place, weather,
+     prompt), JournalCalendar / JournalMap (TravelMap with a legend prop) / JournalInsights / JournalPrint (the browser's
+     print -> PDF; blocks rendered as plain HTML). Private pages: out of the list (unless the Private chip), activity,
+     mentions, On this day, the map and export (unless asked).
+   - Lessons: stock lines ("Added XF-1") swamped Today and the review - supplies aren't something to write about. A
+     review says "Played @Catan" about days already logged, and the page offered "Log a play?" (a second play): pages
+     tagged review make no suggestions.
+

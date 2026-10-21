@@ -25,6 +25,8 @@ const SUPPLY_PAGES = CORE_PAGES.slice(4)
 // Goals' own tabs: the goals, and the to-do list under them
 // (not "Goals" under the page's own "Goals" banner)
 const GOAL_TABS = [{ path: '/goals', label: 'Big picture' }, { path: '/goals/todo', label: 'To-do' }]
+const JOURNAL_TABS = [{ path: '/journal', label: 'Pages' }, { path: '/journal/calendar', label: 'Calendar' },
+  { path: '/journal/map', label: 'Map' }, { path: '/journal/insights', label: 'Insights' }]
 const HOBBIES_PAGE = { path: '/hobbies', label: 'Hobbies', Icon: GridIcon }
 
 const under = (pathname, path) => pathname === path || pathname.startsWith(`${path}/`)
@@ -123,6 +125,13 @@ export function SectionTabs() {
     return (
       <nav className="section-tabs segmented" aria-label="Goals pages">
         {GOAL_TABS.map((p) => <NavLink key={p.path} to={p.path} end>{p.label}</NavLink>)}
+      </nav>
+    )
+  }
+  if (JOURNAL_TABS.some((p) => p.path === pathname)) {
+    return (
+      <nav className="section-tabs segmented" aria-label="Journal pages">
+        {JOURNAL_TABS.map((p) => <NavLink key={p.path} to={p.path} end>{p.label}</NavLink>)}
       </nav>
     )
   }

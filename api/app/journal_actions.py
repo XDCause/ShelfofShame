@@ -72,7 +72,10 @@ def _blocks(blocks):
 
 
 def suggestions(conn, page: dict) -> list[dict]:
-    """What the page's words suggest doing to the models it mentions (not yet done or dismissed)."""
+    """What the page's words suggest doing to the models it mentions (not yet done or dismissed). None on a review
+    page (tagged review): it looks back over days already logged, so "Played @Catan" there isn't a new play."""
+    if "review" in (page.get("tags") or []):
+        return []
     wanted = {}   # (model_id, field) -> what the words say
     supplies = set()
     games = set()

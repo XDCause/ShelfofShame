@@ -4,9 +4,10 @@ import { api, dayDate, isoDay } from '../../api.js'
 import { JournalIcon } from '../../components/icons.jsx'
 import { useApp } from '../app-context.js'
 import { PageRow } from './JournalList.jsx'
+import { OnThisDay } from './JournalExtras.jsx'
 import { moodOf } from './moods.js'
 
-// The journal on the Home page: your week's moods and the latest few pages. (Its to-dos are on Home's To-do card.)
+// The journal on the Home page: your week's moods, On this day (earlier years' pages) and the latest few pages. (Its to-dos are on Home's To-do card.)
 // ("Write today's entry" is in the hero at the top of Home.)
 export default function JournalHome() {
   const { refreshKey } = useApp()
@@ -18,6 +19,7 @@ export default function JournalHome() {
       <h2 id="home-journal" className="home-card-title"><JournalIcon size={20} /> Journal
         <Link to="/journal" className="small">All pages →</Link></h2>
       <YourWeek />
+      <OnThisDay compact />
       {pages?.length > 0 ? (
         <>
           <h3 className="section-title home-journal-title">Latest pages</h3>

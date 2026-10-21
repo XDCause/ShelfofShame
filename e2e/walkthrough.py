@@ -1294,6 +1294,58 @@ def writing_mode(page):
     expect(page.locator("body.writing-mode")).to_have_count(0)
 
 
+@step("Journal extras: a template in a new notebook on lined paper, private, the prompt; Calendar, Map, Insights, a review, print")
+def journal_extras(page):
+    go(page, "Journal")
+    page.locator(".jx-menu > summary").click()
+    page.get_by_role("menuitem", name=re.compile("^Daily reflection")).click()
+    expect(page).to_have_url(re.compile(r"/journal/\d+$"))
+    expect(page.locator(".bn-editor")).to_contain_text("What went well", timeout=20000)
+    page.get_by_label("Title").fill(f"Reflection {MARK}")
+    page.get_by_label("Paper").select_option("lined")
+    expect(page.locator(".journal-page[data-paper='lined']")).to_have_count(1)
+    page.get_by_label("Notebook").select_option("new")
+    page.get_by_label("New notebook's name").fill(f"Book {MARK}")
+    page.get_by_role("button", name="Add", exact=True).click()
+    expect(page.get_by_label("Notebook")).to_contain_text(f"Book {MARK}")
+    page.get_by_label("Private").check()
+    expect(page.locator(".save-status")).to_have_text("Saved", timeout=10000)
+    # private: not in the list until asked for, then in its notebook
+    go(page, "Journal")
+    expect(page.locator(".journal-card", has_text=f"Reflection {MARK}")).to_have_count(0)
+    page.get_by_role("button", name="🔒 Private").click()
+    expect(page.locator(".journal-card", has_text=f"Reflection {MARK}")).to_have_count(1)
+    expect(page.locator(".journal-card", has_text=f"Reflection {MARK}")).to_contain_text(f"Book {MARK}")
+    # an empty page offers a prompt; "Write about this" starts the page with it
+    page.get_by_role("button", name="+ New page").click()
+    prompt = page.locator(".jx-prompt-text").inner_text()
+    page.get_by_role("button", name="Write about this").click()
+    expect(page.locator(".bn-editor")).to_contain_text(prompt, timeout=20000)
+    expect(page.locator(".jx-prompt")).to_have_count(0)
+    page.get_by_role("button", name="Delete").click()
+    page.get_by_role("button", name="Delete", exact=True).last.click()
+    # the tabs
+    page.locator(".section-tabs").get_by_role("link", name="Calendar").click()
+    expect(page.locator(".jcal-streak")).to_contain_text("in a row")
+    expect(page.locator(".jcal-day.today")).to_have_count(1)
+    page.locator(".section-tabs").get_by_role("link", name="Map").click()
+    expect(page.locator("section.page")).to_be_visible()
+    page.locator(".section-tabs").get_by_role("link", name="Insights").click()
+    expect(page.locator(".jin-stats")).to_contain_text("pages written")
+    shot(page, "d38b_journal_insights", full=False)
+    page.get_by_role("button", name="Write my weekly review").click()
+    expect(page).to_have_url(re.compile(r"/journal/\d+$"))
+    expect(page.locator(".bn-editor")).to_contain_text("Next week I want to", timeout=20000)
+    expect(page.locator(".tag-chip")).to_have_text(re.compile("#review"))
+    expect(page.locator(".suggestions")).to_have_count(0)                 # a review looks back: nothing to apply
+    page.get_by_role("button", name="Delete").click()
+    page.get_by_role("button", name="Delete", exact=True).last.click()
+    page.get_by_role("link", name="Print / PDF").click()
+    expect(page.locator(".jx-print-cover")).to_contain_text("pages")
+    page.get_by_label("Include private pages").check()
+    expect(page.locator(".jx-printed", has_text=f"Reflection {MARK}")).to_have_count(1)
+
+
 @step("Mood: pick a face and a word; the list, its filter, Home's week and the calendar show it")
 def mood(page):
     go(page, "Journal")
@@ -2605,7 +2657,7 @@ with sync_playwright() as p:
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
                matches, used_on, gundam, bandai_lookup, warhammer, journal_write, journal_links, journal_from_model,
                journal_suggestion, journal_todo, global_search, journal_wishlist, banners, panel_focus, appearance,
-               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, mood, video_games, chess, reading, warhammer_range, warhammer_minis, gundam_range, board_game_kinds, board_game_elsewhere, volleyball_coach, video_game_friends, wishlist_shops, goals, todos, supply_kit, hiking, gardening, shooting, travel, bunnings_button, settings_more, no_panel):
+               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, journal_extras, mood, video_games, chess, reading, warhammer_range, warhammer_minis, gundam_range, board_game_kinds, board_game_elsewhere, volleyball_coach, video_game_friends, wishlist_shops, goals, todos, supply_kit, hiking, gardening, shooting, travel, bunnings_button, settings_more, no_panel):
         fn(desk)
     ctx = signed_in(browser.new_context(**p.devices["iPhone 13"], timezone_id=zone, ignore_https_errors=True))
     mob = ctx.new_page()

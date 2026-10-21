@@ -810,10 +810,14 @@ td .fill-bar { width: 90px; height: 4px; margin-top: 5px; }
 
 .journal-page {
   --gutter-left: 60px;
-  max-width: 820px; margin: 0 auto; padding: 22px 40px 40px var(--gutter-left);
+  max-width: 920px; margin: 0 auto; padding: 22px 40px 40px var(--gutter-left);
   border-radius: 6px; border: 1px solid var(--border); box-shadow: var(--card-shadow);
   background: var(--surface);
 }
+/* A notes page is a whole sheet: down to the foot of the screen, and you can click anywhere on it to write (user,
+   2026-10-21: a new page looked like a small card). Not wider than ~920px: longer lines are harder to read. */
+.journal-page:not(.whiteboard) { min-height: calc(100dvh - var(--nav-h) - 72px); }
+.journal-page:not(.whiteboard) .journal-editor .bn-editor { min-height: max(200px, calc(100dvh - var(--nav-h) - 330px)); }
 /* In the dark theme a notes page is a sheet of warm paper: dark ink, its own quiet colours. */
 :root[data-theme='dark'] .journal-page:not(.whiteboard) {
   --text: #2a2a22; --muted: #6b6555; --faint: #a8a08a; --surface: #f3ecdc; --field: #faf5e9; --fill: rgb(70 60 40 / 0.09);
@@ -892,9 +896,31 @@ button.mention:disabled { color: var(--muted); background: var(--fill); text-dec
   background: rgb(12 18 14 / 0.66); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);   /* dark enough for its
   words over any picture, or the page itself where the picture fades out (5:1 even on parchment) */
 }
-.main-col:has(.section-tabs:not(.phone-only)) .page-banner { padding-bottom: 62px; }   /* room for them on the picture */
-@media (max-width: 700px) { .main-col:has(.section-tabs) .page-banner { padding-bottom: 62px; } }
+/* Every page's banner is the same height, so its name sits in the same spot on every page (user, 2026-10-21), with room
+   at its foot for the tabs - or, on a page without tabs, its search row, in the same place (Journal, Supplies). */
+.page-banner:not(.home-banner) { padding-bottom: 62px; }
 .section-tabs.phone-only { display: none; }
+.main-col:not(:has(.section-tabs:not(.phone-only))) main > * > .toolbar:first-child:has(> input[type='search']) {
+  position: relative; z-index: 3; margin-top: -56px; margin-bottom: 14px;
+}
+.main-col:not(:has(.section-tabs:not(.phone-only))) main > * > .toolbar:first-child > input[type='search'] {
+  border: 1px solid rgb(255 255 255 / 0.14); background: rgb(12 18 14 / 0.66); color: #f3ecdc;   /* frosted, like the tabs */
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+.main-col:not(:has(.section-tabs:not(.phone-only))) main > * > .toolbar:first-child > input[type='search']::placeholder { color: rgb(243 236 220 / 0.78); }
+@media (min-width: 701px) {   /* (on a phone the buttons wrap below the picture) */
+  .main-col:not(:has(.section-tabs:not(.phone-only))) main > * > .toolbar:first-child:has(> input[type='search']) > .secondary {
+    border: 1px solid rgb(255 255 255 / 0.14); background: rgb(12 18 14 / 0.66); color: #f3ecdc;
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  }
+}
+@media (max-width: 700px) {
+  .main-col:has(.section-tabs.phone-only) main > * > .toolbar:first-child:has(> input[type='search']) { margin-top: 0; }
+  .main-col:has(.section-tabs.phone-only) main > * > .toolbar:first-child > input[type='search'] {   /* (the tabs are there) */
+    border-color: transparent; background: var(--fill); color: inherit; backdrop-filter: none; -webkit-backdrop-filter: none;
+  }
+  .main-col:has(.section-tabs.phone-only) main > * > .toolbar:first-child > input[type='search']::placeholder { color: var(--muted); }
+}
 .segmented a {
   flex: none; display: inline-flex; align-items: center; justify-content: center; padding: 6px 16px; border-radius: 999px;
   color: var(--muted); font-size: 0.9rem; font-weight: 550; min-height: 34px; text-decoration: none;
@@ -2999,4 +3025,134 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
   .home-now > .card > .list { flex: 1; min-height: 0; overflow-y: auto; margin-right: -8px; padding: 0 8px 18px 0;
     mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent); }
   .home-now > .card > .todos { flex: none; }
+}
+
+/* ---------- Journal extras (core/journal: JournalExtras, JournalCalendar, JournalMap, JournalInsights, JournalPrint) ----------
+   Write about today, On this day, templates, notebooks, a page's place / weather / paper, the prompt, and the
+   Calendar / Map / Insights tabs and the print view (user, 2026-10-21). */
+.jx-top-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.jx-top-cards:empty { display: none; }
+.jx-card { display: flex; flex-direction: column; gap: 10px; }
+.jx-card-title { margin: 0; font-family: var(--font-display); font-size: 1.15rem; }
+.jx-did { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: 0.92rem; }
+.jx-card-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: auto; }
+.jx-otd-year + .jx-otd-year { margin-top: 4px; }
+.jx-otd-compact { margin-bottom: 12px; }
+.jx-card-where { display: block; margin-top: 2px; }
+.jx-print-link { margin-left: 4px; }
+/* the Templates menu */
+.jx-menu { position: relative; }
+.jx-menu > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; min-height: 40px; padding: 8px 16px;
+  border-radius: 999px; font-weight: 600; }
+.jx-menu > summary::-webkit-details-marker { display: none; }
+.jx-menu-list { position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; width: min(300px, 86vw); max-height: 70vh; overflow: auto;
+  display: flex; flex-direction: column; padding: 6px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border);
+  box-shadow: 0 18px 40px rgb(0 0 0 / 0.28); }
+.jx-menu-list button[role='menuitem'] { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; width: 100%; padding: 8px 10px;
+  border: 0; border-radius: 10px; background: none; color: var(--text); text-align: left; font-weight: 600; }
+.jx-menu-list button[role='menuitem'] span { font-size: 0.8rem; font-weight: 400; color: var(--muted); }
+.jx-menu-list button[role='menuitem']:hover, .jx-menu-list button[role='menuitem']:focus-visible { background: var(--fill); }
+.jx-menu-head { margin: 8px 10px 2px; font-size: var(--text-xs); font-weight: 650; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.jx-menu-row { display: flex; align-items: center; }
+.jx-menu-x { flex: none; min-width: 32px; font-size: 1.1rem; }
+.jx-menu-tip { margin: 6px 10px; }
+/* notebooks */
+.jx-dot { display: inline-block; width: 9px; height: 9px; margin-right: 6px; border-radius: 50%; background: var(--tone, var(--muted)); }
+.jx-notebooks { flex-basis: 100%; }
+.jx-nb-edit { flex-basis: 100%; margin: 4px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.jx-nb-edit li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.jx-nb-edit input { flex: 1 1 160px; }
+.jx-inline-form { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.jx-inline-form input { min-height: 32px; padding: 4px 10px; font-size: 0.9rem; }
+/* a page's meta: notebook, place, weather, paper */
+.jx-meta-select { min-height: 32px; padding: 4px 28px 4px 10px; font-size: 0.9rem; width: auto; }
+.jx-meta-chip { display: inline-flex; align-items: center; min-height: 32px; padding: 4px 12px; border: 0; color: var(--text); font-size: 0.88rem; cursor: pointer; }
+.jx-pop { position: relative; }
+.jx-pop > summary { list-style: none; }
+.jx-pop > summary::-webkit-details-marker { display: none; }
+.jx-pop-body { position: absolute; left: 0; top: calc(100% + 6px); z-index: 30; width: min(320px, 80vw); display: flex; flex-direction: column;
+  gap: 8px; padding: 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 18px 40px rgb(0 0 0 / 0.28); }
+.jx-pop-list { margin: 0; padding: 0; list-style: none; }
+.jx-pop-list button { width: 100%; text-align: left; }
+/* the prompt on an empty page */
+.jx-prompt { margin: 0 0 14px; padding: 14px 16px; border-radius: 12px; background: var(--fill); border-left: 3px solid var(--tint); }
+.jx-prompt-label { font-size: var(--text-xs); font-weight: 650; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.jx-prompt-text { margin: 4px 0 10px; font-family: var(--font-display); font-size: 1.25rem; }
+.jx-prompt-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+/* paper behind a notes page's writing (reMarkable-style templates) */
+.journal-page[data-paper='lined'] .journal-editor {
+  background-image: repeating-linear-gradient(to bottom, transparent 0 31px, rgb(70 60 40 / 0.14) 31px 32px); background-position: 0 6px; }
+.journal-page[data-paper='grid'] .journal-editor {
+  background-image: linear-gradient(rgb(70 60 40 / 0.1) 1px, transparent 1px), linear-gradient(90deg, rgb(70 60 40 / 0.1) 1px, transparent 1px);
+  background-size: 24px 24px; }
+.journal-page[data-paper='dot'] .journal-editor {
+  background-image: radial-gradient(rgb(70 60 40 / 0.28) 1.2px, transparent 1.4px); background-size: 22px 22px; }
+/* the map list */
+.jx-map-list li { padding: 8px 12px; }
+
+/* Journal > Calendar */
+.jcal-streak { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
+.jcal-streak-big { font-family: var(--font-display); font-size: 1.6rem; font-weight: 600; }
+.jcal-streak-big small { font-size: 0.9rem; font-weight: 500; color: var(--muted); }
+.jcal-head { display: flex; align-items: center; gap: 8px; }
+.jcal-head > .plain { min-width: 40px; min-height: 40px; font-size: 1.3rem; }
+.jcal-title { margin: 0; min-width: 9em; text-align: center; font-family: var(--font-display); font-size: 1.3rem; }
+.jcal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.jcal-name { text-align: center; font-size: var(--text-xs); font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.jcal-day { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 64px;
+  padding: 6px 2px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text); font: inherit; }
+.jcal-day.written { background: var(--tone-bg, var(--fill)); border-color: transparent; }
+.jcal-day:is(a, button):hover { text-decoration: none; outline: 1px solid var(--tone, var(--tint)); }
+.jcal-day.today { box-shadow: inset 0 0 0 2px var(--tint); }
+.jcal-day.future { border-style: dashed; background: transparent; }        /* (not faded: its number must stay readable) */
+.jcal-num { font-size: 0.8rem; font-weight: 650; color: var(--muted); }
+.jcal-face { font-size: 1.4rem; line-height: 1.1; }
+.jcal-more { position: absolute; top: 4px; right: 6px; font-size: 0.7rem; font-weight: 700; color: var(--muted); }
+@media (max-width: 700px) { .jcal-day { min-height: 48px; } .jcal-face { font-size: 1.1rem; } }
+
+/* Journal > Insights */
+.jin-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.jin-stat { display: flex; flex-direction: column; gap: 2px; }
+.jin-stat strong { font-family: var(--font-display); font-size: 1.5rem; }
+.jin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr)); gap: 16px; align-items: start; }
+.jin-title { margin: 0 0 10px; font-family: var(--font-display); font-size: 1.15rem; }
+.jin-chart { margin: 0; }
+.jin-chart svg { width: 100%; height: auto; display: block; }
+.jin-grid-line { stroke: var(--separator); stroke-width: 1; }
+.jin-axis { font-size: 13px; fill: var(--muted); }
+.jin-line { fill: none; stroke: var(--tint); stroke-width: 2; stroke-linejoin: round; }
+.jin-dot { fill: var(--tint); stroke: var(--surface); stroke-width: 2; }
+.jin-table { margin-top: 6px; }
+.jin-spread { margin-top: 14px; }
+.jin-spread-bar { display: flex; gap: 2px; height: 12px; border-radius: 999px; overflow: hidden; }
+.jin-spread-bar span { background: var(--tone); }
+.jin-spread-key { margin: 8px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.85rem; }
+.jin-hobbies { margin: 0 0 12px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.jin-hobbies li { display: grid; grid-template-columns: minmax(0, 1fr) 90px; grid-template-areas: 'name bar' 'what what'; gap: 2px 10px; align-items: center; }
+.jin-hobby-name { grid-area: name; font-weight: 600; }
+.jin-hobby-what { grid-area: what; font-size: 0.85rem; color: var(--muted); }
+.jin-bar { grid-area: bar; position: relative; height: 8px; border-radius: 999px; background: var(--fill); }
+.jin-bar i { position: absolute; top: 0; bottom: 0; left: 50%; width: calc(var(--size) / 2); border-radius: 999px; background: var(--ok); }
+.jin-bar.down i { left: auto; right: 50%; background: var(--low); }
+
+/* Journal > Print / PDF */
+.jx-print-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.jx-print-controls label { display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem; }
+.jx-print-controls input[type='date'] { min-height: 34px; padding: 4px 8px; }
+.jx-print-cover { padding: 24px 0 8px; }
+.jx-print-cover h1 { margin: 4px 0; font-family: var(--font-display); }
+.jx-print-kicker { margin: 0; font-size: var(--text-xs); letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.jx-printed { padding: 22px 0; border-top: 1px solid var(--separator); }
+.jx-printed h2 { margin: 2px 0 6px; font-family: var(--font-display); font-size: 1.6rem; }
+.jx-printed-meta, .jx-printed-tags { margin: 0; font-size: 0.85rem; color: var(--muted); }
+.jx-printed-img { max-width: 100%; max-height: 420px; border-radius: 8px; }
+.jx-printed blockquote { margin: 8px 0; padding-left: 12px; border-left: 3px solid var(--separator); font-style: italic; }
+.jx-printed .jx-check { list-style: none; margin-left: -18px; }
+.jx-printed-kids { margin-left: 18px; }
+@media print {
+  .jx-print-controls, .sidebar, .tabbar, .navbar, .page-banner, .timer-banner { display: none !important; }
+  .jx-print, .jx-print * { color: #111 !important; }
+  .jx-printed { break-before: page; border-top: 0; }
+  .jx-printed:first-of-type { break-before: auto; }
+  .jx-printed-img { break-inside: avoid; }
 }

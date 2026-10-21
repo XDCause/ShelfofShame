@@ -76,3 +76,27 @@ def forecast(lat: float, lon: float) -> list[dict]:
             for i, day in enumerate(d.get("time") or [])]
     _cache[key] = (time.time(), days)
     return days
+
+
+def day_weather(lat: float, lon: float, day: str) -> dict | None:
+    """One day's weather at a place (a journal page's): {sky, icon, max, min, rain_mm}. Their forecast API also keeps the
+    last 92 days (and the next two weeks); None if it has nothing for that day."""
+    key = (round(lat, 2), round(lon, 2), day)
+    hit = _cache.get(key)
+    if hit and time.time() - hit[0] < KEEP:
+        return hit[1]
+    data = _get(FORECAST, {"latitude": key[0], "longitude": key[1], "timezone": "auto", "start_date": day, "end_date": day,
+                           "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code"})
+    d = data.get("daily") or {}
+    times = d.get("time") or []
+    if not times:
+        return None
+    i = times.index(day) if day in times else 0
+
+    def col(name):
+        values = d.get(name) or []
+        return values[i] if i < len(values) else None
+    found = {"sky": sky(col("weather_code"))[0], "icon": sky(col("weather_code"))[1], "max": col("temperature_2m_max"),
+             "min": col("temperature_2m_min"), "rain_mm": col("precipitation_sum")}
+    _cache[key] = (time.time(), found)
+    return found

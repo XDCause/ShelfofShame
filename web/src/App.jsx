@@ -26,6 +26,10 @@ import HobbiesPage from './core/HobbiesPage.jsx'
 import Home, { HomeHero } from './core/Home.jsx'
 import JournalList from './core/journal/JournalList.jsx'
 import JournalPage from './core/journal/JournalPage.jsx'
+import JournalCalendar from './core/journal/JournalCalendar.jsx'
+import JournalInsights from './core/journal/JournalInsights.jsx'
+import JournalMap from './core/journal/JournalMap.jsx'
+import JournalPrint from './core/journal/JournalPrint.jsx'
 import { corePageFor, SectionTabs, Sidebar, TabBar } from './core/Navigation.jsx'
 import { MODULE_PANELS, MODULES, moduleFor, pageFor } from './modules/index.js'
 
@@ -233,6 +237,10 @@ export default function App() {
                   <Route path="/goals/todo" element={<TodoPage />} />
                   <Route path="/goals/:id" element={<GoalPage />} />
                   <Route path="/journal" element={<JournalList />} />
+                  <Route path="/journal/calendar" element={<JournalCalendar />} />
+                  <Route path="/journal/map" element={<JournalMap />} />
+                  <Route path="/journal/insights" element={<JournalInsights />} />
+                  <Route path="/journal/print" element={<JournalPrint />} />
                   <Route path="/journal/:id" element={<JournalPage />} />
                   <Route path="/calendar" element={<CalendarPage />} />
                   <Route path="/supplies" element={<InventoryView refreshKey={refreshKey}

@@ -4,7 +4,7 @@
     kits        bought / started / finished          (models' dates)
     build log   an entry for a kit                   (model_log)
     time        a session on a kit                   (model_sessions, once stopped)
-    journal     a page written                       (journal_pages, on the day it's about)
+    journal     a page written                       (journal_pages, on the day it's about; not private ones)
     board games a play                               (board_game_plays)
     volleyball  a game or training                   (volleyball_games)
     gear        bought                               (gear's purchase date)
@@ -73,7 +73,7 @@ WITH feed AS (
     SELECT {_on_day('entry_date', 'created_at')}, 'page', page_id,
            CASE WHEN kind = 'whiteboard' THEN 'Drew' ELSE 'Wrote' END,
            COALESCE(NULLIF(title, ''), 'Untitled page'), NULL, NULL, NULL, NULL
-    FROM journal_pages
+    FROM journal_pages WHERE NOT private
   UNION ALL
     SELECT {_on_day('p.played_on', 'p.created_at')}, 'game', p.game_id, 'Played', g.name,
            concat_ws(' · ', 'Won by ' || NULLIF(p.winner, ''), NULLIF(p.players, ''), p.minutes || ' min'),

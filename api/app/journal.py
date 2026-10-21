@@ -28,6 +28,9 @@ router = APIRouter(prefix="/api", tags=["journal"])
 Mood = Literal[tuple(MOODS)]
 # A word or two about the mood ("tired", "proud"): up to 5, each short.
 MoodWords = list[str]
+Paper = Literal["plain", "lined", "grid", "dot"]      # what's behind a notes page (86_journal_more.sql)
+Lat = Field(None, ge=-90, le=90)
+Lon = Field(None, ge=-180, le=180)
 
 class PageIn(BaseModel):
     kind: Literal["notes", "whiteboard"] = "notes"   # whiteboard = the whole page is one canvas
@@ -38,6 +41,12 @@ class PageIn(BaseModel):
     content: list = []
     pinned: bool = False
     tags: list[str] = []
+    notebook_id: int | None = None
+    private: bool = False
+    paper: Paper = "plain"
+    place_name: str | None = Field(None, max_length=120)
+    lat: float | None = Lat
+    lon: float | None = Lon
 
 
 class SuggestionIn(BaseModel):
@@ -56,6 +65,21 @@ class PagePatch(BaseModel):
     content: list | None = None
     pinned: bool | None = None
     tags: list[str] | None = None
+    notebook_id: int | None = None
+    private: bool | None = None
+    paper: Paper | None = None
+    place_name: str | None = Field(None, max_length=120)   # (with lat / lon; all three None = no place)
+    lat: float | None = Lat
+    lon: float | None = Lon
+
+
+def check_place(conn, data: dict):
+    """A place has both lat and lon (or neither); a notebook must exist."""
+    if ("lat" in data) != ("lon" in data) or (data.get("lat") is None) != (data.get("lon") is None):
+        raise HTTPException(422, "A place needs both a latitude and a longitude.")
+    if data.get("notebook_id") is not None:
+        found(conn.execute("SELECT 1 FROM journal_notebooks WHERE notebook_id = %s", (data["notebook_id"],)).fetchone(),
+              "Notebook")
 
 
 # ---------------------------------------------------------------------------
@@ -99,7 +123,9 @@ def save_links(conn, page_id: int, content: list):
 # the first kit (or supply) it mentions (product_info_id + photo_updated, like everywhere else).
 PAGE_LIST = """
 SELECT p.page_id, p.kind, p.title, p.mood, p.mood_words, p.entry_date, p.pinned, p.created_at, p.updated_at,
-       left(p.text, 200) AS snippet,
+       left(p.text, 200) AS snippet, p.private, p.paper, p.place_name, p.lat::float AS lat, p.lon::float AS lon, p.weather,
+       p.notebook_id, (SELECT n.name FROM journal_notebooks n WHERE n.notebook_id = p.notebook_id) AS notebook,
+       (SELECT n.colour FROM journal_notebooks n WHERE n.notebook_id = p.notebook_id) AS notebook_colour,
        COALESCE((SELECT array_agg(t.name ORDER BY lower(t.name)) FROM page_tags pt JOIN tags t USING (tag_id)
                  WHERE pt.page_id = p.page_id), '{}') AS tags,
        COALESCE((SELECT b -> 'props' ->> 'url' FROM jsonb_array_elements(p.content) b
@@ -139,7 +165,8 @@ END"""
 
 def fetch_page(conn, page_id: int) -> dict:
     page = found(conn.execute(
-        "SELECT p.*, COALESCE((SELECT array_agg(t.name ORDER BY lower(t.name)) FROM page_tags pt "
+        "SELECT p.*, p.lat::float AS lat, p.lon::float AS lon, "
+        "COALESCE((SELECT array_agg(t.name ORDER BY lower(t.name)) FROM page_tags pt "
         "JOIN tags t USING (tag_id) WHERE pt.page_id = p.page_id), '{}') AS tags "
         "FROM journal_pages p WHERE p.page_id = %s", (page_id,)).fetchone(), "Journal page")
     page["links"] = conn.execute(
@@ -161,10 +188,15 @@ def fetch_page(conn, page_id: int) -> dict:
 @router.get("/journal")
 def list_pages(q: str | None = None, tag: str | None = None,
                mention: str | None = Query(None, pattern=rf"^({'|'.join(KINDS)}):\d+$"),
-               mood: Mood | None = None, limit: int = Query(200, ge=1, le=1000)):
+               mood: Mood | None = None, notebook: int | None = None, private: bool = False,
+               limit: int = Query(200, ge=1, le=1000)):
     """Newest first (pinned ones on top). q searches titles, text and mood words; tag filters by a
-    tag; mention=model:3 lists the pages that @mention model 3; mood=rough the rough days."""
-    where, params = [], []
+    tag; mention=model:3 lists the pages that @mention model 3; mood=rough the rough days; notebook=2
+    one notebook's pages. Private pages only come with private=true (then they're the only ones)."""
+    where, params = ["p.private = %s"], [private]
+    if notebook is not None:
+        where.append("p.notebook_id = %s")
+        params.append(notebook)
     if mood:
         where.append("p.mood = %s")
         params.append(mood)
@@ -191,11 +223,14 @@ def list_pages(q: str | None = None, tag: str | None = None,
 def add_page(body: PageIn):
     data = body.model_dump(exclude={"tags"})
     data["mood_words"] = tidy_words(body.mood_words)
+    if data["place_name"] is not None:
+        data["place_name"] = data["place_name"].strip() or None
     if data["entry_date"] is None:
         data.pop("entry_date")                       # the database's default: today
     data["text"] = plain_text(body.content)
     data["content"] = Jsonb(body.content)
     with db() as conn:
+        check_place(conn, data)
         page_id = insert_row(conn, "journal_pages", data, "page_id")
         save_tags(conn, page_id, body.tags)
         save_links(conn, page_id, body.content)
@@ -243,7 +278,7 @@ def mentionable(q: str = ""):
              WHERE name ILIKE %(q)s OR product_code ILIKE %(q)s ORDER BY name LIMIT 8)
             UNION ALL
             (SELECT 'page', page_id, COALESCE(NULLIF(title, ''), 'Untitled'), 'Journal page' FROM journal_pages
-             WHERE title ILIKE %(q)s ORDER BY entry_date DESC LIMIT 8)
+             WHERE title ILIKE %(q)s AND NOT private ORDER BY entry_date DESC LIMIT 8)
             UNION ALL
             (SELECT 'game', game_id, name, 'Board game' FROM board_games
              WHERE name ILIKE %(q)s ORDER BY name LIMIT 8)
@@ -293,8 +328,18 @@ def update_page(page_id: int, body: PagePatch):
         raise HTTPException(422, "A page needs a date.")
     if "mood_words" in data:
         data["mood_words"] = tidy_words(data["mood_words"] or [])
+    if "pinned" in data and data["pinned"] is None or "private" in data and data["private"] is None \
+            or "paper" in data and data["paper"] is None:
+        raise HTTPException(422, "Pinned, private and paper can't be empty.")
+    if "place_name" in data:
+        data["place_name"] = (data["place_name"] or "").strip() or None
+        if data["place_name"] is None:                  # no place: no map spot, and the weather was for it
+            data.update(lat=None, lon=None)
     with db() as conn:
         fetch_page(conn, page_id)                       # 404 if it doesn't exist
+        check_place(conn, data)
+        if {"lat", "lon"} & data.keys():
+            data["weather"] = None                      # a new place: its weather is asked again
         if data.get("content") is not None:
             save_links(conn, page_id, data["content"])
             drop_unused(conn, page_id, data["content"])  # sketches whose block was deleted

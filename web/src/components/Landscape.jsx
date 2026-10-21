@@ -6,6 +6,7 @@ import { memo, useId } from 'react'
 // seed. Scenes:
 //   peaks   sharp mountains        hills   soft rolling hills     forest  hills covered in pines
 //   coast   headland over the sea  night   hills under stars and a moon
+//   mesa    flat-topped buttes over dry scrub (outback country)
 const W = 1600
 const H = 600
 
@@ -55,15 +56,50 @@ const area = (pts, bottom = H) => `M0 ${bottom} L${pts.map(([x, y]) => `${x.toFi
 // Pines standing on a ridge: little stacked triangles, as one path. Only where the ridge is (its own x range) and,
 // for the coast's headland, only on land (above maxY, the sea's line) - never in the air. (A tree's base is checked
 // to be on its ridge by e2e/ui_audit.py: the "art" check.)
+// Flat-topped buttes (the mesa scene's far ridges): level ground, a steep climb to a flat top, and down again.
+function buttes(rand, { base, height }) {
+  const pts = [[0, base - rand() * height * 0.12]]
+  let x = 0
+  while (x < W) {
+    const ground = base - rand() * height * 0.12
+    x += 60 + rand() * 240
+    pts.push([x, ground])
+    if (rand() < 0.65) {
+      const top = base - height * (0.5 + rand() * 0.5)
+      const rise = 14 + rand() * 22
+      const width = 120 + rand() * 320
+      const foot = (ground + top) / 2 + (ground - top) * 0.3          // the scree slope at its foot
+      pts.push([x + rise * 1.6, foot], [x + rise * 2.2, top + rand() * 5], [x + rise * 2.2 + width / 2, top + rand() * 4],
+        [x + rise * 2.2 + width, top + rand() * 5], [x + rise * 2.8 + width, foot], [x + rise * 4.4 + width, ground])
+      x += rise * 4.4 + width
+    }
+  }
+  return pts.map(([px, py]) => [Math.min(px, W), py])
+}
+
+// Low round bushes along a ridge (the mesa's scrub), as one path.
+function shrubs(rand, pts, size, every) {
+  let d = ''
+  for (let x = rand() * every; x < W; x += every * (0.4 + rand() * 1.2)) {
+    const r = size * (0.5 + rand() * 0.8)
+    const y = groundAt(pts, x) + 3
+    d += `M${(x - r).toFixed(1)} ${y.toFixed(1)} A${r.toFixed(1)} ${(r * 0.75).toFixed(1)} 0 0 1 ${(x + r).toFixed(1)} ${y.toFixed(1)} Z `
+  }
+  return d
+}
+
+// The ridge's height at x (between its points).
+function groundAt(pts, x) {
+  const i = pts.findIndex(([px]) => px >= x)
+  if (i <= 0) return pts[0][1]
+  const [x0, y0] = pts[i - 1]
+  const [x1, y1] = pts[i]
+  return y0 + ((x - x0) / (x1 - x0 || 1)) * (y1 - y0)
+}
+
 function pines(rand, pts, size, every, maxY = Infinity) {
   let d = ''
-  const at = (x) => {
-    const i = pts.findIndex(([px]) => px >= x)
-    if (i <= 0) return pts[0][1]
-    const [x0, y0] = pts[i - 1]
-    const [x1, y1] = pts[i]
-    return y0 + ((x - x0) / (x1 - x0 || 1)) * (y1 - y0)
-  }
+  const at = (x) => groundAt(pts, x)
   const [from, to] = [pts[0][0], pts.at(-1)[0]]
   for (let x = from + rand() * every; x < to; x += every * (0.5 + rand())) {
     const h = size * (0.6 + rand() * 0.8)
@@ -81,6 +117,8 @@ function pines(rand, pts, size, every, maxY = Infinity) {
 // The time of day: the sky's colours before the area's hue is mixed in, and whether the sun shows.
 //   golden    late afternoon (the first look; Home keeps it)    dawn      lilac sky, a peach horizon
 //   blue      after sunset: cool, a glow where the sun went     overcast  soft grey, cloud cover, no sun
+const FLOWERS = ['#e9a3b8', '#f2d27a', '#f1ece0', '#b9a3e3', '#f0b47a']     // the meadow's wildflowers
+
 const TIMES = {
   golden: { top: '#1a2a2a', mid: '#5d6a55', horizon: '#f0b47a', glow: '#ffd8a3', haze: '#55695a', sun: true },
   dawn: { top: '#1c2236', mid: '#6a5a7a', horizon: '#f2a690', glow: '#ffe1d2', haze: '#5c5a6c', sun: true },
@@ -89,7 +127,9 @@ const TIMES = {
 }
 
 // strip: a short, wide crop (a card's picture strip) shows the horizon rather than the foot of the hills.
-// time and extras (clouds, birds, snow, lake, fog, aurora) make each area's picture its own; with neither given it's
+// time and extras make each area's picture its own: clouds, birds, snow, lake, fog, aurora, trees (lone pines on the
+// hills), moon (a crescent in the evening sky), rays (sunbeams fanning from the sun), meadow (wildflowers on the near
+// hill), rainbow (a soft arc behind the hills, after rain). All natural - no buildings (user, 2026-10-21); with neither given it's
 // drawn exactly as it always was (Home's).
 function Landscape({ scene = 'peaks', hue = '#84a85c', seed = 7, className = '', strip = false, time = 'golden', extras = [] }) {
   const id = useId().replace(/:/g, '')
@@ -110,8 +150,9 @@ function Landscape({ scene = 'peaks', hue = '#84a85c', seed = 7, className = '',
   const near = mix('#09100c', hue, 0.06)
   const layers = coast ? 3 : 5
   const firstSunX = W * (0.56 + rand() * 0.26)
-  const sunX = varied ? W * (0.14 + more() * 0.72) : firstSunX      // (anywhere along the sky, for a varied picture)
-  const sunY = H * (night ? 0.24 : varied ? 0.42 + more() * 0.14 : 0.5)
+  const sunX = has('rays') ? W * (0.6 + more() * 0.2)               // (sunbeams need the sun in view: right of the page's name)
+    : varied ? W * (0.14 + more() * 0.72) : firstSunX                   // (anywhere along the sky, for a varied picture)
+  const sunY = has('rays') ? H * 0.4 : H * (night ? 0.24 : varied ? 0.42 + more() * 0.14 : 0.5)
   const seaLine = H * 0.66
   const showSun = night || sky.sun
 
@@ -119,9 +160,11 @@ function Landscape({ scene = 'peaks', hue = '#84a85c', seed = 7, className = '',
     const t = i / (layers - 1)
     const base = coast ? seaLine + 2 : H * (0.5 + t * 0.42)
     const height = coast ? 70 + t * 40 : (scene === 'peaks' ? 260 : 150) * (1 - t * 0.45)
-    const pts = ridge(rand, { base, height, rough: scene === 'peaks' ? 0.56 : 0.5, smooth: scene !== 'peaks' || t > 0.7 })
+    const pts = scene === 'mesa' && t < 0.7 ? buttes(rand, { base: base - 10, height: 150 * (1 - t * 0.35) })
+      : ridge(rand, { base, height: scene === 'mesa' ? height * 0.4 : height, rough: scene === 'peaks' ? 0.56 : 0.5, smooth: scene !== 'peaks' || t > 0.7 })
     // far hills fade into the haze (the coast's are all far: across the water, so never near-black)
-    return { pts, t, colour: mix(haze, near, coast ? 0.1 + t * 0.3 : Math.pow(t, 0.75)) }
+    const colour = mix(haze, near, coast ? 0.1 + t * 0.3 : Math.pow(t, 0.75))
+    return { pts, t, colour: scene === 'mesa' ? mix(colour, '#9a4f30', 0.45 * (1 - t)) : colour }
   })
   // The coast's headland: wooded hills on the left that slope smoothly down into the sea (gone under it by mid-way).
   const headland = coast && (() => {
@@ -137,6 +180,17 @@ function Landscape({ scene = 'peaks', hue = '#84a85c', seed = 7, className = '',
   const birds = has('birds') && Array.from({ length: 3 + Math.floor(more() * 4) }, () => ({
     x: Math.max(40, Math.min(W - 40, sunX + (more() - 0.5) * 560)), y: H * (0.12 + more() * 0.24), s: 7 + more() * 8 }))
   const lakeAfter = Math.floor(layers / 2)          // (a lake shows between the middle and the near hills)
+  // (a page banner shows roughly the middle band of the picture, below the navigation bar: about y 200 - 480)
+  const moon = has('moon') && { x: W * (0.62 + more() * 0.2), y: H * (0.41 + more() * 0.04), r: 28 }
+  const rays = has('rays') && Array.from({ length: 7 }, (_, k) => ({ a: Math.PI - 1.3 + k * 0.43 + more() * 0.12, w: 0.03 + more() * 0.05 }))
+  const nearHill = layers - 2                        // the meadow's hill (the nearest one is mostly under the page)
+  const rainbow = has('rainbow') && { x: W * (0.6 + more() * 0.15), y: H * 0.86, r: 330 + more() * 60 }
+  const meadow = has('meadow') && Array.from({ length: 360 }, (_, k) => {
+    const on = k % 3 === 0 ? nearHill : lakeAfter
+    const x = more() * W
+    const far = on === lakeAfter ? 0.6 : 1
+    return { on, x, y: groundAt(ridges[on].pts, x) + 3 + more() * 36 * far, r: (1.8 + more() * 3) * far, c: FLOWERS[Math.floor(more() * FLOWERS.length)] }
+  })
 
   return (
     <svg className={`landscape ${className}`} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio={strip ? 'xMidYMid slice' : 'xMidYMax slice'} aria-hidden="true" focusable="false">
@@ -158,6 +212,10 @@ function Landscape({ scene = 'peaks', hue = '#84a85c', seed = 7, className = '',
         </linearGradient>
         <radialGradient id={`glint${id}`}>
           <stop offset="0" stopColor={glow} stopOpacity="0.3" />
+          <stop offset="1" stopColor={glow} stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id={`beam${id}`} cx={sunX} cy={sunY} r="900" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor={glow} stopOpacity="0.55" />
           <stop offset="1" stopColor={glow} stopOpacity="0" />
         </radialGradient>
         <filter id={`soft${id}`} x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="9" /></filter>
@@ -194,6 +252,27 @@ function Landscape({ scene = 'peaks', hue = '#84a85c', seed = 7, className = '',
         <path key={`b${i}`} d={`M${b.x - b.s} ${b.y} Q${b.x - b.s / 2} ${b.y - b.s * 0.55} ${b.x} ${b.y} Q${b.x + b.s / 2} ${b.y - b.s * 0.55} ${b.x + b.s} ${b.y}`}
           stroke={mix(near, skyMid, 0.25)} strokeWidth="2" fill="none" strokeLinecap="round" />
       ))}
+      {moon && <>
+        <mask id={`moon${id}`}>
+          <circle cx={moon.x} cy={moon.y} r={moon.r} fill="#fff" />
+          <circle cx={moon.x + moon.r * 0.45} cy={moon.y - moon.r * 0.2} r={moon.r * 0.92} fill="#000" />
+        </mask>
+        <circle cx={moon.x} cy={moon.y} r={moon.r * 3.2} fill={glow} opacity="0.1" filter={`url(#veil${id})`} />
+        <circle cx={moon.x} cy={moon.y} r={moon.r} fill="#f6f1e2" mask={`url(#moon${id})`} opacity="0.92" />
+      </>}
+      {/* sunbeams: soft wedges fanning down and out from the sun */}
+      {rays && rays.map((r, k) => {
+        const far = 1400
+        const [x1, y1] = [sunX + Math.sin(r.a - r.w) * far, sunY + Math.cos(r.a - r.w) * far]
+        const [x2, y2] = [sunX + Math.sin(r.a + r.w) * far, sunY + Math.cos(r.a + r.w) * far]
+        return <path key={`r${k}`} d={`M${sunX} ${sunY} L${x1.toFixed(1)} ${y1.toFixed(1)} L${x2.toFixed(1)} ${y2.toFixed(1)} Z`}
+          fill={`url(#beam${id})`} filter={`url(#soft${id})`} />
+      })}
+      {/* the rainbow: seven soft bands, red outside; the hills cover its feet */}
+      {rainbow && ['#e4877a', '#e9ad72', '#ecd77e', '#9ccf8a', '#7fb3d9', '#8e95d4', '#ae8fcf'].map((c, k) => (
+        <circle key={`rb${k}`} cx={rainbow.x} cy={rainbow.y} r={rainbow.r - k * 9} fill="none" stroke={c} strokeWidth="10"
+          opacity="0.32" filter={`url(#soft${id})`} />
+      ))}
       {coast && <rect y={seaLine} width={W} height={H - seaLine} fill={`url(#sea${id})`} />}
       {/* the sun on the water: a soft path of light, and a bright line where it meets the horizon */}
       {coast && <ellipse cx={sunX} cy={seaLine} rx="200" ry={H - seaLine} fill={`url(#glint${id})`} />}
@@ -224,6 +303,13 @@ function Landscape({ scene = 'peaks', hue = '#84a85c', seed = 7, className = '',
           )}
           {(scene === 'forest' || scene === 'peaks' || scene === 'night') && t > 0.5 && (
             <path className="pines" data-ridge={i} d={pines(rand, pts, 30 + t * 34, 26 - t * 8)} fill={colour} />
+          )}
+          {scene === 'mesa' && t > 0.4 && <path className="shrubs" d={shrubs(more, pts, 10 + t * 14, 70 - t * 30)} fill={colour} />}
+          {meadow && meadow.filter((f) => f.on === i).map((f, k) => (
+            <circle key={`f${k}`} cx={f.x.toFixed(1)} cy={f.y.toFixed(1)} r={f.r.toFixed(1)} fill={mix(f.c, colour, 0.12)} />
+          ))}
+          {has('trees') && (scene === 'hills' || scene === 'mesa') && t > 0.4 && (
+            <path className="pines" data-ridge={i} d={pines(more, pts, 34 + t * 40, 150 - t * 60)} fill={colour} />
           )}
           {i < layers - 1 && !coast && (
             <rect y={Math.min(...pts.map(([, y]) => y)) - 10} width={W} height="120" fill={`url(#mist${id})`} />

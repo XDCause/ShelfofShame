@@ -4,6 +4,7 @@ import { api, imageUrl, isoDay, shortDate } from '../../api.js'
 import { useApp } from '../app-context.js'
 import { MOODS, moodOf, pageFace } from './moods.js'
 import TodoList from './TodoList.jsx'
+import { NotebookFilter, OnThisDay, TemplateMenu, TodayCard, weatherText } from './JournalExtras.jsx'
 import EmptyState from '../EmptyState.jsx'
 import { JournalIcon } from '../../components/icons.jsx'
 
@@ -42,27 +43,35 @@ export function useNewPage() {
   }
 }
 
-// All journal pages as cards: search, filter by tag or mood, newest or oldest first (pinned always
-// on top), with a heading per day or per month. Open to-dos from every page sit above them.
+// All journal pages as cards: search, filter by tag, mood or notebook (private pages only when asked), newest or
+// oldest first (pinned always on top), with a heading per day or per month. Above them: Write about today, On this
+// day and the open to-dos from every page.
 export default function JournalList() {
   const { refreshKey } = useApp()
   const newPage = useNewPage()
   const [pages, setPages] = useState(null)
   const [tags, setTags] = useState([])
+  const [notebooks, setNotebooks] = useState([])
   const [q, setQ] = useState('')
   const [tag, setTag] = useState('')
   const [mood, setMood] = useState('')
+  const [notebook, setNotebook] = useState(null)
+  const [secret, setSecret] = useState(false)          // private pages instead
+  const [nbKey, setNbKey] = useState(0)
   const [oldest, setOldest] = useState(false)
   const [grouping, setGrouping] = useState(readGrouping)
   const [error, setError] = useState('')
 
   useEffect(() => {
     const wait = setTimeout(() => {
-      api.listPages({ q, tag, mood }).then(setPages).catch((e) => setError(e.message))
+      api.listPages({ q, tag, mood, notebook: notebook ?? '', private: secret }).then(setPages).catch((e) => setError(e.message))
     }, q ? 250 : 0)                                         // don't search on every keystroke
     return () => clearTimeout(wait)
-  }, [q, tag, mood, refreshKey])
+  }, [q, tag, mood, notebook, secret, refreshKey, nbKey])
   useEffect(() => { api.journalTags().then(setTags).catch(() => {}) }, [refreshKey])
+  useEffect(() => { api.notebooks().then(setNotebooks).catch(() => {}) }, [refreshKey, nbKey])
+  const filtering = q || tag || mood || notebook != null || secret
+  const newHere = (page = {}) => newPage({ ...(notebook != null ? { notebook_id: notebook } : {}), ...(secret ? { private: true } : {}), ...page })
 
   // Pinned first, then a heading per day (or month).
   const pinned = (pages ?? []).filter((p) => p.pinned)
@@ -82,18 +91,23 @@ export default function JournalList() {
       <div className="toolbar">
         <input type="search" className="search" placeholder="Search the journal..." value={q}
           onChange={(e) => setQ(e.target.value)} aria-label="Search the journal" />
-        <button type="button" className="secondary" onClick={() => newPage({ kind: 'whiteboard' })}>+ Whiteboard</button>
-        <button type="button" className="primary" onClick={() => newPage()}>+ New page</button>
+        <button type="button" className="secondary" onClick={() => newHere({ kind: 'whiteboard' })}>+ Whiteboard</button>
+        <TemplateMenu newPage={newHere} />
+        <button type="button" className="primary" onClick={() => newHere()}>+ New page</button>
       </div>
       <div className="filters">
         <div className="chip-row" role="group" aria-label="Tags">
-          <button type="button" className="chip-filter" aria-pressed={!tag} onClick={() => setTag('')}>All</button>
+          {/* All: every page - no tag and no mood picked (it used to forget the mood) */}
+          <button type="button" className="chip-filter" aria-pressed={!tag && !mood && !secret}
+            onClick={() => { setTag(''); setMood(''); setSecret(false) }}>All</button>
           {tags.map((t) => (
             <button key={t.name} type="button" className="chip-filter" aria-pressed={tag === t.name}
               onClick={() => setTag(tag === t.name ? '' : t.name)}>
               #{t.name} <span className="chip-count">{t.pages}</span>
             </button>
           ))}
+          <button type="button" className="chip-filter" aria-pressed={secret} title="Private pages (kept out of Home, search and the activity feed)"
+            onClick={() => setSecret(!secret)}>🔒 Private</button>
         </div>
         <div className="chip-row mood-filter" role="group" aria-label="Mood">
           {MOODS.map((m) => (
@@ -116,12 +130,20 @@ export default function JournalList() {
             <option value="oldest">Oldest first</option>
           </select>
         </label>
+        <Link className="plain small jx-print-link" to={`/journal/print${notebook != null ? `?notebook=${notebook}` : ''}`}>Print / PDF</Link>
+        <NotebookFilter notebooks={notebooks} value={notebook} onChange={setNotebook} onChanged={() => setNbKey((k) => k + 1)} />
       </div>
       {error && <p className="alert error">{error}</p>}
-      {!q && !tag && !mood && <TodoList card />}
+      {!filtering && (
+        <div className="jx-top-cards">
+          <TodayCard newPage={newHere} />
+          <OnThisDay />
+        </div>
+      )}
+      {!filtering && <TodoList card />}
       {pages && pages.length === 0 && (
-        q || tag || mood ? <p className="empty card">No pages match.</p> : (
-          <EmptyState Icon={JournalIcon} title="Your journal is empty" action="+ New page" onAction={() => newPage()}>
+        filtering ? <p className="empty card">{secret ? 'No private pages. Tick "Private" on a page to keep it out of the way.' : 'No pages match.'}</p> : (
+          <EmptyState Icon={JournalIcon} title="Your journal is empty" action="+ New page" onAction={() => newHere()}>
             Write about a build, a game night or your day - @mention a kit or a game to link them.</EmptyState>
         )
       )}
@@ -160,10 +182,15 @@ function PageCard({ page: p }) {
           <span className="journal-card-head">
             <span className="item-title">{picture && p.mood ? `${moodOf(p.mood).face} ` : ''}{p.title || 'Untitled'}</span>
             <span className="card-pills">
-              <span className={`pill ${KIND_PILL[p.kind][1]}`}>{KIND_PILL[p.kind][0]}</span>
+              {p.notebook ? <span className={`pill ${p.notebook_colour}`}>📓 {p.notebook}</span>
+                : <span className={`pill ${KIND_PILL[p.kind][1]}`}>{KIND_PILL[p.kind][0]}</span>}
               {p.pinned && <span className="pill low">Pinned</span>}
+              {p.private && <span className="pill" title="Private">🔒</span>}
             </span>
           </span>
+          {(p.place_name || p.weather) && (
+            <span className="jx-card-where muted small">{[p.place_name && `📍 ${p.place_name}`, weatherText(p.weather)].filter(Boolean).join('  ')}</span>
+          )}
           {first && <span className="pill tint">#{first}</span>}
           {p.mood && <span className={`mood-line ${moodOf(p.mood).tone}`}>{moodOf(p.mood).label}
             {p.mood_words.length > 0 && <span className="muted"> · {p.mood_words.join(', ')}</span>}</span>}

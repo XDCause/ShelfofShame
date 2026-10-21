@@ -5,6 +5,7 @@ import { useApp } from '../app-context.js'
 import MoodPicker from './MoodPicker.jsx'
 import { pageFace } from './moods.js'
 import TagsInput from './TagsInput.jsx'
+import { NotebookPicker, PAPERS, PlacePicker, PromptCard, WeatherChip } from './JournalExtras.jsx'
 
 const Editor = lazy(() => import('./Editor.jsx'))
 const DrawingCanvas = lazy(() => import('./DrawingCanvas.jsx'))
@@ -12,6 +13,8 @@ const SAVE_AFTER_MS = 700  // save this long after you stop typing
 
 // The parts of a page the server works out from what you wrote.
 const derived = ({ links, mentioned_in, suggestions }) => ({ links, mentioned_in, suggestions })
+// A page with nothing written yet (the prompt shows): no blocks, or only empty ones.
+const blank = (content) => content.every((b) => b.type === 'paragraph' && !(b.content?.length) && !(b.children?.length))
 
 // One journal page: title, date, icon, tags, pin, the editor, and what it links to.
 // Everything saves by itself as you go ("Saving..." / "Saved").
@@ -28,6 +31,8 @@ export default function JournalPage() {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [drawing, setDrawing] = useState(null)      // the drawing open full screen
   const [writing, setWriting] = useState(false)     // full screen writing mode
+  const [editorKey, setEditorKey] = useState(0)     // bumped when the page's blocks are replaced (a prompt used)
+  const [naming, setNaming] = useState(null)        // "Save as template": the name being typed
 
   // Writing mode: a class on <body> hides the app around the page (styles.css), and the browser
   // goes full screen too where it can. Leaving browser full screen (back gesture, Esc) or leaving
@@ -129,7 +134,7 @@ export default function JournalPage() {
   }
 
   return (
-    <article className={board ? 'journal-page whiteboard' : 'journal-page'}>
+    <article className={board ? 'journal-page whiteboard' : 'journal-page'} data-paper={board ? undefined : page.paper}>
       <div className="journal-bar">
         <Link to="/journal" className="plain">‹ Journal</Link>
         <span className="spacer" />
@@ -143,6 +148,29 @@ export default function JournalPage() {
         <label className="pin">
           <input type="checkbox" checked={page.pinned} onChange={edit('pinned', true)} /> Pinned
         </label>
+        <label className="pin" title="Kept out of Home, search, the activity feed and On this day">
+          <input type="checkbox" checked={page.private} onChange={edit('private', true)} /> Private
+        </label>
+        {!board && (naming == null ? (
+          <button type="button" className="plain" onClick={() => setNaming(page.title || '')}>Save as template</button>
+        ) : (
+          <form className="jx-inline-form" onSubmit={async (e) => {
+            e.preventDefault()
+            if (!naming.trim()) return
+            await flush()
+            try {
+              const fresh = await api.getPage(page.page_id)
+              await api.addJournalTemplate({ name: naming.trim(), title: fresh.title, content: fresh.content, tags: fresh.tags })
+              showToast(`Saved "${naming.trim()}": it's under Templates on the journal.`)
+              changed()
+              setNaming(null)
+            } catch (err) { setError(err.message) }
+          }}>
+            <input value={naming} onChange={(e) => setNaming(e.target.value)} placeholder="Template name" aria-label="Template name" maxLength={60} autoFocus />
+            <button type="submit" className="secondary">Save</button>
+            <button type="button" className="plain" onClick={() => setNaming(null)}>Cancel</button>
+          </form>
+        ))}
         {confirmDelete ? (
           <span className="confirm">
             Delete this page?
@@ -170,7 +198,25 @@ export default function JournalPage() {
         <input type="date" value={page.entry_date} aria-label="Date" required
           onChange={(e) => e.target.value && edit('entry_date', true)(e)} />
         <TagsInput tags={page.tags} onChange={(tags) => { setPage((p) => ({ ...p, tags })); save({ tags }, true) }} />
+        <NotebookPicker value={page.notebook_id} onChange={(notebook_id) => { setPage((p) => ({ ...p, notebook_id })); save({ notebook_id }, true) }} />
+        <PlacePicker page={page} onChange={async (place) => {
+          await flush()
+          try { setPage(await api.updatePage(page.page_id, place)); changed() } catch (e) { setError(e.message) }
+        }} />
+        <WeatherChip page={page} onStamped={(saved) => setPage((p) => ({ ...p, weather: saved.weather, place_name: saved.place_name, lat: saved.lat, lon: saved.lon }))} />
+        {!board && (
+          <select className="jx-meta-select" value={page.paper} aria-label="Paper" onChange={edit('paper', true)}>
+            {PAPERS.map(([v, label]) => <option key={v} value={v}>{label} paper</option>)}
+          </select>
+        )}
       </div>
+      {!board && blank(page.content) && (
+        <PromptCard day={page.entry_date} onUse={(content) => {
+          setPage((p) => ({ ...p, content }))
+          save({ content }, true)
+          setEditorKey((k) => k + 1)
+        }} />
+      )}
 
       <Suspense fallback={<p className="muted loading">Opening the editor...</p>}>
         {board ? (
@@ -179,8 +225,8 @@ export default function JournalPage() {
               onSaved={drawingSaved} onExpand={() => setDrawing(board.drawing_id)} />
           )
         ) : (
-          <Editor key={page.page_id} pageId={page.page_id} initialContent={page.content}
-            onChange={(content) => save({ content })} onOpenMention={openMention}
+          <Editor key={`${page.page_id}-${editorKey}`} pageId={page.page_id} initialContent={page.content}
+            onChange={(content) => { setPage((p) => ({ ...p, content })); save({ content }) }} onOpenMention={openMention}
             previews={previews} onDraw={setDrawing} />
         )}
         {drawing && (

@@ -82,6 +82,23 @@ export const api = {
   addDrawingFiles: (id, files) => request(`/journal/drawings/${id}/files`, send('PUT', files)),
   saveDrawingPreview: (id, blob) => request(`/journal/drawings/${id}/preview`, image('PUT', blob)),
   uploadJournalImage: (blob, pageId) => request(`/journal/images${pageId ? `?page_id=${pageId}` : ''}`, image('POST', blob)),
+  // More (api/app/journal_more.py): on this day, today, calendar + streak, insights, review, notebooks, templates, weather, map, export
+  onThisDay: () => request('/journal/on-this-day'),
+  journalToday: () => request('/journal/today'),
+  journalCalendar: (month) => request(`/journal/calendar?month=${month}`),
+  journalInsights: (days = 90) => request(`/journal/insights?days=${days}`),
+  journalReview: (start, end) => request(`/journal/review?start=${start}&end=${end}`),
+  notebooks: () => request('/journal/notebooks'),
+  addNotebook: (data) => request('/journal/notebooks', send('POST', data)),
+  changeNotebook: (id, data) => request(`/journal/notebooks/${id}`, send('PATCH', data)),
+  deleteNotebook: (id) => request(`/journal/notebooks/${id}`, send('DELETE')),
+  journalTemplates: () => request('/journal/templates'),
+  addJournalTemplate: (data) => request('/journal/templates', send('POST', data)),
+  deleteJournalTemplate: (id) => request(`/journal/templates/${id}`, send('DELETE')),
+  stampWeather: (pageId) => request(`/journal/${pageId}/weather`, send('POST')),
+  homePlace: () => request('/journal/home-place'),
+  journalPlaces: () => request('/journal/places'),
+  exportPages: (params) => request(`/journal/export?${new URLSearchParams(Object.entries(params).filter(([, v]) => v !== '' && v != null))}`),
 
   // Goals (core): details, its to-dos, a number to track (or counted from a hobby), pace, habits, progress notes
   goals: (status) => request(`/goals${status ? `?status=${status}` : ''}`),

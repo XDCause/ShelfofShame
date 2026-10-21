@@ -51,7 +51,7 @@ DBeaver, psql, and the one-off import script.
   shortcut is added**).
 - **API** (`api/app`, FastAPI; routes all start `/api`; main.py only wires routers - ORDER MATTERS where a fixed path
   shares a prefix with `/{id}`): core - banners (page pictures), todos (the to-do list), db (pool, enum lists that must match SQL CHECKs, insert_row / update_row /
-  found / tidy_text), activity, calendar, journal (+ journal_text, journal_actions, journal_drawings), goals (+ goal_sources: what a goal counts by itself), todos, settings,
+  found / tidy_text), activity, calendar, journal (+ journal_text, journal_actions, journal_drawings, journal_more: on this day, calendar, insights, review, notebooks, templates, weather, export), goals (+ goal_sources: what a goal counts by itself), todos, settings,
   spending, sitecheck, images, webphoto, lookups, wanted. Supplies hobby - supplies (+ kits: part_of), wishlist, products, catalog,
   paints, colours. Models - models, minis, build, warhammer, gundam. Board games - boardgames. Volleyball -
   volleyball, gear (volleyball's and hiking's: gear.hobby), vbclips, vbcoach. Video games - videogames, vgsync, othergames, vgfind, vgfriends. Chess - chess.
@@ -64,7 +64,7 @@ DBeaver, psql, and the one-off import script.
 - **Web** (`web/src`, React 19 + Vite): App.jsx (routes, panels via openPanel(type), openThing(kind, id)), api.js (every
   fetch, grouped by area), core/ (Home, Navigation, Goals, Journal, Calendar...), modules/<hobby>/manifest.jsx (pages,
   panels, Home tiles / cards, quick actions), components/ (shared), styles.css (one file, sections by comment).
-- **Database**: numbered idempotent files in db/init (01-83); migrate.ps1 applies pending ones (`-Container` for another copy's).
+- **Database**: numbered idempotent files in db/init (01-86); migrate.ps1 applies pending ones (`-Container` for another copy's).
 
 ## Quality gates
 - **When (user, 2026-10-21): at the user's discretion.** Not after every tweak in dev - rebuild (`.\dev.ps1`, whose build

@@ -16,7 +16,7 @@ export default {
   name: 'Gardening',
   // its colour (new leaf: sidebar icon, Home card, banner) and its banner (components/Landscape.jsx scenes)
   hue: '#78b043',
-  banner: { scene: 'hills', seed: 27, time: 'dawn', extras: ['fog', 'clouds'], tagline: 'Grow something every day.' },
+  banner: { scene: 'hills', seed: 27, time: 'dawn', extras: ['meadow', 'rainbow', 'clouds'], tagline: 'Grow something every day.' },
   what: 'Balcony and windowsill garden: layout, plants, watering, photos, harvests, Bunnings',
   Icon: SproutIcon,
   home: { Tiles: GardenTiles },
