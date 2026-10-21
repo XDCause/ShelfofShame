@@ -16,7 +16,7 @@ function niceScale(max, ticks = 4) {
 }
 const compact = (n) => (n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}K` : String(n))
 
-function ChartTable({ title, rows, valueLabel }) {
+export function ChartTable({ title, rows, valueLabel }) {
   return (
     <details className="chart-table">
       <summary>Show as a table</summary>

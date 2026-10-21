@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { dayDate, shortDate } from '../../api.js'
+import { ChartTable } from '../../components/charts.jsx'
 import { MODULES } from '../../modules/index.js'
 
 // Shared by the Goals list, a goal's own page and the Home card (api/app/goals.py).
@@ -135,6 +136,7 @@ export function paceText(g) {
 // marked. Labels on the target line and at "now" say where you sit against the goal.
 export function GoalChart({ goal: g }) {
   const [whole, setWhole] = useState(false)
+  const [hover, setHover] = useState(null)              // the point under the pointer (or picked with the arrow keys)
   const t = (iso) => dayDate(iso).getTime()
   const earlier = (g.history ?? []).filter(([d]) => t(d) < t(g.start_day))
   const canWhole = earlier.length > 0
@@ -161,9 +163,29 @@ export function GoalChart({ goal: g }) {
   const line = steps.map(([d, v]) => `${x(Math.max(d, begin)).toFixed(1)},${y(v).toFixed(1)}`).join(' ')
   const last = series[series.length - 1]
   const unit = g.unit ? ` ${g.unit}` : ''
+  // Hover: the nearest point in time - its number, its day, and where an even pace would have had you then.
+  const points = series.map(([d, v]) => ({ d, v, ms: t(d) })).filter((p) => p.ms <= now)
+  const nearest = (clientX, box) => {
+    const at = begin + ((((clientX - box.left) / box.width) * W - 8) / (W - 16)) * (end - begin)
+    return points.reduce((best, p, i) => (Math.abs(p.ms - at) < Math.abs(points[best].ms - at) ? i : best), 0)
+  }
+  const keys = (e) => {
+    const step = { ArrowLeft: -1, ArrowRight: 1, Home: -Infinity, End: Infinity }[e.key]
+    if (step == null || !points.length) return
+    e.preventDefault()
+    setHover((h) => Math.max(0, Math.min(points.length - 1, (h ?? points.length - 1) + step)))
+  }
+  const h = hover != null ? points[hover] : null
+  const paceAt = (ms) => (g.target_date && ms >= goalStart && ms <= t(g.target_date)
+    ? start + (g.target_value - start) * ((ms - goalStart) / (t(g.target_date) - goalStart || 1)) : null)
+  const pct = (ms) => (x(ms) / W) * 100
+  const byDay = new Map(points.map((p) => [p.d, p.v]))                // (the table: a day's last number)
   return (
     <figure className="goal-chart">
-      <div className="goal-chart-plot">
+      <div className="goal-chart-plot" tabIndex={points.length > 1 ? 0 : undefined} onKeyDown={keys}
+        aria-label={points.length > 1 ? 'Chart: point at it, or use the left and right arrow keys, to see each number' : undefined}
+        onPointerMove={(e) => points.length && setHover(nearest(e.clientX, e.currentTarget.getBoundingClientRect()))}
+        onPointerLeave={() => setHover(null)} onBlur={() => setHover(null)}>
       <svg viewBox={`0 0 ${W} ${H}`} role="img" preserveAspectRatio="none"
         aria-label={`${g.title}: from ${num(start)} to ${num(last[1])}${unit} so far, aiming for ${num(g.target_value)}${unit}`}>
         <line className="goal-chart-target" x1="8" x2={W - 8} y1={y(g.target_value)} y2={y(g.target_value)} />
@@ -179,6 +201,17 @@ export function GoalChart({ goal: g }) {
         {num(last[1])}{unit} now</span>
       <span className="goal-chart-label target" style={{ top: `${(y(g.target_value) / H) * 100}%` }}>target {num(g.target_value)}{unit}</span>
       {whole && canWhole && <span className="goal-chart-label began" style={{ left: `${(x(goalStart) / W) * 100}%` }}>goal began</span>}
+      {h && (
+        <>
+          <span className="goal-chart-cross" style={{ left: `${pct(Math.max(h.ms, begin))}%` }} aria-hidden="true" />
+          <span className="goal-chart-dot on" style={{ left: `${pct(Math.max(h.ms, begin))}%`, top: `${(y(h.v) / H) * 100}%` }} aria-hidden="true" />
+          <span className="chart-tip line-tip goal-chart-tip" role="tooltip" style={{ left: `${Math.min(86, Math.max(14, pct(Math.max(h.ms, begin))))}%` }}>
+            <strong>{num(h.v)}{unit}</strong><br />
+            <span>{dayDate(h.d).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+            {paceAt(h.ms) != null && <><br /><span>even pace: {num(Math.round(paceAt(h.ms) * 10) / 10)}{unit}</span></>}
+          </span>
+        </>
+      )}
       </div>
       {canWhole && (
         <div className="segmented goal-chart-range" role="group" aria-label="Chart shows">
@@ -191,24 +224,38 @@ export function GoalChart({ goal: g }) {
         <span><i className="key-line" /> you <i className="key-pace" /> even pace{now < end && <> <i className="key-today" /> today</>}</span>
         <span>{g.target_date ? shortDate(g.target_date) : 'today'}</span>
       </figcaption>
+      {byDay.size > 1 && (
+        <ChartTable title="Day" valueLabel={g.unit || 'value'} rows={[...byDay].reverse().map(([d, v]) => ({
+          label: dayDate(d).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }), value: v }))} />
+      )}
     </figure>
   )
 }
 
 // A habit's last weeks / months: one bar each, full when it reached the aim.
 export function HabitStrip({ goal: g }) {
+  const [hover, setHover] = useState(null)              // the week / month under the pointer
   const h = g.habit
   if (!h) return null
   const when = (iso) => (h.every === 'week' ? shortDate(iso) : dayDate(iso).toLocaleDateString('en-AU', { month: 'short' }))
   const reached = h.periods.filter((p) => p.met).length
+  const p = hover != null ? h.periods[hover] : null
   return (
     <figure className="habit-chart">
-      <div className="habit-strip" role="img" aria-label={`The last ${h.periods.length} ${h.every}s: ${reached} reached ${num(h.times)}`}>
-        {h.periods.map((p) => (
-          <span key={p.start} className={`habit-bar${p.met ? ' met' : ''}`} title={`${when(p.start)}: ${num(p.count)}`}>
-            <span style={{ height: `${Math.max(6, Math.min(100, (p.count / h.times) * 100))}%` }} />
+      <div className="habit-strip" role="img" aria-label={`The last ${h.periods.length} ${h.every}s: ${reached} reached ${num(h.times)}`}
+        onPointerLeave={() => setHover(null)}>
+        {h.periods.map((per, i) => (
+          <span key={per.start} className={`habit-bar${per.met ? ' met' : ''}${i === hover ? ' on' : ''}`} onPointerEnter={() => setHover(i)}>
+            <span style={{ height: `${Math.max(6, Math.min(100, (per.count / h.times) * 100))}%` }} />
           </span>
         ))}
+        {p && (
+          <span className="chart-tip line-tip goal-chart-tip" role="tooltip"
+            style={{ left: `${Math.min(86, Math.max(14, ((hover + 0.5) / h.periods.length) * 100))}%` }}>
+            <strong>{num(p.count)} of {num(h.times)}</strong>{p.met ? ' - reached' : ''}<br />
+            <span>{h.every === 'week' ? `Week of ${shortDate(p.start)}` : dayDate(p.start).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}</span>
+          </span>
+        )}
       </div>
       <figcaption className="goal-chart-key">
         <span>{when(h.periods[0]?.start)}</span>

@@ -2242,13 +2242,18 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .goal-chart-label.target { right: 6px; transform: translateY(-120%); color: var(--muted); }
 .goal-chart-label.began { top: 2px; margin-left: 6px; color: var(--muted); font-weight: 550; }
 .goal-chart-range { margin: 8px 0 0; }
+.goal-chart-plot:focus-visible { outline: 2px solid var(--tint); outline-offset: 4px; border-radius: 6px; }
+.goal-chart-cross { position: absolute; top: 4px; bottom: 10px; width: 0; border-left: 1px dashed var(--muted); pointer-events: none; }
+.goal-chart-dot.on { width: 13px; height: 13px; margin: -6.5px 0 0 -6.5px; box-shadow: 0 0 0 3px var(--surface), 0 0 0 4px var(--tint); }
+.goal-chart-tip { white-space: nowrap; z-index: 4; pointer-events: none; }
+.habit-bar.on { outline: 2px solid var(--tint); outline-offset: 1px; }
 .goal-to-go { margin-top: 4px; font-size: 0.85rem; font-weight: 650; color: var(--muted); }
 .goal-chart-key { display: flex; justify-content: space-between; gap: 10px; font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
 .goal-chart-key i { display: inline-block; width: 16px; height: 0; vertical-align: middle; margin: 0 4px 0 8px; }
 .key-line { border-top: 2.5px solid var(--tint); }
 .key-pace { border-top: 1.5px dashed var(--muted); }
 .key-today { border-top: 1px dotted var(--faint); }
-.habit-strip { display: flex; align-items: flex-end; gap: 6px; height: 64px; padding-top: 4px; }
+.habit-strip { position: relative; display: flex; align-items: flex-end; gap: 6px; height: 64px; padding-top: 4px; }
 .habit-bar { flex: 1; height: 100%; display: flex; align-items: flex-end; border-radius: 6px; background: var(--fill-2); }
 .habit-bar > span { display: block; width: 100%; border-radius: 6px; background: var(--fill); }
 .habit-bar.met > span { background: var(--ok); }
