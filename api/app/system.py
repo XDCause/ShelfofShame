@@ -101,15 +101,31 @@ def backup_checks(now: datetime, status: dict) -> list[dict]:
         stale = now - when > timedelta(days=3)
         out.append(check("offsite", "Google Drive copy", "warn" if stale else "ok",
                          f"Encrypted copy {_ago(when, now)} - {off.get('files')} kept, {off.get('mb')} MB of the "
-                         f"{off.get('budget_mb')} MB allowed", when))
-    copy = status.get("copy") or {}
-    if copy:
-        when = _at(copy.get("at"))
-        bad = copy.get("ok") is False
-        out.append(check("copy", "Network drive copy", "warn" if bad or now - when > timedelta(days=3) else "ok",
-                         f"{'Failed' if bad else 'Copied'} {_ago(when, now)}{': ' + copy['message'] if bad else ''}", when,
-                         "Is the network drive on?" if bad else None))
-    return out
+                         f"{off.get('budget_mb')} MB allowed" + (f"; videos: {off['videos']} ({off.get('videos_mb', 0) / 1024:.1f} GB)"
+                                                                if off.get("videos") is not None else ""), when))
+    out.append(copy_check(now, status.get("copy") or {}))
+    return [c for c in out if c]
+
+
+def copy_check(now: datetime, copy: dict) -> dict | None:
+    """The copy on the network drive: red once it has failed for more than a day (backup.ps1 keeps failing_since and
+    the runs in a row), amber on a first failure or when no copy has been tried for 3 days. (2026-10-22: it failed
+    four nights running - the drive on the modem sleeps - before anyone noticed.)"""
+    if not copy:
+        return None
+    when = _at(copy.get("at"))
+    if copy.get("ok") is False:
+        since = _at(copy.get("failing_since")) or when
+        runs = int(copy.get("failures") or 1)
+        long = since and now - since > timedelta(days=1)
+        detail = (f"Failing since {since:%a %d %b} ({runs} runs in a row): {copy.get('message', '').strip()}" if runs > 1 or long
+                  else f"Failed {_ago(when, now)}: {copy.get('message', '').strip()}")
+        server = "\\\\" + (copy.get("to") or "").lstrip("\\").split("\\")[0]      # (\\<host>, from its own path)
+        return check("copy", "Network drive copy", "bad" if long or runs >= 2 else "warn", detail, when,
+                     f"Is the network drive plugged in and on? Open {server} in File Explorer to wake it")
+    stale = not when or now - when > timedelta(days=3)
+    return check("copy", "Network drive copy", "warn" if stale else "ok", f"Copied {_ago(when, now)} (checked: identical)", when,
+                 "Is the 2 am backup running? Task Scheduler > \"Shelf of Shame backup\"" if stale else None)
 
 
 def other_checks(now: datetime) -> list[dict]:

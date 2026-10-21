@@ -34,7 +34,7 @@ AI via MCP server (later) -----------------/
 **Only the API talks to PostgreSQL.** Exceptions are admin/dev tools: DBeaver, psql, the scripts (backup, migrate).
 
 ## Where to look
-- **Why things are the way they are: docs/HISTORY.md** (entries 3zzt - 5q; 1 - 3zzs are in docs/HISTORY-early.md).
+- **Why things are the way they are: docs/HISTORY.md** (entries 3zzt - 5r; 1 - 3zzs are in docs/HISTORY-early.md).
   Search both before changing something old - most odd-looking code has a lesson behind it. Design system:
   docs/DESIGN.md. Plans: docs/ROADMAP.md. **BEFORE_GOING_PUBLIC.md: add a row whenever a new data source, scraper,
   copied content or single-user shortcut is added.**
@@ -92,11 +92,13 @@ AI via MCP server (later) -----------------/
   certificate; security-headers.inc has the rest, CSP included). Tests: the `client` fixture is signed in, `anon` isn't;
   the walk-through signs in with a per-run password in its throwaway copy. The cookie is named per copy (otc_session /
   otc_session_dev): a browser keeps cookies per host, not per port.
-- **Backups**: nightly 2 am task "Shelf of Shame backup" runs prod's backup.ps1 -CopyTo the network drive. Each backup
-  is read back; once a week it's test-restored into a throwaway database and every table's rows compared. Prod also
-  sends an encrypted copy (gpg AES-256) to Google Drive once the user runs setup-offsite.ps1 - the user sets that
-  password; Google gives them 15 GB in all, so videos aren't sent and Drive keeps about 200 MB (budget 2 GB).
-  restore-offsite.ps1 gets one back. Results: backups\backup.log, backups\status.json, Settings > System, Home.
+- **Backups**: nightly 2 am task "Shelf of Shame backup" runs prod's backup.ps1. Each backup is read back; once a week
+  it's test-restored into a throwaway database and every table's rows compared. The whole backup goes to Google Drive
+  (G:\My Drive\Off the Clock backups, set up with setup-offsite.ps1 - the user's password, never Claude's): each
+  database backup encrypted (gpg AES-256; ~200 MB kept, budget 2 GB) and each video encrypted once (~5 GB; the user has
+  15 GB in all). The drive on the modem was retired 2026-10-22 (it slept and failed four nights unnoticed).
+  restore-offsite.ps1 -File / -Videos gets them back. A failure: a Windows notification, Settings > System and Home
+  (red after a day). Results: backups\backup.log, backups\status.json.
 
 ## Lessons that keep coming back
 - Give every new CSS class a name nobody else uses (the build catches a clash, but pick well first).

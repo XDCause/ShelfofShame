@@ -122,7 +122,7 @@ mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0 1
   <section aria-labelledby="path-title">
     <div class="section-head"><h2 id="path-title">How a request travels</h2>
       <span class="eyebrow">three containers on this PC · Docker Desktop</span></div>
-    <div class="diagram" role="img" aria-label="Your devices reach the web container (nginx, HTTPS on 8443) over the home Wi-Fi or Tailscale. It serves the React app and passes /api requests to the api container (FastAPI on 8000), the only thing that talks to the db container (PostgreSQL 17 on 5433). The API also asks outside sites. Backups go from the database to the backups folder, then the network drive and Google Drive. Changes are made in the dev copy, tested, and promoted to prod; both branches go to GitHub.">
+    <div class="diagram" role="img" aria-label="Your devices reach the web container (nginx, HTTPS on 8443) over the home Wi-Fi or Tailscale. It serves the React app and passes /api requests to the api container (FastAPI on 8000), the only thing that talks to the db container (PostgreSQL 17 on 5433). The API also asks outside sites. Backups go from the database to the backups folder, then to Google Drive (the database copies and the videos, encrypted). Changes are made in the dev copy, tested, and promoted to prod; both branches go to GitHub.">
       <svg viewBox="0 0 1120 600" xmlns="http://www.w3.org/2000/svg">
         <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
           <path class="arrow" d="M0,0 L10,5 L0,10 z"/></marker></defs>
@@ -182,19 +182,13 @@ mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0 1
         <path class="wire" d="M971,200 L971,248" marker-end="url(#arr)"/>
         <text class="w-label" x="979" y="230">pg_dump</text>
         <!-- off the PC -->
-        <rect class="n-box" x="860" y="440" width="104" height="104" rx="12"/>
-        <text class="n-title" x="872" y="468">Network</text>
-        <text class="n-title" x="872" y="486">drive</text>
-        <text class="n-text" x="872" y="508">on the modem</text>
-        <text class="n-text" x="872" y="526">+ videos</text>
-        <rect class="n-box" x="978" y="440" width="104" height="104" rx="12"/>
-        <text class="n-title" x="990" y="468">Google</text>
-        <text class="n-title" x="990" y="486">Drive</text>
-        <text class="n-text" x="990" y="508">gpg-encrypted</text>
-        <text class="n-text" x="990" y="526">~200 MB of 15 GB</text>
-        <path class="wire" d="M930,362 L912,438" marker-end="url(#arr)"/>
-        <path class="wire dash" d="M1012,362 L1030,438" marker-end="url(#arr)"/>
-        <text class="w-label" x="1036" y="408">prod only</text>
+        <rect class="n-box" x="860" y="440" width="222" height="104" rx="12"/>
+        <text class="n-title" x="876" y="468">Google Drive</text>
+        <text class="n-text" x="876" y="490">the whole backup, gpg-encrypted:</text>
+        <text class="n-text" x="876" y="508">database copies (~200 MB)</text>
+        <text class="n-text" x="876" y="526">+ every video, once (~5 GB)</text>
+        <path class="wire" d="M971,362 L971,438" marker-end="url(#arr)"/>
+        <text class="w-label" x="979" y="404">prod only, checked</text>
         <!-- dev and prod -->
         <rect class="n-box" x="282" y="250" width="110" height="112" rx="12"/>
         <text class="n-title" x="296" y="278">dev copy</text>

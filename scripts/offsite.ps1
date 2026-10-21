@@ -61,6 +61,34 @@ function Unprotect-Backup([string]$from, [string]$to, [string]$pass) {
     Invoke-Gpg $pass @('--decrypt', '--output', $to, $from)
 }
 
+# Videos (the app's media folder): each one encrypted once into <Drive folder>\media\<its path>.gpg, checked by
+# decrypting it again. A video never changes once uploaded, so one already there is skipped; one deleted in the app
+# stays on Drive (a mistaken delete can be undone). Answers @{ sent; files; mb }.
+function Send-OffsiteMedia([string]$media, [string]$folder, [string]$pass) {
+    $sent = 0
+    if (Test-Path $media) {
+        foreach ($f in Get-ChildItem $media -Recurse -File) {
+            $rel = $f.FullName.Substring($media.TrimEnd('\').Length + 1)
+            $target = Join-Path (Join-Path $folder 'media') "$rel.gpg"
+            if (Test-Path $target) { continue }
+            New-Item -ItemType Directory -Force (Split-Path $target -Parent) | Out-Null
+            $sealed = Join-Path $env:TEMP ("otc-video-" + [guid]::NewGuid() + ".gpg")
+            $check = "$sealed.check"
+            try {
+                Protect-Backup $f.FullName $sealed $pass
+                Unprotect-Backup $sealed $check $pass
+                if ((Get-FileHash $check).Hash -ne (Get-FileHash $f.FullName).Hash) { throw "$rel did not decrypt to the same video" }
+                Copy-Item $sealed $target -ErrorAction Stop
+                $sent++
+            } finally {
+                Remove-Item $sealed, $check -ErrorAction SilentlyContinue
+            }
+        }
+    }
+    $all = @(Get-ChildItem (Join-Path $folder 'media') -Recurse -File -Filter '*.gpg' -ErrorAction SilentlyContinue)
+    return @{ sent = $sent; files = $all.Count; mb = [math]::Round((($all | Measure-Object Length -Sum).Sum) / 1MB) }
+}
+
 # Keep: the newest backup of each of the last 7 days, then one a week for 4 more weeks, then one a month for 6
 # months; and never more than $budgetMB in all (the oldest go first, always keeping 3). Answers how many went.
 function Remove-OldOffsite([string]$folder, [int]$budgetMB) {

@@ -5,9 +5,9 @@
 #   .\backup.ps1 -CopyTo "D:\Backups" # also copy each backup somewhere else (USB drive, network drive...)
 #   .\backup.ps1 -TestRestore         # also do the weekly test restore now
 #
-# The nightly task copies to the network drive on the modem (a slow, sometimes flaky share - about
-# 2 MB/s): \\10.0.0.138\Seagate_ExpansionDesk_2_917f\Off the Clock backups. That copy keeps the newest
-# $Keep backups too. If the drive can't be reached, the backup here still counts; the log says so.
+# Until 2026-10-22 the nightly task also copied to a drive on the modem; it slept and failed four nights unnoticed,
+# so it was retired and Google Drive (below) holds the whole backup. -CopyTo still works for any other folder (it
+# wakes a sleeping network share first, keeps the newest $Keep backups there too, and says so if it fails).
 #
 # Every backup is checked (health check, 2026-10-21):
 #   - read back: pg_restore --list must read it, and the copy on disk must match the one Postgres wrote;
@@ -17,8 +17,9 @@
 #
 # Off-site (prod only, once set up with .\setup-offsite.ps1): each backup is encrypted (gpg, AES-256, your
 # password) and copied to a folder Google Drive for desktop syncs. Kept there: the last 7 days, one a week for
-# 4 weeks, one a month for 6 months (about 11 MB each), never more than OffsiteBudgetMB. Videos aren't sent:
-# they'd fill the 15 GB Google gives you - they're on the network drive. To get one back: .\restore-offsite.ps1
+# 4 weeks, one a month for 6 months (about 11 MB each), never more than OffsiteBudgetMB. The videos go too, each
+# encrypted once (about 5 GB of the 15 GB Google gives you; a new video adds its size). To get either back:
+# .\restore-offsite.ps1 -File <a backup> or -Videos <the Drive folder>. A failure pops up a Windows notification.
 #
 # Restore (replaces the current data!):
 #   docker cp .\backups\<file>.dump hobby-inventory-db:/tmp/restore.dump
@@ -60,10 +61,46 @@ function Read-Status {
     if (Test-Path $statusFile) { try { return Get-Content $statusFile -Raw | ConvertFrom-Json } catch { } }
     return New-Object PSObject
 }
+# A Windows notification on this PC (the nightly task runs while you're signed in): a failure shows the morning after,
+# not only inside the app. (2026-10-22: the network copy failed four nights running and nothing said so.)
+function Notify([string]$title, [string]$text) {
+    try {
+        [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
+        [Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] | Out-Null
+        $esc = { param($t) [Security.SecurityElement]::Escape($t) }
+        $xml = New-Object Windows.Data.Xml.Dom.XmlDocument
+        $xml.LoadXml("<toast><visual><binding template='ToastGeneric'><text>$(& $esc $title)</text><text>$(& $esc $text)</text>" +
+                     "</binding></visual></toast>")
+        $app = '{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}\WindowsPowerShell\v1.0\powershell.exe'    # (Windows PowerShell's own id)
+        [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($app).Show([Windows.UI.Notifications.ToastNotification]::new($xml))
+    } catch {
+        Add-Content -Path $log -Value "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')  (no Windows notification: $($_.Exception.Message))" -Encoding ascii
+    }
+}
+$NOTIFY = @{ backup = 'The backup'; restore_test = 'The weekly test restore'; offsite = 'The Google Drive copy'; copy = 'The network drive copy' }
+
+# A part that fails keeps the day it started failing and how many runs in a row have failed (Settings > System turns
+# red after a day of it), and says so with a notification.
 function Set-Status([string]$part, [hashtable]$values) {
     $s = Read-Status
+    $before = $s.$part
+    if ($values.ok -eq $false) {
+        $values.failing_since = if ($before -and $before.ok -eq $false -and $before.failing_since) { $before.failing_since } else { $values.at }
+        $values.failures = if ($before -and $before.ok -eq $false -and $before.failures) { [int]$before.failures + 1 } else { 1 }
+        if ($NOTIFY.ContainsKey($part)) {
+            $runs = if ($values.failures -gt 1) { " ($($values.failures) runs in a row)" } else { '' }
+            Notify "Off the Clock: $($NOTIFY[$part]) failed$runs" "$($values.message) - see Settings > System"
+        }
+    }
     $s | Add-Member -NotePropertyName $part -NotePropertyValue ([pscustomobject]$values) -Force
     $s | ConvertTo-Json -Depth 4 | Set-Content -Path $statusFile -Encoding ascii
+}
+function Remove-Status([string]$part) {
+    $s = Read-Status
+    if ($s.PSObject.Properties[$part]) {
+        $s.PSObject.Properties.Remove($part)
+        $s | ConvertTo-Json -Depth 4 | Set-Content -Path $statusFile -Encoding ascii
+    }
 }
 function Fail($msg) {
     Log "FAILED: $msg"
@@ -152,11 +189,29 @@ function Copy-Media($to, [switch]$Slow) {
     Log "OK: videos in $to - $(@($files).Count) files, $mb MB"
 }
 Copy-Media (Join-Path $folder 'media')
+if (-not $CopyTo) { Remove-Status 'copy' }      # (no copy elsewhere any more - the network drive was retired 2026-10-22)
+
+# A network drive can be asleep: the modem's USB drive stopped answering the first request after a quiet spell
+# (2026-10-19 to 22, "The network name cannot be found" every night at 2 am, fine by day). Asking the modem for its
+# list of shares wakes it; try a few times, 20 s apart, before giving up.
+function Wait-Share([string]$to) {
+    if ($to -notlike '\\*') { return $true }
+    $server = '\\' + ($to.TrimStart('\') -split '\\')[0]
+    for ($try = 1; $try -le 4; $try++) {
+        if (Test-Path $to) { return $true }
+        Log "The network drive isn't answering yet - waking it (try $try of 4)"
+        net view $server 2>$null | Out-Null
+        Start-Sleep -Seconds 20
+    }
+    return (Test-Path $to)
+}
 
 if ($CopyTo) {
     try {
+        if (-not (Wait-Share $CopyTo)) { throw "the network drive didn't wake up (tried for about 80 s)" }
         New-Item -ItemType Directory -Force $CopyTo | Out-Null
-        Copy-Item $path $CopyTo -ErrorAction Stop
+        try { Copy-Item $path $CopyTo -ErrorAction Stop }
+        catch { Log "WARNING: the copy failed once ($($_.Exception.Message.Trim())) - trying again in 30 s"; Start-Sleep -Seconds 30; Copy-Item $path $CopyTo -ErrorAction Stop }
         $same = (Get-FileHash $path).Hash -eq (Get-FileHash (Join-Path $CopyTo $name)).Hash
         if ($same) { Log "Copied to $CopyTo (checked: identical)" } else { Log "WARNING: the copy in $CopyTo doesn't match" }
         Set-Status 'copy' @{ at = $now; ok = $same; to = $CopyTo; message = $(if ($same) { 'checked: identical' } else { "the copy doesn't match" }) }
@@ -192,8 +247,11 @@ if ($AppEnv -eq 'prod' -and (Test-Path $offsiteCfg)) {
         $files = Get-ChildItem $cfg.folder -Filter 'hobby_inventory_*.dump.gpg'
         $mb = [math]::Round((($files | Measure-Object Length -Sum).Sum) / 1MB)
         Log "OK: encrypted copy in $($cfg.folder) - $(@($files).Count) kept, $mb MB$(if ($removed) { ", $removed old removed" })"
+        # ...and the videos, each sent once (2026-10-22: Drive holds the whole backup; the network drive was retired)
+        $videos = Send-OffsiteMedia (Join-Path $Root 'media') $cfg.folder $pass
+        Log "OK: videos on Drive - $($videos.files) files, $($videos.mb) MB$(if ($videos.sent) { ", $($videos.sent) new sent" })"
         Set-Status 'offsite' @{ at = $now; ok = $true; folder = $cfg.folder; files = @($files).Count; mb = $mb; budget_mb = $OffsiteBudgetMB
-                                message = 'encrypted and checked' }
+                                videos = $videos.files; videos_mb = $videos.mb; message = 'encrypted and checked' }
     } catch {
         Log "WARNING: off-site copy failed: $($_.Exception.Message)"
         Set-Status 'offsite' @{ at = $now; ok = $false; message = $_.Exception.Message }

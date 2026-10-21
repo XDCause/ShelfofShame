@@ -200,7 +200,7 @@ SUP-0001... numbering.
 | Back up and copy elsewhere | `.\backup.ps1 -CopyTo "D:\Backups"` |
 | Test-restore the newest backup now (it also happens weekly by itself) | `.\backup.ps1 -TestRestore` |
 | **Encrypted copy to Google Drive** (once; prod folder) | install Google Drive for desktop, then `.\setup-offsite.ps1` |
-| Get a Google Drive copy back | `.\restore-offsite.ps1 -File "G:\My Drive\Off the Clock backups\<file>.dump.gpg"` |
+| Get a Google Drive copy back | `.\restore-offsite.ps1 -File "G:\My Drive\Off the Clock backups\<file>.dump.gpg"` (`-Videos <that folder>` for the videos) |
 | How it's all doing (backups, syncs, disk, updates) | Settings > System (Home shows anything that needs a look) |
 | Check for updates (monthly; dev folder) | `.\check-updates.ps1` |
 | **Run every check** (API tests + web tests + walk-through + audit, side by side, ~9 min; in dev) | `.\test_all.ps1` |
@@ -219,8 +219,10 @@ docker exec hobby-inventory-db pg_restore -U hobby -d hobby_inventory --clean --
 
 The nightly backup is the Windows scheduled task **"Shelf of Shame backup"** (Task Scheduler). Each backup is read
 back to check it, and once a week one is restored for real into a throwaway database and every table's rows
-compared; results are in `backups\backup.log` and Settings > System. The encrypted Google Drive copies keep the last
-7 days, one a week for 4 weeks and one a month for 6 months (about 200 MB; videos stay on the network drive).
+compared; results are in `backups\backup.log` and Settings > System, and a failure pops up a Windows notification.
+Everything also goes to Google Drive, encrypted: the database backups (the last 7 days, one a week for 4 weeks, one a
+month for 6 months - about 200 MB) and every video, once (about 5 GB). To get them back: `.\restore-offsite.ps1
+-File <a backup>` and `-Videos "G:\My Drive\Off the Clock backups"`.
 
 Useful psql commands: `\dt` list tables, `\dv` list views, `\d supplies` describe a table, `\q` quit.
 

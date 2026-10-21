@@ -702,3 +702,18 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
      would otherwise be read as /videogames/{app_id}). othergames.py stays whole: its routes use nearly all its sync
      code, so a split would only add an import. The movers report what each part borrows from the other first; the
      things the old file still needs stay there as shared helpers (no import circles).
+
+5r. **The whole backup on Google Drive; the modem's drive retired; failures shouted** (2026-10-22). The user set up the
+   Drive copy (setup-offsite.ps1 took a typed "yes" as the folder name - now y / yes means yes, and the folder must be a
+   full path outside the app's). Then: the copy to the drive on the modem had failed every night since 10-19 ("The
+   network name cannot be found") and nothing said so until the System panel's first day - the user: "this should have
+   been flagged much earlier". By day it answered; at 2 am, and often even when awake, it hung (a 11 MB copy ran 5+
+   minutes; the 10-18 copy there reads as 0 bytes). So:
+   - backup.ps1: Set-Status keeps failing_since and the runs in a row for any part, and a failure pops up a Windows
+     notification (WinRT toast as Windows PowerShell; the task runs while signed in). Settings > System: the network
+     copy is red once it has failed for a day or twice running, with since when; amber when no copy has been tried in
+     3 days. A -CopyTo share is woken first (net view, 4 tries 20 s apart) and the copy tried twice.
+   - The user chose to send everything to Google Drive: each video encrypted once into <Drive folder>\media\<path>.gpg
+     (Send-OffsiteMedia: decrypted again and compared before it counts; ~5 GB of 15 GB), restore-offsite.ps1 -Videos
+     brings them back. The nightly task no longer copies to the modem's drive (-CopyTo dropped; backup.ps1 clears the
+     old "copy" status so its red line goes).

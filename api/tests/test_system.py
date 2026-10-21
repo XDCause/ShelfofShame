@@ -38,7 +38,8 @@ def test_a_fresh_checked_backup_and_restore_test_are_green(client, folder):
     (folder / "status.json").write_text(json.dumps({
         "backup": {"at": (now - timedelta(hours=3)).isoformat(timespec="seconds"), "ok": True, "name": name},
         "restore_test": {"at": (now - timedelta(days=2)).isoformat(timespec="seconds"), "ok": True, "tables": 105, "rows": 900},
-        "offsite": {"at": (now - timedelta(hours=3)).isoformat(timespec="seconds"), "ok": True, "files": 5, "mb": 55, "budget_mb": 2048},
+        "offsite": {"at": (now - timedelta(hours=3)).isoformat(timespec="seconds"), "ok": True, "files": 5, "mb": 55, "budget_mb": 2048,
+                    "videos": 4, "videos_mb": 5102},
     }))
     (folder / "updates.json").write_text(json.dumps({"at": now.isoformat(timespec="seconds"), "outdated": 2, "audit_problems": 0}))
     with db() as conn:
@@ -47,6 +48,8 @@ def test_a_fresh_checked_backup_and_restore_test_are_green(client, folder):
     assert c["backup"]["state"] == "ok" and "read back and checked" in c["backup"]["detail"]
     assert c["restore"]["state"] == "ok" and "105 tables" in c["restore"]["detail"]
     assert c["offsite"]["state"] == "ok" and "55 MB" in c["offsite"]["detail"]
+    assert "videos: 4 (5.0 GB)" in c["offsite"]["detail"]
+    assert "copy" not in c                                                     # (no network drive: no line for it)
     assert c["updates"]["state"] == "ok" and c["sites"]["state"] == "ok" and c["disk"]["state"] in ("ok", "warn", "bad")
     assert c["steam"]["state"] == "off"
 
@@ -86,3 +89,28 @@ def test_junk_status_files_are_ignored(client, folder):
 def test_the_drive_copy_is_prod_only(client, folder, monkeypatch):
     monkeypatch.setenv("APP_ENV", "dev")
     assert by_key(client)["offsite"] == {**by_key(client)["offsite"], "state": "off", "detail": "Prod only"}
+
+
+def test_a_network_copy_failing_night_after_night_is_red_with_since_when(client, folder):
+    now = datetime.now()
+    (folder / f"hobby_inventory_{stamp(now - timedelta(hours=6))}.dump").write_bytes(b"PGDMP")
+    (folder / "status.json").write_text(json.dumps({"copy": {
+        "at": (now - timedelta(hours=6)).isoformat(timespec="seconds"), "ok": False, "to": r"\10.0.0.9\Disk\Off the Clock backups",
+        "message": "The network name cannot be found.\r\n", "failing_since": (now - timedelta(days=3, hours=6)).isoformat(timespec="seconds"),
+        "failures": 4}}))
+    c = by_key(client)["copy"]
+    assert c["state"] == "bad" and "4 runs in a row" in c["detail"] and c["detail"].startswith("Failing since")
+    assert "\\10.0.0.9 in File Explorer" in c["fix"]
+    assert client.get("/api/system").json()["worst"] == "bad"
+
+
+def test_a_first_network_copy_failure_is_amber_and_a_quiet_one_too(client, folder):
+    now = datetime.now()
+    first = {"at": now.isoformat(timespec="seconds"), "ok": False, "to": r"\nas\share", "message": "busy", "failures": 1,
+             "failing_since": now.isoformat(timespec="seconds")}
+    (folder / "status.json").write_text(json.dumps({"copy": first}))
+    assert by_key(client)["copy"]["state"] == "warn"
+    quiet = {"at": (now - timedelta(days=5)).isoformat(timespec="seconds"), "ok": True, "to": r"\nas\share"}
+    (folder / "status.json").write_text(json.dumps({"copy": quiet}))
+    c = by_key(client)["copy"]
+    assert c["state"] == "warn" and "Task Scheduler" in c["fix"]

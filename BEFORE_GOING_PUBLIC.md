@@ -98,7 +98,7 @@ Fine on a home network with one user; not fine for a hosted app.
 | **Australia-specific defaults**: time zone Australia/Brisbane, AUD currency, en-AU dates | `db/Dockerfile`, `web/src/api.js` (`money`, `shortDate`) | Make them per-user settings. |
 | **Brands list kept deliberately small** (Tamiya, Milliput, Microscale, Other + ones added as used) | `db/init/02_seed.sql` | The owner's choice. A public app would need a proper shared brand list. |
 | **One running timer for the whole app** | `build.py` (`GET /api/timer`) | Per user. |
-| **Off-site backup to the owner's own Google Drive** (encrypted with gpg, the owner's password; 2026-10-21) | `backup.ps1`, `setup-offsite.ps1`, `scripts/offsite.ps1` | The owner's data in the owner's cloud. A hosted app would back up its own servers (and must never put users' data in one person's Drive). |
+| **Off-site backup to the owner's own Google Drive** (database and videos, encrypted with gpg, the owner's password; 2026-10-21/22) | `backup.ps1`, `setup-offsite.ps1`, `scripts/offsite.ps1` | The owner's data in the owner's cloud. A hosted app would back up its own servers (and must never put users' data in one person's Drive). |
 | **No rate limiting** on the API | `api/app/` | Lookups trigger requests to other sites (section 1), so they must be limited per user. |
 
 ## 4. Names, brands and design
