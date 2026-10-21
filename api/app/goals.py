@@ -38,7 +38,7 @@ router = APIRouter(prefix="/api", tags=["goals"])
 
 Status = Literal["active", "paused", "done", "dropped"]
 Timeframe = Literal["year", "three_years"]
-Kind = Literal["target", "habit"]
+Kind = Literal["target", "habit", "milestone"]       # milestone: yes or no - done, or not yet (no number, no pace)
 Every = Literal["week", "month"]
 YEARS = {"year": 1, "three_years": 3}
 STATUSES = ["active", "paused", "done", "dropped"]
@@ -222,6 +222,8 @@ def shaped(conn, g: dict, now: date) -> dict:
     if g["habit"]:
         moved.append(g["habit"]["last_day"])
         g["progress"] = min(1.0, g["habit"]["this"] / g["habit"]["times"])
+    elif g["kind"] == "milestone":                 # done or not: only its to-dos (if any) show the steps
+        g["progress"] = 1.0 if g["status"] == "done" else g["todos_done"] / g["todos_total"] if g["todos_total"] else None
     elif g["target_value"] is not None and g["current_value"] is not None:
         g["progress"] = fraction(g["start_value"], g["target_value"], g["current_value"])
     elif g["todos_total"]:
@@ -231,7 +233,8 @@ def shaped(conn, g: dict, now: date) -> dict:
     g["pace"] = pace(g, now)
     g["last_moved"] = max((d for d in moved if d), default=None)
     since = max(g["last_moved"] or g["started_on"], g["started_on"])
-    g["still_for"] = (now - since).days if g["status"] == "active" and not g["upcoming"] else None
+    quiet_kind = g["kind"] == "milestone" and not g["todos_total"]      # (a yes / no with no steps has nothing to move)
+    g["still_for"] = (now - since).days if g["status"] == "active" and not g["upcoming"] and not quiet_kind else None
     return g
 
 

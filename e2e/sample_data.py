@@ -275,6 +275,8 @@ sketch = post("/goals", {"title": "Sketch twice a week", "kind": "habit", "habit
 if sketch:
     for d in (-15, -13, -8, -6, -1):
         post(f"/goals/{sketch['goal_id']}/updates", {"day": day(d)})
+post("/goals", {"title": "Run a marathon", "kind": "milestone", "timeframe": "three_years",
+                "steps": ["Pick a race", "Sign up", "Build to 30 km long runs"]})
 post("/goals", {"title": "Plan the Japan trip", "hobby": "travel", "target_date": day(40), "why": "Cherry blossom season.",
                 "steps": ["Book flights", "Book the ryokan in Kyoto", "Buy a rail pass", "Pack the camera"]})
 post("/goals", {"title": "Lose 3 kg before summer", "unit": "kg", "start_value": 82, "target_value": 79, "current_value": 81.2,

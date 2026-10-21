@@ -1933,3 +1933,13 @@ DBeaver connection confirmed working (2026-10-11).
    User: Set up's Reach a target | A habit hugged the left - even halves now (Status 2 x 2). "Goals inside this" has
    + Add one: a panel to make a goal inside it (you stay on the bigger goal) - rendered on the page itself (a portal):
    inside the sticky side column it sat under the top bar.
+5f. **Goals: hover readouts, Upcoming, yes / no, and a hobby's goals on its page** (2026-10-21). The goal chart and
+   habit bars show the number under the pointer (arrow keys too; "Show as a table"); the shared charts already did.
+   A goal inside a 3-year goal picks any of its years; When offers the year after next. Upcoming = active but its time
+   hasn't begun (derived, not stored: it turns active on its own): no pace, no nudges, not in a bigger goal's average,
+   its own filter. Each goal inside a bigger one shows its pill; Why it matters moved to the side. A hobby's first page
+   opens with its active goals (core/goals/HobbyGoals, added in App's module routes - one place for every hobby).
+   84_goal_milestone.sql: kind 'milestone' (user: "proposed in 3 years is a yes or no - Behind isn't true"): Not yet /
+   Done and the time left, its to-dos as steps, no pace, no nudges unless it has to-dos. Lesson: 83 re-ran in a test
+   (proving it idempotent) and its kind CHECK quietly removed 84's milestone for the tests after it - a later migration
+   that widens a constraint must be matched in the earlier file that also (re)defines it.

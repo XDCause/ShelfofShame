@@ -119,7 +119,7 @@ function GoalCard({ goal: g }) {
         {g.why && <span className="goal-why">{g.why}</span>}
         <ProgressBar goal={g} />
         {(progress || g.progress != null) && (
-          <span className="item-meta">{[progress, g.progress != null && !g.habit && `${Math.round(g.progress * 100)}%`,
+          <span className="item-meta">{[progress, g.progress != null && !g.habit && g.kind !== 'milestone' && `${Math.round(g.progress * 100)}%`,
             g.source && 'counts itself', g.habit?.streak > 1 && `${g.habit.streak} ${g.habit.every}s in a row`].filter(Boolean).join(' · ')}</span>
         )}
         {g.next_step && g.status === 'active' && <span className="goal-next"><span className="muted">Next:</span> {g.next_step}</span>}

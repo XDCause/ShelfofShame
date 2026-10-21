@@ -16,6 +16,7 @@ const num = (v) => (v == null ? '' : Number(v).toLocaleString('en-AU', { maximum
 
 // "6 of 30 books", "77.5 kg (from 80 to 75)", "2 of 5 steps", or nothing to say.
 export function progressText(g) {
+  if (g.kind === 'milestone') return g.todos_total ? `${g.todos_done} of ${g.todos_total} to-do${g.todos_total === 1 ? '' : 's'}` : ''
   if (g.target_value != null) {
     const unit = g.unit ? ` ${g.unit}` : ''
     if (g.current_value == null) return `Target ${num(g.target_value)}${unit}`
@@ -110,6 +111,7 @@ export const PACE = {
 }
 export function PaceBadge({ goal: g }) {
   if (g.upcoming) return <span className="pill goal-upcoming">Upcoming · starts {shortDate(g.start_day)}</span>
+  if (g.kind === 'milestone' && g.status === 'active') return <span className="pill goal-not-yet">Not yet</span>
   if (g.habit && g.status === 'active') {
     return <span className={`pill ${g.habit.met ? 'ok' : 'tint'}`}>{g.habit.met ? `Done this ${g.habit.every}` : `${num(g.habit.left)} to go this ${g.habit.every}`}</span>
   }
@@ -134,6 +136,19 @@ export function paceText(g) {
 
 // The number over time: where you've been (solid), an even pace from start to target (dashed) and today. For a
 // number you give: each progress note's number; for one the app counts: its running total (or each new level).
+// "2 years 2 months to go", "5 months to go", "12 days to go" - a yes / no goal's countdown.
+export function timeLeft(iso) {
+  if (!iso) return ''
+  const end = dayDate(iso)
+  const now = new Date()
+  const days = Math.round((end - now) / 86400000)
+  if (days < 0) return `${-days} day${days === -1 ? '' : 's'} past the day`
+  if (days < 45) return `${days} day${days === 1 ? '' : 's'} to go`
+  const months = (end.getFullYear() - now.getFullYear()) * 12 + end.getMonth() - now.getMonth()
+  const [y, m] = [Math.floor(months / 12), months % 12]
+  return `${[y && `${y} year${y === 1 ? '' : 's'}`, m && `${m} month${m === 1 ? '' : 's'}`].filter(Boolean).join(' ')} to go`
+}
+
 // A rating (a level) can also show its whole history - where you came from before this goal - with the goal's start
 // marked. Labels on the target line and at "now" say where you sit against the goal.
 export function GoalChart({ goal: g }) {

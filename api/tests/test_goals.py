@@ -243,3 +243,17 @@ def test_a_goal_whose_time_has_not_begun_is_upcoming(client):
     assert abs(g["progress"] - 0.5) < 1e-9                           # only this year's goal counts yet
     assert [(k["title"], k["upcoming"]) for k in g["goals"]] == [("Swim 1 km", False), ("Sprint race", True)]
 
+
+def test_a_yes_or_no_goal(client):
+    """A milestone (proposed, yes or no): no number, no pace - not "Behind" - and no nudge unless it has steps."""
+    g = client.post("/api/goals", json={"title": "Propose", "kind": "milestone", "timeframe": "three_years",
+                                        "started_on": D(-60).isoformat(), "target_value": 5}).json()
+    assert (g["kind"], g["progress"], g["pace"]) == ("milestone", None, None)
+    assert "Propose" not in [s["title"] for s in client.get("/api/goals/nudges").json()["stale"]]
+    t = client.post("/api/todos", json={"title": "Buy the ring", "goal_id": g["goal_id"]}).json()
+    client.post("/api/todos", json={"title": "Plan the day", "goal_id": g["goal_id"]})
+    client.post(f"/api/todos/{t['todo_id']}/done")
+    g = client.get(f"/api/goals/{g['goal_id']}").json()
+    assert (g["progress"], g["pace"]) == (0.5, None)                   # its steps show, still no pace
+    assert client.patch(f"/api/goals/{g['goal_id']}", json={"status": "done"}).json()["progress"] == 1
+

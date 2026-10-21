@@ -19,6 +19,7 @@ import EventPanel from './core/calendar/EventPanel.jsx'
 import GlobalSearch from './core/GlobalSearch.jsx'
 import GoalPage from './core/goals/GoalPage.jsx'
 import GoalsPage from './core/goals/GoalsPage.jsx'
+import HobbyGoals from './core/goals/HobbyGoals.jsx'
 import TodoPage from './core/todo/TodoPage.jsx'
 import TodoPanel from './core/todo/TodoPanel.jsx'
 import HobbiesPage from './core/HobbiesPage.jsx'
@@ -244,7 +245,9 @@ export default function App() {
                   {MODULES.map((m) => (
                     <Route key={m.id} path={m.id}>
                       <Route index element={<Navigate to={m.pages[0].path} replace />} />
-                      {m.pages.map((p) => <Route key={p.path} path={p.path} element={p.render(app)} />)}
+                      {/* a hobby's first page opens with its goals (core/goals/HobbyGoals.jsx) */}
+                      {m.pages.map((p, i) => <Route key={p.path} path={p.path}
+                        element={i === 0 ? <><HobbyGoals hobby={m.id} />{p.render(app)}</> : p.render(app)} />)}
                     </Route>
                   ))}
                   <Route path="*" element={<p className="empty card">There's no page here. <Link to="/">Go home</Link></p>} />

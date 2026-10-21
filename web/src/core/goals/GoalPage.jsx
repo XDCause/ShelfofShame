@@ -10,7 +10,7 @@ import { useApp } from '../app-context.js'
 import { useNewPage } from '../journal/JournalList.jsx'
 import { QuickAdd, TaskRow, useTick } from '../todo/todoParts.jsx'
 import { Celebrate, dueText, GoalChart, HabitStrip, hobbyName, PaceBadge, paceText, periodChoices, periodLabel, periodValue,
-  ProgressBar, progressText, STATUS } from './goalParts.jsx'
+  ProgressBar, progressText, STATUS, timeLeft } from './goalParts.jsx'
 
 const num = (v) => (v == null ? '' : Number(v).toLocaleString('en-AU', { maximumFractionDigits: 2 }))
 
@@ -111,9 +111,10 @@ function Hero({ goal: g, save, run, reach, cheer }) {
   const text = progressText(g)
   const eyebrow = [g.hobby ? hobbyName(g.hobby) : 'Life in general', g.timeframe && periodLabel(g.timeframe, g.period_start)].filter(Boolean)
   const done = g.status === 'done'
-  const there = !done && g.status === 'active' && g.progress != null && g.progress >= 1 && !g.habit
+  const there = !done && g.status === 'active' && g.progress != null && g.progress >= 1 && !g.habit && g.kind !== 'milestone'
   const manualHabit = g.habit && !g.source
-  const big = g.habit ? `${num(g.habit.this)} / ${num(g.habit.times)}`
+  const milestone = g.kind === 'milestone'
+  const big = milestone ? (done ? 'Done' : 'Not yet') : g.habit ? `${num(g.habit.this)} / ${num(g.habit.times)}`
     : g.target_value != null && g.current_value != null ? `${num(g.current_value)} / ${num(g.target_value)}`
       : g.progress != null ? `${Math.round(g.progress * 100)}%` : null
   const write = () => newPage({
@@ -140,17 +141,19 @@ function Hero({ goal: g, save, run, reach, cheer }) {
         {big && (
           <div className="goal-big">
             <span className="goal-big-number">{big}</span>
-            <span className="goal-big-unit">{g.habit ? `this ${g.habit.every}${g.unit && g.source ? ` · ${g.unit}` : ''}` : g.target_value != null ? g.unit ?? '' : text}</span>
-            {!g.habit && g.target_value != null && g.current_value != null && g.progress != null && g.progress < 1 && (
+            <span className="goal-big-unit">{milestone ? (done ? '' : g.target_date ? timeLeft(g.target_date) : 'no set day')
+              : g.habit ? `this ${g.habit.every}${g.unit && g.source ? ` · ${g.unit}` : ''}` : g.target_value != null ? g.unit ?? '' : text}</span>
+            {!g.habit && !milestone && g.target_value != null && g.current_value != null && g.progress != null && g.progress < 1 && (
               <span className="goal-to-go">{num(Math.abs(g.target_value - g.current_value))}{g.unit ? ` ${g.unit}` : ''} to go</span>
             )}
             {g.habit && g.habit.streak > 0 && <span className="goal-streak">{g.habit.streak} {g.habit.every}{g.habit.streak === 1 ? '' : 's'} in a row</span>}
           </div>
         )}
       </div>
-      {g.progress != null && !g.habit && (
+      {g.progress != null && !g.habit && !(milestone && !g.todos_total) && !(milestone && done) && (
         <div className="goal-hero-bar"><ProgressBar goal={g} />
-          {big !== `${Math.round(g.progress * 100)}%` && <span className="goal-big-percent">{Math.round(g.progress * 100)}%</span>}</div>
+          {milestone ? <span className="goal-big-percent goal-steps-text">{text}</span>
+            : big !== `${Math.round(g.progress * 100)}%` && <span className="goal-big-percent">{Math.round(g.progress * 100)}%</span>}</div>
       )}
       {g.upcoming && <p className="goal-pace-text">Its time starts {shortDate(g.start_day)} - until then it's Upcoming: no pace, no nudges. A good time to plan its to-dos.</p>}
       {paceText(g) && <p className="goal-pace-text">{paceText(g)}</p>}
@@ -159,7 +162,10 @@ function Hero({ goal: g, save, run, reach, cheer }) {
           ? `Nothing new since ${shortDate(g.source_latest)} - the line moves when your ${g.source_label.toLowerCase()} does.`
           : `Nothing counted yet - the line moves when your ${g.source_label.toLowerCase()} does.`}</p>
       )}
-      {g.habit ? <HabitStrip goal={g} /> : <GoalChart goal={g} />}
+      {g.habit ? <HabitStrip goal={g} /> : !milestone && <GoalChart goal={g} />}
+      {milestone && !done && g.status === 'active' && !g.upcoming && (
+        <p className="goal-pace-text">A yes or no: done, or not yet - mark it reached when it happens.{g.todos_total ? '' : ' Steps towards it can go in Next up.'}</p>
+      )}
       {done && (
         <div className="goal-reached">
           <span className="goal-reached-icon" aria-hidden="true">🏆</span>
@@ -278,13 +284,13 @@ function InsideGoal({ parent, onClose, onAdded }) {
     e.preventDefault()
     if (!f.title.trim()) return
     const when = choices.find((c) => c.value === f.when)
-    const measure = f.kind === 'habit'
+    const measure = f.kind === 'milestone' ? {} : f.kind === 'habit'
       ? { habit_times: Math.max(1, Math.round(Number(f.times) || 1)), habit_every: f.every }
       : { target_value: f.target === '' ? null : Number(f.target), unit: f.source ? null : f.unit || null,
           start_value: f.source || f.target === '' ? null : 0 }
     try {
       await api.addGoal({ title: f.title.trim(), parent_id: parent.goal_id, hobby: parent.hobby, timeframe: when.timeframe,
-        period_start: when.period_start, kind: f.kind, source: f.source || null, ...measure })
+        period_start: when.period_start, kind: f.kind, source: f.kind === 'milestone' ? null : f.source || null, ...measure })
       changed()
       onAdded()
       showToast(`Added inside ${parent.title}`)
@@ -306,7 +312,9 @@ function InsideGoal({ parent, onClose, onAdded }) {
         <div className="segmented goal-kind" role="group" aria-label="Kind">
           <button type="button" aria-pressed={f.kind === 'target'} onClick={() => setF({ ...f, kind: 'target' })}>Reach a target</button>
           <button type="button" aria-pressed={f.kind === 'habit'} onClick={() => setF({ ...f, kind: 'habit' })}>A habit</button>
+          <button type="button" aria-pressed={f.kind === 'milestone'} onClick={() => setF({ ...f, kind: 'milestone' })}>Yes or no</button>
         </div>
+        {f.kind !== 'milestone' && <>
         <label className="field">{f.kind === 'habit' ? 'What counts as a time' : 'Counting'}
           <select value={f.source} onChange={set('source')} aria-label="What it counts">
             <option value="">{f.kind === 'habit' ? 'I tick it myself' : 'A number I give'}</option>
@@ -324,6 +332,7 @@ function InsideGoal({ parent, onClose, onAdded }) {
             {!f.source && <label className="field">Unit<input value={f.unit} onChange={set('unit')} maxLength={40} placeholder="km, books, kg..." /></label>}
           </div>
         )}
+        </>}
         <p className="muted small">Its progress feeds into {parent.title}. Why it matters and its to-dos go on its own page, later.</p>
         {error && <p className="alert error small" role="alert">{error}</p>}
       </form>
@@ -394,7 +403,11 @@ function SetUp({ goal: g, save, open }) {
         <div className="segmented goal-kind" role="group" aria-label="Kind">
           <button type="button" aria-pressed={g.kind === 'target'} onClick={() => g.kind !== 'target' && save({ kind: 'target' })}>Reach a target</button>
           <button type="button" aria-pressed={g.kind === 'habit'} onClick={() => g.kind !== 'habit' && save({ kind: 'habit' })}>A habit</button>
+          <button type="button" aria-pressed={g.kind === 'milestone'} onClick={() => g.kind !== 'milestone' && save({ kind: 'milestone' })}>Yes or no</button>
         </div>
+        {g.kind === 'milestone' ? (
+          <p className="muted small">Done, or not yet - no number and no pace. Mark it reached when it happens; its to-dos (Next up) show the steps.</p>
+        ) : <>
         <label className="field">{g.kind === 'habit' ? 'What counts as a time' : 'Counting'}
           <select value={g.source ?? ''} onChange={(e) => save({ source: e.target.value || null })} aria-label="What it counts">
             <option value="">{g.kind === 'habit' ? 'I\'ll tick it myself ("Did it today")' : 'A number I give'}</option>
@@ -428,6 +441,7 @@ function SetUp({ goal: g, save, open }) {
               : 'A progress note with a number updates "Now" for you. No number? Its to-dos measure it.'}</p>
           </div>
         )}
+        </>}
       </div>
     </details>
   )

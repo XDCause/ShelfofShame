@@ -18,7 +18,7 @@ ALTER TABLE goals ADD COLUMN IF NOT EXISTS habit_every TEXT;
 ALTER TABLE goals ADD COLUMN IF NOT EXISTS parent_id INT REFERENCES goals ON DELETE SET NULL;
 
 ALTER TABLE goals DROP CONSTRAINT IF EXISTS goals_kind_check;
-ALTER TABLE goals ADD CONSTRAINT goals_kind_check CHECK (kind IN ('target', 'habit'));
+ALTER TABLE goals ADD CONSTRAINT goals_kind_check CHECK (kind IN ('target', 'habit', 'milestone'));   -- (84 added milestone: running this again mustn't take it away)
 ALTER TABLE goals DROP CONSTRAINT IF EXISTS goals_habit_check;
 ALTER TABLE goals ADD CONSTRAINT goals_habit_check
     CHECK (habit_every IS NULL OR habit_every IN ('week', 'month'));
