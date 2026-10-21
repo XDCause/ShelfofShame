@@ -5,6 +5,8 @@ import Notice from './Notice.jsx'
 import OwnedBadge from './OwnedBadge.jsx'
 import WishForm from './WishForm.jsx'
 import EmptyState from '../core/EmptyState.jsx'
+import { useApp } from '../core/app-context.js'
+import { ExtraTags, extraOf } from './wishExtras.jsx'
 import { CartIcon } from '../components/icons.jsx'
 
 const SHOP_KEY = 'hobby-inventory.lastShop'
@@ -19,7 +21,8 @@ const saveShop = (shop) => {
 // put it in the basket, then "Add N to inventory" moves everything ticked across in one go (that's
 // the only way to buy - one item is just one tick). "+ Add" opens a side panel that searches
 // Tamiya, reads a barcode or takes the details by hand.
-export default function WishlistView({ lookups, settings, refreshKey, onChanged }) {
+export default function WishlistView({ lookups, settings, refreshKey, onChanged, extras = {} }) {
+  const { openPanel } = useApp()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [show, setShow] = useState('all')
@@ -99,29 +102,23 @@ export default function WishlistView({ lookups, settings, refreshKey, onChanged 
 
   return (
     <section className={ticked.length ? 'wishlist has-bar' : 'wishlist'}>
-      {items.length > 0 && (
-        <p className="summary">
-          <strong>{toFind.length}</strong> to find · about <strong>{money(cost(toFind))}</strong>
-          {unpriced > 0 && <span className="muted"> ({unpriced} without a price)</span>}
-        </p>
-      )}
+      {/* One line: what's left to find and roughly what it costs; tap a card to tick it (user, 2026-10-21: tidier) */}
       <div className="wish-head">
-        {items.length > 0 && <div className="progress" role="img" aria-label={`${ticked.length} of ${items.length} ticked`}>
-          <span className="progress-text">
-            <strong>{ticked.length}</strong> of {items.length} ticked
-          </span>
-          <span className="progress-bar">
-            <span style={{ width: `${(ticked.length / items.length) * 100}%` }} />
-          </span>
-        </div>}
-        <div className="segmented" role="group" aria-label="Show">
-          {[['all', 'All'], ['needed', 'To find'], ['got', 'Ticked']].map(([key, label]) => (
-            <button key={key} aria-pressed={show === key} onClick={() => setShow(key)}>{label}</button>
-          ))}
-        </div>
-        <div className="head-buttons">
-          <button className="primary" onClick={() => openForm(null)}>+ Add</button>
-        </div>
+        <p className="wish-sum">
+          {items.length > 0 ? <>
+            <strong>{toFind.length}</strong> to find · about <strong>{money(cost(toFind))}</strong>
+            {unpriced > 0 && <span className="muted"> ({unpriced} without a price)</span>}
+            {ticked.length > 0 && <span className="muted"> · {ticked.length} ticked</span>}
+          </> : <span className="muted">Nothing on your list yet.</span>}
+        </p>
+        {ticked.length > 0 && (
+          <div className="segmented" role="group" aria-label="Show">
+            {[['all', 'All'], ['needed', 'To find'], ['got', 'Ticked']].map(([key, label]) => (
+              <button key={key} aria-pressed={show === key} onClick={() => setShow(key)}>{label}</button>
+            ))}
+          </div>
+        )}
+        <button className="primary" onClick={() => openForm(null)}>+ Add</button>
       </div>
 
       {message && <Notice type={message.type} onClose={clearMessage}>{message.text}</Notice>}
@@ -152,6 +149,7 @@ export default function WishlistView({ lookups, settings, refreshKey, onChanged 
           Add what you want to buy - search Tamiya, scan a barcode, or type it in. Low supplies land here by themselves.</EmptyState>
       ) : <p className="empty card">{show === 'got' ? 'Nothing ticked yet.' : 'Everything is ticked off.'}</p>)}
 
+      {visible.length > 0 && <h3 className="section-title wish-sub">Supplies</h3>}
       <div className="wish-grid">
         {visible.map((w) => (
           <WishCard
@@ -160,6 +158,8 @@ export default function WishlistView({ lookups, settings, refreshKey, onChanged 
             onToggle={() => toggle(w)}
             onEdit={() => openForm(w)}
             onRemove={() => remove(w)}
+            extra={extraOf(extras, 'wish', w.wish_id)}
+            onDetails={() => openPanel('wanted', { kind: 'wish', wantedRef: w.wish_id, name: w.name })}
           />
         ))}
       </div>
@@ -185,7 +185,7 @@ export default function WishlistView({ lookups, settings, refreshKey, onChanged 
   )
 }
 
-function WishCard({ wish, onToggle, onEdit, onRemove }) {
+function WishCard({ wish, onToggle, onEdit, onRemove, extra, onDetails }) {
   const [confirmRemove, setConfirmRemove] = useState(false)
   const stop = (fn) => (e) => {
     e.stopPropagation()
@@ -228,19 +228,21 @@ function WishCard({ wish, onToggle, onEdit, onRemove }) {
           <OwnedBadge wish={wish} />
         </div>
         {wish.notes && <p className="wish-notes">{wish.notes}</p>}
+        <ExtraTags x={extra} />
       </div>
 
       <div className="wish-actions" onClick={(e) => e.stopPropagation()}>
         {!confirmRemove ? (
           <>
-            <button className="plain" onClick={stop(onEdit)}>Edit</button>
-            <button className="plain destructive" onClick={stop(() => setConfirmRemove(true))}>Remove</button>
+            <button className="plain small" onClick={stop(onEdit)}>Edit</button>
+            <button className="plain small" onClick={stop(onDetails)}>Details</button>
+            <button className="plain small destructive" onClick={stop(() => setConfirmRemove(true))}>Remove</button>
           </>
         ) : (
           <>
-            <span className="small">Remove from wishlist?</span>
-            <button className="danger" onClick={stop(onRemove)}>Remove</button>
-            <button className="plain" onClick={stop(() => setConfirmRemove(false))}>Cancel</button>
+            <span className="small">Remove it?</span>
+            <button className="danger small" onClick={stop(onRemove)}>Remove</button>
+            <button className="plain small" onClick={stop(() => setConfirmRemove(false))}>Cancel</button>
           </>
         )}
       </div>

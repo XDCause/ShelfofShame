@@ -4,6 +4,10 @@ Kits (76_supply_kits.sql): a supply can be part of another (part_of) - the nippe
 parts, and the parts its title says it comes with that you haven't added yet ("Includes Nipper, Hobby Knife..."):
 POST /supplies/{id}/parts adds them, copying the kit's brand, where and when you bought it, condition and place.
 Searching finds a part by its own name, and the kit by any of its parts' names. A part with no photo shows its kit's.
+
+Also on each supply (88_supplies_more.sql): its place's whole path (Paint rack › Drawer 2), when it was opened and when to
+check it (shelf life: its own, else its category's), its colour swatch, the build it's set aside for, its warranty, and a
+forecast from its stock history: how often you use it and roughly when the last one runs out.
 """
 import re
 from datetime import date
@@ -41,6 +45,11 @@ class SupplyIn(BaseModel):
     location_id: int | None = None
     notes: str | None = None
     part_of: int | None = None             # the kit it came in
+    opened_on: date | None = None          # first opened: shelf life counts from here (set by itself when opened)
+    shelf_months: int | None = Field(None, ge=1, le=240)   # check it after this long (else its category's)
+    swatch: str | None = Field(None, pattern=r"^#[0-9a-f]{6}$")   # its colour, for a dot and sorting by colour
+    reserved_model_id: int | None = None   # set aside for this build
+    warranty_until: date | None = None
 
 
 class SupplyPatch(BaseModel):
@@ -61,6 +70,11 @@ class SupplyPatch(BaseModel):
     location_id: int | None = None
     notes: str | None = None
     part_of: int | None = None
+    opened_on: date | None = None          # first opened: shelf life counts from here (set by itself when opened)
+    shelf_months: int | None = Field(None, ge=1, le=240)   # check it after this long (else its category's)
+    swatch: str | None = Field(None, pattern=r"^#[0-9a-f]{6}$")   # its colour, for a dot and sorting by colour
+    reserved_model_id: int | None = None   # set aside for this build
+    warranty_until: date | None = None
 
 
 class Adjust(BaseModel):
@@ -103,9 +117,26 @@ SELECT s.*, v.item_ref, v.brand, v.category, v.location, v.stock_status, v.total
                             WHERE c.brand_id = s.brand_id AND c.product_code = s.product_code
                             LIMIT 1)) AS barcode,
        {ON_WISHLIST} AS on_wishlist,
-       {USED_ON} AS used_on
+       {USED_ON} AS used_on,
+       location_path(s.location_id) AS location_path,
+       COALESCE(s.shelf_months, cat.shelf_months) AS shelf_life,
+       (s.opened_on + make_interval(months => COALESCE(s.shelf_months, cat.shelf_months)))::date AS check_by,
+       COALESCE(s.opened_on + make_interval(months => COALESCE(s.shelf_months, cat.shelf_months)) <= current_date
+                AND s.qty_on_hand > 0, false) AS check_due,
+       (SELECT m.name FROM models m WHERE m.model_id = s.reserved_model_id) AS reserved_for,
+       s.warranty_until IS NOT NULL AND s.warranty_until BETWEEN current_date AND current_date + 30 AS warranty_soon,
+       u.used_year,
+       CASE WHEN u.used_year >= 2 THEN round((u.used_year * 30.44 / u.days)::numeric, 1)::float8 END AS uses_per_month,
+       CASE WHEN u.used_year >= 2 AND s.qty_on_hand > 0
+            THEN current_date + floor(s.qty_on_hand * u.days / u.used_year)::int END AS out_by
 FROM supplies s
 JOIN v_supplies v USING (supply_id)
+JOIN categories cat ON cat.category_id = s.category_id
+-- how much it's been used in the last year (the stock history's "used" changes), over how many days
+LEFT JOIN LATERAL (SELECT sum(-m.change)::int AS used_year,
+                          greatest(30, extract(epoch FROM now() - min(m.created_at)) / 86400)::float8 AS days
+                   FROM stock_movements m WHERE m.supply_id = s.supply_id AND m.reason = 'used'
+                     AND m.created_at > now() - interval '365 days') u ON true
 LEFT JOIN product_info p ON p.brand_id = s.brand_id AND p.product_code = s.product_code
 -- the kit it came in (a sub-select, so "supply_id" stays unambiguous for the WHERE clauses added to this)
 LEFT JOIN LATERAL (SELECT k.name AS kit_name, k.product_code AS kit_code, kp.product_info_id AS info_id,
@@ -269,6 +300,13 @@ def update_supply(supply_id: int, body: SupplyPatch):
                 raise HTTPException(422, "A supply can't be part of itself.")
             check_kit(conn, supply_id, data["part_of"])
         before = stock_status(conn, supply_id)
+        if data.get("reserved_model_id") is not None:
+            found(conn.execute("SELECT 1 FROM models WHERE model_id = %s", (data["reserved_model_id"],)).fetchone(), "Model")
+        # first opened (Sealed -> anything else): its shelf life starts today, unless you've given a day
+        if data.get("condition") not in (None, "Sealed") and "opened_on" not in data:
+            old = conn.execute("SELECT condition, opened_on FROM supplies WHERE supply_id = %s", (supply_id,)).fetchone()
+            if old and old["opened_on"] is None and old["condition"] in (None, "Sealed"):
+                data["opened_on"] = date.today()
         stock_reason(conn, "edited")
         update_row(conn, "supplies", "supply_id", supply_id, data)
         wish_id = auto_wishlist(conn, supply_id, before) if data else None  # e.g. -> Nearly empty

@@ -204,6 +204,15 @@ def run_all():
         STATE["running"] = False
 
 
+def _wanted_prices():
+    """With the weekly check: wanted Blue Sky gear's price and stock (wanted_more.refresh_weekly)."""
+    from . import wanted_more
+    try:
+        wanted_more.refresh_weekly()
+    except Exception:  # noqa: BLE001 - a shop down is no reason to stop
+        log.exception("Weekly wanted-price refresh failed")
+
+
 def start_weekly():
     """While the app runs: a check whenever the oldest result is a week old (looked at every 6 hours)."""
     def loop():
@@ -213,6 +222,7 @@ def start_weekly():
                     last = conn.execute("SELECT min(checked_at) AS t, count(*) AS n FROM site_checks").fetchone()
                 if last["n"] < len(CHECKS) or datetime.now(timezone.utc) - last["t"] > WEEKLY:
                     run_all()
+                    _wanted_prices()
             except Exception:  # database restarting...: say so, try again later
                 log.exception("Weekly site check failed")
             threading.Event().wait(6 * 3600)

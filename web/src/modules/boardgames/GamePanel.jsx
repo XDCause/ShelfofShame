@@ -326,8 +326,8 @@ function GameForm({ game, onClose, onCancel, onSaved }) {
 // The picker also offers "Someone else's game": type its name (a friend's copy) - it's added to your
 // games as Played elsewhere. "Didn't finish" marks an abandoned game (no winner).
 const ELSEWHERE = 'elsewhere'
-function PlayForm({ gameId, games, onSaved, onCancel }) {
-  const { form, set, payload } = useRecordForm(PLAY_FIELDS, null, { played_on: today() })
+function PlayForm({ gameId, games, onSaved, onCancel, day = null }) {
+  const { form, set, payload } = useRecordForm(PLAY_FIELDS, null, { played_on: day ?? today() })
   const [pick, setPick] = useState(gameId ?? '')
   const [otherName, setOtherName] = useState('')
   const [unfinished, setUnfinished] = useState(false)
@@ -390,7 +390,8 @@ function PlayForm({ gameId, games, onSaved, onCancel }) {
 }
 
 // "Log a play" from Home or the Plays page: pick the game, then the same form.
-export function PlayPanel({ gameId = null, onClose }) {
+// day: the calendar event's day it was played (Log it).
+export function PlayPanel({ gameId = null, day = null, onClose }) {
   const { changed, showToast } = useApp()
   const [games, setGames] = useState(null)
   useEffect(() => { api.listBoardGames().then((gs) => setGames(gs.filter((g) => g.status !== 'Gone'))).catch(() => setGames([])) }, [])
@@ -398,7 +399,7 @@ export function PlayPanel({ gameId = null, onClose }) {
     <Drawer title="Log a play" onClose={onClose}>
       {!games ? <p className="muted">Loading...</p> : games.length === 0
         ? <p className="empty">Add a game first (Board games, "+ Add game").</p>
-        : <PlayForm gameId={gameId} games={games} onCancel={onClose}
+        : <PlayForm gameId={gameId} games={games} onCancel={onClose} day={day}
             onSaved={(p) => { changed(); showToast(`Logged a play of ${p.game_name}`); onClose() }} />}
     </Drawer>
   )

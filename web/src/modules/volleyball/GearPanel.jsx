@@ -5,6 +5,8 @@ import { RowPhoto } from '../../components/RecordFields.jsx'
 import { useApp } from '../../core/app-context.js'
 import JournalMentions from '../../core/journal/JournalMentions.jsx'
 import { FormPanel } from './VolleyballPanels.jsx'
+import Fold from '../../components/Fold.jsx'
+import { Attachments, Maintenance, Warranty } from '../../components/supplyExtras.jsx'
 
 // Gear (shoes, knee pads, balls; boots, packs, poles...): one piece's panel, and finding it at a shop
 // (api/app/gear.py). Shared by the hobbies with gear: volleyball, hiking and shooting (gear.hobby).
@@ -153,6 +155,13 @@ export function GearPanel({ id = null, wanted = false, hobby: newHobby = 'volley
                 onClick={() => setCondition(c)}>{c}</button>
             ))}
           </div>
+          {gear && condition !== 'Wanted' && <>
+            <Fold title="Maintenance" detail="cleaning, new grips, service"><Maintenance kind="gear" id={gear.gear_id} hobby={hobby} name={gear.name} /></Fold>
+            <Fold title="Warranty and receipts" detail={gear.warranty_until ? `warranty until ${shortDate(gear.warranty_until)}` : 'receipts, manuals'}>
+              <Warranty value={gear.warranty_until} onChange={async (v) => { await api.updateGear(gear.gear_id, { warranty_until: v }); reload(); changed() }} />
+              <Attachments kind="gear" id={gear.gear_id} />
+            </Fold>
+          </>}
           {gear && <JournalMentions kind="gear" id={gear.gear_id} name={gear.name} onLeave={onClose} />}
         </>
       )}

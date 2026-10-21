@@ -46,6 +46,15 @@ def lookups():
             query = sql.SQL("SELECT t.{id} AS id, t.name, {counts} AS uses FROM {table} t ORDER BY t.name").format(
                 id=sql.Identifier(id_col), table=sql.Identifier(table), counts=counts)
             result[kind] = conn.execute(query).fetchall()
+        # Places nest (88_supplies_more.sql): each also has its whole path for dropdowns ("Paint rack > Drawer 2"), and one
+        # with places inside it is in use.
+        more = {r["id"]: r for r in conn.execute(
+            "SELECT location_id AS id, location_path(location_id) AS path, "
+            "(SELECT count(*) FROM storage_locations c WHERE c.parent_id = l.location_id)::int AS inside FROM storage_locations l").fetchall()}
+        for r in result["locations"]:
+            r["path"] = more[r["id"]]["path"]
+            r["uses"] += more[r["id"]]["inside"]
+        result["locations"].sort(key=lambda r: r["path"].lower())
     return result
 
 

@@ -114,7 +114,7 @@ export function SectionTabs() {
   const { pathname } = useLocation()
   const module = moduleFor(pathname)
   if (module) {
-    if (module.pages.length < 2) return null
+    // (a hobby with one page shows its one tab too: something on the banner's foot, like every other page - user, 2026-10-21)
     return (
       <nav className="section-tabs segmented" aria-label={`${module.name} pages`}>
         {module.pages.map((p) => <NavLink key={p.path} to={pageLink(module, p)}>{p.label}</NavLink>)}

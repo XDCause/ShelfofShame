@@ -48,13 +48,14 @@ class GearPatch(BaseModel):
     brand: str | None = None
     size: str | None = None
     condition: Condition | None = None
+    warranty_until: date | None = None
     purchase_date: date | None = None
     price_paid: Decimal | None = Field(None, ge=0)
     notes: str | None = None
 
 
 GEAR_SELECT = """
-SELECT g.gear_id, g.hobby, g.name, g.kind, g.brand, g.size, g.condition, g.purchase_date, g.price_paid,
+SELECT g.gear_id, g.hobby, g.name, g.kind, g.brand, g.size, g.condition, g.purchase_date, g.price_paid, g.warranty_until,
        g.notes, g.created_at, g.updated_at, g.photo IS NOT NULL AS has_photo,
        g.shop_name, g.shop_url, g.shop_price, g.shop_id,
        (SELECT count(*) FROM hike_gear hg WHERE hg.gear_id = g.gear_id) AS hikes,

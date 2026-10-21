@@ -10,7 +10,7 @@ same shape the real site gives. Only main.py calls it, and only with OUTSIDE_SIT
 """
 import logging
 
-from . import (bluesky, bookseries, bunnings, chesscom, exophase, frankfurter, gameology, goodgames, hasegawa, hlj, openlibrary,
+from . import (bluesky, bookseries, bunnings, chesscom, exophase, frankfurter, gameology, goodgames, hasegawa, hlj, linkpeek, openlibrary,
                openmeteo, overpass, stedi, steam, steamhunters, tamiya, trumpeter, webphoto, wikimedia)
 
 log = logging.getLogger("stand_ins")
@@ -163,6 +163,10 @@ def install():
     overpass._post = lambda data: {"elements": []}
     wikimedia._get = lambda url, params: {}
     bunnings._get = _refuse(bunnings.BunningsError, "Bunnings")
+    # "Add from a link": a product page, as the stand-in shop's (robots.txt: allowed)
+    linkpeek._get = lambda url, limit=None: (url, "" if url.endswith("/robots.txt") else
+        '<html><head><title>Stand-in shop</title><meta property="og:title" content="Stand-in Knee Pads">'
+        '<meta property="product:price:amount" content="39.95"></head><body></body></html>')
     bunnings.photo = lambda image: (PNG, "image/png")
     openmeteo._get = lambda url, params: ({"results": [{"name": "Brisbane", "admin1": "Queensland", "country": "Australia",
                                                         "latitude": -27.47, "longitude": 153.03, "country_code": "AU"}]}

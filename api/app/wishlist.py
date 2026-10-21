@@ -168,6 +168,11 @@ def move_to_inventory(conn, wish, shop):
                     %(notes)s)
             RETURNING supply_id""", {**wish, "shop": shop}).fetchone()["supply_id"]
 
+    # remembered in the wishlist's history (89_wishlist_more.sql): what, when, where, the price expected
+    conn.execute("INSERT INTO wanted_history (kind, ref, name, hobby, shop, expected, paid, wanted_on) "
+                 "VALUES ('wish', %s, %s, 'models', %s, %s, %s, %s)",
+                 (supply_id, wish["name"], shop, wish.get("est_price"), wish.get("est_price"), wish.get("created_at")))
+    conn.execute("DELETE FROM wanted_extras WHERE kind = 'wish' AND ref = %s", (wish["wish_id"],))
     conn.execute("DELETE FROM wishlist WHERE wish_id = %s", (wish["wish_id"],))
     supply = conn.execute("SELECT supply_id, item_ref, name, qty_on_hand FROM v_supplies WHERE supply_id = %s",
                           (supply_id,)).fetchone()

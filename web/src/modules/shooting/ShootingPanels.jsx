@@ -30,7 +30,8 @@ const NUMBER_FIELDS = ['range_id', 'rifle_id', 'ammo_id']
 const asNumbers = (data) => Object.fromEntries(Object.entries(data).map(([k, v]) => [k, NUMBER_FIELDS.includes(k) && v != null ? Number(v) : v]))
 
 // A session: a new one starts with what you used last (range, rifle, its ammo); once saved, add its groups.
-export function SessionPanel({ id = null, live = false, onClose }) {
+// day: the calendar event's day (Log it) for a new session.
+export function SessionPanel({ id = null, live = false, day = null, onClose }) {
   const { changed, showToast, openPanel } = useApp()
   const lists = useShootingLists()
   const things = useShootingThings()
@@ -49,7 +50,7 @@ export function SessionPanel({ id = null, live = false, onClose }) {
       return <Drawer title={s ? 'Session details' : 'Log a session'} onClose={onClose}><p className="muted">Loading...</p></Drawer>
     }
     const club = things.ranges.find((r) => r.counts_for_club)
-    const defaults = { shot_on: today(), kind: 'Practice', range_id: last?.range_id ?? club?.range_id, rifle_id: last?.rifle_id, ammo_id: last?.ammo_id }
+    const defaults = { shot_on: day ?? today(), kind: 'Practice', range_id: last?.range_id ?? club?.range_id, rifle_id: last?.rifle_id, ammo_id: last?.ammo_id }
     return (
       <FormPanel title={s ? 'Session details' : 'Log a session'} fields={sessionFields(lists, things)} record={s} defaults={defaults}
         onClose={editing ? () => setEditing(false) : onClose} saveLabel={s ? 'Save' : 'Start logging'}

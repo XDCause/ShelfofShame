@@ -10,6 +10,7 @@ import PhotoUpload from './PhotoUpload.jsx'
 import ScanButton from './ScanButton.jsx'
 import StockHistory from './StockHistory.jsx'
 import SupplyFields, { DETAIL_FIELDS, toForm, toPayload } from './SupplyFields.jsx'
+import { SupplyMore, Swatch } from './supplyExtras.jsx'
 
 // Everything about one supply in a side panel. Everyday changes (stock, condition, reorder,
 // location, last purchased, notes) save as you make them; what the item IS sits behind
@@ -188,7 +189,7 @@ export default function ItemPanel({ supplyId, lookups, reloadKey, onClose, onCha
               {item.has_image ? <img src={imageUrl(item)} alt="" /> : <span className="photo-missing">No photo</span>}
             </div>
             <div>
-              <h3 className="item-name">{item.name}</h3>
+              <h3 className="item-name"><Swatch hex={item.swatch} size={16} /> {item.name}</h3>
               <p className="item-sub mono">{[item.brand, item.product_code].filter(Boolean).join(' · ')}</p>
               <div className="chips">
                 {[item.category, item.paint_type, item.finish, item.size]
@@ -273,7 +274,7 @@ export default function ItemPanel({ supplyId, lookups, reloadKey, onClose, onCha
               <span className="field-label">Location</span>
               <select value={item.location_id ?? ''} onChange={(e) => save({ location_id: e.target.value ? Number(e.target.value) : null })}>
                 <option value="">—</option>
-                {lookups.locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+                {lookups.locations.map((l) => <option key={l.id} value={l.id}>{l.path ?? l.name}</option>)}
               </select>
             </label>
             <label className="field">
@@ -295,6 +296,8 @@ export default function ItemPanel({ supplyId, lookups, reloadKey, onClose, onCha
                 onBlur={() => saveText('notes')} />
             </label>
           </section>
+
+          <SupplyMore item={item} save={save} onOpenModel={onOpenModel} />
 
           {item.product_description && (
             <section className="panel-section">

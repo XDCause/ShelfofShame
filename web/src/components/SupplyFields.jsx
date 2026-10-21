@@ -114,7 +114,7 @@ export default function SupplyFields({ form, set, lookups, stock = false, reorde
           <Field label="Location">
             <select value={form.location_id} onChange={set('location_id')}>
               <option value="">—</option>
-              {lookups.locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+              {lookups.locations.map((l) => <option key={l.id} value={l.id}>{l.path ?? l.name}</option>)}
             </select>
           </Field>
           <Field label="Last purchased">

@@ -129,7 +129,7 @@ const TIMES = {
 // strip: a short, wide crop (a card's picture strip) shows the horizon rather than the foot of the hills.
 // time and extras make each area's picture its own: clouds, birds, snow, lake, fog, aurora, trees (lone pines on the
 // hills), moon (a crescent in the evening sky), rays (sunbeams fanning from the sun), meadow (wildflowers on the near
-// hill), rainbow (a soft arc behind the hills, after rain). All natural - no buildings (user, 2026-10-21); with neither given it's
+// hill), rainbow (a soft arc behind the hills, after rain), stars (the first ones of the evening), distant (lower mountains, more sky). All natural - no buildings (user, 2026-10-21); with neither given it's
 // drawn exactly as it always was (Home's).
 function Landscape({ scene = 'peaks', hue = '#84a85c', seed = 7, className = '', strip = false, time = 'golden', extras = [] }) {
   const id = useId().replace(/:/g, '')
@@ -159,7 +159,7 @@ function Landscape({ scene = 'peaks', hue = '#84a85c', seed = 7, className = '',
   const ridges = Array.from({ length: layers }, (_, i) => {
     const t = i / (layers - 1)
     const base = coast ? seaLine + 2 : H * (0.5 + t * 0.42)
-    const height = coast ? 70 + t * 40 : (scene === 'peaks' ? 260 : 150) * (1 - t * 0.45)
+    const height = (coast ? 70 + t * 40 : (scene === 'peaks' ? 260 : 150) * (1 - t * 0.45)) * (has('distant') ? 0.55 : 1)
     const pts = scene === 'mesa' && t < 0.7 ? buttes(rand, { base: base - 10, height: 150 * (1 - t * 0.35) })
       : ridge(rand, { base, height: scene === 'mesa' ? height * 0.4 : height, rough: scene === 'peaks' ? 0.56 : 0.5, smooth: scene !== 'peaks' || t > 0.7 })
     // far hills fade into the haze (the coast's are all far: across the water, so never near-black)
@@ -173,6 +173,8 @@ function Landscape({ scene = 'peaks', hue = '#84a85c', seed = 7, className = '',
       .map(([x, y]) => [x, Math.min(y + ease((x - W * 0.2) / (W * 0.34)) * 340, H + 10)])
   })()
   const stars = night && Array.from({ length: 90 }, () => [rand() * W, rand() * H * 0.55, rand() * 1.4 + 0.3, rand() * 0.7 + 0.2])
+  // the first stars of the evening (not night): fewer and fainter, in the band a banner shows
+  const dusk = !night && has('stars') && Array.from({ length: 55 }, () => [more() * W, H * (0.1 + more() * 0.32), more() * 1.2 + 0.5, more() * 0.5 + 0.3])
   // Clouds: a few soft lit puffs (a sky full of them when it's overcast).
   const clouds = (has('clouds') || time === 'overcast') && Array.from({ length: time === 'overcast' ? 8 : 3 + Math.floor(more() * 3) }, () => ({
     x: more() * W, y: H * (0.06 + more() * (time === 'overcast' ? 0.36 : 0.28)), w: 160 + more() * 260, h: 16 + more() * 22, o: 0.3 + more() * 0.3 }))
@@ -181,7 +183,9 @@ function Landscape({ scene = 'peaks', hue = '#84a85c', seed = 7, className = '',
     x: Math.max(40, Math.min(W - 40, sunX + (more() - 0.5) * 560)), y: H * (0.12 + more() * 0.24), s: 7 + more() * 8 }))
   const lakeAfter = Math.floor(layers / 2)          // (a lake shows between the middle and the near hills)
   // (a page banner shows roughly the middle band of the picture, below the navigation bar: about y 200 - 480)
-  const moon = has('moon') && { x: W * (0.62 + more() * 0.2), y: H * (0.41 + more() * 0.04), r: 28 }
+  const moon = has('moon') && (has('distant')       // (lower hills leave sky higher up: there, right of the search bar)
+    ? { x: W * (0.715 + more() * 0.03), y: H * (0.27 + more() * 0.03), r: 24 }   // (a phone shows about 0.24 - 0.76 of the width)
+    : { x: W * (0.62 + more() * 0.2), y: H * (0.41 + more() * 0.04), r: 28 })
   const rays = has('rays') && Array.from({ length: 7 }, (_, k) => ({ a: Math.PI - 1.3 + k * 0.43 + more() * 0.12, w: 0.03 + more() * 0.05 }))
   const nearHill = layers - 2                        // the meadow's hill (the nearest one is mostly under the page)
   const rainbow = has('rainbow') && { x: W * (0.6 + more() * 0.15), y: H * 0.86, r: 330 + more() * 60 }
@@ -233,6 +237,7 @@ function Landscape({ scene = 'peaks', hue = '#84a85c', seed = 7, className = '',
       </defs>
       <rect width={W} height={H} fill={`url(#sky${id})`} />
       {stars && stars.map(([x, y, r, o], i) => <circle key={i} cx={x.toFixed(1)} cy={y.toFixed(1)} r={r.toFixed(2)} fill="#fff" opacity={o.toFixed(2)} />)}
+      {dusk && dusk.map(([x, y, r, o], i) => <circle key={`d${i}`} cx={x.toFixed(1)} cy={y.toFixed(1)} r={r.toFixed(2)} fill="#fff" opacity={o.toFixed(2)} />)}
       {/* northern lights: soft ribbons across the night sky */}
       {night && has('aurora') && [0, 1].map((k) => {
         const y0 = H * (0.12 + k * 0.1)

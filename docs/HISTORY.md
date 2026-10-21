@@ -1969,4 +1969,74 @@ DBeaver connection confirmed working (2026-10-11).
    - Lessons: stock lines ("Added XF-1") swamped Today and the review - supplies aren't something to write about. A
      review says "Played @Catan" about days already logged, and the page offered "Log a play?" (a second play): pages
      tagged review make no suggestions.
+5i. **The calendar grows** (2026-10-21; from a scan of Google / Apple Calendar, Fantastical, Notion Calendar, Sunsama,
+   TimeTree - user picked all but phone sync / import / reminders).
+   - 87_calendar_more.sql: repeats + monthly, monthly_nth (2nd Saturday; 5th = last), yearly (29 Feb -> 28th), weekdays
+     (repeat_days, 0 = Mon) with repeat_every; countdown, lat / lon, checklist JSONB; todos.plan_on / plan_time /
+     plan_minutes (time-blocking). calendar.days_of walks day by day through on_day(); /calendar also returns todos
+     (due or planned), goals ending (target_date) and holidays. api/app/holidays.py: Queensland's public holidays from the
+     rules (Easter by Meeus, weekend substitutes, Ekka = the Wednesday 10-16 Aug) - no outside source.
+   - api/app/calendar_more.py: parse (quick add in plain words: days, dates, times and ranges, "for 2 hours", repeats,
+     "until", "at <place>", hobby from keywords; tested on 9 phrases), search, countdowns, weather (openmeteo.long_forecast,
+     16 days, an hour's cache; the event's place else Gardening's home), balance (planned minutes vs each hobby's logged
+     minutes / days), year, bring (gear / rifles + ammo / packing lists), move (one day of a repeating event = skip +
+     one-off copy).
+   - Web: CalendarPage (Month / Week / Agenda / Year, Show ▾ layers + hobbies remembered per device, drag events and
+     to-dos to a day), CalendarViews (Week's hour grid with lanes, drag to a time; Agenda; Year heatmap by activity or
+     mood; To plan tray), calendarParts (quick add, search, countdowns - also on Home's Coming up -, balance, Log it:
+     volleyball / board games / shooting open their log for the day, others their page; "Logged ✓" when that hobby's
+     log has the day), EventPanel (repeat kinds, weekday picks, place for the weather, countdown, What to bring).
+   - Fixed on the way: Goals' "Hours played" summed vg_playtime's running TOTALS (it holds each game's total per day) -
+     now each day's change (vgplaytime.PLAYED), like the balance. And dev.ps1 / promote.ps1 threw away `docker compose
+     build` failures: a lint warning left the OLD web running while the script said it built (dev showed the old
+     calendar) - both now stop and say so.
+5j. **Supplies: every hobby's kit** (2026-10-21; user: "broad like the wishlist ... hobby filtering then down another
+   layer"). The count and value at the top went. api/app/owned.py: GET /api/owned - volleyball / hiking gear you have,
+   garden supplies and seeds (Have / Running low), rifles in use and ammo (rounds left), each with its kind and the panel
+   that opens it. InventoryView: a hobby row (All hobbies, Models = the supplies, then each hobby with kit; remembered per
+   device), then that hobby's own kinds (Models: its categories). All hobbies shows a section per hobby.
+5k. **Supplies: tidier, then twelve more** (2026-10-21; user: "too many options and buttons", then from a scan of paintRack,
+   Sortly, Grocy and Homebox: "do 1 to 12"). The page keeps search + Add, the hobby row and Options; categories are the
+   group headings (no chips), "N need attention" on a hobby's heading filters to those, the rest is under Options.
+   88_supplies_more.sql: storage_locations.parent_id (places nest; names unique among siblings; location_path(id) - the
+   arrow is chr(8250) so the file stays ASCII: the test database read the literal character wrongly), categories.shelf_months
+   (seeded for paint, glue...), supplies.opened_on (set when first opened) / shelf_months / counted_at / swatch /
+   reserved_model_id / warranty_until, gear.warranty_until, attachments (receipts, manuals: PDF or photo, 10 MB, removed
+   with their item by trigger), todos.supply_id / gear_id (maintenance = a repeating to-do; its next keeps the link).
+   supplies.py SUPPLY_SELECT adds location_path, check_by / check_due, reserved_for, warranty_soon and a forecast from the
+   stock history (uses_per_month, out_by: 2+ uses in the last year). api/app/supplies_more.py: places (+ move, QR SVG by
+   segno - the full SVG: an <img> needs its xmlns), stocktake + count (reason 'counted'), shop list, attachments, bulk
+   (move / category / reserve / wishlist / delete), value report (supplies, kits, board games, gear, rifles, ammo, garden).
+   Web: components/supplyExtras (colour families, a swatch guessed from the bottle photo in a canvas, the panel's shelf life /
+   colour / set aside / forecast / Maintenance / Warranty and receipts - the last two on gear too), InventoryView (row tags,
+   colour filter + sort, Select several with a bulk bar, Fill colours from photos, Tools links), core/supplies/SuppliesTools
+   (Places and labels, a place's page - where a label's QR leads -, Shopping mode, Stocktake, Value report).
+5l. **Wishlist: tidier, then ten more** (2026-10-21; user: "fix up the wishlist tab", then from a look at GiftList, Swym,
+   Keepa / CamelCamelCamel, Qapital: "do all 10"). Even spacing, one summary line, quiet placeholders (white only behind a
+   real photo), the same card size for every kind, Edit / Details / Remove as small links; a hobby row and Options (group by
+   shop or hobby, the bought history, add from a link, the gift list) like Supplies.
+   89_wishlist_more.sql: wanted things live in five tables, so wanted_extras / wanted_prices are keyed (kind, ref) - kind
+   wish | model | game | gear | garden - with for_model / for_goal, target_price, saved, in_stock + stock_checked, link;
+   wanted_history records every buy (the wishlist's own move_to_inventory too). api/app/wanted_more.py: extras (hobby, days
+   on the list, below target...), set extras, save, prices, check (Blue Sky gear by its product; Good Games board games by
+   handle - asked only when you tap: Good Games is paused in the weekly check), got / ungot (kit In stash, game Owned, gear
+   New, garden Have; a supply moves to your supplies), history, from-link + save. refresh_weekly runs after the weekly site
+   check (Blue Sky gear only). api/app/linkpeek.py: one product page you pasted (webphoto.check_address: public addresses
+   only, every redirect; 2 MB; robots.txt respected; BoardGameGeek and SteamHunters refused) - JSON-LD Product, else Open
+   Graph; stand-in in stand_ins.py, refused in conftest. Web: components/wishExtras (ExtraTags, WantedPanel, LinkPanel,
+   WishHistory, GiftList at /wishlist/gift), WishlistPage (every card has a tick: bought, with Undo).
 
+
+5m. **Something on every banner's foot** (2026-10-21; user: "check the banner issues ... with other modules with not having
+   the selector"). A script found pages whose picture ended in empty space where the tabs sit: Wishlist on a PC (its
+   Supplies / Wishlist tabs are phone-only), Hobbies, and Building my car (SectionTabs hid a hobby with one page). Now:
+   SectionTabs shows a one-page hobby's single tab; Hobbies has a "Find a hobby" search (pulled onto the picture by the
+   same rule as Journal's and Supplies' search); the Wishlist's hobby row and Options sit on the picture on a PC, frosted
+   like the tabs (styles.css, the banner section). Home's banner is left bare on purpose.
+
+5n. **One hobby pick - tried and taken back** (2026-10-21). One hobby pick shared by Goals, Journal, Supplies and the
+   Wishlist (and a guessed hobby on each journal page) was built in dev; the user didn't like it and asked for it to be
+   reversed the same day, before it was committed. Each page keeps its own filters (Supplies and the Wishlist their own
+   hobby rows; Goals by status; Journal by tag and mood). Don't bring it back without asking.
+   What the user wanted instead: the Wishlist's hobby row in the banner tabs' style (one frosted bar, the hobby you're
+   on a filled pill; styles.css, the banner section) - on the picture on a PC, just under it on a phone.

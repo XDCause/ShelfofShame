@@ -10,6 +10,8 @@ A habit goal (so many times a week / month) uses the sum sources too: "hike 20 k
 """
 from datetime import date
 
+from .vgplaytime import PLAYED
+
 SOURCES = {
     # key: (label, unit, hobby, mode, sql)  - sql gives day, amount
     "books_finished": ("Books finished", "books", "reading", "sum",
@@ -50,7 +52,7 @@ SOURCES = {
                            UNION ALL SELECT exo_completed_at::date, 1 FROM vg_other_games WHERE exo_completed_at IS NOT NULL AND NOT hidden"""),
     "achievements": ("Achievements unlocked", "achievements", "videogames", "sum",
                      "SELECT unlocked_at::date AS day, 1 AS amount FROM vg_achievements WHERE achieved AND unlocked_at IS NOT NULL"),
-    "hours_played": ("Hours played", "hours", "videogames", "sum", "SELECT day, minutes / 60.0 AS amount FROM vg_playtime"),
+    "hours_played": ("Hours played", "hours", "videogames", "sum", f"SELECT day, played / 60.0 AS amount FROM ({PLAYED}) p"),   # (each day's change: the table holds totals)
     "shooting_sessions": ("Shooting sessions", "sessions", "shooting", "sum", "SELECT shot_on AS day, 1 AS amount FROM shooting_sessions"),
     "rounds_fired": ("Rounds fired", "rounds", "shooting", "sum",
                      "SELECT shot_on AS day, rounds AS amount FROM shooting_sessions WHERE rounds IS NOT NULL"),

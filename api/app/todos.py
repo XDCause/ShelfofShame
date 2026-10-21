@@ -16,7 +16,7 @@ no day). Open ones come grouped by when: overdue, today, this week, later, no da
 
 (The tick boxes in journal pages are to-dos too: /journal/todos. The To-do page shows both.)
 """
-from datetime import date, timedelta
+from datetime import date, time, timedelta
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Query, Response
@@ -49,6 +49,8 @@ class TodoIn(BaseModel):
     hobby: str | None = Field(None, max_length=40)
     goal_id: int | None = Field(None, ge=1, le=2_000_000_000)
     repeats: Repeats = "never"
+    supply_id: int | None = Field(None, ge=1, le=2_000_000_000)   # maintenance for a tool ("clean the airbrush")
+    gear_id: int | None = Field(None, ge=1, le=2_000_000_000)     # ...or for gear ("new grips")
 
 
 class TodoOrder(BaseModel):
@@ -63,6 +65,11 @@ class TodoPatch(BaseModel):
     hobby: str | None = Field(None, max_length=40)
     goal_id: int | None = Field(None, ge=1, le=2_000_000_000)
     repeats: Repeats | None = None
+    plan_on: date | None = None                             # when you'll do it (the calendar: time-blocking)
+    plan_time: time | None = None
+    plan_minutes: int | None = Field(None, ge=5, le=720)
+    supply_id: int | None = Field(None, ge=1, le=2_000_000_000)
+    gear_id: int | None = Field(None, ge=1, le=2_000_000_000)
 
 
 def check(conn, data: dict):
@@ -70,6 +77,10 @@ def check(conn, data: dict):
         raise HTTPException(422, f"Unknown hobby: {data['hobby']}.")
     if data.get("goal_id") and not conn.execute("SELECT 1 FROM goals WHERE goal_id = %s", (data["goal_id"],)).fetchone():
         raise HTTPException(422, "That goal doesn't exist.")
+    if data.get("supply_id") and not conn.execute("SELECT 1 FROM supplies WHERE supply_id = %s", (data["supply_id"],)).fetchone():
+        raise HTTPException(422, "That supply doesn't exist.")
+    if data.get("gear_id") and not conn.execute("SELECT 1 FROM gear WHERE gear_id = %s", (data["gear_id"],)).fetchone():
+        raise HTTPException(422, "That gear doesn't exist.")
 
 
 def fetch(conn, todo_id: int) -> dict:
@@ -96,7 +107,14 @@ def next_due(due: date | None, today: date, repeats: str) -> date:
 
 
 @router.get("/todos")
-def list_todos(show: Literal["open", "done"] = "open", limit: int = Query(200, ge=1, le=1000)):
+def list_todos(show: Literal["open", "done"] = "open", limit: int = Query(200, ge=1, le=1000),
+               supply_id: int | None = None, gear_id: int | None = None):
+    """Open (or done) to-dos; supply_id / gear_id: just that one's maintenance."""
+    if supply_id is not None or gear_id is not None:
+        col, val = ("t.supply_id", supply_id) if supply_id is not None else ("t.gear_id", gear_id)
+        with db() as conn:
+            return conn.execute(SELECT + f" WHERE {col} = %s AND (t.done_at IS NULL) = %s " + OPEN_ORDER + " LIMIT %s",
+                                (val, show == "open", limit)).fetchall()
     with db() as conn:
         if show == "done":
             return conn.execute(SELECT + " WHERE t.done_at IS NOT NULL ORDER BY t.done_at DESC LIMIT %s", (limit,)).fetchall()
@@ -161,7 +179,7 @@ def done(todo_id: int):
         nxt = None
         if t["repeats"] != "never":
             today = conn.execute("SELECT current_date AS d").fetchone()["d"]
-            nid = insert_row(conn, "todos", {k: t[k] for k in ("title", "notes", "priority", "hobby", "goal_id", "repeats")}
+            nid = insert_row(conn, "todos", {k: t[k] for k in ("title", "notes", "priority", "hobby", "goal_id", "repeats", "supply_id", "gear_id")}
                              | {"due_on": next_due(t["due_on"], today, t["repeats"])}, "todo_id")
             nxt = fetch(conn, nid)
         return {"done": fetch(conn, todo_id), "next": nxt}

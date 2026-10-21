@@ -39,7 +39,7 @@ from fastapi import Depends, FastAPI
 
 from . import (activity, auth, banners, boardgames, bookseries, build, calendar, catalog, chess, colours, garden, garden_doctor, garden_guide,
                garden_items,
-               gear, goals, hiking, journal, journal_drawings, journal_more, shooting, shooting_sessions, shooting_shots, travel, travel_trip,
+               gear, goals, hiking, journal, journal_drawings, journal_more, calendar_more, owned, supplies_more, wanted_more, shooting, shooting_sessions, shooting_shots, travel, travel_trip,
                gundam, lookups, minis, vgsync, models, othergames, products, reading, readimport, reading_recs, settings, sitecheck, spending, supplies, vbclips, vbcoach, vgfind, vgfriends, videogames, wanted, webphoto,
                todos, volleyball, warhammer, wishlist)
 from .db import db
@@ -65,7 +65,7 @@ async def lifespan(_app):
 
 app = FastAPI(title="Off the Clock API", docs_url="/api/docs", openapi_url="/api/openapi.json", lifespan=lifespan)
 
-for part in (activity, banners, goals, todos, journal_drawings, journal_more, journal, calendar, supplies, wishlist, products, catalog, models, minis, build, colours,
+for part in (activity, banners, goals, todos, journal_drawings, journal_more, journal, calendar, calendar_more, owned, supplies_more, supplies, wanted_more, wishlist, products, catalog, models, minis, build, colours,
              boardgames, volleyball, gear, vbclips, vbcoach, othergames, vgfind, vgfriends, videogames, chess, reading, readimport, hiking, garden, garden_doctor, garden_guide, garden_items, shooting, shooting_sessions, shooting_shots, travel, travel_trip, reading_recs, bookseries, warhammer, gundam, spending, settings, sitecheck, lookups, webphoto, wanted):
     app.include_router(part.router, dependencies=[Depends(auth.require_session)])   # signed in only (auth.py)
 app.include_router(auth.router)                  # signing in itself: each route checks what it needs

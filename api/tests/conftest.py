@@ -26,7 +26,7 @@ def clean_database():
         conn.execute("TRUNCATE stock_movements, wishlist, barcode_catalog, product_info, supplies, "
                      "model_paints, models, catalog_products, model_sessions, model_log, model_log_photos, colour_groups, "
                      "colour_group_members, mixes, mix_parts, price_guide, journal_pages, tags, page_tags, "
-                     "journal_links, journal_images, journal_drawings, journal_notebooks, journal_templates, calendar_events, board_games, board_game_plays, gear, "
+                     "journal_links, journal_images, journal_drawings, journal_notebooks, journal_templates, attachments, wanted_extras, wanted_prices, wanted_history, calendar_events, board_games, board_game_plays, gear, "
                      "volleyball_games, volleyball_teams, volleyball_videos, vg_achievements, vg_games, vg_other_games, "
                      "chess_games, chess_archives, books, reading_log, book_quotes, vg_friends, volleyball_coach, goals, site_checks, hikes, hike_photos, hike_gear, garden_spaces, garden_containers, garden_plantings, garden_logs, garden_photos, garden_tasks, garden_items, shooting_ranges, rifles, ammo, shooting_sessions, shooting_groups, shooting_shots, shooting_media, rifle_logs, dope_rows, trips, trip_places, travel_countries, vg_playtime, banners, auth_account, auth_recovery_codes, auth_sessions, auth_passkeys, auth_failures, todos "
                      "RESTART IDENTITY CASCADE")
@@ -50,6 +50,7 @@ def clean_database():
                                ('Acrylic paint, 10ml', NULL, 'Acrylic', '10ml', 3.95, 2)""")
         conn.execute("DELETE FROM brands WHERE name NOT IN ('Tamiya', 'Milliput', 'Microscale', 'Other')")
         conn.execute("DELETE FROM categories WHERE name LIKE 'Test %'")
+        conn.execute("DELETE FROM storage_locations WHERE parent_id IS NOT NULL")   # (places inside others: only tests make them)
         conn.execute("DELETE FROM storage_locations WHERE name LIKE 'Test %'")
     yield
 
@@ -65,7 +66,7 @@ def no_real_steam(monkeypatch):
     to fake one fails."""
     import httpx
 
-    from app import (bluesky, bookseries, bunnings, chess, goodgames, chesscom, exophase, frankfurter, hiking, openlibrary, openmeteo,
+    from app import (bluesky, bookseries, bunnings, chess, goodgames, chesscom, exophase, frankfurter, hiking, linkpeek, openlibrary, openmeteo,
                      overpass,
                      reading, steam,
                      stedi, steamhunters, trumpeter, videogames, gameology, ucp, wikimedia)
@@ -108,6 +109,7 @@ def no_real_steam(monkeypatch):
     monkeypatch.setattr(frankfurter, "_get", refusing(frankfurter.RatesError))
     frankfurter._cache.clear()
     monkeypatch.setattr(trumpeter, "_get", refusing(connect_error))
+    monkeypatch.setattr(linkpeek, "_get", refusing(linkpeek.LinkError))
     monkeypatch.setattr(trumpeter, "PAUSE", 0)
     hiking.LOOKING.clear()
     auth.CHALLENGES.clear()

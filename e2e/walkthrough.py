@@ -163,15 +163,18 @@ def inventory_loads(page):
     expect(page).to_have_url(BASE + "/supplies")            # ...moves to the core page
     expect(page.locator(".navbar h1")).to_contain_text("Hobby supplies")
     expect(page.locator("tr.row").first).to_be_visible(timeout=15000)
-    expect(page.locator("p.summary")).to_contain_text(f"{TOTAL} items")
-    assert page.locator("tr.row").count() == TOTAL
+    models = page.get_by_role("button", name=re.compile(r"^Models \d+$"))    # (other hobbies' kit shows too: just the supplies)
+    if models.count():
+        models.click()
+    expect(page.locator("tr.row")).to_have_count(TOTAL)
     shot(page, "d01_inventory")
 
 
 @step("Search narrows the list and the total follows")
 def search(page):
     page.get_by_label("Search", exact=True).fill("flat")
-    expect(page.locator("p.summary")).to_contain_text(f"of {TOTAL} items", timeout=5000)
+    expect(page.locator("tr.row")).not_to_have_count(TOTAL, timeout=5000)
+    expect(page.get_by_role("button", name="Clear filters")).to_be_visible()
     n = page.locator("tr.row").count()
     assert 0 < n < TOTAL, n
     shot(page, "d02_search_flat", full=False)
@@ -179,14 +182,14 @@ def search(page):
     expect(page.locator("tr.row")).to_have_count(TOTAL)
 
 
-@step("Category chip filters, tapping again clears")
+@step("Options: the category filter narrows the list, Every category clears it")
 def chip(page):
-    paint = page.get_by_role("button", name=re.compile(r"^Paint \d+$"))
-    paint.click()
-    expect(page.locator("p.summary")).to_contain_text(f"of {TOTAL} items")
-    n = page.locator("tr.row").count()
-    assert n == PAINTS, n
-    paint.click()
+    page.locator(".inv-menu > summary").click()
+    page.get_by_label("Category").select_option("Paint")
+    expect(page.locator("tr.row")).to_have_count(PAINTS)
+    expect(page.locator(".inv-menu > summary")).to_contain_text("1 on")
+    page.get_by_label("Category").select_option("")
+    page.locator(".inv-menu > summary").click()
     expect(page.locator("tr.row")).to_have_count(TOTAL)
 
 
@@ -194,11 +197,12 @@ def chip(page):
 def groups(page):
     expect(page.get_by_label("Group by")).to_have_value("category")
     paint = page.locator("details.inv-group", has=page.locator("summary", has_text=re.compile(r"^Paint")))
-    expect(paint.locator("summary")).to_contain_text(f"{PAINTS} ·")
+    expect(paint.locator("summary .fold-detail")).to_have_text(str(PAINTS))
     paint.locator("summary").click()
     expect(paint.locator("tr.row").first).to_be_hidden()
     expect(page.locator("tr.row:visible")).to_have_count(TOTAL - PAINTS)
-    page.get_by_role("button", name="Close all").click()
+    page.locator(".inv-menu > summary").click()                      # (Group / Sort / Close all live under Options)
+    page.get_by_role("button", name="Close all groups").click()
     expect(page.locator("tr.row:visible")).to_have_count(0)
     shot(page, "d02b_groups_closed", full=False)
     page.reload()
@@ -208,8 +212,67 @@ def groups(page):
     expect(page.locator("tr.row:visible", has_text="Acrylic XF1 Flat Black")).to_be_visible()
     page.get_by_label("Search", exact=True).fill("")
     expect(page.locator("tr.row:visible")).to_have_count(0)      # closed again after the search
-    page.get_by_role("button", name="Open all").click()
+    page.locator(".inv-menu > summary").click()
+    page.get_by_role("button", name="Open all groups").click()
     expect(page.locator("tr.row:visible")).to_have_count(TOTAL)
+
+
+@step("Supplies: every hobby's kit - pick a hobby, then one of its kinds; a row opens its panel")
+def supplies_hobbies(page):
+    tag = MARK.replace("e2e", "sup")                  # (not MARK itself: the Volleyball step looks for its own gear by it)
+    made = [page.request.post(f"{BASE}/api/gear", data={"name": name, "hobby": "volleyball", "kind": kind}).json()
+            for name, kind in ((f"Pads {tag}", "Knee pads"), (f"Ball {tag}", "Ball"))]
+    page.reload()
+    page.get_by_role("button", name=re.compile(r"^Volleyball \d+$")).click()
+    expect(page.locator("tr.row", has_text=f"Pads {tag}")).to_be_visible()
+    expect(page.locator("tr.row", has_text="XF1 Flat Black")).to_have_count(0)        # no model supplies here
+    expect(page.locator("details.inv-group summary", has_text="Knee pads")).to_be_visible()   # its kinds are headings
+    page.locator("tr.row", has_text=f"Pads {tag}").click()
+    expect(drawer(page)).to_contain_text(f"Pads {tag}")
+    page.keyboard.press("Escape")
+    page.get_by_role("button", name=re.compile(r"^All hobbies")).click()
+    expect(page.locator(".inv-hobby-title", has_text="Volleyball")).to_be_visible()
+    shot(page, "d02c_supplies_hobbies", full=False)
+    page.get_by_role("button", name=re.compile(r"^Models \d+$")).click()
+    expect(page.locator("tr.row")).to_have_count(TOTAL)
+    for g in made:
+        page.request.delete(f"{BASE}/api/gear/{g['gear_id']}")
+
+
+@step("Supplies tools: places that nest, a QR label, a place's page moves a paint in, shopping, stocktake, value report, select several")
+def supplies_tools(page):
+    tag = MARK.replace("e2e", "pl")
+    rack = page.request.post(f"{BASE}/api/places", data={"name": f"Rack {tag}"}).json()
+    drawer = page.request.post(f"{BASE}/api/places", data={"name": "Top drawer", "parent_id": rack["id"]}).json()
+    page.goto(BASE + "/supplies/places")
+    row = page.locator(".sx-places li", has_text="Top drawer").filter(has=page.locator(f"a[href='/supplies/place/{drawer['id']}']"))
+    row.locator("input[type=checkbox]").check()
+    page.get_by_role("link", name="Print 1 label").click()
+    label = page.locator(".sx-label img")
+    expect(label).to_be_visible()
+    page.wait_for_function("() => document.querySelector('.sx-label img').naturalWidth > 0")     # the QR code drew
+    page.goto(BASE + f"/supplies/place/{drawer['id']}")
+    expect(page.locator(".sx-title")).to_contain_text(f"Rack {tag} › Top drawer")
+    page.get_by_label("Find a supply to move here").fill("XF1 Flat")
+    page.locator(".row-button", has_text="Move here").first.click()
+    expect(page.locator(".card", has_text="In here")).to_contain_text("XF1 Flat Black")
+    page.goto(BASE + "/supplies/shop")
+    expect(page.locator(".sx-title")).to_contain_text("Shopping at")
+    page.goto(BASE + "/supplies/stocktake")
+    first = page.locator(".sx-count-card h3").inner_text()
+    page.locator(".sx-count-actions .primary").click()
+    expect(page.locator(".sx-count-card h3")).not_to_have_text(first)
+    page.goto(BASE + "/supplies/report")
+    expect(page.locator(".sx-report-part").first).to_be_visible()
+    page.goto(BASE + "/supplies")
+    page.locator(".inv-menu > summary").click()
+    page.get_by_role("button", name="Select several…").click()
+    page.locator("tr.row").nth(0).click()
+    page.locator("tr.row").nth(1).click()
+    expect(page.locator(".inv-bulk")).to_contain_text("2 selected")
+    shot(page, "d02d_supplies_select", full=False)
+    page.locator(".inv-bulk").get_by_role("button", name="Done").click()
+    expect(page.locator(".inv-bulk")).to_have_count(0)
 
 
 @step("Item panel opens; condition Nearly empty makes it Low")
@@ -223,7 +286,7 @@ def condition_low(page):
     expect(d).to_contain_text("shows as Low")
     expect(d.locator(".wish-action")).to_contain_text("On wishlist")
     page.keyboard.press("Escape")
-    expect(page.get_by_role("button", name=re.compile("Needs attention"))).to_be_visible()
+    expect(page.get_by_role("button", name=re.compile("need attention"))).to_be_visible()
     row = page.locator("tr.row", has_text="Acrylic XF1 Flat Black")
     expect(row.locator("td.hide-xs .badge.low")).to_be_visible()
     expect(row.locator("td.hide-xs .tag", has_text="On wishlist")).to_be_visible()
@@ -342,6 +405,54 @@ def wishlist_buy(page):
     expect(notice).to_be_visible()
     notice.get_by_role("button", name="Close message").click()          # the green bar has a close button
     expect(notice).to_have_count(0)
+
+
+@step("Wishlist extras: details (save up, a price), tick a kit bought and it's in the history; add from a link; the gift list")
+def wishlist_extras(page):
+    tag = MARK.replace("e2e", "wk")
+    kit = page.request.post(f"{BASE}/api/models", data={"name": f"Kit {tag}", "status": "Wanted", "price_paid": 54}).json()
+    try:
+        _wishlist_extras(page, tag)
+    finally:                                          # (its kit and gear would change other steps' counts)
+        page.request.delete(f"{BASE}/api/models/{kit['model_id']}")
+        for g in page.request.get(f"{BASE}/api/gear").json():
+            if g["name"] == f"Pads {tag}":
+                page.request.delete(f"{BASE}/api/gear/{g['gear_id']}")
+
+
+def _wishlist_extras(page, tag):
+    page.goto(BASE + "/wishlist")                       # a fresh load (the step before ends here, so a nav click wouldn't fetch the new kit)
+    card = page.locator(".wanted-card", has_text=f"Kit {tag}")
+    card.get_by_role("button", name="Details").click()
+    d = drawer(page)
+    d.get_by_label("Amount to put aside").fill("20")
+    d.get_by_role("button", name="Put aside").click()
+    expect(d).to_contain_text("Saved $20.00 of $54.00")
+    d.get_by_label("A price you saw").fill("49.95")
+    d.get_by_role("button", name="Add price").click()
+    expect(d.locator(".wx-prices")).to_contain_text("$49.95")
+    page.keyboard.press("Escape")
+    expect(card).to_contain_text("Saved $20.00")
+    card.locator(".wanted-tick").click()
+    expect(card.locator(".wanted-tick")).to_have_attribute("aria-pressed", "true")
+    page.locator(".inv-menu > summary").click()
+    page.get_by_role("button", name="What I bought (history)").click()
+    expect(page.locator(".wx-history")).to_contain_text(f"Kit {tag}")
+    page.locator(".inv-menu > summary").click()
+    page.get_by_role("button", name="Back to the wishlist").click()
+    # add from a link (the walk-through's stand-in shop page)
+    page.locator(".inv-menu > summary").click()
+    page.get_by_role("button", name="Add from a shop link…").click()
+    d = drawer(page)
+    d.get_by_label("Product link").fill(f"https://shop.example.com/{tag}")
+    d.get_by_role("button", name="Read it").click()
+    expect(d.get_by_label("Name")).to_have_value("Stand-in Knee Pads")
+    d.get_by_label("Name").fill(f"Pads {tag}")
+    d.get_by_label("What is it").select_option("gear:volleyball")
+    d.get_by_role("button", name="Add to my wishlist").click()
+    expect(page.locator(".wanted-card", has_text=f"Pads {tag}")).to_be_visible()
+    page.goto(BASE + "/wishlist/gift")
+    expect(page.locator(".wx-gift-list").first).to_be_visible()
 
 
 @step("Bought item is in inventory with today's date; delete it")
@@ -503,7 +614,7 @@ def wishlist_panel(page):
 @step("Wishlist + Add: search Tamiya in the panel (search only, no tamiya.com fetch)")
 def shop_tamiya(page):
     go(page, "Wishlist")
-    expect(page.locator(".head-buttons button")).to_have_count(1)            # just + Add
+    expect(page.locator(".wish-head button")).to_have_count(1)              # just + Add
     page.locator(".wish-head").get_by_role("button", name="+ Add").click()
     d = drawer(page)
     expect(d.get_by_role("button", name="Use barcode")).to_be_visible()
@@ -1073,7 +1184,7 @@ def calendar(page):
     d.get_by_label("Sets you lost").fill("1")
     d.get_by_role("button", name="Log it").click()
     expect(page.locator(".toast")).to_contain_text("Won 3–1")
-    expect(detail.locator(".row-button", has_text=f"Volleyball comp {MARK}")).to_contain_text("Result in")
+    expect(detail.locator(".cal-planned", has_text=f"Volleyball comp {MARK}")).to_contain_text("Logged")
     expect(detail).to_contain_text("Volleyball vs Spikers")                    # what happened
     detail.get_by_role("button", name="Write about this day").click()
     expect(page).to_have_url(re.compile(r"/journal/\d+$"))
@@ -1308,7 +1419,8 @@ def journal_extras(page):
     page.get_by_label("New notebook's name").fill(f"Book {MARK}")
     page.get_by_role("button", name="Add", exact=True).click()
     expect(page.get_by_label("Notebook")).to_contain_text(f"Book {MARK}")
-    page.get_by_label("Private").check()
+    page.get_by_label("Private").click()
+    expect(page.get_by_label("Private")).to_be_checked()
     expect(page.locator(".save-status")).to_have_text("Saved", timeout=10000)
     # private: not in the list until asked for, then in its notebook
     go(page, "Journal")
@@ -1342,8 +1454,60 @@ def journal_extras(page):
     page.get_by_role("button", name="Delete", exact=True).last.click()
     page.get_by_role("link", name="Print / PDF").click()
     expect(page.locator(".jx-print-cover")).to_contain_text("pages")
-    page.get_by_label("Include private pages").check()
+    page.get_by_label("Include private pages").click()                    # (ticked by the address, a moment later)
+    expect(page.get_by_label("Include private pages")).to_be_checked()
     expect(page.locator(".jx-printed", has_text=f"Reflection {MARK}")).to_have_count(1)
+
+
+@step("Calendar extras: quick add in plain words, chosen weekdays, a countdown and a checklist, search, Week / Agenda / Year, Show, drag a day")
+def calendar_extras(page):
+    go(page, "Calendar")
+    quick = page.get_by_label("Add an event in plain words")
+    quick.fill(f"Club night {MARK} every mon and thu 7-9pm at the hall")
+    expect(page.locator(".cal-quick-read")).to_contain_text("every Mon & Thu")
+    expect(page.locator(".cal-quick-read")).to_contain_text("7pm–9pm")
+    page.locator(".cal-quick-read").get_by_role("button", name="Add", exact=True).click()
+    expect(page.locator(".toast")).to_contain_text(f"Club night {MARK} added")
+    # a countdown with what to bring, made from quick add's "Edit first"
+    quick.fill(f"Comp {MARK} in 10 days 8am")
+    page.locator(".cal-quick-read").get_by_role("button", name="Edit first").click()
+    d = drawer(page)
+    d.get_by_role("switch", name=re.compile("Count down to it")).check()
+    d.get_by_label("Add an item to bring").fill("Knee pads")
+    page.keyboard.press("Enter")
+    expect(d.locator(".cal-checklist")).to_contain_text("0/1 packed")
+    d.get_by_role("button", name="Add event", exact=True).click()
+    expect(page.locator(".cal-countdown", has_text=f"Comp {MARK}")).to_contain_text("10 days")
+    # search finds it; Week, Agenda and Year show
+    page.get_by_label("Search events").fill(f"club night {MARK}")
+    expect(page.locator(".cal-search-list")).to_contain_text(f"Club night {MARK}")
+    page.get_by_label("Search events").fill("")
+    page.locator(".section-tabs").get_by_role("link", name="Week", exact=True).click()
+    expect(page.locator(".cal-week-col")).to_have_count(7)
+    page.locator(".section-tabs").get_by_role("link", name="Agenda", exact=True).click()
+    expect(page.locator(".cal-agenda")).to_contain_text(f"Club night {MARK}")
+    shot(page, "d31b_calendar_agenda", full=False)
+    page.locator(".section-tabs").get_by_role("link", name="Year", exact=True).click()
+    expect(page.locator(".cal-year-month")).to_have_count(12)
+    page.locator(".section-tabs").get_by_role("link", name="Month", exact=True).click()
+    # Show: hiding planned events hides them
+    page.locator(".cal-menu > summary").click()
+    page.locator(".cal-menu-body").get_by_label("Planned events").uncheck()
+    expect(page.locator(".day-event", has_text=f"Club night {MARK}")).to_have_count(0)
+    page.locator(".cal-menu-body").get_by_label("Planned events").check()
+    page.locator(".cal-menu > summary").click()
+    # drag one day of the repeating event to another day: that day only
+    pill = page.locator(".day-event", has_text=f"Club night {MARK}").first
+    before = page.locator(".day-event", has_text=f"Club night {MARK}").count()
+    for attempt in range(2):                        # (a simulated HTML drag can miss right after a menu closes: once more)
+        pill.drag_to(page.locator("button.day").nth(41))
+        try:
+            expect(page.get_by_text("Moved that day only")).to_be_visible(timeout=6000)
+            break
+        except AssertionError:
+            if attempt:
+                raise
+    expect(page.locator(".day-event", has_text=f"Club night {MARK}")).to_have_count(before)
 
 
 @step("Mood: pick a face and a word; the list, its filter, Home's week and the calendar show it")
@@ -2445,7 +2609,9 @@ def wishlist_shops(page):
     expect(page.locator(".shop-heading").first).to_contain_text(page.request.get(f"{BASE}/api/settings").json()["default_shop"])
     section = page.locator(".shop-section", has=page.locator(".shop-heading", has_text="Good Games"))
     expect(section.locator(".wanted-card", has_text=f"Wantgame {MARK}")).to_be_visible()
-    page.locator(".shop-jump").get_by_role("link", name=re.compile("^Good Games")).click()
+    page.locator(".inv-hobbies").get_by_role("button", name=re.compile("^Board games")).click()         # the hobby row
+    expect(page.locator(".wanted-card", has_text=f"Wantgame {MARK}")).to_be_visible()
+    page.locator(".inv-hobbies").get_by_role("button", name="All hobbies").click()
     shot(page, "d59_wishlist_shops", full=False)
     page.request.delete(f"{BASE}/api/board-games/{game['game_id']}")
     # Gear you want, found at Blue Sky Athletics (Way of Wade) - its stand-in in this copy (nothing is added here).
@@ -2651,13 +2817,13 @@ with sync_playwright() as p:
     sign_in_page(browser, zone)
     desk = signed_in(browser.new_context(viewport={"width": 1280, "height": 860}, timezone_id=zone, ignore_https_errors=True)).new_page()
     watch(desk, "desktop")
-    for fn in (home, inventory_loads, search, chip, groups, condition_low, plus_minus, notes, edit_details, settings,
-               add_lookup, add_to_wishlist, wishlist_buy, delete_bought, scan_owned, scan_unknown,
+    for fn in (home, inventory_loads, search, chip, groups, supplies_hobbies, supplies_tools, condition_low, plus_minus, notes, edit_details, settings,
+               add_lookup, add_to_wishlist, wishlist_buy, wishlist_extras, delete_bought, scan_owned, scan_unknown,
                models, model_paste, add_model_hasegawa, add_model_trumpeter, undo, add_to_wishlist_button, duplicate_check, wishlist_panel, shop_tamiya, used_up,
                scalemates, desktop_tabs, model_edit, lists_protect, kit_paints, timer, build_log, stash, mixes,
                matches, used_on, gundam, bandai_lookup, warhammer, journal_write, journal_links, journal_from_model,
                journal_suggestion, journal_todo, global_search, journal_wishlist, banners, panel_focus, appearance,
-               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, journal_extras, mood, video_games, chess, reading, warhammer_range, warhammer_minis, gundam_range, board_game_kinds, board_game_elsewhere, volleyball_coach, video_game_friends, wishlist_shops, goals, todos, supply_kit, hiking, gardening, shooting, travel, bunnings_button, settings_more, no_panel):
+               build_underway, calendar, volleyball, board_games, whiteboard, sketch_block, writing_mode, journal_extras, calendar_extras, mood, video_games, chess, reading, warhammer_range, warhammer_minis, gundam_range, board_game_kinds, board_game_elsewhere, volleyball_coach, video_game_friends, wishlist_shops, goals, todos, supply_kit, hiking, gardening, shooting, travel, bunnings_button, settings_more, no_panel):
         fn(desk)
     ctx = signed_in(browser.new_context(**p.devices["iPhone 13"], timezone_id=zone, ignore_https_errors=True))
     mob = ctx.new_page()

@@ -30,6 +30,8 @@ import JournalCalendar from './core/journal/JournalCalendar.jsx'
 import JournalInsights from './core/journal/JournalInsights.jsx'
 import JournalMap from './core/journal/JournalMap.jsx'
 import JournalPrint from './core/journal/JournalPrint.jsx'
+import { LabelsPage, PlacePage, PlacesPage, ShopMode, Stocktake, ValueReport } from './core/supplies/SuppliesTools.jsx'
+import { GiftList, LinkPanel, WantedPanel } from './components/wishExtras.jsx'
 import { corePageFor, SectionTabs, Sidebar, TabBar } from './core/Navigation.jsx'
 import { MODULE_PANELS, MODULES, moduleFor, pageFor } from './modules/index.js'
 
@@ -48,7 +50,7 @@ const APP_NAME = 'Off the Clock'
 // Also here: the Undo bar after any -/+, the running-timer banner, and Scan in the nav bar.
 
 // Panels opened by type with openPanel(type, props).
-const PANELS = { event: EventPanel, todo: TodoPanel, ...MODULE_PANELS }
+const PANELS = { event: EventPanel, todo: TodoPanel, wanted: WantedPanel, wantedlink: LinkPanel, ...MODULE_PANELS }
 
 // Old addresses from before supplies moved out of the models hobby keep working.
 function MovedTo({ to }) {
@@ -243,6 +245,13 @@ export default function App() {
                   <Route path="/journal/print" element={<JournalPrint />} />
                   <Route path="/journal/:id" element={<JournalPage />} />
                   <Route path="/calendar" element={<CalendarPage />} />
+                  <Route path="/wishlist/gift" element={<GiftList />} />
+                  <Route path="/supplies/places" element={<PlacesPage />} />
+                  <Route path="/supplies/place/:id" element={<PlacePage />} />
+                  <Route path="/supplies/labels" element={<LabelsPage />} />
+                  <Route path="/supplies/shop" element={<ShopMode />} />
+                  <Route path="/supplies/stocktake" element={<Stocktake />} />
+                  <Route path="/supplies/report" element={<ValueReport />} />
                   <Route path="/supplies" element={<InventoryView refreshKey={refreshKey}
                     onAdjusted={adjusted} onOpen={openItem} onAdd={openAdd} />} />
                   <Route path="/wishlist" element={<WishlistPage lookups={lookups} settings={settings}

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router'
 import { ChevronIcon } from '../components/icons.jsx'
 import { BannerArt } from '../components/PageBanner.jsx'
@@ -8,9 +9,16 @@ import { MODULES } from '../modules/index.js'
 // Every hobby, with its numbers: the phone's Hobbies tab (wide screens list them in the sidebar).
 export default function HobbiesPage() {
   const banners = useBanners()
+  const [q, setQ] = useState('')
+  const shown = MODULES.filter((m) => !q.trim() || `${m.name} ${m.what ?? ''}`.toLowerCase().includes(q.trim().toLowerCase()))
   return (
     <section className="page hobbies">
-      {MODULES.map((m) => (
+      {/* a search on the banner's foot, like Journal and Supplies (it narrows the cards) */}
+      <div className="toolbar hobbies-find">
+        <input type="search" className="search" placeholder="Find a hobby..." value={q} onChange={(e) => setQ(e.target.value)} aria-label="Find a hobby" />
+      </div>
+      {shown.length === 0 && <p className="empty card">No hobby matches.</p>}
+      {shown.map((m) => (
         <section key={m.id} className="card hobby-card" data-hobby={m.id} style={{ '--hue': m.hue }}>
           <Link to={`/${m.id}`} className="hobby-art" tabIndex={-1} aria-hidden="true"><BannerArt area={m} photo={banners[m.id]} strip /></Link>
           <Link to={`/${m.id}`} className="hobby-head">

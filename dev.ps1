@@ -30,6 +30,8 @@ function Start-Dev {
     Write-Host 'Building and starting the dev copy...' -ForegroundColor Cyan
     $code = Get-CodeHash $DevRoot       # the code this build is made from (for run_e2e's "passed" stamp)
     In-Dev { docker compose build 2>$null | Out-Null }
+    # A failed build (a lint warning, a CSS clash) leaves the old containers running: say so instead of carrying on.
+    if ($LASTEXITCODE -ne 0) { Write-Host 'The build failed - the dev copy still runs the OLD code. Run "docker compose build" in the dev folder to see why.' -ForegroundColor Red; exit 1 }
     # its HTTPS certificate before nginx starts (made if missing or this PC's names / addresses changed)
     powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $DevRoot 'make-cert.ps1')
     if ($LASTEXITCODE -ne 0) { exit 1 }

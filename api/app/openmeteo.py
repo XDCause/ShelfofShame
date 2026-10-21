@@ -78,6 +78,27 @@ def forecast(lat: float, lon: float) -> list[dict]:
     return days
 
 
+def long_forecast(lat: float, lon: float) -> list[dict]:
+    """The next 16 days at a place (the calendar's events): [{day, max, min, rain_chance, code, sky, icon}]. Kept an hour."""
+    key = (round(lat, 2), round(lon, 2), "16")
+    hit = _cache.get(key)
+    if hit and time.time() - hit[0] < KEEP:
+        return hit[1]
+    data = _get(FORECAST, {"latitude": key[0], "longitude": key[1], "timezone": "auto", "forecast_days": 16,
+                           "daily": "temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code"})
+    d = data.get("daily") or {}
+
+    def col(name, i):
+        values = d.get(name) or []
+        return values[i] if i < len(values) else None
+    days = [{"day": day, "max": col("temperature_2m_max", i), "min": col("temperature_2m_min", i),
+             "rain_chance": col("precipitation_probability_max", i), "code": col("weather_code", i),
+             "sky": sky(col("weather_code", i))[0], "icon": sky(col("weather_code", i))[1]}
+            for i, day in enumerate(d.get("time") or [])]
+    _cache[key] = (time.time(), days)
+    return days
+
+
 def day_weather(lat: float, lon: float, day: str) -> dict | None:
     """One day's weather at a place (a journal page's): {sky, icon, max, min, rain_mm}. Their forecast API also keeps the
     last 92 days (and the next two weeks); None if it has nothing for that day."""
