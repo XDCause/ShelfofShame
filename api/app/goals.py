@@ -213,7 +213,7 @@ def shaped(conn, g: dict, now: date) -> dict:
         g["current_value"] = m["current"]
         if g["start_value"] is None:
             g["start_value"] = m["start"]
-        g["series"], g["auto_start"] = m["series"], m["start"]
+        g["series"], g["auto_start"], g["source_latest"], g["history"] = m["series"], m["start"], m["latest"], m["history"]
         moved.append(m["last_day"])
     g["habit"] = habit(conn, g, now) if g["kind"] == "habit" else None
     if g["habit"]:
@@ -333,6 +333,8 @@ def list_goals(status: Status | None = None):
         now = today(conn)
         rows = conn.execute(GOAL_SELECT + ORDER).fetchall()
         goals = with_children([shaped(conn, g, now) for g in rows], now)      # (all of them: a parent needs its goals)
+        for g in goals:
+            g.pop("history", None)                     # (the list doesn't draw charts: a goal's own page has it)
         shown = [g for g in goals if not status or g["status"] == status]
         return {"goals": shown, "statuses": STATUSES, "this_year": now.year,
                 "counts": {s: sum(1 for g in goals if g["status"] == s) for s in STATUSES}}

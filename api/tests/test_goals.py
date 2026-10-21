@@ -125,14 +125,32 @@ def test_a_goal_that_counts_books_by_itself(client):
 
 
 def test_a_rating_goal_starts_where_you_were(client):
+    """A chess.com rating: its rated games in exact order (several on one day), then chess.com's own latest - the
+    Chess tab's number. Club games are another rating, counted only by club_rating."""
+    import json
     with db() as conn:
-        for days, rating in [(-40, 1150), (-10, 1190), (-2, 1230)]:
-            conn.execute("""INSERT INTO chess_games (source, played_at, time_class, rated, colour, my_rating, opp_name, result)
-                            VALUES ('otb', %s, 'rapid', true, 'white', %s, 'X', 'win')""", (D(days), rating))
+        for at, rating in [(D(-40), 1150), (D(-10), 1190)]:
+            conn.execute("""INSERT INTO chess_games (source, played_at, time_class, rated, rules, colour, my_rating, opp_name, result)
+                            VALUES ('chesscom', %s, 'rapid', true, 'chess', 'white', %s, 'X', 'win')""", (at, rating))
+        for hour, rating in [(20, 1236), (9, 1260), (14, 1248)]:      # the same day: the 8 pm one is the latest
+            conn.execute("""INSERT INTO chess_games (source, played_at, time_class, rated, rules, colour, my_rating, opp_name, result)
+                            VALUES ('chesscom', %s::date + make_interval(hours => %s), 'rapid', true, 'chess', 'black', %s, 'Y', 'win')""",
+                         (D(-3), hour, rating))
+        conn.execute("""INSERT INTO chess_games (source, played_at, time_class, rated, colour, my_rating, opp_name, result)
+                        VALUES ('otb', %s, 'rapid', true, 'white', 1500, 'Club', 'win')""", (D(-1),))
     g = client.post("/api/goals", json={"title": "Reach 1400", "source": "chess_rapid", "target_value": 1400,
                                         "started_on": D(-20).isoformat()}).json()
-    assert (g["start_value"], g["current_value"]) == (1150, 1230)      # the rating when it began, and now
-    assert abs(g["progress"] - 80 / 250) < 1e-9
+    assert (g["start_value"], g["current_value"]) == (1150, 1236)      # the rating when it began, and the last game's
+    assert [v for _, v in g["history"]] == [1150, 1190, 1236]         # its whole story, a point a day (that day's last)
+    assert "history" not in client.get("/api/goals").json()["goals"][0]   # (only a goal's own page draws it)
+    assert abs(g["progress"] - 86 / 250) < 1e-9
+    with db() as conn:                                                 # chess.com says 1241 now: that's where you are
+        stats = {"chess_rapid": {"last": {"rating": 1241, "date": int(conn.execute("SELECT extract(epoch FROM now())::bigint AS t").fetchone()["t"])}}}
+        conn.execute("INSERT INTO chess_account (id, username, stats) VALUES (1, 'someone', %s) "
+                     "ON CONFLICT (id) DO UPDATE SET stats = EXCLUDED.stats", (json.dumps(stats),))
+    assert client.get(f"/api/goals/{g['goal_id']}").json()["current_value"] == 1241
+    club = client.post("/api/goals", json={"title": "Club 1600", "source": "club_rating", "target_value": 1600}).json()
+    assert club["current_value"] == 1500 and club["source_latest"] == D(-1).isoformat()
 
 
 def test_pace_ahead_on_track_behind(client):

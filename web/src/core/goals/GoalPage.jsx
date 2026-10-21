@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useNavigate, useParams } from 'react-router'
 import { api, shortDate, timeAgo, today } from '../../api.js'
+import Drawer from '../../components/Drawer.jsx'
 import FitTextarea from '../../components/FitTextarea.jsx'
 import Fold from '../../components/Fold.jsx'
 import { MODULES } from '../../modules/index.js'
@@ -94,7 +96,7 @@ export default function GoalPage() {
           </section>
         </div>
         <div className="goal-side">
-          <Family goal={goal} />
+          <Family goal={goal} reload={load} />
           <SetUp goal={goal} save={save} open={fresh} />
         </div>
       </div>
@@ -139,6 +141,9 @@ function Hero({ goal: g, save, run, reach, cheer }) {
           <div className="goal-big">
             <span className="goal-big-number">{big}</span>
             <span className="goal-big-unit">{g.habit ? `this ${g.habit.every}${g.unit && g.source ? ` · ${g.unit}` : ''}` : g.target_value != null ? g.unit ?? '' : text}</span>
+            {!g.habit && g.target_value != null && g.current_value != null && g.progress != null && g.progress < 1 && (
+              <span className="goal-to-go">{num(Math.abs(g.target_value - g.current_value))}{g.unit ? ` ${g.unit}` : ''} to go</span>
+            )}
             {g.habit && g.habit.streak > 0 && <span className="goal-streak">{g.habit.streak} {g.habit.every}{g.habit.streak === 1 ? '' : 's'} in a row</span>}
           </div>
         )}
@@ -148,6 +153,11 @@ function Hero({ goal: g, save, run, reach, cheer }) {
           {big !== `${Math.round(g.progress * 100)}%` && <span className="goal-big-percent">{Math.round(g.progress * 100)}%</span>}</div>
       )}
       {paceText(g) && <p className="goal-pace-text">{paceText(g)}</p>}
+      {g.source && g.kind === 'target' && g.series && new Set(g.series.map(([, v]) => v)).size <= 1 && (
+        <p className="goal-pace-text">{g.source_latest
+          ? `Nothing new since ${shortDate(g.source_latest)} - the line moves when your ${g.source_label.toLowerCase()} does.`
+          : `Nothing counted yet - the line moves when your ${g.source_label.toLowerCase()} does.`}</p>
+      )}
       {g.habit ? <HabitStrip goal={g} /> : <GoalChart goal={g} />}
       {done && (
         <div className="goal-reached">
@@ -197,12 +207,16 @@ function NextUp({ goal: g, reload }) {
   )
 }
 
-// A bigger goal's goals inside it, or the bigger goal this one is part of.
-function Family({ goal: g }) {
+// A bigger goal's goals inside it (+ Add one: a panel, so you stay on this goal), or the bigger goal this one is part of.
+function Family({ goal: g, reload }) {
+  const [adding, setAdding] = useState(false)
   if (!g.goals.length && !g.parent_id && g.timeframe !== 'three_years') return null
   return (
     <section className="card home-card goal-family">
-      <h2 className="home-card-title">{g.goals.length || g.timeframe === 'three_years' ? 'Goals inside this' : 'Part of'}</h2>
+      <h2 className="home-card-title">{g.goals.length || g.timeframe === 'three_years' ? 'Goals inside this' : 'Part of'}
+        {!g.parent_id && <button type="button" className="plain small goal-family-add" onClick={() => setAdding(true)}>+ Add one</button>}</h2>
+      {/* (on the page itself: inside the sticky side column it would sit under the top bar) */}
+      {adding && createPortal(<InsideGoal parent={g} onClose={() => setAdding(false)} onAdded={reload} />, document.body)}
       {g.parent_id && !g.goals.length && <Link to={`/goals/${g.parent_id}`} className="goal-family-link">{g.parent_title} →</Link>}
       {g.goals.length > 0 ? (
         <ul className="goal-family-list">
@@ -217,19 +231,104 @@ function Family({ goal: g }) {
           ))}
         </ul>
       ) : g.timeframe === 'three_years' && (
-        <p className="muted small">Break it into a goal for each year: in a year's goal, Set up › Part of picks this one.</p>
+        <p className="muted small">Break it into a goal for each year: + Add one.</p>
       )}
     </section>
+  )
+}
+
+// What a goal can count by itself (api/app/goal_sources.py), for the pickers.
+function useSources() {
+  const [sources, setSources] = useState([])
+  useEffect(() => { api.goalSources().then(setSources).catch(() => {}) }, [])
+  return sources
+}
+
+// The "What it counts" choices, grouped by hobby.
+function SourceOptions({ sources }) {
+  const byHobby = MODULES.map((m) => [m.name, sources.filter((s) => s.hobby === m.id)]).filter(([, list]) => list.length)
+  const other = sources.filter((s) => !s.hobby || !MODULES.some((m) => m.id === s.hobby))
+  return (
+    <>
+      {byHobby.map(([name, list]) => (
+        <optgroup key={name} label={name}>{list.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}</optgroup>
+      ))}
+      {other.length > 0 && <optgroup label="Everything">{other.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}</optgroup>}
+    </>
+  )
+}
+
+// A new goal inside this one, in a panel: its name, when, and how it's measured. Add (or close) and you're back here.
+function InsideGoal({ parent, onClose, onAdded }) {
+  const { changed, showToast } = useApp()
+  const sources = useSources()
+  const choices = periodChoices(new Date().getFullYear()).filter((c) => c.timeframe === 'year' || !c.timeframe)
+  const [f, setF] = useState({ title: '', when: choices[0].value, kind: 'target', source: '', target: '', unit: '', times: '1', every: 'week' })
+  const [error, setError] = useState('')
+  const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
+  const add = async (e) => {
+    e.preventDefault()
+    if (!f.title.trim()) return
+    const when = choices.find((c) => c.value === f.when)
+    const measure = f.kind === 'habit'
+      ? { habit_times: Math.max(1, Math.round(Number(f.times) || 1)), habit_every: f.every }
+      : { target_value: f.target === '' ? null : Number(f.target), unit: f.source ? null : f.unit || null,
+          start_value: f.source || f.target === '' ? null : 0 }
+    try {
+      await api.addGoal({ title: f.title.trim(), parent_id: parent.goal_id, hobby: parent.hobby, timeframe: when.timeframe,
+        period_start: when.period_start, kind: f.kind, source: f.source || null, ...measure })
+      changed()
+      onAdded()
+      showToast(`Added inside ${parent.title}`)
+      onClose()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+  return (
+    <Drawer title={`A goal inside "${parent.title}"`} onClose={onClose} footer={<>
+      <button type="submit" form="inside-goal" className="primary" disabled={!f.title.trim()}>Add goal</button>
+      <button type="button" className="plain" onClick={onClose}>Cancel</button>
+    </>}>
+      <form id="inside-goal" className="panel-section goal-inside-form" onSubmit={add}>
+        <label className="field">What's the goal?
+          <input autoFocus value={f.title} onChange={set('title')} maxLength={200} placeholder="e.g. Hike 300 km this year" /></label>
+        <label className="field">When
+          <select value={f.when} onChange={set('when')}>{choices.map((c) => <option key={c.value || 'none'} value={c.value}>{c.label}</option>)}</select></label>
+        <div className="segmented goal-kind" role="group" aria-label="Kind">
+          <button type="button" aria-pressed={f.kind === 'target'} onClick={() => setF({ ...f, kind: 'target' })}>Reach a target</button>
+          <button type="button" aria-pressed={f.kind === 'habit'} onClick={() => setF({ ...f, kind: 'habit' })}>A habit</button>
+        </div>
+        <label className="field">{f.kind === 'habit' ? 'What counts as a time' : 'Counting'}
+          <select value={f.source} onChange={set('source')} aria-label="What it counts">
+            <option value="">{f.kind === 'habit' ? 'I tick it myself' : 'A number I give'}</option>
+            <SourceOptions sources={sources} />
+          </select></label>
+        {f.kind === 'habit' ? (
+          <div className="goal-number">
+            <label className="field">Times<input type="number" min="1" inputMode="numeric" value={f.times} onChange={set('times')} /></label>
+            <label className="field">Every
+              <select value={f.every} onChange={set('every')}><option value="week">Week</option><option value="month">Month</option></select></label>
+          </div>
+        ) : (
+          <div className="goal-number">
+            <label className="field">Target<input type="number" step="any" inputMode="decimal" value={f.target} onChange={set('target')} /></label>
+            {!f.source && <label className="field">Unit<input value={f.unit} onChange={set('unit')} maxLength={40} placeholder="km, books, kg..." /></label>}
+          </div>
+        )}
+        <p className="muted small">Its progress feeds into {parent.title}. Why it matters and its to-dos go on its own page, later.</p>
+        {error && <p className="alert error small" role="alert">{error}</p>}
+      </form>
+    </Drawer>
   )
 }
 
 // Set up: everything about the goal you'd change now and then.
 function SetUp({ goal: g, save, open }) {
   const [startOpen] = useState(open)      // decided once (a new goal: open); after that it stays as you leave it
-  const [sources, setSources] = useState([])
+  const sources = useSources()
   const [bigger, setBigger] = useState([])
   useEffect(() => {
-    api.goalSources().then(setSources).catch(() => {})
     api.goals().then((d) => setBigger(d.goals.filter((x) => x.goal_id !== g.goal_id && !x.parent_id && x.status !== 'dropped'))).catch(() => {})
   }, [g.goal_id])
   const choices = periodChoices(new Date().getFullYear(), g)
@@ -239,13 +338,11 @@ function SetUp({ goal: g, save, open }) {
         onSave={(v) => save({ [name]: v === '' ? null : Number(v) })} />
     </label>
   )
-  const byHobby = MODULES.map((m) => [m.name, sources.filter((s) => s.hobby === m.id)]).filter(([, list]) => list.length)
-  const other = sources.filter((s) => !s.hobby || !MODULES.some((m) => m.id === s.hobby))
   return (
     <details className="card goal-setup" open={startOpen}>
       <summary><h2 className="home-card-title">Set up</h2><span className="muted small">when, what it counts, status</span></summary>
       <div className="goal-setup-body">
-        <div className="segmented" role="group" aria-label="Status">
+        <div className="segmented goal-status" role="group" aria-label="Status">
           {Object.entries(STATUS).map(([k, s]) => (
             <button key={k} type="button" aria-pressed={g.status === k} onClick={() => g.status !== k && save({ status: k })}>{s.label}</button>
           ))}
@@ -286,17 +383,14 @@ function SetUp({ goal: g, save, open }) {
         </div>
 
         <h3 className="goal-setup-title">How you'll measure it</h3>
-        <div className="segmented" role="group" aria-label="Kind">
+        <div className="segmented goal-kind" role="group" aria-label="Kind">
           <button type="button" aria-pressed={g.kind === 'target'} onClick={() => g.kind !== 'target' && save({ kind: 'target' })}>Reach a target</button>
           <button type="button" aria-pressed={g.kind === 'habit'} onClick={() => g.kind !== 'habit' && save({ kind: 'habit' })}>A habit</button>
         </div>
         <label className="field">{g.kind === 'habit' ? 'What counts as a time' : 'Counting'}
           <select value={g.source ?? ''} onChange={(e) => save({ source: e.target.value || null })} aria-label="What it counts">
             <option value="">{g.kind === 'habit' ? 'I\'ll tick it myself ("Did it today")' : 'A number I give'}</option>
-            {byHobby.map(([name, list]) => (
-              <optgroup key={name} label={name}>{list.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}</optgroup>
-            ))}
-            {other.length > 0 && <optgroup label="Everything">{other.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}</optgroup>}
+            <SourceOptions sources={sources} />
           </select>
         </label>
         {g.kind === 'habit' ? (

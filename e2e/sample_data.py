@@ -264,7 +264,7 @@ print("goals, to-dos, calendar, journal", flush=True)
 # Goals that count themselves from the hobbies, one you update, habits, and a 3-year goal with a year's goal inside it
 outdoors = post("/goals", {"title": "Get outdoors more", "timeframe": "three_years", "why": "Weekends outside, not on the couch."})
 for title, source, target in [("Read 24 books", "books_finished", 24), ("Hike 300 km", "km_hiked", 300),
-                              ("Reach 1400 rapid", "chess_rapid", 1400), ("Finish three kits this year", "kits_finished", 3)]:
+                              ("Reach 1400 at the club", "club_rating", 1400), ("Finish three kits this year", "kits_finished", 3)]:
     post("/goals", {"title": title, "source": source, "target_value": target, "timeframe": "year",
                     "parent_id": outdoors["goal_id"] if outdoors and source == "km_hiked" else None})
 post("/goals", {"title": "Play chess twice a week", "kind": "habit", "habit_times": 2, "source": "chess_games", "timeframe": "year"})

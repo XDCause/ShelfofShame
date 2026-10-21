@@ -1923,3 +1923,13 @@ DBeaver connection confirmed working (2026-10-11).
    26px margins), pots drawn to scale too small to tap (28px floor; the level label only with room), white on amber 2:1
    (dark text now), an un-underlined link in a sentence; the walk-through assumed its Warhammer kit was the only one;
    the Dev pill clipped the brand at laptop width (a badge on the logo now).
+5e. **Goal fixes from prod use** (2026-10-21). "Chess Elo for 1200" showed no chart: a level source sorted by day only,
+   so with several games on the user's last day (4 May 2025) "now" was any of them (775, not 757); and every rated
+   game counted, chess.com and club alike - two rating scales. Now: chess_<class> = chess.com games only (rules chess)
+   in exact time order (rows() orders by an `ord` column when a source has one), then chess.com's own latest rating
+   (stats.chess_<class>.last) - the Chess tab's number; club games are their own source (club_rating). A counted goal
+   with nothing new in its time says so ("Nothing new since..."); a level's whole history comes with the goal (not the
+   list) for the chart's "Since it began | Whole history" switch, with labels for now and the target and "N to go".
+   User: Set up's Reach a target | A habit hugged the left - even halves now (Status 2 x 2). "Goals inside this" has
+   + Add one: a panel to make a goal inside it (you stay on the bigger goal) - rendered on the page itself (a portal):
+   inside the sticky side column it sat under the top bar.

@@ -131,11 +131,17 @@ export function paceText(g) {
 
 // The number over time: where you've been (solid), an even pace from start to target (dashed) and today. For a
 // number you give: each progress note's number; for one the app counts: its running total (or each new level).
+// A rating (a level) can also show its whole history - where you came from before this goal - with the goal's start
+// marked. Labels on the target line and at "now" say where you sit against the goal.
 export function GoalChart({ goal: g }) {
-  const series = g.series ?? []
-  if (series.length < 1 || g.target_value == null) return null
+  const [whole, setWhole] = useState(false)
   const t = (iso) => dayDate(iso).getTime()
-  const begin = t(g.start_day)
+  const earlier = (g.history ?? []).filter(([d]) => t(d) < t(g.start_day))
+  const canWhole = earlier.length > 0
+  const series = whole && canWhole ? [...g.history.filter(([d]) => t(d) <= Date.now())] : g.series ?? []
+  if (series.length < 1 || g.target_value == null) return null
+  const goalStart = t(g.start_day)
+  const begin = whole && canWhole ? Math.min(t(series[0][0]), goalStart) : goalStart
   const now = Date.now()
   const end = Math.max(g.target_date ? t(g.target_date) : now, now, begin + 86400000)
   const start = g.start_value ?? series[0][1] ?? 0
@@ -161,15 +167,27 @@ export function GoalChart({ goal: g }) {
       <svg viewBox={`0 0 ${W} ${H}`} role="img" preserveAspectRatio="none"
         aria-label={`${g.title}: from ${num(start)} to ${num(last[1])}${unit} so far, aiming for ${num(g.target_value)}${unit}`}>
         <line className="goal-chart-target" x1="8" x2={W - 8} y1={y(g.target_value)} y2={y(g.target_value)} />
-        {g.target_date && <line className="goal-chart-pace" x1={x(begin)} y1={y(start)} x2={x(t(g.target_date))} y2={y(g.target_value)} />}
+        {g.target_date && <line className="goal-chart-pace" x1={x(goalStart)} y1={y(start)} x2={x(t(g.target_date))} y2={y(g.target_value)} />}
+        {whole && canWhole && <line className="goal-chart-today" x1={x(goalStart)} x2={x(goalStart)} y1="6" y2={H - 14} />}
         {now < end && <line className="goal-chart-today" x1={x(now)} x2={x(now)} y1="6" y2={H - 14} />}
         <polyline className="goal-chart-line" points={line} />
       </svg>
-      {/* (the svg stretches to the card's width: a dot drawn in it would squash into an oval) */}
+      {/* (the svg stretches to the card's width: a dot or words drawn in it would squash - so they're laid on top) */}
       <span className="goal-chart-dot" style={{ left: `${(x(Math.min(now, end)) / W) * 100}%`, top: `${(y(last[1]) / H) * 100}%` }} />
+      <span className={`goal-chart-label now${x(Math.min(now, end)) / W < 0.3 ? ' right' : ''}`}
+        style={{ left: `${(x(Math.min(now, end)) / W) * 100}%`, top: `${(y(last[1]) / H) * 100}%` }}>
+        {num(last[1])}{unit} now</span>
+      <span className="goal-chart-label target" style={{ top: `${(y(g.target_value) / H) * 100}%` }}>target {num(g.target_value)}{unit}</span>
+      {whole && canWhole && <span className="goal-chart-label began" style={{ left: `${(x(goalStart) / W) * 100}%` }}>goal began</span>}
       </div>
+      {canWhole && (
+        <div className="segmented goal-chart-range" role="group" aria-label="Chart shows">
+          <button type="button" aria-pressed={!whole} onClick={() => setWhole(false)}>Since it began</button>
+          <button type="button" aria-pressed={whole} onClick={() => setWhole(true)}>Whole history</button>
+        </div>
+      )}
       <figcaption className="goal-chart-key">
-        <span>{shortDate(g.start_day)}</span>
+        <span>{shortDate(new Date(begin).toLocaleDateString('en-CA'))}</span>
         <span><i className="key-line" /> you <i className="key-pace" /> even pace{now < end && <> <i className="key-today" /> today</>}</span>
         <span>{g.target_date ? shortDate(g.target_date) : 'today'}</span>
       </figcaption>

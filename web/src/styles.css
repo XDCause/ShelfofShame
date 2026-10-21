@@ -2236,6 +2236,13 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .goal-chart-dot { position: absolute; width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px; border-radius: 50%; background: var(--tint);
   box-shadow: 0 0 0 2px var(--surface); }
 .habit-chart { margin: 4px 0 0; }
+.goal-chart-label { position: absolute; font-size: 0.75rem; font-weight: 650; white-space: nowrap; pointer-events: none; }
+.goal-chart-label.now { transform: translate(-100%, -150%); margin-left: -6px; color: var(--tint); }
+.goal-chart-label.now.right { transform: translate(0, -150%); margin-left: 8px; }     /* near the left edge: say it on the right */
+.goal-chart-label.target { right: 6px; transform: translateY(-120%); color: var(--muted); }
+.goal-chart-label.began { top: 2px; margin-left: 6px; color: var(--muted); font-weight: 550; }
+.goal-chart-range { margin: 8px 0 0; }
+.goal-to-go { margin-top: 4px; font-size: 0.85rem; font-weight: 650; color: var(--muted); }
 .goal-chart-key { display: flex; justify-content: space-between; gap: 10px; font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
 .goal-chart-key i { display: inline-block; width: 16px; height: 0; vertical-align: middle; margin: 0 4px 0 8px; }
 .key-line { border-top: 2.5px solid var(--tint); }
@@ -2271,7 +2278,11 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .goal-setup > summary::after { content: '▾'; color: var(--muted); transition: transform 0.15s; }
 .goal-setup[open] > summary::after { transform: rotate(180deg); }
 .goal-setup-body { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; }
-.goal-setup-body .segmented { flex-wrap: wrap; }
+/* Status (4) and Reach a target | A habit (2): even halves across the card, not a pill hugging the left */
+.goal-status, .goal-kind { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-radius: 16px; }
+.goal-status button, .goal-kind button { width: 100%; }
+.goal-family-add { margin-left: auto; font-family: var(--font-ui); }
+.goal-inside-form { display: flex; flex-direction: column; gap: 12px; }
 .goal-setup-title { margin: 6px 0 0; font-size: 0.95rem; }
 .goal-now-auto { display: flex; align-items: baseline; gap: 6px; min-height: 40px; font-weight: 650; padding-top: 8px; }
 .goal-part-of { font-size: 0.82rem; color: var(--muted); }

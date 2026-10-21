@@ -28,14 +28,20 @@ SOURCES = {
     "volleyball_games": ("Volleyball games and trainings", "games", "volleyball", "sum",
                          "SELECT played_on AS day, 1 AS amount FROM volleyball_games WHERE played_on IS NOT NULL AND bye IS NULL"),
     "chess_games": ("Chess games", "games", "chess", "sum", "SELECT played_at::date AS day, 1 AS amount FROM chess_games"),
-    "chess_rapid": ("Chess rating (rapid)", "rating", "chess", "level",
-                    "SELECT played_at::date AS day, my_rating AS amount FROM chess_games WHERE time_class = 'rapid' AND rated AND my_rating IS NOT NULL"),
-    "chess_blitz": ("Chess rating (blitz)", "rating", "chess", "level",
-                    "SELECT played_at::date AS day, my_rating AS amount FROM chess_games WHERE time_class = 'blitz' AND rated AND my_rating IS NOT NULL"),
-    "chess_bullet": ("Chess rating (bullet)", "rating", "chess", "level",
-                     "SELECT played_at::date AS day, my_rating AS amount FROM chess_games WHERE time_class = 'bullet' AND rated AND my_rating IS NOT NULL"),
-    "chess_daily": ("Chess rating (daily)", "rating", "chess", "level",
-                    "SELECT played_at::date AS day, my_rating AS amount FROM chess_games WHERE time_class = 'daily' AND rated AND my_rating IS NOT NULL"),
+    # A chess.com rating: your rated games there (exactly in time order - several a day), then chess.com's own latest
+    # rating, so "now" is the number on the Chess tab. Club games have their own rating: never mixed in.
+    **{f"chess_{tc}": (f"chess.com rating ({tc})", "rating", "chess", "level", f"""
+        SELECT played_at::date AS day, my_rating AS amount, played_at AS ord FROM chess_games
+         WHERE source = 'chesscom' AND rules = 'chess' AND time_class = '{tc}' AND rated AND my_rating IS NOT NULL
+        UNION ALL
+        SELECT to_timestamp((stats -> 'chess_{tc}' -> 'last' ->> 'date')::bigint)::date,
+               (stats -> 'chess_{tc}' -> 'last' ->> 'rating')::numeric,
+               to_timestamp((stats -> 'chess_{tc}' -> 'last' ->> 'date')::bigint) + interval '1 second'
+          FROM chess_account WHERE id = 1 AND stats -> 'chess_{tc}' -> 'last' ->> 'rating' IS NOT NULL""")
+       for tc in ("rapid", "blitz", "bullet", "daily")},
+    "club_rating": ("Club rating (over the board)", "rating", "chess", "level",
+                    """SELECT played_at::date AS day, my_rating AS amount, played_at AS ord FROM chess_games
+                       WHERE source = 'otb' AND rated AND my_rating IS NOT NULL"""),
     "games_100": ("Games finished to 100%", "games", "videogames", "sum",
                   """SELECT completed_at::date AS day, 1 AS amount FROM vg_games WHERE completed_at IS NOT NULL AND NOT hidden
                      UNION ALL SELECT exo_completed_at::date, 1 FROM vg_other_games WHERE exo_completed_at IS NOT NULL AND NOT hidden"""),
@@ -63,9 +69,11 @@ def catalogue() -> list[dict]:
 
 
 def rows(conn, key: str, end: date) -> list[tuple[date, float]]:
-    """Every (day, amount) up to `end`, oldest first. Days in the future (a trip not yet started) don't count."""
+    """Every (day, amount) up to `end`, oldest first. Days in the future (a trip not yet started) don't count. A
+    source with an `ord` column (a time) is in that order within a day - a level's latest is the last game, not any."""
     sql = SOURCES[key][4]
-    found = conn.execute(f"SELECT day, amount FROM ({sql}) s WHERE day IS NOT NULL AND day <= %s ORDER BY day", (end,)).fetchall()
+    order = "day, ord" if " AS ord" in sql else "day"
+    found = conn.execute(f"SELECT day, amount FROM ({sql}) s WHERE day IS NOT NULL AND day <= %s ORDER BY {order}", (end,)).fetchall()
     return [(r["day"], float(r["amount"] or 0)) for r in found]
 
 
@@ -88,7 +96,10 @@ def measure(conn, key: str, start: date, end: date) -> dict:
             series.append((d, running))
         current = running
     return {"start": first, "current": current, "series": [(d, round(v, 2)) for d, v in series],
-            "last_day": inside[-1][0] if inside else None}
+            "last_day": inside[-1][0] if inside else None,
+            "latest": data[-1][0] if data else None,           # (the newest record at all, even before the goal began)
+            # a level's whole story (a rating long before this goal): the chart's "Whole history" (one point a day: its last)
+            "history": [(d, round(v, 2)) for d, v in dict(data).items()] if mode == "level" else None}
 
 
 def counted(conn, key: str, start: date, end: date) -> list[tuple[date, float]]:
