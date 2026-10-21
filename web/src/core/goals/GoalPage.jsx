@@ -262,8 +262,14 @@ function SourceOptions({ sources }) {
 function InsideGoal({ parent, onClose, onAdded }) {
   const { changed, showToast } = useApp()
   const sources = useSources()
-  const choices = periodChoices(new Date().getFullYear()).filter((c) => c.timeframe === 'year' || !c.timeframe)
-  const [f, setF] = useState({ title: '', when: choices[0].value, kind: 'target', source: '', target: '', unit: '', times: '1', every: 'week' })
+  // inside a 3-year goal: each of its years (2026, 2027, 2028); else the usual years ahead
+  const thisYear = new Date().getFullYear()
+  const choices = parent.timeframe === 'three_years'
+    ? [0, 1, 2].map((i) => parent.period_start + i).map((y) => ({ value: `year:${y}`, timeframe: 'year', period_start: y,
+      label: y === thisYear ? `${y} (this year)` : String(y) }))
+    : periodChoices(thisYear).filter((c) => c.timeframe === 'year' || !c.timeframe)
+  const firstYear = choices.find((c) => c.period_start >= thisYear) ?? choices[0]
+  const [f, setF] = useState({ title: '', when: firstYear.value, kind: 'target', source: '', target: '', unit: '', times: '1', every: 'week' })
   const [error, setError] = useState('')
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
   const add = async (e) => {

@@ -61,12 +61,13 @@ export function periodLabel(timeframe, start) {
 export const periodShort = (g) => (g.timeframe === 'year' ? String(g.period_start)
   : g.timeframe === 'three_years' ? `${g.period_start}–${String(g.period_start + 2).slice(2)}` : '')
 
-// The choices offered: this year, next year (for New Year's goals made in December), 3 years from
-// either, no set time - plus whatever the goal already has, if it's none of those.
+// The choices offered: this year, the next two (New Year's goals made in December; a 3-year goal's last year), 3 years
+// from this year or next, no set time - plus whatever the goal already has, if it's none of those.
 export function periodChoices(thisYear, goal = null) {
   const choices = [
     ['year', thisYear, `This year (${thisYear})`],
     ['year', thisYear + 1, `Next year (${thisYear + 1})`],
+    ['year', thisYear + 2, String(thisYear + 2)],
     ['three_years', thisYear, `3 years (${thisYear}–${thisYear + 2})`],
     ['three_years', thisYear + 1, `3 years (${thisYear + 1}–${thisYear + 3})`],
     ['', null, 'No set time'],
