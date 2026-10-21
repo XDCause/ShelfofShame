@@ -33,7 +33,7 @@ $versions = @(
 if ($Only) { $todo = @($versions | Where-Object { $Only -contains $_.Key }) } else { $todo = $versions }
 if (-not $todo) { Write-Host "No version called $($Only -join ', '). Choose from: $(($versions | ForEach-Object { $_.Key }) -join ', ')" -ForegroundColor Red; exit 1 }
 
-$image = 'offtheclock-e2e:1.47.0'
+$image = 'offtheclock-e2e:1.64.0'
 $work = Join-Path $Root '.showcase'
 $out = Join-Path $Root 'showcase'
 $c = @{ Name = 'hobby-showcase'; Volume = 'hobby_showcase_pgdata'; Db = '5438'; Api = '8005'; Web = '8085'; Https = '8448' }

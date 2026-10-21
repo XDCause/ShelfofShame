@@ -20,7 +20,7 @@ param([switch]$NoAudit)
 
 . "$PSScriptRoot\scripts\common.ps1"
 Set-Location -Path $Root
-$image = 'offtheclock-e2e:1.47.0'    # e2e\Dockerfile: Playwright's image with its Python packages installed
+$image = 'offtheclock-e2e:1.64.0'    # e2e\Dockerfile: Playwright's image with its Python packages installed
 $code = Get-CodeHash
 $built = (Get-Stamp 'built')[0]
 

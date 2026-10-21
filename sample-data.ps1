@@ -16,7 +16,7 @@ if ($AppEnv -ne 'dev') { Write-Host "This replaces the app's data - it only runs
 if (-not (Test-Healthy $DbContainer) -or -not (Test-Healthy $ApiContainer) -or -not (Test-Healthy $WebContainer)) {
     Write-Host 'Dev is not running: start it with .\dev.ps1 first.' -ForegroundColor Red; exit 1
 }
-$image = 'offtheclock-e2e:1.47.0'
+$image = 'offtheclock-e2e:1.64.0'
 $quiet = @('-e', 'PGOPTIONS=-c client_min_messages=warning')
 function Sql([string]$q) { (docker exec @quiet $DbContainer psql -U $DbUser -d $DbName -Atq -v ON_ERROR_STOP=1 -c $q) -join "`n" }
 

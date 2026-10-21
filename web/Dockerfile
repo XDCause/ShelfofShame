@@ -1,5 +1,5 @@
 # Stage 1: build the React app into static files (needs Node.js)
-FROM node:22.23.3-alpine AS build
+FROM node:22.23.4-alpine AS build
 WORKDIR /app
 # Install exact versions from package-lock.json; cached unless dependencies change.
 COPY package.json package-lock.json ./

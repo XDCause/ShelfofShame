@@ -19,6 +19,7 @@ problem page (outlined in red: /out/audit_*.png). Exits 1 if it finds anything n
 """
 import base64
 import http.cookiejar
+import importlib.util
 import json
 import os
 import re
@@ -32,7 +33,7 @@ from playwright.sync_api import sync_playwright
 
 BASE = "https://web"          # (the copy's own certificate: not checked)
 OUT = "/out"
-AXE = "/usr/local/lib/python3.10/dist-packages/axe_playwright_python/axe.min.js"
+AXE = os.path.join(os.path.dirname(importlib.util.find_spec("axe_playwright_python").origin), "axe.min.js")   # (wherever pip put it)
 ONLY = sys.argv[1] if len(sys.argv) > 1 and not sys.argv[1].startswith("--") else ""
 
 SIZES = [("pc", 1440, 900, False), ("laptop", 1024, 768, False), ("tablet", 768, 1024, True),
