@@ -267,6 +267,9 @@ for title, source, target in [("Read 24 books", "books_finished", 24), ("Hike 30
                               ("Reach 1400 at the club", "club_rating", 1400), ("Finish three kits this year", "kits_finished", 3)]:
     post("/goals", {"title": title, "source": source, "target_value": target, "timeframe": "year",
                     "parent_id": outdoors["goal_id"] if outdoors and source == "km_hiked" else None})
+if outdoors:                       # a year's goal for next year inside it: Upcoming until then
+    post("/goals", {"title": "Walk the Overland Track", "timeframe": "year", "period_start": TODAY.year + 1, "hobby": "hiking",
+                    "parent_id": outdoors["goal_id"], "steps": ["Book the huts", "Train with a full pack"]})
 post("/goals", {"title": "Play chess twice a week", "kind": "habit", "habit_times": 2, "source": "chess_games", "timeframe": "year"})
 sketch = post("/goals", {"title": "Sketch twice a week", "kind": "habit", "habit_times": 2, "hobby": "models", "timeframe": "year"})
 if sketch:

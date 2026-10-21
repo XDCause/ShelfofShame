@@ -69,7 +69,7 @@ def test_status_and_order_and_activity(client):
     assert done["done_on"] is not None and done["days_left"] is None
     listed = client.get("/api/goals").json()
     assert [g["title"] for g in listed["goals"]] == ["Pinned one", "Sooner", "Later"]
-    assert listed["counts"] == {"active": 2, "paused": 0, "done": 1, "dropped": 0}
+    assert listed["counts"] == {"active": 2, "paused": 0, "done": 1, "dropped": 0, "upcoming": 0}
     assert [g["title"] for g in client.get("/api/goals?status=done").json()["goals"]] == ["Later"]
     client.post(f"/api/goals/{b['goal_id']}/updates", json={"text": "Booked lessons"})
     feed = client.get("/api/activity?limit=50").json()
@@ -224,3 +224,22 @@ def test_steps_become_to_dos_once(client):
     todos = client.get(f"/api/goals/{g['goal_id']}").json()["todos"]
     assert [(t["title"], t["done_at"] is not None) for t in todos] == [("First", False), ("Second", False), ("Done one", True)]
     assert all(t["hobby"] == "models" for t in todos)
+
+
+def test_a_goal_whose_time_has_not_begun_is_upcoming(client):
+    """A next-year goal: upcoming (not active yet) - no pace, no nudge, counted apart, and not dragging a bigger goal down."""
+    next_year = D(0).year + 1
+    big = client.post("/api/goals", json={"title": "Triathlon", "timeframe": "three_years"}).json()
+    now = client.post("/api/goals", json={"title": "Swim 1 km", "timeframe": "year", "parent_id": big["goal_id"], "unit": "m",
+                                          "start_value": 0, "target_value": 1000, "current_value": 500}).json()
+    later = client.post("/api/goals", json={"title": "Sprint race", "timeframe": "year", "period_start": next_year,
+                                            "parent_id": big["goal_id"], "started_on": D(-30).isoformat(),
+                                            "unit": "races", "start_value": 0, "target_value": 1, "current_value": 0}).json()
+    assert (now["upcoming"], later["upcoming"]) == (False, True)
+    assert later["pace"] is None and later["start_day"] == f"{next_year}-01-01" and now["pace"] is not None
+    assert client.get("/api/goals").json()["counts"]["upcoming"] == 1
+    assert "Sprint race" not in [s["title"] for s in client.get("/api/goals/nudges").json()["stale"]]
+    g = client.get(f"/api/goals/{big['goal_id']}").json()
+    assert abs(g["progress"] - 0.5) < 1e-9                           # only this year's goal counts yet
+    assert [(k["title"], k["upcoming"]) for k in g["goals"]] == [("Swim 1 km", False), ("Sprint race", True)]
+

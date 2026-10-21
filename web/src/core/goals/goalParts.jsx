@@ -109,6 +109,7 @@ export const PACE = {
   done: { label: 'Target reached', tone: 'ok' },
 }
 export function PaceBadge({ goal: g }) {
+  if (g.upcoming) return <span className="pill goal-upcoming">Upcoming · starts {shortDate(g.start_day)}</span>
   if (g.habit && g.status === 'active') {
     return <span className={`pill ${g.habit.met ? 'ok' : 'tint'}`}>{g.habit.met ? `Done this ${g.habit.every}` : `${num(g.habit.left)} to go this ${g.habit.every}`}</span>
   }

@@ -177,7 +177,7 @@ def habit(conn, g: dict, now: date) -> dict:
 def pace(g: dict, now: date) -> dict | None:
     """Where an even pace would have you by today, and whether you're ahead / on track / behind (needs a day to
     reach it and some way to measure progress). For a number: how much a month (or week, near the end) it takes."""
-    if g["kind"] != "target" or g["status"] != "active" or g["progress"] is None or not g["target_date"]:
+    if g["kind"] != "target" or g["status"] != "active" or g["progress"] is None or not g["target_date"] or g["upcoming"]:
         return None
     begin, end = start_day(g), g["target_date"]
     total = (end - begin).days
@@ -207,6 +207,9 @@ def shaped(conn, g: dict, now: date) -> dict:
     source = goal_sources.SOURCES.get(g["source"]) if g["source"] else None
     g["source_label"] = source[0] if source else None
     g["start_day"] = start_day(g)
+    # Upcoming: active, but its time hasn't begun (a 2027 goal, now) - no pace, no nudges, not in a bigger goal's
+    # average yet. It becomes active by itself on its first day: nothing to change.
+    g["upcoming"] = g["status"] == "active" and g["start_day"] > now
     g["series"], moved = None, [g["last_update"], g["last_todo_done"]]
     if source and g["kind"] == "target":
         m = goal_sources.measure(conn, g["source"], start_day(g), min(now, g["target_date"] or now))
@@ -228,7 +231,7 @@ def shaped(conn, g: dict, now: date) -> dict:
     g["pace"] = pace(g, now)
     g["last_moved"] = max((d for d in moved if d), default=None)
     since = max(g["last_moved"] or g["started_on"], g["started_on"])
-    g["still_for"] = (now - since).days if g["status"] == "active" else None
+    g["still_for"] = (now - since).days if g["status"] == "active" and not g["upcoming"] else None
     return g
 
 
@@ -239,7 +242,7 @@ def with_children(goals: list[dict], now: date) -> list[dict]:
         if g["parent_id"]:
             inside.setdefault(g["parent_id"], []).append(g)
     for g in goals:
-        kids = [k["progress"] for k in inside.get(g["goal_id"], []) if k["progress"] is not None]
+        kids = [k["progress"] for k in inside.get(g["goal_id"], []) if k["progress"] is not None and not k["upcoming"]]
         if g["progress"] is None and kids and g["kind"] == "target":
             g["progress"] = sum(kids) / len(kids)
             g["progress_from"] = "goals"
@@ -252,7 +255,8 @@ def fetch(conn, goal_id: int) -> dict:
     g = shaped(conn, found(conn.execute(GOAL_SELECT + " WHERE g.goal_id = %s", (goal_id,)).fetchone(), "Goal"), now)
     kids = [shaped(conn, k, now) for k in conn.execute(GOAL_SELECT + " WHERE g.parent_id = %s" + ORDER, (goal_id,)).fetchall()]
     with_children([g, *kids], now)
-    g["goals"] = [{k: c[k] for k in ("goal_id", "title", "status", "progress", "pace", "hobby", "period_start", "timeframe")}
+    g["goals"] = [{k: c[k] for k in ("goal_id", "title", "status", "progress", "pace", "hobby", "period_start", "timeframe",
+                                     "upcoming", "start_day", "habit", "kind")}
                   for c in kids]
     g["todos"] = conn.execute("""SELECT t.*, NULL AS goal_title,
                                         CASE WHEN t.done_at IS NOT NULL THEN 'done' WHEN t.due_on IS NULL THEN 'someday'
@@ -337,7 +341,8 @@ def list_goals(status: Status | None = None):
             g.pop("history", None)                     # (the list doesn't draw charts: a goal's own page has it)
         shown = [g for g in goals if not status or g["status"] == status]
         return {"goals": shown, "statuses": STATUSES, "this_year": now.year,
-                "counts": {s: sum(1 for g in goals if g["status"] == s) for s in STATUSES}}
+                "counts": {**{s: sum(1 for g in goals if g["status"] == s and not g["upcoming"]) for s in STATUSES},
+                           "upcoming": sum(1 for g in goals if g["upcoming"])}}
 
 
 @router.get("/goals/sources")

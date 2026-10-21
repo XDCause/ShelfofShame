@@ -84,11 +84,6 @@ export default function GoalPage() {
           <NextUp goal={goal} reload={load} />
           <Notes goal={goal} run={run} />
           <section className="card home-card">
-            <h2 className="home-card-title">Why it matters</h2>
-            <SavedText value={goal.why ?? ''} placeholder="What it'll mean when you get there..." aria-label="Why it matters"
-              onSave={(why) => save({ why: why || null })} />
-          </section>
-          <section className="card home-card">
             <h2 className="home-card-title">Details</h2>
             <SavedText className="goal-details" value={goal.details ?? ''} aria-label="Details"
               placeholder="The plan, what you'll need, what might get in the way, ideas..."
@@ -97,6 +92,11 @@ export default function GoalPage() {
         </div>
         <div className="goal-side">
           <Family goal={goal} reload={load} />
+          <section className="card home-card goal-why-card">
+            <h2 className="home-card-title">Why it matters</h2>
+            <SavedText value={goal.why ?? ''} placeholder="What it'll mean when you get there..." aria-label="Why it matters"
+              onSave={(why) => save({ why: why || null })} />
+          </section>
           <SetUp goal={goal} save={save} open={fresh} />
         </div>
       </div>
@@ -152,6 +152,7 @@ function Hero({ goal: g, save, run, reach, cheer }) {
         <div className="goal-hero-bar"><ProgressBar goal={g} />
           {big !== `${Math.round(g.progress * 100)}%` && <span className="goal-big-percent">{Math.round(g.progress * 100)}%</span>}</div>
       )}
+      {g.upcoming && <p className="goal-pace-text">Its time starts {shortDate(g.start_day)} - until then it's Upcoming: no pace, no nudges. A good time to plan its to-dos.</p>}
       {paceText(g) && <p className="goal-pace-text">{paceText(g)}</p>}
       {g.source && g.kind === 'target' && g.series && new Set(g.series.map(([, v]) => v)).size <= 1 && (
         <p className="goal-pace-text">{g.source_latest
@@ -224,9 +225,10 @@ function Family({ goal: g, reload }) {
             <li key={c.goal_id}>
               <Link to={`/goals/${c.goal_id}`}>{c.title}</Link>
               <span className="goal-family-meta">
-                {c.status !== 'active' ? STATUS[c.status].label : c.progress != null ? `${Math.round(c.progress * 100)}%` : ''}
+                {c.status !== 'active' ? STATUS[c.status].label : c.progress != null && !c.upcoming ? `${Math.round(c.progress * 100)}%` : ''}
               </span>
-              <ProgressBar goal={c} />
+              {(c.upcoming || c.pace || c.habit) && <span className="goal-family-pace"><PaceBadge goal={c} /></span>}
+              {!c.upcoming && <ProgressBar goal={c} />}
             </li>
           ))}
         </ul>

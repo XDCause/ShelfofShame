@@ -6,7 +6,9 @@ import { useApp } from '../app-context.js'
 import EmptyState from '../EmptyState.jsx'
 import { dueText, groupGoals, hobbyName, PaceBadge, periodChoices, periodLabel, ProgressBar, progressText, STATUS } from './goalParts.jsx'
 
-const SHOWS = [['active', 'Active'], ['paused', 'Paused'], ['done', 'Done'], ['dropped', 'Dropped'], ['', 'All']]
+// (Upcoming: active goals whose time hasn't begun - a 2027 goal now - apart from the ones you can work on)
+const SHOWS = [['active', 'Active'], ['upcoming', 'Upcoming'], ['paused', 'Paused'], ['done', 'Done'], ['dropped', 'Dropped'], ['', 'All']]
+const shows = (g, show) => !show || (show === 'upcoming' ? g.upcoming : g.status === show && !(show === 'active' && g.upcoming))
 
 // Goals: a card per goal (how far along, what's next, when it's due), in sections - this year's goals,
 // 3-year goals, next year's, no set time, past years'. Tap one for its own page. "+ New goal" asks
@@ -37,7 +39,7 @@ export default function GoalsPage() {
   if (error && !data) return <p className="alert error">{error}</p>
   if (!data) return <p className="muted loading">Loading...</p>
   const choices = periodChoices(data.this_year)
-  const shown = data.goals.filter((g) => !show || g.status === show)
+  const shown = data.goals.filter((g) => shows(g, show))
   const sections = groupGoals(shown, data.this_year)
   const newForm = (
     <form className="goal-new card" onSubmit={add}>
@@ -74,7 +76,7 @@ export default function GoalsPage() {
           </div>
           {error && <p className="alert error">{error}</p>}
           {adding && newForm}
-          {shown.length === 0 ? <p className="muted">No {STATUS[show]?.label.toLowerCase()} goals.</p>
+          {shown.length === 0 ? <p className="muted">No {show === 'upcoming' ? 'upcoming' : STATUS[show]?.label.toLowerCase()} goals.</p>
             : sections.map((s) => <GoalSection key={s.key || 'none'} section={s} thisYear={data.this_year} />)}
         </>
       )}

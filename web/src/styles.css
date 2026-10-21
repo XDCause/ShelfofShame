@@ -2276,6 +2276,8 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .goal-family-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; }
 .goal-family-list .goal-meter { grid-column: 1 / -1; margin: 0; }
 .goal-family-meta { font-size: 0.85rem; color: var(--muted); }
+.goal-family-pace { grid-column: 1 / -1; }
+.goal-upcoming { background: var(--purple-bg); color: var(--purple); }
 .goal-setup { padding: 16px 18px; }
 .goal-setup > summary { list-style: none; cursor: pointer; display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
 .goal-setup > summary::-webkit-details-marker { display: none; }
