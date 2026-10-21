@@ -325,4 +325,4 @@
 .sys-check > .pill { flex: none; min-width: 72px; text-align: center; }
 .sys-check .item-meta { display: block; }
 .sys-fix { font-style: italic; }
-.sys-warning button { padding: 0; }
+.sys-warning button { display: inline-flex; align-items: center; min-height: 24px; padding: 0; }      /* (a tap target: 24 px at least) */

@@ -102,7 +102,8 @@ AI via MCP server (later) -----------------/
 - "Today": the database and the API both run on Brisbane time (TZ in their Dockerfiles); in SQL prefer the database's
   current_date (one clock for the row and the comparison).
 - Never calculate barcodes; learn them (HISTORY-early 3d).
-- `docker compose up -d` doesn't rebuild - use `.\dev.ps1` or `--build`.
+- `docker compose up -d` doesn't rebuild - use `.\dev.ps1` or `--build`. **Rebuild dev before test_all / promote**: the
+  walk-through runs on dev's BUILT images, so web changes since the last dev.ps1 aren't what it tests (2026-10-22).
 - Write multi-line edit scripts as .py files with the Write tool (shell heredocs and "\a", "\r" in Python strings have
   mangled paths), and never pass robocopy (or anything with /SWITCHES) through Git Bash - it rewrites them as paths.
 - Every photo URL must change when the photo changes (served with a 1-year cache).
