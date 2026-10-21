@@ -40,8 +40,13 @@ if (-not $Folder) {
         exit 1
     }
     $Folder = Join-Path $drive 'Off the Clock backups'
-    $answer = Read-Host "Put the encrypted copies in '$Folder'? (Enter = yes, or type another folder)"
-    if ($answer) { $Folder = $answer }
+    $answer = (Read-Host "Put the encrypted copies in '$Folder'? (Enter or y = yes, or type another folder's full path)").Trim()
+    if ($answer -and $answer -notmatch '^(y|yes)$') { $Folder = $answer }    # ("yes" once became a folder called yes)
+}
+# A full path, and not inside the app's own folder (a copy there isn't off-site - and git would see it).
+if (-not [IO.Path]::IsPathRooted($Folder)) { Write-Host "'$Folder' isn't a full path (like G:\My Drive\Off the Clock backups)." -ForegroundColor Yellow; exit 1 }
+if ([IO.Path]::GetFullPath($Folder).StartsWith($Root, [StringComparison]::OrdinalIgnoreCase)) {
+    Write-Host "That's inside the app's own folder - pick a folder Google Drive syncs." -ForegroundColor Yellow; exit 1
 }
 New-Item -ItemType Directory -Force $Folder | Out-Null
 
