@@ -37,10 +37,10 @@ from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI
 
-from . import (activity, auth, banners, boardgames, bookseries, build, calendar, catalog, chess, colours, garden, garden_doctor, garden_guide,
+from . import (activity, auth, auth_passkeys, banners, boardgames, bookseries, build, calendar, catalog, chess, colours, garden, garden_doctor, garden_guide,
                garden_items, garden_logs, garden_today,
-               gear, goals, hiking, journal, journal_drawings, journal_more, calendar_more, owned, supplies_more, wanted_more, shooting, shooting_sessions, shooting_shots, travel, travel_trip,
-               gundam, lookups, minis, vgsync, models, othergames, products, reading, readimport, reading_recs, settings, sitecheck, spending, supplies, vbclips, vbcoach, vgfind, vgfriends, videogames, wanted, webphoto,
+               gear, goals, hiking, journal, journal_drawings, journal_more, calendar_more, owned, supplies_more, wanted_more, shooting, shooting_sessions, shooting_shots, travel, travel_places, travel_trip,
+               gundam, lookups, minis, vgsync, models, othergames, products, reading, readimport, reading_recs, settings, sitecheck, spending, supplies, vbclips, vbcoach, vgfind, vgfriends, videogames, videogames_stats, wanted, webphoto,
                system, todos, volleyball, warhammer, wishlist)
 from .db import db
 
@@ -66,9 +66,10 @@ async def lifespan(_app):
 app = FastAPI(title="Off the Clock API", docs_url="/api/docs", openapi_url="/api/openapi.json", lifespan=lifespan)
 
 for part in (activity, banners, goals, todos, journal_drawings, journal_more, journal, calendar, calendar_more, owned, supplies_more, supplies, wanted_more, wishlist, products, catalog, models, minis, build, colours,
-             boardgames, volleyball, gear, vbclips, vbcoach, othergames, vgfind, vgfriends, videogames, chess, reading, readimport, hiking, garden, garden_logs, garden_today, garden_doctor, garden_guide, garden_items, shooting, shooting_sessions, shooting_shots, travel, travel_trip, reading_recs, bookseries, warhammer, gundam, spending, settings, system, sitecheck, lookups, webphoto, wanted):
+             boardgames, volleyball, gear, vbclips, vbcoach, othergames, vgfind, vgfriends, videogames_stats, videogames, chess, reading, readimport, hiking, garden, garden_logs, garden_today, garden_doctor, garden_guide, garden_items, shooting, shooting_sessions, shooting_shots, travel, travel_places, travel_trip, reading_recs, bookseries, warhammer, gundam, spending, settings, system, sitecheck, lookups, webphoto, wanted):
     app.include_router(part.router, dependencies=[Depends(auth.require_session)])   # signed in only (auth.py)
 app.include_router(auth.router)                  # signing in itself: each route checks what it needs
+app.include_router(auth_passkeys.router)         # (passkeys: the same - split out of auth.py)
 
 
 @app.get("/api/health")

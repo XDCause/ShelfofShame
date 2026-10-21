@@ -34,7 +34,7 @@ AI via MCP server (later) -----------------/
 **Only the API talks to PostgreSQL.** Exceptions are admin/dev tools: DBeaver, psql, the scripts (backup, migrate).
 
 ## Where to look
-- **Why things are the way they are: docs/HISTORY.md** (entries 3zzt - 5p; 1 - 3zzs are in docs/HISTORY-early.md).
+- **Why things are the way they are: docs/HISTORY.md** (entries 3zzt - 5q; 1 - 3zzs are in docs/HISTORY-early.md).
   Search both before changing something old - most odd-looking code has a lesson behind it. Design system:
   docs/DESIGN.md. Plans: docs/ROADMAP.md. **BEFORE_GOING_PUBLIC.md: add a row whenever a new data source, scraper,
   copied content or single-user shortcut is added.**
@@ -42,7 +42,9 @@ AI via MCP server (later) -----------------/
   routers - ORDER MATTERS where a fixed path shares a prefix with `/{id}` (e.g. supplies_more before supplies). db.py:
   the pool, enum lists that must match SQL CHECKs (MODULE_IDS, GEAR_HOBBIES...), insert_row / update_row / found /
   tidy_text. Outside sites: one module each, polite, faked in tests by conftest and answered by stand_ins.py in the
-  walk-through. system.py: Settings > System (backups, syncs, disk, updates).
+  walk-through. system.py: Settings > System (backups, syncs, disk, updates). Big modules are split by topic: garden (+ garden_logs,
+  garden_today), travel (+ travel_places), auth (+ auth_passkeys: no blanket session check, like auth), videogames
+  (+ videogames_stats - included BEFORE videogames: /videogames/stats would otherwise hit /videogames/{app_id}).
 - **Web** (`web/src`, React 19 + Vite): App.jsx (routes, panels via openPanel(type), openThing(kind, id)), api.js (every
   fetch), core/ (Home, Navigation, Goals, Journal, Calendar, Supplies tools...), modules/<hobby>/manifest.jsx (pages,
   panels, quick actions - loaded on demand with part() from modules/lazy.js) and HomeTiles.jsx (its Home tiles, loaded

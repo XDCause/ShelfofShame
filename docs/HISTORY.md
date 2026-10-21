@@ -684,3 +684,21 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
      Settings button ambiguous).
    - docs/stack.html: the tech-stack map (published as a page for the user). Its data block names every API module,
      hobby, outside site, tool and script; test_docs fails until anything new is on it.
+
+5q. **Toward 90: updates, more web tests, smaller files** (2026-10-22; user: "how can I make the score better", then
+   do 2-4, Google Drive last). Rescored 87 after 5p.
+   - Update round (each group tested on its own): FastAPI 0.143 -> 0.156.8 (Starlette 1.9), psycopg-pool 3.3.3,
+     BeautifulSoup 4.15.0, pytest 9.1.1; React 19.3.1, BlockNote 0.56.0 (still on Mantine 8 - it takes 8 or 9),
+     eslint-plugin-react 7.37.5, Node 22.23.4; Playwright 1.47 -> 1.64 (the noble image; ui_audit finds axe.min.js
+     through importlib, not a python3.10 path). All passed first time. Left for later: the majors (Mantine 9, Vite 8,
+     React Router 8, ESLint 10, @vitejs/plugin-react 6) and Starlette's "use httpx2 for the test client" warning.
+   - Web tests 16 -> 30: the Wishlist (tick, the list catches up after 6 s, undo, a refused tick, the hobby row
+     remembered), Goals (sections, the when choices, a new goal opens its page, status chips), a goal's Next up (arrow
+     keys reorder and save; a tick says Done with Undo), Supplies (search every word, need attention, a category,
+     the hobby row swapping to another hobby's kit). NextUp is exported for its test.
+   - Smaller files: InventoryView.jsx 607 -> 414 (+ inventoryParts.jsx), GoalPage.jsx 581 -> 285 (+ goalPageParts.jsx),
+     travel.py 589 -> 463 (+ travel_places.py), auth.py 571 -> 427 (+ auth_passkeys.py, included like auth: no blanket
+     session check), videogames.py 562 -> 474 (+ videogames_stats.py, included BEFORE videogames - /videogames/stats
+     would otherwise be read as /videogames/{app_id}). othergames.py stays whole: its routes use nearly all its sync
+     code, so a split would only add an import. The movers report what each part borrows from the other first; the
+     things the old file still needs stay there as shared helpers (no import circles).
