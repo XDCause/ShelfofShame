@@ -1943,3 +1943,8 @@ DBeaver connection confirmed working (2026-10-11).
    Done and the time left, its to-dos as steps, no pace, no nudges unless it has to-dos. Lesson: 83 re-ran in a test
    (proving it idempotent) and its kind CHECK quietly removed 84's milestone for the tests after it - a later migration
    that widens a constraint must be matched in the earlier file that also (re)defines it.
+5g. **Next up in your own order** (2026-10-21). 85_todo_order.sql: todos.sort_order; PUT /todos/order {todo_ids}. Open
+   to-dos sort by day (none last), then sort_order, then priority, then age - on a goal's Next up, its "Next:" step and
+   the To-do page's No day group. Undated ones on Next up have a grip: drag (pointer events, so mouse and finger) or
+   focus it and press up / down. Lesson: following the drag on the grip itself (setPointerCapture) lost the pointer as
+   soon as React moved the rows, so the drop never fired; the window follows a drag now, the order kept in a ref.

@@ -185,18 +185,93 @@ function Hero({ goal: g, save, run, reach, cheer }) {
   )
 }
 
-// Next up: the goal's own to-dos - tick them off here; they're on Goals > To-do and Home too.
+// Next up: the goal's own to-dos - tick them off here; they're on Goals > To-do and Home too. Dated ones come first,
+// by day; undated ones in your own order: drag one by its grip (mouse or finger), or focus the grip and use the
+// up / down arrow keys.
 function NextUp({ goal: g, reload }) {
   const [ticked, tickOff] = useTick(reload)
   const tick = async (t) => { await tickOff(t); reload() }       // (the goal's progress moves with it)
   const open = g.todos.filter((t) => !t.done_at)
+  const dated = open.filter((t) => t.due_on)
+  const undated = open.filter((t) => !t.due_on)
+  const [order, setOrder] = useState(null)                       // the ids while dragging (or just saved)
+  const list = useRef(null)
+  const drag = useRef(null)
+  const [dragging, setDragging] = useState(null)
+  const ids = order && order.length === undated.length && undated.every((t) => order.includes(t.todo_id))
+    ? order : undated.map((t) => t.todo_id)
+  const byId = new Map(undated.map((t) => [t.todo_id, t]))
+  const save = async (next) => {
+    setOrder(next)
+    try { await api.orderTodos(next) } catch { /* the list comes back as saved */ }
+    reload()
+  }
+  const move = (id, to) => {
+    const next = ids.filter((x) => x !== id)
+    next.splice(Math.max(0, Math.min(next.length, to)), 0, id)
+    return next
+  }
+  // While dragging, the window follows the pointer (the rows move under it, so the grip itself can lose it).
+  const follow = (e) => {
+    const d = drag.current
+    if (!d) return
+    const rows = [...list.current.querySelectorAll('[data-undated]')].filter((r) => Number(r.dataset.undated) !== d.id)
+    const to = rows.filter((r) => { const b = r.getBoundingClientRect(); return e.clientY > b.top + b.height / 2 }).length
+    const next = d.order.filter((x) => x !== d.id)
+    next.splice(to, 0, d.id)
+    if (next.join() !== d.order.join()) {
+      d.order = next
+      d.moved = true
+      setOrder(next)
+    }
+  }
+  const drop = () => {
+    const d = drag.current
+    drag.current = null
+    setDragging(null)
+    if (d?.moved) save(d.order)
+  }
+  const start = (e, id) => {
+    e.preventDefault()
+    drag.current = { id, moved: false, order: ids }
+    setDragging(id)
+    setOrder(ids)
+    const up = () => {
+      window.removeEventListener('pointermove', follow)
+      window.removeEventListener('pointerup', up)
+      window.removeEventListener('pointercancel', up)
+      drop()
+    }
+    window.addEventListener('pointermove', follow)
+    window.addEventListener('pointerup', up)
+    window.addEventListener('pointercancel', up)
+  }
+  const keys = (e, id) => {
+    const by = { ArrowUp: -1, ArrowDown: 1 }[e.key]
+    if (!by) return
+    e.preventDefault()
+    save(move(id, ids.indexOf(id) + by))
+  }
   const done = g.todos.filter((t) => t.done_at)
   return (
     <section className="card home-card goal-next-up">
       <h2 className="home-card-title">Next up{g.todos_total > 0 && <span className="muted small"> {g.todos_done} of {g.todos_total} done</span>}</h2>
       <QuickAdd onAdded={reload} placeholder="Add a step towards it..." extra={{ goal_id: g.goal_id, hobby: g.hobby }} />
       {open.length > 0
-        ? <ul className="list plain-list task-list">{open.map((t) => <TaskRow key={t.todo_id} t={t} done={ticked.has(t.todo_id)} onTick={tick} />)}</ul>
+        ? (
+          <ul className="list plain-list task-list" ref={list}>
+            {dated.map((t) => <TaskRow key={t.todo_id} t={t} done={ticked.has(t.todo_id)} onTick={tick} />)}
+            {ids.map((id) => byId.get(id)).filter(Boolean).map((t) => (
+              <TaskRow key={t.todo_id} t={t} done={ticked.has(t.todo_id)} onTick={tick} data-undated={t.todo_id}
+                data-dragging={dragging === t.todo_id ? 'yes' : undefined}
+                grip={undated.length > 1 && (
+                  <button type="button" className="task-grip" aria-label={`Move ${t.title} (up / down arrow keys)`} title="Drag to reorder"
+                    onPointerDown={(e) => start(e, t.todo_id)}
+                    onKeyDown={(e) => keys(e, t.todo_id)}>⠿</button>
+                )} />
+            ))}
+          </ul>
+        )
         : <p className="muted small">{done.length ? 'All done - add the next step when you know it.' : 'Break it into small steps: each one goes on your to-do list too.'}</p>}
       {done.length > 0 && (
         <Fold title="Done" detail={String(done.length)}>

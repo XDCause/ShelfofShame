@@ -2271,6 +2271,11 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
   100% { opacity: 0; transform: translate(var(--drift), 260px) rotate(var(--turn)); }
 }
 .goal-next-up .task-add { margin-bottom: 8px; }
+.task-grip { flex: none; align-self: center; width: 24px; min-height: 32px; padding: 0; border: 0; background: none; color: var(--faint);
+  font-size: 1.1rem; line-height: 1; cursor: grab; touch-action: none; border-radius: 6px; }
+.task-grip:hover, .task-grip:focus-visible { color: var(--text); background: var(--fill); }
+.task-grip:active { cursor: grabbing; }
+.task-row[data-dragging] { background: var(--fill); border-radius: 10px; box-shadow: 0 4px 14px rgb(0 0 0 / 0.12); }
 .goal-family-link { font-weight: 600; }
 .goal-family-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .goal-family-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; }

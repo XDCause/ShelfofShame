@@ -9,6 +9,7 @@ no day). Open ones come grouped by when: overdue, today, this week, later, no da
     GET    /todos/summary                counts for Home (open, overdue, today) + the next few
     POST   /todos                        a new one
     PATCH  /todos/{id}                   change it
+    PUT    /todos/order                  {todo_ids}: your order for undated ones (dragged on a goal's Next up)
     POST   /todos/{id}/done              tick it off (a repeating one adds its next)
     POST   /todos/{id}/undone            put it back
     DELETE /todos/{id}
@@ -36,7 +37,8 @@ SELECT = """SELECT t.*, g.title AS goal_title,
             WHEN t.due_on <= current_date + 6 THEN 'week'
             ELSE 'later' END AS bucket
 FROM todos t LEFT JOIN goals g USING (goal_id)"""
-OPEN_ORDER = """ORDER BY CASE WHEN t.due_on IS NULL THEN 1 ELSE 0 END, t.due_on, t.priority = 'high' DESC, t.created_at"""
+# soonest day first; without a day: the order you dragged them into (sort_order), then high priority, then oldest
+OPEN_ORDER = """ORDER BY t.due_on NULLS LAST, t.sort_order NULLS LAST, t.priority = 'high' DESC, t.created_at"""
 
 
 class TodoIn(BaseModel):
@@ -47,6 +49,10 @@ class TodoIn(BaseModel):
     hobby: str | None = Field(None, max_length=40)
     goal_id: int | None = Field(None, ge=1, le=2_000_000_000)
     repeats: Repeats = "never"
+
+
+class TodoOrder(BaseModel):
+    todo_ids: list[int] = Field(min_length=1, max_length=500)
 
 
 class TodoPatch(BaseModel):
@@ -116,6 +122,19 @@ def add_todo(body: TodoIn):
         check(conn, data)
         todo_id = insert_row(conn, "todos", data, "todo_id")
         return fetch(conn, todo_id)
+
+
+@router.put("/todos/order", status_code=204)
+def order_todos(body: TodoOrder):
+    """The to-dos in the order given (dragged): each gets its place; ones not sent keep theirs."""
+    ids = list(dict.fromkeys(body.todo_ids))
+    with db() as conn:
+        known = {r["todo_id"] for r in conn.execute("SELECT todo_id FROM todos WHERE todo_id = ANY(%s)", (ids,)).fetchall()}
+        if known != set(ids):
+            raise HTTPException(422, "Some of those to-dos don't exist.")
+        for i, todo_id in enumerate(ids):
+            conn.execute("UPDATE todos SET sort_order = %s WHERE todo_id = %s", (i, todo_id))
+    return Response(status_code=204)
 
 
 @router.patch("/todos/{todo_id}")

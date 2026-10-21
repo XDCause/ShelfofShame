@@ -84,3 +84,16 @@ def test_linked_to_a_goal_and_a_hobby(client):
     assert client.get("/api/todos").json()[0]["goal_id"] is None                 # the goal gone: the to-do stays
     assert client.post("/api/todos", json={"title": ""}).status_code == 422
     assert client.post("/api/todos", json={"title": "x", "repeats": "hourly"}).status_code == 422
+
+
+def test_undated_ones_in_your_own_order(client):
+    """Dragged on a goal's Next up: undated to-dos keep the order you put them in - after the dated ones."""
+    a, b, c = (add(client, title=t) for t in ("Alpha", "Bravo", "Charlie"))
+    dated = add(client, title="Dated", due_on=D(5))
+    assert [t["title"] for t in client.get("/api/todos").json()] == ["Dated", "Alpha", "Bravo", "Charlie"]
+    assert client.put("/api/todos/order", json={"todo_ids": [c["todo_id"], a["todo_id"], b["todo_id"]]}).status_code == 204
+    assert [t["title"] for t in client.get("/api/todos").json()] == ["Dated", "Charlie", "Alpha", "Bravo"]
+    assert client.put("/api/todos/order", json={"todo_ids": [999999]}).status_code == 422
+    assert client.put("/api/todos/order", json={"todo_ids": []}).status_code == 422
+    assert dated["sort_order"] is None
+

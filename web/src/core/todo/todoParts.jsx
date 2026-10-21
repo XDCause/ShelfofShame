@@ -44,12 +44,14 @@ export function useTick(onChanged) {
   return [ticked, tick]
 }
 
-export function TaskRow({ t, done, onTick, compact = false }) {
+// grip: something before the tick box (a goal's Next up: the handle to drag an undated one into place).
+export function TaskRow({ t, done, onTick, compact = false, grip = null, ...rest }) {
   const { openPanel } = useApp()
   const hobby = hobbyOf(t.hobby)
   const when = dueLabel(t)
   return (
-    <li className={`task-row${done ? ' task-done' : ''}${t.bucket === 'overdue' ? ' task-late' : ''}`}>
+    <li className={`task-row${done ? ' task-done' : ''}${t.bucket === 'overdue' ? ' task-late' : ''}`} {...rest}>
+      {grip}
       <input type="checkbox" className="task-check" checked={done} onChange={() => onTick(t)} aria-label={`Done: ${t.title}`} />
       <button type="button" className="task-open" onClick={() => openPanel('todo', { id: t.todo_id })}>
         <span className="item-title">{t.priority === 'high' && <span className="task-high" title="High priority">!</span>}{t.title}</span>

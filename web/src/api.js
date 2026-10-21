@@ -92,6 +92,7 @@ export const api = {
   goalSources: () => request('/goals/sources'),
   goalNudges: () => request('/goals/nudges'),
   goalCheckinSeen: () => request('/goals/checkin-seen', send('POST')),
+  orderTodos: (ids) => request('/todos/order', send('PUT', { todo_ids: ids })),
   addGoalUpdate: (id, note) => request(`/goals/${id}/updates`, send('POST', note)),
   deleteGoalUpdate: (updateId) => request(`/goal-updates/${updateId}`, send('DELETE')),
 

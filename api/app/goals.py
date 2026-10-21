@@ -103,7 +103,7 @@ SELECT g.*, p.title AS parent_title,
        (SELECT count(*)::int FROM todos t WHERE t.goal_id = g.goal_id) AS todos_total,
        (SELECT count(*)::int FROM todos t WHERE t.goal_id = g.goal_id AND t.done_at IS NOT NULL) AS todos_done,
        (SELECT t.title FROM todos t WHERE t.goal_id = g.goal_id AND t.done_at IS NULL
-        ORDER BY t.due_on NULLS LAST, t.priority = 'high' DESC, t.created_at LIMIT 1) AS next_step,
+        ORDER BY t.due_on NULLS LAST, t.sort_order NULLS LAST, t.priority = 'high' DESC, t.created_at LIMIT 1) AS next_step,
        (SELECT max(t.done_at)::date FROM todos t WHERE t.goal_id = g.goal_id) AS last_todo_done,
        (SELECT max(u.day) FROM goal_updates u WHERE u.goal_id = g.goal_id) AS last_update,
        (SELECT count(*)::int FROM goals c WHERE c.parent_id = g.goal_id) AS children,
@@ -266,7 +266,8 @@ def fetch(conn, goal_id: int) -> dict:
                                              WHEN t.due_on < current_date THEN 'overdue' WHEN t.due_on = current_date THEN 'today'
                                              WHEN t.due_on <= current_date + 6 THEN 'week' ELSE 'later' END AS bucket
                                  FROM todos t WHERE t.goal_id = %s
-                                 ORDER BY t.done_at IS NOT NULL, t.done_at DESC, t.due_on NULLS LAST, t.priority = 'high' DESC, t.created_at""",
+                                 ORDER BY t.done_at IS NOT NULL, t.done_at DESC, t.due_on NULLS LAST, t.sort_order NULLS LAST,
+                                          t.priority = 'high' DESC, t.created_at""",
                               (goal_id,)).fetchall()
     g["updates"] = [{**u, "value": float(u["value"]) if u["value"] is not None else None} for u in conn.execute(
         "SELECT * FROM goal_updates WHERE goal_id = %s ORDER BY day DESC, created_at DESC", (goal_id,)).fetchall()]
