@@ -36,7 +36,7 @@ export default function SettingsPanel({ lookups, settings, onClose, onSettings, 
 }
 
 // Light, dark, or whatever the device is set to (remembered on this device), and the name Home greets.
-function Appearance({ settings, onSettings }) {
+export function Appearance({ settings, onSettings }) {      // (exported for its tests)
   const [choice, setChoice] = useState(readTheme)
   const [name, setName] = useState(settings.your_name ?? '')
   const [saved, setSaved] = useState('')
@@ -119,7 +119,7 @@ function DefaultShop({ settings, onSettings }) {
   )
 }
 
-function Backups() {
+export function Backups() {      // (exported for its tests)
   const [data, setData] = useState(null)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState(null)
@@ -155,7 +155,7 @@ function Backups() {
         {latest && <a className="button secondary" href={backupUrl(latest.name)} download>Download latest</a>}
       </div>
       {message && <p className={`alert ${message.type} small`}>{message.text}</p>}
-      <p className="hint">Download one now and then and keep it off this PC (a USB stick, OneDrive), in case the PC dies.</p>
+      <p className="hint">Each backup is checked, and also goes to Google Drive, encrypted - System above shows how that's going.</p>
       {data.backups.length > 1 && (
         <Fold title="All backups" detail={data.backups.length} className="inner">
           <ul className="list compact">
