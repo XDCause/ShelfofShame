@@ -77,7 +77,9 @@ function Notify([string]$title, [string]$text) {
         Add-Content -Path $log -Value "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')  (no Windows notification: $($_.Exception.Message))" -Encoding ascii
     }
 }
-$NOTIFY = @{ backup = 'The backup'; restore_test = 'The weekly test restore'; offsite = 'The Google Drive copy'; copy = 'The network drive copy' }
+$NOTIFY = @{ backup = 'The backup'; restore_test = 'The weekly test restore'; offsite = 'The Google Drive copy'; copy = 'The network drive copy'
+             drive_sync = "Google Drive's upload"; drive_restore = 'The monthly restore test from Google Drive' }
+$QUIET_ONCE = @('drive_sync')       # (a big video can take a night to upload: say so the second time running)
 
 # A part that fails keeps the day it started failing and how many runs in a row have failed (Settings > System turns
 # red after a day of it), and says so with a notification.
@@ -87,7 +89,7 @@ function Set-Status([string]$part, [hashtable]$values) {
     if ($values.ok -eq $false) {
         $values.failing_since = if ($before -and $before.ok -eq $false -and $before.failing_since) { $before.failing_since } else { $values.at }
         $values.failures = if ($before -and $before.ok -eq $false -and $before.failures) { [int]$before.failures + 1 } else { 1 }
-        if ($NOTIFY.ContainsKey($part)) {
+        if ($NOTIFY.ContainsKey($part) -and -not ($QUIET_ONCE -contains $part -and $values.failures -lt 2)) {
             $runs = if ($values.failures -gt 1) { " ($($values.failures) runs in a row)" } else { '' }
             Notify "Off the Clock: $($NOTIFY[$part]) failed$runs" "$($values.message) - see Settings > System"
         }
@@ -123,9 +125,22 @@ function Get-Counts([string]$db) {
     return $out
 }
 
+# Restore a backup (already inside the container) into a throwaway database and count every table's rows against
+# $expected (a table -> rows map). Answers @{ restored; wrong (tables that came back different); tables; rows }.
+function Test-Restore([string]$inside, [hashtable]$expected) {
+    $scratch = 'restore_check'
+    docker exec $container psql -U $DbUser -d postgres -q -c "DROP DATABASE IF EXISTS $scratch" -c "CREATE DATABASE $scratch" 2>$null | Out-Null
+    docker exec $container pg_restore -U $DbUser -d $scratch --no-owner $inside 2>$null
+    $restored = $LASTEXITCODE -eq 0
+    $got = if ($restored) { Get-Counts $scratch } else { @{} }
+    docker exec $container psql -U $DbUser -d postgres -q -c "DROP DATABASE IF EXISTS $scratch" 2>$null | Out-Null
+    $wrong = @(foreach ($t in $expected.Keys) { if ($got[$t] -ne $expected[$t]) { "$t ($($got[$t]) of $($expected[$t]))" } })
+    return @{ restored = $restored; wrong = $wrong; tables = $got.Count; rows = ($got.Values | Measure-Object -Sum).Sum }
+}
+
 $lastTest = (Read-Status).restore_test
 $testDue = $TestRestore -or -not $lastTest -or -not $lastTest.ok -or ((Get-Date) - [datetime]$lastTest.at).TotalDays -ge 6.5
-if ($testDue) { $before = Get-Counts $DbName }
+$before = Get-Counts $DbName                          # (every night: saved with the backup for later test restores)
 
 docker exec $container pg_dump -U $DbUser -d $DbName -Fc -f "/tmp/$name"
 if ($LASTEXITCODE -ne 0) { Fail 'pg_dump returned an error' }
@@ -145,31 +160,28 @@ $size = [math]::Round((Get-Item $path).Length / 1KB)
 Log "OK: $name ($size KB, read back and checked)"
 Set-Status 'backup' @{ at = $now; ok = $true; name = $name; kb = $size; message = 'read back and checked' }
 
-# The weekly test restore: into a throwaway database, every table's rows counted against the live one.
+# This backup's row counts, kept beside it (backups\counts\<name>.json) so any later test restore - the monthly one
+# from Google Drive - knows what should come back. Only tables that didn't change while backing up are kept.
+$settled = Get-Counts $DbName
+$counts = @{}
+foreach ($t in $before.Keys) { if ($settled[$t] -eq $before[$t]) { $counts[$t] = $before[$t] } }
+$countsDir = Join-Path $folder 'counts'
+New-Item -ItemType Directory -Force $countsDir | Out-Null
+$counts | ConvertTo-Json | Set-Content -Path (Join-Path $countsDir "$name.json") -Encoding ascii
+Get-ChildItem $countsDir -Filter '*.json' | Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-200) } | Remove-Item
+
+# The weekly test restore: into a throwaway database, every table's rows counted against those counts.
 if ($testDue) {
-    $scratch = 'restore_check'
-    docker exec $container psql -U $DbUser -d postgres -q -c "DROP DATABASE IF EXISTS $scratch" -c "CREATE DATABASE $scratch" 2>$null | Out-Null
-    docker exec $container pg_restore -U $DbUser -d $scratch --no-owner "/tmp/$name" 2>$null
-    $restored = $LASTEXITCODE -eq 0
-    $after = if ($restored) { Get-Counts $scratch } else { @{} }
-    docker exec $container psql -U $DbUser -d postgres -q -c "DROP DATABASE IF EXISTS $scratch" 2>$null | Out-Null
-    $wrong = @()
-    if ($restored) {
-        $again = Get-Counts $DbName                       # (a table that changed while backing up isn't the backup's fault)
-        foreach ($t in $before.Keys) {
-            if ($after[$t] -ne $before[$t] -and $again[$t] -eq $before[$t]) { $wrong += "$t ($($after[$t]) of $($before[$t]))" }
-        }
-    }
-    if (-not $restored) {
+    $r = Test-Restore "/tmp/$name" $counts
+    if (-not $r.restored) {
         Log "FAILED: test restore of $name - pg_restore returned an error"
         Set-Status 'restore_test' @{ at = $now; ok = $false; name = $name; message = 'pg_restore returned an error' }
-    } elseif ($wrong.Count) {
-        Log "FAILED: test restore of $name - rows missing: $($wrong -join ', ')"
-        Set-Status 'restore_test' @{ at = $now; ok = $false; name = $name; message = "rows missing: $($wrong -join ', ')" }
+    } elseif ($r.wrong.Count) {
+        Log "FAILED: test restore of $name - rows missing: $($r.wrong -join ', ')"
+        Set-Status 'restore_test' @{ at = $now; ok = $false; name = $name; message = "rows missing: $($r.wrong -join ', ')" }
     } else {
-        $rows = ($after.Values | Measure-Object -Sum).Sum
-        Log "OK: test restore of $name - $($after.Count) tables, $rows rows, all match"
-        Set-Status 'restore_test' @{ at = $now; ok = $true; name = $name; tables = $after.Count; rows = $rows; message = 'all tables match' }
+        Log "OK: test restore of $name - $($r.tables) tables, $($r.rows) rows, all match"
+        Set-Status 'restore_test' @{ at = $now; ok = $true; name = $name; tables = $r.tables; rows = $r.rows; message = 'all tables match' }
     }
 }
 docker exec $container rm -f "/tmp/$name" | Out-Null
@@ -224,6 +236,72 @@ if ($CopyTo) {
     }
 }
 
+# Has Google finished uploading? Every Drive file older than 6 hours (tonight's are still going up) must be in Google
+# Drive for desktop's own list with a Google id and the same size, and nothing queued (api/app/drivecheck.py reads a
+# copy of its database inside the api container). Can't tell -> said so, never a failure of the backup.
+function Test-DriveUploaded([string]$driveFolder) {
+    $fs = Join-Path $env:LOCALAPPDATA 'Google\DriveFS'
+    $acct = Get-ChildItem $fs -Directory -ErrorAction SilentlyContinue | Where-Object { Test-Path (Join-Path $_.FullName 'metadata_sqlite_db') } |
+        Select-Object -First 1
+    if (-not $acct) {
+        Set-Status 'drive_sync' @{ at = $now; ok = $null; message = "Google Drive for desktop's database wasn't found - can't tell" }
+        return
+    }
+    $work = Join-Path $folder '.drivefs'
+    New-Item -ItemType Directory -Force $work | Out-Null
+    try {
+        foreach ($f in 'metadata_sqlite_db', 'metadata_sqlite_db-wal', 'metadata_sqlite_db-shm') {
+            $p = Join-Path $acct.FullName $f
+            if (Test-Path $p) { Copy-Item $p $work -Force }
+        }
+        $old = @(Get-ChildItem $driveFolder -Recurse -File -Filter '*.gpg' | Where-Object { $_.LastWriteTime -lt (Get-Date).AddHours(-6) })
+        ConvertTo-Json -InputObject @($old | ForEach-Object { @{ name = $_.Name; size = $_.Length } }) |
+            Set-Content -Path (Join-Path $work 'expected.json') -Encoding ascii
+        if (-not $old.Count) {
+            Set-Status 'drive_sync' @{ at = $now; ok = $null; checked = 0; message = 'nothing old enough to check yet' }
+            return
+        }
+        $raw = docker exec $ApiContainer python -m app.drivecheck /backups/.drivefs/metadata_sqlite_db /backups/.drivefs/expected.json
+        $r = ($raw -join '') | ConvertFrom-Json
+        $values = @{ at = $now; ok = $r.ok; checked = $r.checked; queued = $r.queued; message = $r.message }
+        if ($r.pending) { $values.pending = ($r.pending -join ', ') }
+        Set-Status 'drive_sync' $values
+        Log "$(if ($r.ok) { 'OK' } elseif ($r.ok -eq $false) { 'WARNING' } else { 'NOTE' }): Google Drive uploads - $($r.message) ($($r.checked) files checked)"
+    } finally {
+        Remove-Item $work -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+# Once a month: a backup fetched back from Google Drive, decrypted with the saved password and restored into a
+# throwaway database, every table counted against what was saved with it (backups\counts). It prefers a copy over 6
+# days old, which Drive is more likely to have to download - the whole way back, end to end.
+function Test-DriveRestore([string]$driveFolder, [string]$key) {
+    $last = (Read-Status).drive_restore
+    if (-not $TestRestore -and $last -and $last.ok -and ((Get-Date) - [datetime]$last.at).TotalDays -lt 28) { return }
+    $countsDir = Join-Path $folder 'counts'
+    $copies = @(Get-ChildItem $driveFolder -Filter 'hobby_inventory_*.dump.gpg' | Sort-Object Name -Descending |
+        Where-Object { Test-Path (Join-Path $countsDir (($_.Name -replace '\.gpg$', '') + '.json')) })
+    if (-not $copies.Count) { Log 'NOTE: no Drive copy with saved counts yet for the monthly restore test'; return }
+    $pick = @($copies | Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-6) })[0]
+    if (-not $pick) { $pick = $copies[0] }
+    $dumpName = $pick.Name -replace '\.gpg$', ''
+    $plain = Join-Path $env:TEMP "otc-drive-restore-$dumpName"
+    try {
+        Unprotect-Backup $pick.FullName $plain $key
+        docker cp $plain "${container}:/tmp/drive-restore.dump" | Out-Null
+        $saved = @{}
+        (Get-Content (Join-Path $countsDir "$dumpName.json") -Raw | ConvertFrom-Json).PSObject.Properties | ForEach-Object { $saved[$_.Name] = [int64]$_.Value }
+        $r = Test-Restore '/tmp/drive-restore.dump' $saved
+        docker exec $container rm -f /tmp/drive-restore.dump | Out-Null
+    } finally {
+        Remove-Item $plain -ErrorAction SilentlyContinue
+    }
+    if (-not $r.restored) { throw "$dumpName from Drive didn't restore (pg_restore returned an error)" }
+    if ($r.wrong.Count) { throw "$dumpName from Drive came back with rows missing: $($r.wrong -join ', ')" }
+    Log "OK: monthly restore test from Google Drive - ${dumpName}: $($r.tables) tables, $($r.rows) rows, all match"
+    Set-Status 'drive_restore' @{ at = $now; ok = $true; name = $dumpName; tables = $r.tables; rows = $r.rows; message = 'all tables match' }
+}
+
 # Off-site: encrypted, into the folder Google Drive syncs (prod only; set up with setup-offsite.ps1).
 $offsiteCfg = Join-Path $env:USERPROFILE '.offtheclock\offsite.json'
 $keyFile = Join-Path $env:USERPROFILE '.offtheclock\backup-key.xml'
@@ -252,6 +330,11 @@ if ($AppEnv -eq 'prod' -and (Test-Path $offsiteCfg)) {
         Log "OK: videos on Drive - $($videos.files) files, $($videos.mb) MB$(if ($videos.sent) { ", $($videos.sent) new sent" })"
         Set-Status 'offsite' @{ at = $now; ok = $true; folder = $cfg.folder; files = @($files).Count; mb = $mb; budget_mb = $OffsiteBudgetMB
                                 videos = $videos.files; videos_mb = $videos.mb; message = 'encrypted and checked' }
+        try { Test-DriveUploaded $cfg.folder } catch { Log "WARNING: couldn't check Google Drive's uploads: $($_.Exception.Message)" }
+        try { Test-DriveRestore $cfg.folder $pass } catch {
+            Log "FAILED: monthly restore test from Google Drive - $($_.Exception.Message)"
+            Set-Status 'drive_restore' @{ at = $now; ok = $false; message = $_.Exception.Message }
+        }
     } catch {
         Log "WARNING: off-site copy failed: $($_.Exception.Message)"
         Set-Status 'offsite' @{ at = $now; ok = $false; message = $_.Exception.Message }

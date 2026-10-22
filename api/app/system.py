@@ -103,8 +103,40 @@ def backup_checks(now: datetime, status: dict) -> list[dict]:
                          f"Encrypted copy {_ago(when, now)} - {off.get('files')} kept, {off.get('mb')} MB of the "
                          f"{off.get('budget_mb')} MB allowed" + (f"; videos: {off['videos']} ({off.get('videos_mb', 0) / 1024:.1f} GB)"
                                                                 if off.get("videos") is not None else ""), when))
+    if off and os.environ.get("APP_ENV", "prod") == "prod":
+        out += drive_checks(now, status)
     out.append(copy_check(now, status.get("copy") or {}))
     return [c for c in out if c]
+
+
+def drive_checks(now: datetime, status: dict) -> list[dict]:
+    """Has Google finished uploading (backup.ps1 + drivecheck.py), and the monthly restore from a Drive copy."""
+    out = []
+    sync = status.get("drive_sync") or {}
+    when = _at(sync.get("at"))
+    if not sync or sync.get("ok") is None:
+        out.append(check("drive_sync", "Drive upload", "off", sync.get("message") or "Not checked yet - the next nightly backup does", when))
+    elif sync.get("ok"):
+        out.append(check("drive_sync", "Drive upload", "ok", f"All {sync.get('checked')} files are up on Google Drive (checked {_ago(when, now)})", when))
+    else:
+        runs = int(sync.get("failures") or 1)
+        out.append(check("drive_sync", "Drive upload", "bad" if runs >= 2 else "warn",
+                         f"{sync.get('message')}" + (f" ({runs} nights running)" if runs > 1 else "") +
+                         (f": {sync['pending']}" if sync.get("pending") else ""), when,
+                         "Is Google Drive for desktop running and signed in? Its icon in the taskbar shows what's left to upload"))
+    test = status.get("drive_restore") or {}
+    when = _at(test.get("at"))
+    if not test:
+        out.append(check("drive_restore", "Restore from Drive", "warn", "Not done yet - the next nightly backup does one", None))
+    elif test.get("ok") is False:
+        out.append(check("drive_restore", "Restore from Drive", "bad", f"Failed: {test.get('message')}", when,
+                         "Run .\\backup.ps1 -TestRestore in the prod folder and look at backups\\backup.log"))
+    else:
+        stale = now - when > timedelta(days=35)
+        out.append(check("drive_restore", "Restore from Drive", "warn" if stale else "ok",
+                         f"A copy from Google Drive restored {_ago(when, now)}: {test.get('tables')} tables, {test.get('rows')} rows, all there",
+                         when, "Run .\\backup.ps1 -TestRestore in the prod folder" if stale else None))
+    return out
 
 
 def copy_check(now: datetime, copy: dict) -> dict | None:

@@ -114,3 +114,24 @@ def test_a_first_network_copy_failure_is_amber_and_a_quiet_one_too(client, folde
     (folder / "status.json").write_text(json.dumps({"copy": quiet}))
     c = by_key(client)["copy"]
     assert c["state"] == "warn" and "Task Scheduler" in c["fix"]
+
+
+def test_the_drive_upload_and_the_restore_from_drive(client, folder):
+    now = datetime.now()
+    at = now.isoformat(timespec="seconds")
+    base = {"offsite": {"at": at, "ok": True, "files": 3, "mb": 33, "budget_mb": 2048}}
+    (folder / "status.json").write_text(json.dumps(base))
+    c = by_key(client)
+    assert c["drive_sync"]["state"] == "off" and c["drive_restore"]["state"] == "warn"          # (not done yet)
+    (folder / "status.json").write_text(json.dumps({**base,
+        "drive_sync": {"at": at, "ok": True, "checked": 7, "message": "all uploaded"},
+        "drive_restore": {"at": (now - timedelta(days=3)).isoformat(timespec="seconds"), "ok": True, "tables": 105, "rows": 18735}}))
+    c = by_key(client)
+    assert c["drive_sync"]["state"] == "ok" and "All 7 files are up" in c["drive_sync"]["detail"]
+    assert c["drive_restore"]["state"] == "ok" and "105 tables" in c["drive_restore"]["detail"]
+    (folder / "status.json").write_text(json.dumps({**base,
+        "drive_sync": {"at": at, "ok": False, "checked": 7, "failures": 2, "message": "2 not uploaded yet", "pending": "a.gpg, b.gpg"},
+        "drive_restore": {"at": at, "ok": False, "message": "rows missing: supplies (3 of 22)"}}))
+    c = by_key(client)
+    assert c["drive_sync"]["state"] == "bad" and "2 nights running" in c["drive_sync"]["detail"] and "a.gpg" in c["drive_sync"]["detail"]
+    assert c["drive_restore"]["state"] == "bad" and "rows missing" in c["drive_restore"]["detail"]
