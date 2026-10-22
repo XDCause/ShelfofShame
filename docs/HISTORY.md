@@ -717,3 +717,23 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
      (Send-OffsiteMedia: decrypted again and compared before it counts; ~5 GB of 15 GB), restore-offsite.ps1 -Videos
      brings them back. The nightly task no longer copies to the modem's drive (-CopyTo dropped; backup.ps1 clears the
      old "copy" status so its red line goes).
+
+5s. **Backups proven from Drive; web tests 44; the big version jumps** (2026-10-22, the user: "Lets do 1, 2 and 3").
+   - Did Google really finish uploading? Drive for desktop keeps its state in a SQLite file
+     (%LOCALAPPDATA%\Google\DriveFS\<account>\metadata_sqlite_db). backup.ps1 copies it (and its -wal / -shm) into
+     backups\.drivefs and the API container reads it (app/drivecheck.py): each .gpg older than 6 h must have a cloud id
+     (not "local-..."), the same size, not be trashed, and the upload queue must be empty. The file's layout is
+     undocumented, so "can't tell" is ok=null and never fails a backup. Settings > System: Drive upload (red after two
+     nights with files waiting - one night can just be a slow upload).
+   - Monthly (28 days, or -TestRestore) a dump is taken back FROM the Drive folder, decrypted, and test-restored like
+     the weekly one, every table's rows compared with the counts saved for that dump (backups\counts\<name>.json,
+     written each night). Restore from Drive: amber if never done or older than 35 days, red if it failed.
+   - Web tests 30 -> 44: Settings (Appearance, Backups, System and Home's warning), the calendar views, the journal
+     list's filters. src/tests/setup.js gives jsdom matchMedia.
+   - The majors, one at a time, each through npm audit, the web tests, lint and a full build: React Router 8.5.0
+     (nothing to change), Vite 8.3.5 + @vitejs/plugin-react 6.1.2 (Rolldown: the main download 224 -> 186 KB
+     compressed, 218 files instead of 168), Mantine 9.7.3 (only BlockNote uses it), ESLint 10.13.0.
+     ESLint 10: eslint-plugin-react (no release since 2025-04) stops at ESLint 9, so its rules moved to
+     @eslint-react/eslint-plugin 5.28.4, one for one, except jsx-no-duplicate-props (no counterpart) and
+     jsx-uses-vars / jsx-no-undef: ESLint 10 tracks JSX names itself - checked with a file using one import only in
+     JSX (fine), one not at all (warned) and an undefined component (error).

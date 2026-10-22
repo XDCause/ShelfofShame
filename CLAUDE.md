@@ -34,7 +34,7 @@ AI via MCP server (later) -----------------/
 **Only the API talks to PostgreSQL.** Exceptions are admin/dev tools: DBeaver, psql, the scripts (backup, migrate).
 
 ## Where to look
-- **Why things are the way they are: docs/HISTORY.md** (entries 3zzt - 5r; 1 - 3zzs are in docs/HISTORY-early.md).
+- **Why things are the way they are: docs/HISTORY.md** (entries 3zzt - 5s; 1 - 3zzs are in docs/HISTORY-early.md).
   Search both before changing something old - most odd-looking code has a lesson behind it. Design system:
   docs/DESIGN.md. Plans: docs/ROADMAP.md. **BEFORE_GOING_PUBLIC.md: add a row whenever a new data source, scraper,
   copied content or single-user shortcut is added.**
