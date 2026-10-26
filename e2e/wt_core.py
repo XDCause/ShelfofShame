@@ -174,7 +174,12 @@ def calendar(page):
     expect(page.locator(".toast")).to_contain_text("added to the calendar")
     detail = page.locator(".day-detail")
     expect(detail).to_contain_text(f"Volleyball comp {MARK}")
-    assert page.locator(".day-event", has_text=MARK).count() >= 3      # every week on the grid
+    # every week on the grid: counted on NEXT month's, all after today (this month's can hold only 2 when it
+    # starts late in the month - it failed on Monday 26 Oct 2026); then back to today for the steps below
+    page.get_by_role("button", name="Next month").click()
+    expect(page.locator(".day-event", has_text=MARK).nth(3)).to_be_visible()   # 4 at least
+    page.get_by_role("button", name="Today").click()
+    expect(detail).to_contain_text(f"Volleyball comp {MARK}")
     shot(page, "d31_calendar")
     # An all-day event: the switch hides the times; it shows as a solid bar and "All day".
     page.get_by_role("button", name="+ Add event").click()

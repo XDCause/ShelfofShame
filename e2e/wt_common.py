@@ -99,7 +99,8 @@ def step(name):
                 fn(page, *a)
                 results.append((name, "PASS", f"{time.time() - t:.1f}s"))
             except Exception as e:  # keep going: one broken step shouldn't hide the rest
-                results.append((name, "FAIL", f"{type(e).__name__}: {str(e).splitlines()[0][:220]}"))
+                first = (str(e).splitlines() or ["(no message)"])[0]   # a bare assert has none: that crashed the run
+                results.append((name, "FAIL", f"{type(e).__name__}: {first[:220]}"))
                 safe = re.sub(r"\W+", "_", name)
                 try:
                     page.screenshot(path=f"{OUT}/FAIL_{safe}.png", full_page=True)
