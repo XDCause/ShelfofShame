@@ -77,7 +77,8 @@ def global_search(page):
     page.goto(BASE + "/")
     expect(page.locator(".home-banner h2")).to_be_visible()
     page.keyboard.press("Control+k")
-    expect(page.get_by_label("Search everything")).to_be_focused()   # focused a moment later: typing before it was lost
+    # focused a moment later (typing before it was lost); two boxes have this label, so the one with the focus
+    expect(page.locator('input[aria-label="Search everything"]:focus')).to_have_count(1)
     page.keyboard.type("Sherman")
     expect(page.locator(".search-results li").first).to_contain_text("Sherman")
     page.keyboard.press("Enter")
