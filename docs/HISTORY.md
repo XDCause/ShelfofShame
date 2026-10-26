@@ -740,3 +740,6 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
    - Fixed 2026-10-26: Drive upload went red after two nights saying "2 change(s) still queued" with every file it
      checked safely up. The check runs seconds after the backup writes tonight's file and removes an old one, so those
      two changes are always queued then. Now only the files old enough to be up decide it; the queue is just mentioned.
+   - Also 2026-10-26: the 3 am run on the 26th (just after the laptop woke) logged nothing and was killed at the task's
+     15-minute limit - the first docker command waited on a still-waking Docker Desktop. backup.ps1 now asks Docker in
+     a job with a 30 s limit, up to 8 times, and fails loudly (log, status, notification) if it never answers.

@@ -110,7 +110,17 @@ function Fail($msg) {
     exit 1
 }
 
-$state = docker inspect --format '{{.State.Health.Status}}' $container 2>$null
+# Is the database up? Asked in a job with a time limit, again for up to ~6 minutes (2026-10-26: run at 3 am just after
+# the laptop woke, the first docker command waited on a still-waking Docker Desktop until the task's 15-minute limit
+# killed it - no log line, no notification). Now it gives up loudly, well inside the limit.
+$state = ''
+for ($try = 1; $try -le 8; $try++) {
+    $job = Start-Job { param($c) docker inspect --format '{{.State.Health.Status}}' $c 2>$null } -ArgumentList $container
+    if (Wait-Job $job -Timeout 30) { $state = "$(Receive-Job $job)".Trim() } else { $state = 'docker not answering' }
+    Remove-Job $job -Force
+    if ($state -eq 'healthy') { break }
+    Start-Sleep -Seconds 15
+}
 if ($state -ne 'healthy') { Fail "$container is not running/healthy (state: '$state'). Is Docker Desktop running?" }
 
 # Every table's row count (exact), for the test restore to compare with.
