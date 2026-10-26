@@ -74,6 +74,7 @@ def no_panel(page):
 def global_search(page):
     go(page, "Home")
     page.keyboard.press("Control+k")
+    expect(page.get_by_label("Search everything")).to_be_focused()   # focused a moment later: typing before it was lost
     page.keyboard.type("Sherman")
     expect(page.locator(".search-results li").first).to_contain_text("Sherman")
     page.keyboard.press("Enter")
