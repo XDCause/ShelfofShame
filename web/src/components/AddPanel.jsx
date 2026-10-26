@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api, imageUrl } from '../api.js'
 import Drawer from './Drawer.jsx'
+import ItemLookup from './ItemLookup.jsx'
 import { shrink } from './PhotoUpload.jsx'
 import ScanButton from './ScanButton.jsx'
 import SimilarItems from './SimilarItems.jsx'
@@ -26,8 +27,6 @@ export default function AddPanel({ lookups, settings, scanned: initialScan, onCl
     const r = initialScan.result
     return applyResult(r.match === 'unknown' && r.brand_id == null ? { ...start, brand_id: '' } : start, r)
   })
-  const [code, setCode] = useState('')
-  const [choices, setChoices] = useState(null) // both makers have this number: their results, to pick from
   const [busy, setBusy] = useState('')
   const [message, setMessage] = useState(null)
   const [supplies, setSupplies] = useState([]) // for "Already in your inventory"
@@ -49,55 +48,10 @@ export default function AddPanel({ lookups, settings, scanned: initialScan, onCl
     setForm((f) => applyResult(f, result))
   }
 
-  const lookup = async () => {
-    if (!code.trim()) return
-    setBusy('lookup')
-    setMessage(null)
-    try {
-      // The API asks Tamiya and / or Trumpeter (a plain number could be either's); both found = you pick.
-      const { found: hits, missed, choices: matches } = await api.lookupItem(code.trim())
-      if (matches) {                           // words: Stedi's tools that match - you pick one
-        setChoices(matches)
-        setFound(null)
-        return
-      }
-      const unsure = missed.filter((m) => ![404, 409, 422].includes(m.status)).map((m) => `${m.maker}: ${m.message}`)
-      if (hits.length > 1) {
-        setChoices(hits)
-        setFound(null)
-      } else {
-        pick(hits[0], hits.length + missed.length > 1, unsure)
-      }
-    } catch (e) {
-      setMessage({ tone: 'error', text: e.message })
-    } finally {
-      setBusy('')
-    }
-  }
-
-  const pick = async (r, say = false, unsure = []) => {
-    if (r.sku && !r.product_code) {            // a Stedi search result: look that tool up properly first
-      setBusy('lookup')
-      try {
-        r = (await api.lookupItem(r.sku)).found[0]
-      } catch (e) {
-        setMessage({ tone: 'error', text: e.message })
-        return
-      } finally {
-        setBusy('')
-      }
-      say = true
-    }
-    const { maker } = r
-    setChoices(null)
+  const onFound = (r) => {
     setFound(r)
+    setMessage(null)
     setForm((f) => applyResult(f, r))
-    if (r.warning) setMessage({ tone: 'error', text: r.warning })
-    else if (maker === 'Trumpeter' && r.is_tool === false) {
-      setMessage({ tone: 'low', text: `That's a Trumpeter kit (${r.item_type ?? 'a model'}) - kits usually go in Models.` })
-    } else if (unsure.length) setMessage({ tone: 'low', text: `Found at ${maker}. Couldn't check the other site (${unsure.join('; ')}).` })
-    else if (r.price_usd != null) setMessage({ tone: 'ok', text: `Found at Stedi: US$${r.price_usd.toFixed(2)} on steditools.com (US dollars - put in what you paid).` })
-    else if (say) setMessage({ tone: 'ok', text: `Found at ${maker}.` })
   }
 
   // After saving: remember the scanned barcode and keep your photo if there's no other.
@@ -177,17 +131,7 @@ export default function AddPanel({ lookups, settings, scanned: initialScan, onCl
     <Drawer title="Add a supply" onClose={onClose} footer={footer}>
       <section className="panel-section add-start">
         <ScanButton onBarcode={onBarcode} label={scan ? 'Use another barcode' : 'Use barcode'} />
-        <div className="lookup-row">
-          <label className="field">
-            <span className="field-label">or item number, paint code - or a Stedi tool</span>
-            <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. XF-76, 81776, 08005, MS-106 or nipper"
-              autoCapitalize="characters"
-              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); lookup() } }} />
-          </label>
-          <button type="button" className="secondary" onClick={lookup} disabled={busy !== '' || !code.trim()}>
-            {busy === 'lookup' ? 'Looking up...' : 'Look up'}
-          </button>
-        </div>
+        <ItemLookup onFound={onFound} />
       </section>
 
       {scan && (
@@ -201,27 +145,8 @@ export default function AddPanel({ lookups, settings, scanned: initialScan, onCl
           <button type="button" className="plain" onClick={() => onOpen(owned)}>Open it</button> to add stock with +.
         </p>
       )}
+      {found?.warning && <p className="alert error small">{found.warning}</p>}
       {message && <p className={`alert ${message.tone} small`} role="alert">{message.text}</p>}
-      {choices && (
-        <section className="panel-section" aria-label="Which one">
-          <p className="hint">{choices[0]?.sku ? `${choices.length} Stedi tool${choices.length > 1 ? 's' : ''} match. Which is yours?`
-            : `Tamiya and Trumpeter both have item ${code.trim()}. Which is yours?`}</p>
-          <ul className="list kit-choices">
-            {choices.map((c) => (
-              <li key={c.sku ?? c.maker}>
-                <button type="button" className="row-button" onClick={() => pick(c)}>
-                  {c.has_image ? <img className="thumb" src={imageUrl(c)} alt="" loading="lazy" />
-                    : c.image ? <img className="thumb" src={c.image} alt="" loading="lazy" referrerPolicy="no-referrer" />
-                      : <span className="thumb thumb-empty" aria-hidden="true" />}
-                  <span><strong>{c.sku ?? c.maker}</strong> · {c.name ?? c.title}{c.version && <span className="muted"> · {c.version}</span>}
-                    {c.price_usd != null && <span className="muted small"> · US${c.price_usd.toFixed(2)}</span>}
-                    {c.available === false && <span className="muted small"> · sold out</span>}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
 
       {(photo || yourPhotoUrl || found?.title) && (
         <div className="preview">

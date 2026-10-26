@@ -109,12 +109,24 @@ def add_to_wishlist_button(page):
     go(page, "Supplies")
 
 
-@step("Wishlist: total line and the side-panel form")
+@step("Wishlist: total line and the side-panel form, with Add a supply's look-up (not just Tamiya)")
 def wishlist_panel(page):
     go(page, "Wishlist")
     page.locator(".wish-head").get_by_role("button", name="+ Add").click()
-    expect(drawer(page).locator(".drawer-head")).to_contain_text("Add to wishlist")
+    d = drawer(page)
+    expect(d.locator(".drawer-head")).to_contain_text("Add to wishlist")
     shot(page, "d14_wishlist_panel")
+    # the same box as Add a supply: a number only Trumpeter has (stand-ins) fills the form in (not saved)
+    d.get_by_placeholder("e.g. XF-76, 81776, 08005, MS-106 or nipper").fill("08005")
+    d.get_by_role("button", name="Look up").click()
+    expect(d.get_by_label("Name", exact=True)).to_have_value("Masking Tape Cutter")
+    expect(d.get_by_role("alert")).to_contain_text("Found at Trumpeter")
+    # a kit: Models' Add a model (every kit look-up), already Wanted (not saved)
+    d.get_by_role("button", name="Look up a kit").click()
+    d = drawer(page)
+    expect(d.locator(".drawer-head")).to_contain_text("Add a kit to your wishlist")
+    expect(d.get_by_text("Look up a kit (optional)")).to_be_visible()
+    expect(d.get_by_label("Status")).to_have_value("Wanted")
     page.keyboard.press("Escape")
 
 

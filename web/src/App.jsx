@@ -88,7 +88,7 @@ export default function App() {
   }, [loadLookups])
 
   const close = useCallback(() => setPanel(null), [])
-  const openModel = useCallback((id) => setPanel({ type: 'model', id }), [])
+  const openModel = useCallback((id, more = {}) => setPanel({ type: 'model', id, ...more }), [])   // more: {wanted: true} = a new kit for the wishlist
   const openItem = useCallback((id) => setPanel({ type: 'item', id }), [])
   const show = (type, text) => setFlash({ type, text })
   const clearFlash = useCallback(() => setFlash(null), [])
@@ -300,7 +300,7 @@ export default function App() {
             }} />
         )}
         {lookups && panel?.type === 'model' && (
-          <ModelPanel key={panel.id ?? 'new-model'} modelId={panel.id} lookups={lookups} settings={settings}
+          <ModelPanel key={panel.id ?? 'new-model'} modelId={panel.id} wanted={panel.wanted} lookups={lookups} settings={settings}
             onClose={close} onChanged={changed} onCreated={openModel} onOpenSupply={openItem} />
         )}
         {lookups && panel?.type === 'settings' && (

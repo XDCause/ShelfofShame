@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { api, timeAgo } from '../api.js'
 import { BoxIcon, CalendarIcon, CartIcon, ChevronIcon, JournalIcon, PenIcon } from '../components/icons.jsx'
@@ -12,8 +13,8 @@ import TodoHome from './todo/TodoHome.jsx'
 import GoalNudges from './goals/GoalNudges.jsx'
 import JournalHome from './journal/JournalHome.jsx'
 import { useNewPage } from './journal/JournalList.jsx'
-import { SiteCheckWarning } from '../components/SiteChecks.jsx'
-import { SystemWarning } from '../components/SystemStatus.jsx'
+import { SiteCheckWarning, useFailingSites } from '../components/SiteChecks.jsx'
+import { SystemWarning, useSystemAttention } from '../components/SystemStatus.jsx'
 import { RunningLow, SuppliesTiles } from './SuppliesHome.jsx'
 import { useShared } from './useShared.js'
 
@@ -46,13 +47,37 @@ export function HomeHero({ area }) {
         <p className="hero-date">{today}</p>
         <h2>{greeting(now.getHours())}{settings?.your_name && `, ${settings.your_name}`}</h2>
         <p className="hero-tagline">{tagline()}</p>
-        <button type="button" className="primary hero-write" onClick={() => newPage({ title: today })}>
-          Write today's entry <ChevronIcon size={16} />
-        </button>
+        <div className="hero-actions">
+          <button type="button" className="primary hero-write" onClick={() => newPage({ title: today })}>
+            Write today's entry <ChevronIcon size={16} />
+          </button>
+          <HomeAttention />
+        </div>
       </div>
       <p className="hero-script" aria-hidden="true">Better things<br />outside of work.</p>
       <BannerPicture area={{ ...area, name: 'Home' }} photo={banners.home} />
     </header>
+  )
+}
+
+// A "!" by "Write today's entry" when the app needs a look (a late backup, a lookup site that changed...); tap it
+// for what and a link to Settings. Nothing when all is well. (It was a banner above the cards; user, 2026-10-26:
+// a "!" keeps Home's layout still.)
+function HomeAttention() {
+  const system = useSystemAttention()
+  const failing = useFailingSites()
+  const ref = useRef(null)
+  const count = (system?.attention.length ?? 0) + (failing.length ? 1 : 0)
+  if (!count) return null
+  const close = () => { if (ref.current) ref.current.open = false }
+  return (
+    <details className={`hero-attention${system?.worst === 'bad' ? ' bad' : ''}`} ref={ref}>
+      <summary aria-label={`${count} thing${count === 1 ? '' : 's'} need${count === 1 ? 's' : ''} a look`}>!</summary>
+      <div className="hero-attention-card">
+        <SystemWarning data={system} onOpen={close} />
+        <SiteCheckWarning failing={failing} onOpen={close} />
+      </div>
+    </details>
   )
 }
 
@@ -70,8 +95,6 @@ export default function Home() {
 
   return (
     <section className="page home">
-      <SystemWarning />
-      <SiteCheckWarning />
       <div className="home-now">
         {features.map((m) => <m.home.Feature key={m.id} />)}
         <RecentActivity items={activity} />

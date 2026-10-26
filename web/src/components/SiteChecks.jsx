@@ -45,17 +45,23 @@ export default function SiteChecks() {
 }
 
 // Home: a quiet warning when a site the app reads has stopped working (nothing when all is well).
-export function SiteCheckWarning() {
-  const { refreshKey, openPanel } = useApp()
+// (Home shows it behind the "!" by "Write today's entry": HomeAttention.)
+export function useFailingSites() {
+  const { refreshKey } = useApp()
   const [failing, setFailing] = useState([])
   useEffect(() => {
     api.siteChecks().then((d) => setFailing(d.sites.filter((s) => s.ok === false))).catch(() => setFailing([]))
   }, [refreshKey])
-  if (failing.length === 0) return null
+  return failing
+}
+
+export function SiteCheckWarning({ failing, onOpen }) {
+  const { openPanel } = useApp()
+  if (!failing?.length) return null
   return (
     <p className="alert low site-check-warning">
       {failing.map((s) => s.site).join(', ')} {failing.length === 1 ? 'has' : 'have'} changed: look-ups there may not
-      work. <button type="button" className="plain small" onClick={() => openPanel('settings')}>See Settings › Lookup sites</button>
+      work. <button type="button" className="plain small" onClick={() => { onOpen?.(); openPanel('settings') }}>See Settings › Lookup sites</button>
     </p>
   )
 }

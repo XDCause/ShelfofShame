@@ -545,6 +545,9 @@ def test_a_month_recap_and_the_unlock_calendar(client, fake):
     assert r["rarest"][0]["name"] == "Summit" and r["top_games"][0]["name"] == "Celeste"
     assert client.get("/api/videogames/recap?month=2026-09").json()["achievements"] == 0
     assert client.get("/api/videogames/recap?month=Oct").status_code == 422
+    life = client.get("/api/videogames/recap?month=all").json()                  # lifetime: every unlock, nothing to compare
+    assert (life["month"], life["achievements"], life["previous"], life["perfect_count"]) == ("all", 3, None, 1)
+    assert life["rarest"][0]["name"] == "Summit"
     stats = client.get("/api/videogames/stats").json()
     assert set(stats["streak"]) == {"current", "longest", "longest_end", "unlocked_today"} and "days" in stats
 

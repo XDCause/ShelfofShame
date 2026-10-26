@@ -344,6 +344,12 @@ def video_games(page):
         expect(recap.locator(".home-card-title")).not_to_have_text(this_month)
         recap.get_by_role("button", name="Month after").click()
         expect(recap.locator(".home-card-title")).to_have_text(this_month)
+    # ...and your lifetime (no month arrows), then back to the month
+    recap.get_by_role("button", name="Lifetime").click()
+    expect(recap.locator(".home-card-title")).to_have_text("Lifetime")
+    expect(recap.get_by_role("button", name="Month before")).to_have_count(0)
+    recap.get_by_role("button", name="Month", exact=True).click()
+    expect(recap.locator(".home-card-title")).to_have_text(this_month)
     expect(page.locator(".heatmap-week")).to_have_count(53)
     page.locator(".heatmap-grid .heatmap-day").last.hover()
     expect(page.locator(".heatmap-foot")).to_contain_text("on ")

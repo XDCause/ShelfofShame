@@ -28,8 +28,8 @@ const scalematesSearch = (m) => {
 }
 
 // One model (kit): status, what you paid, time spent, paint checklist, build log, notes and
-// photo. Also used to add a new model (modelId = null).
-export default function ModelPanel({ modelId, lookups, settings, onClose, onChanged, onCreated, onOpenSupply }) {
+// photo. Also used to add a new model (modelId = null; wanted = for the wishlist).
+export default function ModelPanel({ modelId, wanted, lookups, settings, onClose, onChanged, onCreated, onOpenSupply }) {
   const [model, setModel] = useState(null)
   const [error, setError] = useState('')
   const [note, setNote] = useState('')
@@ -60,7 +60,7 @@ export default function ModelPanel({ modelId, lookups, settings, onClose, onChan
 
   if (editing) {
     return (
-      <ModelForm model={model} lookups={lookups} settings={settings} onClose={onClose}
+      <ModelForm model={model} wanted={wanted} lookups={lookups} settings={settings} onClose={onClose}
         onCancel={() => (model ? setEditing(false) : onClose())}
         onSaved={(m) => {
           if (model) { onModel(m, 'Saved ✓'); setEditing(false) } else { onChanged(); onCreated(m.model_id) }

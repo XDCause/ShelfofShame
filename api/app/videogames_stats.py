@@ -1,6 +1,6 @@
 """Video games: time played, the stats page, the year's recap and the yearly goal. Split out of videogames.py
 (2026-10-22)."""
-from datetime import timedelta
+from datetime import date, timedelta
 
 from fastapi import APIRouter, Query
 
@@ -57,22 +57,28 @@ def stats(months: int = Query(24, ge=1, le=120), platforms: str | None = PLATFOR
 
 
 @router.get("/videogames/recap")
-def recap(month: str | None = Query(None, pattern=r"^\d{4}-\d{2}$"), platforms: str | None = PLATFORMS_QUERY):
+def recap(month: str | None = Query(None, pattern=r"^(\d{4}-\d{2}|all)$"), platforms: str | None = PLATFORMS_QUERY):
     """One month (YYYY-MM, default this one) of achievement hunting on the chosen platforms (default
     all): how many you unlocked (and the month before, to compare - only up to the same point while
     this month is still going), in how many games, the games you 100%'d, your rarest unlocks, your
-    best day and the games you unlocked the most in. `first` is the earliest month with an unlock."""
+    best day and the games you unlocked the most in. `first` is the earliest month with an unlock.
+    month=all: the same for your whole lifetime (no month before: `previous` is None; `perfect` is the 12
+    most recent 100%s, `perfect_count` all of them)."""
     chosen = platforms_from(platforms)
+    lifetime = month == "all"
     with db() as conn:
-        start = conn.execute("SELECT date_trunc('month', COALESCE(to_date(%s, 'YYYY-MM'), now()))::date AS s",
-                             (month,)).fetchone()["s"]
-        span = {"start": start, "end": (start.replace(day=28) + timedelta(days=4)).replace(day=1), "platforms": chosen}
-        span["before"] = (start - timedelta(days=1)).replace(day=1)
+        if lifetime:
+            span = {"start": date(1970, 1, 1), "end": date(9999, 1, 1), "platforms": chosen}
+        else:
+            start = conn.execute("SELECT date_trunc('month', COALESCE(to_date(%s, 'YYYY-MM'), now()))::date AS s",
+                                 (month,)).fetchone()["s"]
+            span = {"start": start, "end": (start.replace(day=28) + timedelta(days=4)).replace(day=1), "platforms": chosen,
+                    "before": (start - timedelta(days=1)).replace(day=1)}
         unlocked = f"{UNLOCKS} AND a.unlocked_at >= %(start)s AND a.unlocked_at < %(end)s"
         counts = conn.execute(f"SELECT count(*)::int AS achievements, count(DISTINCT a.app_id)::int AS games {unlocked}",
                               span).fetchone()
         # The month before - up to the same point when this month isn't over yet (1-14 Sept for 1-14 Oct).
-        counts["previous"] = conn.execute(
+        counts["previous"] = None if lifetime else conn.execute(
             f"SELECT count(*)::int AS n {UNLOCKS} AND a.unlocked_at >= %(before)s AND a.unlocked_at < %(start)s "
             "AND a.unlocked_at < %(before)s::timestamptz + (now() - %(start)s::timestamptz)", span).fetchone()["n"]
         best_day = conn.execute(f"SELECT a.unlocked_at::date AS day, count(*)::int AS count {unlocked} "
@@ -85,9 +91,12 @@ def recap(month: str | None = Query(None, pattern=r"^\d{4}-\d{2}$"), platforms: 
                                          GROUP BY 1, 2, 3 ORDER BY 4 DESC, 3 LIMIT 5""", span).fetchall())
         perfect = games_where(conn, chosen, "NOT hidden AND completed_at >= %(start)s AND completed_at < %(end)s",
                               lambda g: g["completed_at"], params=span)
+        counts["perfect_count"] = len(perfect)
+        if lifetime:
+            perfect = perfect[::-1][:12]                                     # the latest first
         first = conn.execute(f"SELECT to_char(min(a.unlocked_at), 'YYYY-MM') AS m {UNLOCKS}", span).fetchone()["m"]
         this_month = conn.execute("SELECT to_char(now(), 'YYYY-MM') AS m").fetchone()["m"]   # Brisbane, not UTC
-    return {"month": start.strftime("%Y-%m"), "first": first, "this_month": this_month,
+    return {"month": "all" if lifetime else span["start"].strftime("%Y-%m"), "first": first, "this_month": this_month,
             **counts, "best_day": best_day, "rarest": rarest, "top_games": top, "perfect": perfect}
 
 

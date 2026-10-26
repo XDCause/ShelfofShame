@@ -44,9 +44,10 @@ const toBody = (f, editing) => {
 }
 
 // Adding a model (look the kit up by its number first, optionally) or editing its details.
-export default function ModelForm({ model, lookups, settings, onClose, onCancel, onSaved }) {
+// wanted: a new kit for the wishlist (opened from the wishlist's + Add): it starts as Wanted.
+export default function ModelForm({ model, wanted: forWishlist = false, lookups, settings, onClose, onCancel, onSaved }) {
   const [form, setForm] = useState(() => (model ? toForm(model) : {
-    ...toForm({}), hobby: 'Scale model', status: 'In stash', figures: '1', purchase_date: today(),
+    ...toForm({}), hobby: 'Scale model', status: forWishlist ? 'Wanted' : 'In stash', figures: '1', purchase_date: today(),
     purchased_from: settings.default_shop ?? '',
   }))
   const [kitCode, setKitCode] = useState('')
@@ -159,7 +160,7 @@ export default function ModelForm({ model, lookups, settings, onClose, onCancel,
   )
 
   return (
-    <Drawer title={model ? 'Edit model' : 'Add a model'} onClose={onClose} footer={footer}>
+    <Drawer title={model ? 'Edit model' : forWishlist ? 'Add a kit to your wishlist' : 'Add a model'} onClose={onClose} footer={footer}>
       {error && <p className="alert error" role="alert">{error}</p>}
       <div className="segmented hobby-picker" role="group" aria-label="Hobby">
         {lookups.hobbies.map((h) => (

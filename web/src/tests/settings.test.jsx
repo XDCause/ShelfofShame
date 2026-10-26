@@ -4,8 +4,11 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { api } from '../api.js'
 import { Appearance, Backups } from '../components/SettingsPanel.jsx'
-import SystemStatus, { SystemWarning } from '../components/SystemStatus.jsx'
+import SystemStatus, { SystemWarning, useSystemAttention } from '../components/SystemStatus.jsx'
 import { AppContext } from '../core/app-context.js'
+
+// How Home uses it (behind the "!"): the hook asks, the warning shows.
+const HomeWarning = () => <SystemWarning data={useSystemAttention()} />
 
 vi.mock('../api.js', async (importOriginal) => {
   const real = await importOriginal()
@@ -91,13 +94,13 @@ describe('System', () => {
   it("Home's warning shows only what needs a look, and opens Settings", async () => {
     api.system.mockResolvedValue({ ...CHECKS, attention: [CHECKS.checks[1]] })
     const openPanel = vi.fn()
-    render(<AppContext.Provider value={{ refreshKey: 0, openPanel }}><SystemWarning /></AppContext.Provider>)
+    render(<AppContext.Provider value={{ refreshKey: 0, openPanel }}><HomeWarning /></AppContext.Provider>)
     expect(await screen.findByText(/Drive upload: 2 not uploaded yet/)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Open the System panel ›' }))
     expect(openPanel).toHaveBeenCalledWith('settings')
     cleanup()
     api.system.mockResolvedValue({ worst: 'ok', checks: [], attention: [] })
-    const { container } = render(<AppContext.Provider value={{ refreshKey: 0, openPanel }}><SystemWarning /></AppContext.Provider>)
+    const { container } = render(<AppContext.Provider value={{ refreshKey: 0, openPanel }}><HomeWarning /></AppContext.Provider>)
     await waitFor(() => expect(api.system).toHaveBeenCalled())
     expect(container.textContent).toBe('')
   })

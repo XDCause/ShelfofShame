@@ -6,11 +6,11 @@ import { useShared } from '../../core/useShared.js'
 
 // Shared bits of the Video games hobby: the Steam account and sync, rarity, completion bars.
 
-// How rare an achievement is: the share of all players who have it.
+// How rare an achievement is: the share of all players who have it, to one decimal (12.3%, like Steam).
 export const rarity = (percent) => {
   if (percent == null) return null
   const p = Number(percent)
-  return { text: `${p < 1 ? p.toFixed(1) : Math.round(p)}%`, tone: p <= 5 ? 'low' : p <= 20 ? 'purple' : 'tint',
+  return { text: `${p.toFixed(1)}%`, tone: p <= 5 ? 'low' : p <= 20 ? 'purple' : 'tint',
     label: p <= 5 ? 'Ultra rare' : p <= 20 ? 'Rare' : null }
 }
 

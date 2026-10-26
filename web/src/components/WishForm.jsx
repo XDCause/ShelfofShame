@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api, imageUrl } from '../api.js'
+import { useApp } from '../core/app-context.js'
 import CatalogSearch from './CatalogSearch.jsx'
 import Drawer from './Drawer.jsx'
+import ItemLookup from './ItemLookup.jsx'
 import PhotoUpload, { shrink } from './PhotoUpload.jsx'
 import ScanButton from './ScanButton.jsx'
 import SimilarItems from './SimilarItems.jsx'
@@ -36,8 +38,11 @@ function scanMessage(r) {
 
 // Add or edit a wishlist item in a side panel. Adding starts with the three ways in:
 //   search Tamiya's catalogue    one tap adds it (CatalogSearch)
-//   use a barcode                scan or type it; the details are filled in below
+//   use a barcode or look it up  scan it, or type an item number / paint code / Stedi tool (the same
+//                                look-up as Add a supply: Tamiya, Trumpeter, Stedi); filled in below
 //   fill in the form             anything else (other brands)
+//   look up a kit                Models' Add a model, as Wanted: every kit look-up (Tamiya, Hasegawa, Trumpeter,
+//                                Bandai, Games Workshop) without a copy of them here
 // `scanned` = {result, photo} when opened from Scan in the nav bar.
 // onCatalogAdded(product) = something was added straight from the search (the panel stays open).
 export default function WishForm({ wish, lookups, scanned, onSaved, onCancel, onCatalogAdded }) {
@@ -46,13 +51,13 @@ export default function WishForm({ wish, lookups, scanned, onSaved, onCancel, on
     const start = startForm(wish)
     return scanned ? applyResult(start, scanned.result) : start
   })
-  const [code, setCode] = useState('')
   const [found, setFound] = useState(scanned?.result?.match !== 'unknown' ? scanned?.result ?? null : null)
-  const [busy, setBusy] = useState('') // '' | 'lookup' | 'save'
+  const [busy, setBusy] = useState('') // '' | 'save'
   const [error, setError] = useState('')
   const [current, setCurrent] = useState(wish) // the saved item, refreshed after a photo change
   const [note, setNote] = useState('')
   const [supplies, setSupplies] = useState([]) // for "You already own"
+  const { openModel } = useApp()
   useEffect(() => { api.listSupplies().then(setSupplies).catch(() => {}) }, [])
 
   const photo = found?.has_image ? found : current?.has_image ? current : null
@@ -68,19 +73,9 @@ export default function WishForm({ wish, lookups, scanned, onSaved, onCancel, on
     setForm((f) => applyResult(f, result))
   }
 
-  const lookup = async () => {
-    if (!code.trim()) return
-    setBusy('lookup')
-    setError('')
-    try {
-      const r = await api.lookupTamiya(code.trim())
-      setFound(r)
-      setForm((f) => applyResult(f, r))
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setBusy('')
-    }
+  const onFound = (r) => {
+    setFound(r)
+    setForm((f) => applyResult(f, r))
   }
 
   const refreshCurrent = async (text) => {
@@ -140,18 +135,14 @@ export default function WishForm({ wish, lookups, scanned, onSaved, onCancel, on
             <span className="muted small">Not in Tamiya's catalogue?</span>
             <ScanButton onBarcode={onBarcode} label={scan ? 'Use another barcode' : 'Use barcode'} />
           </div>
-          {scan && scan.result.match === 'unknown' && scan.result.brand_id != null && <div className="lookup-row">
-            <label className="field">
-              <span className="field-label">or Tamiya paint code / item number</span>
-              <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. XF-76 or 81776"
-                autoCapitalize="characters"
-                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); lookup() } }} />
-            </label>
-            <button type="button" className="secondary" onClick={lookup} disabled={busy !== '' || !code.trim()}>
-              {busy === 'lookup' ? 'Looking up...' : 'Look up'}
-            </button>
-          </div>}
+          <ItemLookup onFound={onFound} />
           {!scan && <p className="hint">...or fill in the details below.</p>}
+          <div className="add-or">
+            <span className="muted small">Want a kit (Tamiya, Hasegawa, Trumpeter, Bandai, Warhammer)?</span>
+            <button type="button" className="secondary small" onClick={() => { onCancel(); openModel(null, { wanted: true }) }}>
+              Look up a kit
+            </button>
+          </div>
         </section>
       )}
 
@@ -162,6 +153,7 @@ export default function WishForm({ wish, lookups, scanned, onSaved, onCancel, on
       )}
       {found?.warning && <p className="alert error small">{found.warning}</p>}
       {found?.on_wishlist_id && <p className="alert low small">This is already on your wishlist.</p>}
+      {found?.supply_id && <p className="alert low small">You already own {found.owned_qty} of these.</p>}
       {error && <p className="alert error small" role="alert">{error}</p>}
 
       {(photo || yourPhotoUrl || found?.title || wish) && (

@@ -179,9 +179,10 @@ th.col-value { width: 96px; }
 .wish-card.got { opacity: 0.55; }
 .wish-card.got h3 { text-decoration: line-through; }
 /* White only behind a real photo (they're shot on white); without one, a quiet block in the theme's colours. */
-.wish-photo { position: relative; height: 150px; background: var(--fill-2); display: grid; place-items: center; }
+.wish-photo { position: relative; height: 150px; background: var(--fill-2); display: grid; place-items: center; overflow: hidden; }
 .wish-photo:has(img) { background: #fff; }
-.wish-photo img { width: 100%; height: 100%; object-fit: contain; padding: 8px; }
+/* Pinned to the box: as a grid item, a big photo (Tamiya's are ~1000px) stretched the row to its own height and spilled over the card. */
+.wish-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; padding: 8px; }
 .prio { position: absolute; top: 10px; right: 10px; }
 .tick { position: absolute; top: 10px; left: 10px; width: 40px; height: 40px; cursor: pointer; }
 .tick input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }

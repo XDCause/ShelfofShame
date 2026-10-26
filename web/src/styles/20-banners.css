@@ -58,6 +58,23 @@
 }
 .hero-tagline { margin: 10px 0 20px; font-size: 1.05rem; color: rgb(243 236 220 / 0.88); max-width: 46ch; }
 .hero-write { background: #ece3cf; color: #17211b; }
+.hero-actions { position: relative; display: flex; align-items: center; gap: 10px; }
+/* The "!" when the app needs a look (HomeAttention): a round amber button (red for a problem). Its card opens
+   UPWARD over the greeting, from the left of the row: the banner clips what leaves it and the cards cover its foot. */
+.hero-attention summary {
+  display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; list-style: none;
+  font-size: 1.25rem; font-weight: 800; line-height: 1; color: #2a1a02; background: #e5b562; box-shadow: 0 2px 12px rgb(0 0 0 / 0.3);
+}
+.hero-attention.bad summary { color: #fff; background: #b8432c; }
+.hero-attention summary::-webkit-details-marker { display: none; }
+.hero-attention summary:focus-visible { outline: 3px solid #f6efdf; outline-offset: 2px; }
+.hero-attention-card {
+  position: absolute; z-index: 3; left: 0; bottom: calc(100% + 8px); width: min(380px, calc(100vw - 2 * var(--gutter))); padding: 6px;
+  border-radius: var(--radius); background: var(--elevated); border: 1px solid var(--border); box-shadow: var(--shadow);
+  animation: pop-in 0.16s var(--ease-out);
+}
+.hero-attention-card .alert { margin: 0; }
+.hero-attention-card .alert + .alert { margin-top: 6px; }
 .hero-write svg { margin-right: -4px; }
 .hero-script {
   position: absolute; right: max(var(--gutter), calc((100% - var(--column)) / 2 + var(--gutter))); top: calc(var(--nav-h) + 30px);

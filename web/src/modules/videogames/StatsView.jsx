@@ -66,8 +66,8 @@ const addMonths = (ym, n) => {
 }
 const longDay = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
 
-// One month at a time: how many achievements (and the change from the month before), in how many
-// games, the games you 100%'d, your best day, your rarest unlocks and where they came from.
+// One month at a time - or your lifetime: how many achievements (and the change from the month before), in how
+// many games, the games you 100%'d, your best day, your rarest unlocks and where they came from.
 function Recap({ counting }) {
   const { refreshKey, openPanel } = useApp()
   const [month, setMonth] = useState(null)
@@ -76,23 +76,31 @@ function Recap({ counting }) {
   useEffect(() => { api.videoGameRecap(month, counting).then(setR).catch((e) => setError(e.message)) }, [month, refreshKey, counting])
   if (error) return <section className="card home-card wide-card"><p className="alert error">{error}</p></section>
   if (!r) return <section className="card home-card wide-card"><p className="muted loading">Loading...</p></section>
+  const lifetime = r.month === 'all'
+  const perfectCount = r.perfect_count ?? r.perfect.length
   return (
-    <section className="card home-card wide-card recap" aria-label={`${monthName(r.month, true)} recap`}>
+    <section className="card home-card wide-card recap" aria-label={lifetime ? 'Lifetime recap' : `${monthName(r.month, true)} recap`}>
       <div className="recap-head">
-        <button type="button" className="plain" onClick={() => setMonth(addMonths(r.month, -1))}
-          disabled={!r.first || r.month <= r.first} aria-label="Month before">‹</button>
-        <h2 className="home-card-title">{monthName(r.month, true)}</h2>
-        <button type="button" className="plain" onClick={() => setMonth(addMonths(r.month, 1))}
-          disabled={r.month >= r.this_month} aria-label="Month after">›</button>
+        {lifetime ? <h2 className="home-card-title">Lifetime</h2> : <>
+          <button type="button" className="plain" onClick={() => setMonth(addMonths(r.month, -1))}
+            disabled={!r.first || r.month <= r.first} aria-label="Month before">‹</button>
+          <h2 className="home-card-title">{monthName(r.month, true)}</h2>
+          <button type="button" className="plain" onClick={() => setMonth(addMonths(r.month, 1))}
+            disabled={r.month >= r.this_month} aria-label="Month after">›</button>
+        </>}
+        <div className="segmented recap-span" role="group" aria-label="Recap of">
+          <button type="button" aria-pressed={!lifetime} onClick={() => setMonth(null)}>Month</button>
+          <button type="button" aria-pressed={lifetime} onClick={() => setMonth('all')}>Lifetime</button>
+        </div>
       </div>
-      {r.achievements === 0 ? <p className="muted">No achievements unlocked this month.</p> : (
+      {r.achievements === 0 ? <p className="muted">{lifetime ? 'No achievements unlocked yet.' : 'No achievements unlocked this month.'}</p> : (
         <>
           <div className="recap-numbers">
-            <span><strong>{r.achievements.toLocaleString()}<Change value={r.achievements - r.previous}
-              what={r.month === r.this_month ? 'on the same days of the month before' : 'on the month before'} /></strong>
+            <span><strong>{r.achievements.toLocaleString()}{!lifetime && <Change value={r.achievements - r.previous}
+              what={r.month === r.this_month ? 'on the same days of the month before' : 'on the month before'} />}</strong>
               achievements</span>
             <span><strong>{r.games}</strong> game{r.games === 1 ? '' : 's'}</span>
-            <span><strong>{r.perfect.length}</strong> at 100%</span>
+            <span><strong>{perfectCount}</strong> at 100%</span>
             {r.best_day && <span><strong>{r.best_day.count}</strong> on your best day, {longDay(r.best_day.day)}</span>}
           </div>
           <div className="recap-grid">
@@ -108,7 +116,8 @@ function Recap({ counting }) {
           </div>
           {r.perfect.length > 0 && (
             <>
-              <h3 className="section-title">100% this month</h3>
+              <h3 className="section-title">{!lifetime ? '100% this month' : perfectCount > r.perfect.length
+                ? `Your latest ${r.perfect.length} at 100%` : 'Every game at 100%'}</h3>
               <div className="perfect-grid">{r.perfect.map((g) => <PerfectCard key={g.app_id} game={g} />)}</div>
             </>
           )}
