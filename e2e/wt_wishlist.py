@@ -119,7 +119,7 @@ def wishlist_panel(page):
     # the same box as Add a supply: a number only Trumpeter has (stand-ins) fills the form in (not saved)
     d.get_by_placeholder("e.g. XF-76, 81776, 08005, MS-106 or nipper").fill("08005")
     d.get_by_role("button", name="Look up", exact=True).click()             # (not "Look up a kit")
-    expect(d.get_by_label("Name", exact=True)).to_have_value("Masking Tape Cutter")
+    expect(d.get_by_label(re.compile(r"^Name"))).to_have_value("Masking Tape Cutter")     # (its label reads "Name *")
     expect(d.get_by_role("alert")).to_contain_text("Found at Trumpeter")
     # a kit: Models' Add a model (every kit look-up), already Wanted (not saved)
     d.get_by_role("button", name="Look up a kit").click()

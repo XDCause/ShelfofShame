@@ -72,7 +72,10 @@ def no_panel(page):
 
 @step("Top-bar search: Ctrl+K, type, Enter opens the kit")
 def global_search(page):
-    go(page, "Home")
+    # a settled Home first: the step before ends on a reload whose last check passes while the page still loads,
+    # and a nav click (then Ctrl+K) sent then was lost
+    page.goto(BASE + "/")
+    expect(page.locator(".home-banner h2")).to_be_visible()
     page.keyboard.press("Control+k")
     expect(page.get_by_label("Search everything")).to_be_focused()   # focused a moment later: typing before it was lost
     page.keyboard.type("Sherman")
