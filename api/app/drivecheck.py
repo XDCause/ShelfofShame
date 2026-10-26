@@ -2,7 +2,7 @@
 
 Google Drive for desktop keeps what it knows in a local SQLite database (metadata_sqlite_db): every item with its Google
 file id, name and size, and a queue of changes still to send (the operations table). An item counts as uploaded when
-it's there with a Google id (not a local placeholder), the same size, not in the trash - and nothing is queued. This is
+it's there with a Google id (not a local placeholder), the same size, not in the trash (the queue is only reported). This is
 how Drive for desktop works today, not a published interface, so anything unexpected answers "can't tell", never a
 failure of the backup itself.
 
@@ -38,10 +38,11 @@ def check(db_path: str, expected: list[dict]) -> dict:
         up = any(not str(i).startswith("local") and size == f["size"] and not trashed for i, size, trashed in rows.get(f["name"], []))
         if not up:
             pending.append(f["name"])
-    ok = not pending and queued == 0
-    message = ("all uploaded" if ok else
-               f"{len(pending)} not uploaded yet" + (f", {queued} change(s) queued" if queued else "") if pending else
-               f"{queued} change(s) still queued")
+    # The queue doesn't decide it (2026-10-26): the check runs seconds after the backup writes tonight's file and removes
+    # an old one, so those two changes are always still queued - it was "2 change(s) still queued", red by night two,
+    # with every file it checked safely up. Only the files old enough to be up count; the queue is just mentioned.
+    ok = not pending
+    message = ("all uploaded" if ok else f"{len(pending)} not uploaded yet") + (f" ({queued} newer change(s) queued)" if queued else "")
     return {"ok": ok, "checked": len(expected), "pending": pending[:10], "queued": queued, "message": message}
 
 

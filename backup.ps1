@@ -237,7 +237,7 @@ if ($CopyTo) {
 }
 
 # Has Google finished uploading? Every Drive file older than 6 hours (tonight's are still going up) must be in Google
-# Drive for desktop's own list with a Google id and the same size, and nothing queued (api/app/drivecheck.py reads a
+# Drive for desktop's own list with a Google id and the same size; its queue is only reported (api/app/drivecheck.py reads a
 # copy of its database inside the api container). Can't tell -> said so, never a failure of the backup.
 function Test-DriveUploaded([string]$driveFolder) {
     $fs = Join-Path $env:LOCALAPPDATA 'Google\DriveFS'

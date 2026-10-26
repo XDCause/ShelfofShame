@@ -737,3 +737,6 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
      @eslint-react/eslint-plugin 5.28.4, one for one, except jsx-no-duplicate-props (no counterpart) and
      jsx-uses-vars / jsx-no-undef: ESLint 10 tracks JSX names itself - checked with a file using one import only in
      JSX (fine), one not at all (warned) and an undefined component (error).
+   - Fixed 2026-10-26: Drive upload went red after two nights saying "2 change(s) still queued" with every file it
+     checked safely up. The check runs seconds after the backup writes tonight's file and removes an old one, so those
+     two changes are always queued then. Now only the files old enough to be up decide it; the queue is just mentioned.

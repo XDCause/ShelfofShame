@@ -41,12 +41,14 @@ def test_not_there_wrong_size_or_trashed_is_pending(tmp_path):
     assert out["message"] == "3 not uploaded yet"
 
 
-def test_a_local_placeholder_or_a_queue_is_not_done(tmp_path):
+def test_a_local_placeholder_is_not_done_but_a_queue_alone_is_fine(tmp_path):
     db = drive_db(tmp_path, [(DUMP["name"], "local-123", DUMP["size"], 0)], queued=2)
     out = drivecheck.check(db, [DUMP])
-    assert out["ok"] is False and out["pending"] == [DUMP["name"]] and "2 change(s) queued" in out["message"]
-    db2 = drive_db(tmp_path / "..", [(DUMP["name"], "1abc", DUMP["size"], 0)], queued=1)
-    assert drivecheck.check(db2, [DUMP])["message"] == "1 change(s) still queued"
+    assert out["ok"] is False and out["pending"] == [DUMP["name"]] and out["message"] == "1 not uploaded yet (2 newer change(s) queued)"
+    # tonight's new file and an old one removed are always still queued when it checks (2026-10-26): not a failure
+    db2 = drive_db(tmp_path / "..", [(DUMP["name"], "1abc", DUMP["size"], 0)], queued=2)
+    out = drivecheck.check(db2, [DUMP])
+    assert out["ok"] is True and out["queued"] == 2 and out["message"] == "all uploaded (2 newer change(s) queued)"
 
 
 def test_an_unknown_layout_or_no_database_is_cant_tell_not_a_failure(tmp_path):
