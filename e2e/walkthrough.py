@@ -1,6 +1,9 @@
 """The browser walk-through: runs every step (wt_<area>.py) in ORDER on a desktop, then the phone, and reports.
 Steps build on each other, so ORDER matters. A step that isn't in ORDER stops the run before it starts (a step
-that was written but never added to the list used to be skipped quietly)."""
+that was written but never added to the list used to be skipped quietly).
+E2E_STEPS=name,name (run_e2e.ps1 -Steps / -Failed): only those steps, in ORDER - to check a fix quickly. A step that
+needs an earlier one's data fails alone too: then name both (or run them all). Failed steps go in /out/failed.txt."""
+import os
 import wt_core, wt_hobbies, wt_journal, wt_models, wt_supplies, wt_wishlist
 from wt_common import *  # noqa: F401,F403
 
@@ -101,6 +104,12 @@ if _left_out or _unknown:
     raise SystemExit(2)
 
 
+ONLY = {s.strip() for s in os.environ.get("E2E_STEPS", "").split(",") if s.strip()}
+if ONLY - set(STEPS):
+    print(f"No such step: {', '.join(sorted(ONLY - set(STEPS)))}. The steps are the function names in ORDER.")
+    raise SystemExit(2)
+
+
 def sign_in_page(browser, zone):
     ctx = browser.new_context(viewport={"width": 1280, "height": 860}, timezone_id=zone, ignore_https_errors=True)
     page = ctx.new_page()
@@ -113,16 +122,22 @@ with sync_playwright() as p:
     browser = p.chromium.launch()
     # The user's time zone: "today" in the browser must be the same day the app dates pages by.
     zone = "Australia/Brisbane"
-    sign_in_page(browser, zone)
+    if not ONLY or "sign_in_ui" in ONLY:
+        sign_in_page(browser, zone)
     desk = signed_in(browser.new_context(viewport={"width": 1280, "height": 860}, timezone_id=zone, ignore_https_errors=True)).new_page()
     watch(desk, "desktop")
     for name in ORDER:
-        STEPS[name](desk)
-    ctx = signed_in(browser.new_context(**p.devices["iPhone 13"], timezone_id=zone, ignore_https_errors=True))
-    mob = ctx.new_page()
-    watch(mob, "phone")
-    STEPS["phone"](mob)
+        if not ONLY or name in ONLY:
+            STEPS[name](desk)
+    if not ONLY or "phone" in ONLY:
+        ctx = signed_in(browser.new_context(**p.devices["iPhone 13"], timezone_id=zone, ignore_https_errors=True))
+        mob = ctx.new_page()
+        watch(mob, "phone")
+        STEPS["phone"](mob)
     browser.close()
+
+with open(f"{OUT}/failed.txt", "w") as f:     # for run_e2e.ps1 -Failed
+    f.write(",".join(failed_steps))
 
 for name, status, info in results:
     print(f"{status}  {name}  ({info})")

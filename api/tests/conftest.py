@@ -19,17 +19,40 @@ from app.db import db  # noqa: E402
 from app.main import app  # noqa: E402
 
 
+EMPTIED = ("stock_movements, wishlist, barcode_catalog, product_info, supplies, "
+           "model_paints, models, catalog_products, model_sessions, model_log, model_log_photos, colour_groups, "
+           "colour_group_members, mixes, mix_parts, price_guide, journal_pages, tags, page_tags, "
+           "journal_links, journal_images, journal_drawings, journal_notebooks, journal_templates, attachments, wanted_extras, wanted_prices, wanted_history, calendar_events, board_games, board_game_plays, gear, "
+           "volleyball_games, volleyball_teams, volleyball_videos, vg_achievements, vg_games, vg_other_games, "
+           "chess_games, chess_archives, books, reading_log, book_quotes, vg_friends, volleyball_coach, goals, site_checks, hikes, hike_photos, hike_gear, garden_spaces, garden_containers, garden_plantings, garden_logs, garden_photos, garden_tasks, garden_items, shooting_ranges, rifles, ammo, shooting_sessions, shooting_groups, shooting_shots, shooting_media, rifle_logs, dope_rows, trips, trip_places, travel_countries, vg_playtime, banners, auth_account, auth_recovery_codes, auth_sessions, auth_passkeys, auth_failures, todos")
+_candidates = []   # EMPTIED and every table that refers to one (TRUNCATE ... CASCADE empties those too): found once
+
+
+def _used_tables(conn):
+    """The tables a test may have touched: with a row, or with an id counter that has moved (an empty table whose
+    counter moved still needs RESTART IDENTITY - tests count on ids from 1)."""
+    if not _candidates:
+        _candidates.extend(r["t"] for r in conn.execute("""
+            WITH RECURSIVE t(oid) AS (SELECT unnest(%s::regclass[])::oid
+                                      UNION SELECT c.conrelid FROM pg_constraint c JOIN t ON c.confrelid = t.oid WHERE c.contype = 'f')
+            SELECT DISTINCT oid::regclass::text AS t FROM t""", ([n.strip() for n in EMPTIED.split(",")],)).fetchall())
+    has_rows = " UNION ALL ".join(f"(SELECT '{t}' AS t FROM {t} LIMIT 1)" for t in _candidates)
+    counted = conn.execute("""
+        SELECT DISTINCT d.refobjid::regclass::text AS t FROM pg_sequences s
+        JOIN pg_class c ON c.relname = s.sequencename AND c.relnamespace = s.schemaname::regnamespace
+        JOIN pg_depend d ON d.objid = c.oid AND d.deptype IN ('a', 'i')
+        WHERE s.last_value IS NOT NULL AND d.refobjid::regclass::text = ANY(%s)""", (_candidates,)).fetchall()
+    return sorted({r["t"] for r in conn.execute(has_rows).fetchall()} | {r["t"] for r in counted})
+
+
 @pytest.fixture(autouse=True)
 def clean_database():
-    """Every test starts with the seeded lookup lists and nothing else."""
+    """Every test starts with the seeded lookup lists and nothing else. Only the tables in use are emptied: emptying
+    all ~90 each time was over half the suite's time (2026-10-26)."""
     with db() as conn:
-        conn.execute("TRUNCATE stock_movements, wishlist, barcode_catalog, product_info, supplies, "
-                     "model_paints, models, catalog_products, model_sessions, model_log, model_log_photos, colour_groups, "
-                     "colour_group_members, mixes, mix_parts, price_guide, journal_pages, tags, page_tags, "
-                     "journal_links, journal_images, journal_drawings, journal_notebooks, journal_templates, attachments, wanted_extras, wanted_prices, wanted_history, calendar_events, board_games, board_game_plays, gear, "
-                     "volleyball_games, volleyball_teams, volleyball_videos, vg_achievements, vg_games, vg_other_games, "
-                     "chess_games, chess_archives, books, reading_log, book_quotes, vg_friends, volleyball_coach, goals, site_checks, hikes, hike_photos, hike_gear, garden_spaces, garden_containers, garden_plantings, garden_logs, garden_photos, garden_tasks, garden_items, shooting_ranges, rifles, ammo, shooting_sessions, shooting_groups, shooting_shots, shooting_media, rifle_logs, dope_rows, trips, trip_places, travel_countries, vg_playtime, banners, auth_account, auth_recovery_codes, auth_sessions, auth_passkeys, auth_failures, todos "
-                     "RESTART IDENTITY CASCADE")
+        used = _used_tables(conn)
+        if used:
+            conn.execute(f"TRUNCATE {', '.join(used)} RESTART IDENTITY CASCADE")
         conn.execute("DELETE FROM settings WHERE key LIKE 'reading_goal_%%'")
         conn.execute("DELETE FROM garden_guides WHERE custom")
         conn.execute("UPDATE shooting_settings SET licence_expires = NULL, licence_note = NULL, club_shoots_needed = NULL, clean_every = 200")

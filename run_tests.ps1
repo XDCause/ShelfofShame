@@ -2,6 +2,8 @@
 #
 #   .\run_tests.ps1               # everything
 #   .\run_tests.ps1 -k wishlist   # only tests whose name matches
+#   .\run_tests.ps1 -Failed       # only the tests that failed last time (pytest --lf; api\.pytest_cache). Neither
+#                                 # -k nor -Failed counts as a pass for promote.ps1 (only a full run does)
 #
 # Your real data is never touched:
 #   1. A separate database, hobby_inventory_test, is rebuilt from scratch using db/init/*.sql
@@ -11,7 +13,7 @@
 #   3. tamiya.com is replaced by a fake inside the tests, so they're fast and offline.
 #   .\run_tests.ps1 -Coverage     # + which API lines no test runs (api\coverage.txt; pytest-cov goes
 #                                 into the throwaway test container only)
-param([string]$k = '', [switch]$Coverage)
+param([string]$k = '', [switch]$Coverage, [switch]$Failed)
 
 . "$PSScriptRoot\scripts\common.ps1"
 Set-Location -Path $Root
@@ -44,6 +46,7 @@ Write-Host "  $($files.Count) db\init files ok ($($files[0].Name) ... $($files[-
 Write-Host 'Running tests...' -ForegroundColor Cyan
 $pytestArgs = @('-q')
 if ($k) { $pytestArgs += @('-k', $k) }
+if ($Failed) { $pytestArgs += @('--lf', '--lfnf=none') }   # (nothing failed last time: runs nothing)
 # What the tests see, read-only besides the code: db\init (a test can run a migration file as it is), web\src\api.js
 # (test_web_calls: every call is a real route) and the notes (test_docs: they keep up with the code).
 $mounts = @('-v', "${PSScriptRoot}\api:/app", '-v', "${PSScriptRoot}\db\init:/db/init:ro",
@@ -62,7 +65,7 @@ $result = $LASTEXITCODE
 docker exec $db psql -U hobby -d postgres -q -c "DROP DATABASE IF EXISTS $testDb" | Out-Null
 if ($result -eq 0) {
     Write-Host 'All tests passed.' -ForegroundColor Green
-    if (-not $k -and -not $Coverage) { Set-Stamp 'api' $code }   # only a full run counts
+    if (-not $k -and -not $Coverage -and -not $Failed) { Set-Stamp 'api' $code }   # only a full run counts
 }
 else { Write-Host 'Some tests FAILED (see above).' -ForegroundColor Red }
 exit $result

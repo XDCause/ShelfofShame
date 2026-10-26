@@ -2,6 +2,10 @@
 #
 #   .\run_e2e.ps1              # the walk-through and the UI audit, side by side (~5-6 minutes)
 #   .\run_e2e.ps1 -NoAudit     # the walk-through only (quicker, while working on something; promote runs both)
+#   .\run_e2e.ps1 -Steps calendar,global_search   # only those steps (their function names in walkthrough.py's ORDER):
+#                                                  # ~1-2 minutes, to check a fix. A step that needs an earlier one's
+#                                                  # data fails alone too - name both. No audit; not a pass for promote.
+#   .\run_e2e.ps1 -Failed      # only the steps that failed last time (e2e\out\failed.txt); the same rules
 #
 # Neither runs against this copy's own app. Each gets a THROWAWAY copy next to it, started from:
 #   - the images this copy is running (so it tests exactly what .\dev.ps1 built), and
@@ -16,12 +20,20 @@
 #                  text, touch targets, broken pictures, axe-core accessibility, browser errors)
 # When it ends - pass, fail or Ctrl+C - both copies and their volumes are deleted. You can keep using the app while
 # it runs. Screenshots go to e2e\out\ (git-ignored).
-param([switch]$NoAudit)
+param([switch]$NoAudit, [string]$Steps = '', [switch]$Failed)
 
 . "$PSScriptRoot\scripts\common.ps1"
 Set-Location -Path $Root
 $image = 'offtheclock-e2e:1.64.0'    # e2e\Dockerfile: Playwright's image with its Python packages installed
 $code = Get-CodeHash
+if ($Failed) {
+    $last = Join-Path $Root 'e2e\out\failed.txt'
+    $Steps = if (Test-Path $last) { (Get-Content $last -Raw).Trim() } else { '' }
+    if (-not $Steps) { Write-Host 'No failed steps from the last run (e2e\out\failed.txt is empty or missing).' -ForegroundColor Yellow; exit 0 }
+    Write-Host "Running the steps that failed last time: $Steps" -ForegroundColor Cyan
+}
+$partial = [bool]$Steps
+if ($partial) { $NoAudit = $true }    # a quick check of a few steps: the audit looks at every page, so not here
 $built = (Get-Stamp 'built')[0]
 
 docker build -q -t $image e2e | Out-Null    # cached after the first time: instant
@@ -111,7 +123,7 @@ try {
     # 3. The walk-through and the audit, side by side, each on its copy's network (https://web is its nginx).
     if ($copies.Count -gt 1) { Write-Host 'Walk-through and UI audit (every page, 5 sizes x 2 themes), side by side...' -ForegroundColor Cyan }
     foreach ($c in $copies) {
-        docker run -d --name "$($c.Name)-run" --network "$($c.Name)_default" --ipc=host -e "E2E_PASSWORD=$password" `
+        docker run -d --name "$($c.Name)-run" --network "$($c.Name)_default" --ipc=host -e "E2E_PASSWORD=$password" -e "E2E_STEPS=$Steps" `
             -v "${PSScriptRoot}\e2e:/e2e" -v "${PSScriptRoot}\e2e\out:/out" $image python "/e2e/$($c.Run)" | Out-Null
     }
     $result = 0
@@ -133,7 +145,8 @@ try {
 }
 # A pass counts for promote.ps1 only if the running app was built from the code on disk, and the audit ran too.
 if ($result -eq 0) {
-    if ($NoAudit) { Write-Host 'Note: -NoAudit, so this pass is not recorded for promote.ps1 (it runs the audit too).' -ForegroundColor Yellow }
+    if ($partial) { Write-Host 'Note: only some steps ran, so this pass is not recorded for promote.ps1 (it runs them all).' -ForegroundColor Yellow }
+    elseif ($NoAudit) { Write-Host 'Note: -NoAudit, so this pass is not recorded for promote.ps1 (it runs the audit too).' -ForegroundColor Yellow }
     elseif ($built -eq $code) { Set-Stamp 'e2e' $code }
     else { Write-Host 'Note: the running app was built from older code than is on disk (rebuild with .\dev.ps1), so this pass is not recorded for promote.ps1.' -ForegroundColor Yellow }
 }

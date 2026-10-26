@@ -56,6 +56,10 @@ AI via MCP server (later) -----------------/
 - **When (user, 2026-10-21): at the user's discretion.** Not after every tweak in dev - rebuild (`.\dev.ps1`, whose build
   still runs the build checks below) and let the user look. Run the full suite when asked, at the end of a hobby update,
   or after a batch of changes; promote.ps1 runs it anyway if this exact code hasn't passed (stamps in .tested\).
+- **Fixing a failure (user, 2026-10-26: full reruns cost time and tokens): rerun only what failed, then ONE full run.**
+  `.\run_e2e.ps1 -Failed` (or `-Steps a,b`: ~45 s, not 9 min; name a step's earlier step too if it needs its data),
+  `.\run_tests.ps1 -Failed` (or `-k`). Read only the summary lines (grep PASS/FAIL), a failure's screenshot only if
+  the message isn't enough. Partial runs never count for promote. Test-only fixes don't need `.\dev.ps1`.
 - `.\test_all.ps1` in dev (~9 minutes) = the API tests (run_tests.ps1: a fresh test DB from db\init, pytest), the web
   code's own tests (run_web_tests.ps1: Vitest + jsdom, web/src/tests) and the browser walk-through (run_e2e.ps1:
   e2e/walkthrough.py runs the steps in e2e/wt_<area>.py in its ORDER - a step left out of ORDER stops the run) side

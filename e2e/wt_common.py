@@ -26,6 +26,7 @@ from playwright.sync_api import expect, sync_playwright
 BASE = "https://web"          # (the copy's own certificate: the browser and urllib are told not to check it)
 OUT = "/out"
 results, errors = [], []
+failed_steps = []   # the function names of steps that failed (walkthrough.py saves them for run_e2e.ps1 -Failed)
 
 # Signed in (api/app/auth.py): run_e2e.ps1 set this copy's password (E2E_PASSWORD) - its own, never yours.
 PASSWORD = os.environ["E2E_PASSWORD"]
@@ -101,6 +102,7 @@ def step(name):
             except Exception as e:  # keep going: one broken step shouldn't hide the rest
                 first = (str(e).splitlines() or ["(no message)"])[0]   # a bare assert has none: that crashed the run
                 results.append((name, "FAIL", f"{type(e).__name__}: {first[:220]}"))
+                failed_steps.append(fn.__name__)
                 safe = re.sub(r"\W+", "_", name)
                 try:
                     page.screenshot(path=f"{OUT}/FAIL_{safe}.png", full_page=True)
