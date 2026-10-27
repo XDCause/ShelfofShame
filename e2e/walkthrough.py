@@ -126,6 +126,9 @@ with sync_playwright() as p:
         sign_in_page(browser, zone)
     desk = signed_in(browser.new_context(viewport={"width": 1280, "height": 860}, timezone_id=zone, ignore_https_errors=True)).new_page()
     watch(desk, "desktop")
+    if ONLY:                      # (in a full run the first step opens the app; a later one alone needs it open)
+        desk.goto(BASE + "/")
+        expect(desk.locator(".home-banner h2")).to_be_visible()
     for name in ORDER:
         if not ONLY or name in ONLY:
             STEPS[name](desk)

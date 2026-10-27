@@ -161,6 +161,13 @@ export const LogoMark = ({ size = 28, ...p }) => (
     <path d="M1.5 21.5h29" />
   </svg>
 )
+export const EyeIcon = (p) => (
+  <Icon {...p}><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" /><circle cx="12" cy="12" r="3" /></Icon>
+)
+export const EyeOffIcon = (p) => (
+  <Icon {...p}><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" /><circle cx="12" cy="12" r="3" />
+    <path d="m4 4 16 16" /></Icon>
+)
 export const CheckIcon = (p) => (
   <Icon {...p}><rect x="3.5" y="3.5" width="17" height="17" rx="4" /><path d="m8 12.5 2.8 2.8L16.5 9" /></Icon>
 )

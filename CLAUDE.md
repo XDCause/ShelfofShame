@@ -49,7 +49,7 @@ AI via MCP server (later) -----------------/
   fetch), core/ (Home, Navigation, Goals, Journal, Calendar, Supplies tools...), modules/<hobby>/manifest.jsx (pages,
   panels, quick actions - loaded on demand with part() from modules/lazy.js) and HomeTiles.jsx (its Home tiles, loaded
   up front), components/ (shared), styles.css (one file, sections by comment).
-- **Database**: numbered idempotent files in db/init (01-90); migrate.ps1 applies pending ones (`-Container` for another
+- **Database**: numbered idempotent files in db/init (01-91); migrate.ps1 applies pending ones (`-Container` for another
   copy's).
 
 ## Quality gates

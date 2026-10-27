@@ -315,6 +315,8 @@ export const api = {
   videoGameSummary: (platforms) => request(`/videogames/summary${platforms ? `?platforms=${platforms.join(',')}` : ''}`),
   listVideoGames: (show = 'all') => request(`/videogames?show=${show}`),
   getVideoGame: (id) => request(`/videogames/${id}`),
+  // What a game's hidden achievements say, by Steam app id (a Ubisoft game: its Steam version's): { texts: {api name: text} }
+  hiddenAchievementTexts: (appId) => request(`/videogames/hidden/${appId}`),
   // Just this game, now: answers with the game (and sync_note if SteamHunters / Exophase didn't answer)
   syncVideoGame: (id) => request(`/videogames/${id}/sync`, send('POST')),
   hideVideoGame: (id, hidden) => request(`/videogames/${id}`, send('PATCH', { hidden })),

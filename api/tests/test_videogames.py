@@ -121,6 +121,31 @@ def test_one_game_with_its_achievements(client, fake):
     assert client.get("/api/videogames/999").status_code == 404
 
 
+def test_hidden_achievements_text_is_read_once(client, fake, monkeypatch):
+    """Steam leaves Hades' Secret without a description; SteamHunters has it - asked the first time only."""
+    asked = []
+    monkeypatch.setattr(steamhunters, "descriptions", lambda app_id: asked.append(app_id) or {
+        "Y": "Pet Cerberus", "X": "Get out"})
+    setup(client)
+    assert client.get("/api/videogames/hidden/20").json() == {"texts": {"Y": "Pet Cerberus"}}   # hidden ones only
+    assert client.get("/api/videogames/hidden/20").json() == {"texts": {"Y": "Pet Cerberus"}}
+    assert asked == [20]                                                       # kept: not asked again
+    assert client.get("/api/videogames/hidden/10").json() == {"texts": {}}     # nothing hidden: not asked at all
+    assert asked == [20]
+    assert client.get("/api/videogames/hidden/999").status_code == 404
+
+
+def test_hidden_achievements_text_waits_when_steamhunters_is_down(client, fake, monkeypatch):
+    def down(app_id):
+        raise steamhunters.Unavailable("Couldn't reach SteamHunters (it timed out twice).")
+    monkeypatch.setattr(steamhunters, "descriptions", down)
+    setup(client)
+    r = client.get("/api/videogames/hidden/20")
+    assert r.status_code == 502 and "SteamHunters" in r.json()["detail"]
+    monkeypatch.setattr(steamhunters, "descriptions", lambda app_id: {"Y": "Pet Cerberus"})
+    assert client.get("/api/videogames/hidden/20").json() == {"texts": {"Y": "Pet Cerberus"}}   # asked again later
+
+
 def test_the_dashboard_summary(client, fake):
     setup(client)
     s = client.get("/api/videogames/summary").json()
@@ -358,8 +383,14 @@ def test_the_steamhunters_client_reads_its_answers(monkeypatch):
                                                          '"playersStartedCount": 23079, "points": 4669}'))
     got = steamhunters.game(504230)
     assert (got["sh_median_minutes"], got["sh_players_perfected"], got["sh_fastest_minutes"]) == (2994, 5685, None)
+    monkeypatch.setattr(steamhunters, "_get", answer(200, '[{"apiName": "A", "description": "Start", "obtainability": 1}, '
+                                                         '{"apiName": "B", "description": " Pet Cerberus ", "obtainability": 3}, '
+                                                         '{"apiName": "C", "description": ""}, {"description": "no name"}]'))
+    assert steamhunters.descriptions(504230) == {"A": "Start", "B": "Pet Cerberus"}
+    assert steamhunters.unobtainable(504230) == {"B"}
     monkeypatch.setattr(steamhunters, "_get", answer(404, "<html>"))
     assert steamhunters.game(1) is None
+    assert steamhunters.descriptions(1) == {}
     monkeypatch.setattr(steamhunters, "_get", answer(403, "<html>Just a moment...</html>", "text/html"))   # a bot check
     with pytest.raises(steamhunters.Unavailable):
         steamhunters.game(1)
@@ -611,7 +642,7 @@ def test_epic_and_ubisoft_from_an_exophase_profile(client, exo):
     assert client.put("/api/videogames/other/account", json={"profile": "bad name!"}).status_code == 422
 
 
-def test_ticking_off_ubisoft_achievements(client, exo):
+def test_ticking_off_ubisoft_achievements(client, exo, monkeypatch):
     connect(client)
     siege = next(g for g in client.get("/api/videogames/other").json()["games"] if g["platform"] == "ubisoft")
     url = f"/api/videogames/other/{siege['game_id']}"
@@ -626,6 +657,9 @@ def test_ticking_off_ubisoft_achievements(client, exo):
     assert client.get(url).json()["achievements_done"] == 2
     r = client.patch(url, json={"hours": 850}).json()
     assert r["playtime_minutes"] == 51000
+    # Its hidden achievement's text, by its Steam version's id (the list is that version's)
+    monkeypatch.setattr(steamhunters, "descriptions", lambda app_id: {"ACH_3": "Find the room"} if app_id == 359550 else {})
+    assert client.get("/api/videogames/hidden/359550").json() == {"texts": {"ACH_3": "Find the room"}}
     epic = next(g for g in client.get("/api/videogames/other").json()["games"] if g["platform"] == "epic")
     assert client.put(f"/api/videogames/other/{epic['game_id']}/achievements", json={"achieved": True}).status_code == 409
 

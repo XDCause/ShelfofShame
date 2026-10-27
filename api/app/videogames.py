@@ -15,6 +15,7 @@
     stats     for the charts: unlocks per month, how rare your achievements are, your started games
               by completion, most played games
     games     every game with its completion; one game with its achievements
+    hidden    what hidden achievements say (SteamHunters, once per game; shown when you press the eye)
 
 Steam's pictures are linked from Steam's own servers (header and icon addresses below).
 """
@@ -25,7 +26,7 @@ from datetime import date, timedelta
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 
-from . import othergames, steam, vgplaytime
+from . import othergames, steam, steamhunters, vgplaytime
 from .db import db, found
 from .vgsync import SYNC, start_sync, sync_game, sync_one
 from .settings import get_setting
@@ -449,6 +450,42 @@ def get_game(app_id: int):
             (app_id,)).fetchall()
         game["played"] = vgplaytime.history(conn, "steam", app_id)
     return game
+
+
+# A game's hidden achievements (Steam api names): a Steam game's own, or a Ubisoft game's list from its Steam version.
+HIDDEN_NAMES = """
+SELECT api_name FROM vg_achievements WHERE app_id = %(id)s AND hidden
+UNION SELECT a.api_name FROM vg_other_achievements a JOIN vg_other_games o USING (game_id)
+      WHERE o.steam_app_id = %(id)s AND a.hidden"""
+
+
+@router.get("/videogames/hidden/{app_id}")
+def hidden_texts(app_id: int):
+    """What the game's hidden achievements say (Steam leaves them empty): {texts: {api name: text}}. From SteamHunters
+    the first time it's asked for a game (91_vg_hidden_text.sql), then from the database."""
+    with db() as conn:
+        names = {r["api_name"] for r in conn.execute(HIDDEN_NAMES, {"id": app_id}).fetchall()}
+        if not names:
+            found(conn.execute("SELECT 1 FROM vg_games WHERE app_id = %(id)s UNION "
+                               "SELECT 1 FROM vg_other_games WHERE steam_app_id = %(id)s", {"id": app_id}).fetchone(), "Game")
+            return {"texts": {}}
+        read = conn.execute("SELECT 1 FROM vg_hidden_read WHERE app_id = %s", (app_id,)).fetchone()
+    if not read:                          # (outside the connection: SteamHunters can take a few seconds)
+        try:
+            got = steamhunters.descriptions(app_id)
+        except steamhunters.Unavailable as e:
+            raise HTTPException(502, f"{e} Try again in a while.")
+        with db() as conn:
+            for name in names:
+                if text := got.get(name):
+                    conn.execute("INSERT INTO vg_hidden_text (app_id, api_name, description) VALUES (%s, %s, %s) "
+                                 "ON CONFLICT (app_id, api_name) DO UPDATE SET description = EXCLUDED.description",
+                                 (app_id, name, text))
+            conn.execute("INSERT INTO vg_hidden_read (app_id) VALUES (%s) ON CONFLICT (app_id) DO NOTHING", (app_id,))
+    with db() as conn:
+        rows = conn.execute("SELECT api_name, description FROM vg_hidden_text WHERE app_id = %s AND api_name = ANY(%s)",
+                            (app_id, list(names))).fetchall()
+    return {"texts": {r["api_name"]: r["description"] for r in rows}}
 
 
 @router.post("/videogames/{app_id}/sync")

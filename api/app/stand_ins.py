@@ -105,6 +105,12 @@ def _refuse(error, what):
     return no
 
 
+class _AnyText(dict):
+    """SteamHunters' hidden-achievement texts: a made-up one for whichever achievement is asked about."""
+    def get(self, name, default=None):
+        return f"(Stand-in) How to unlock {name}."
+
+
 def install():
     """Swap every outside site for a stand-in (see the module's docstring)."""
     # Model kits and paints
@@ -153,6 +159,7 @@ def install():
     steamhunters.game = lambda app_id: {"sh_median_minutes": 2994, "sh_players_perfected": 5685, "sh_players_started": 90000}
     steamhunters.unobtainable = lambda app_id: set()
     steamhunters.dlc_names = lambda app_id: []
+    steamhunters.descriptions = lambda app_id: _AnyText()     # every hidden achievement gets a made-up text
     exophase._get = _refuse(exophase.Unavailable, "Exophase")
     exophase.search = lambda words, environment: []          # Epic / Ubisoft "find a game": nothing found
     chesscom._get = _refuse(chesscom.ChessError, "chess.com")

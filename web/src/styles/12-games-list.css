@@ -140,6 +140,12 @@
   background: transparent; color: #fff; font-weight: 700; line-height: 1; cursor: pointer; }
 .ach-tick.on { background: var(--ok); border-color: var(--ok); }
 .ach-tick:focus-visible { outline: 2px solid var(--tint); outline-offset: 2px; }
+/* Hidden achievements: an eye on each to show what it says, and Show hidden for them all. */
+.ach-eye { flex: none; width: 32px; height: 32px; min-height: 0; padding: 0; display: inline-flex; align-items: center;
+  justify-content: center; border-radius: 50%; color: var(--muted); }
+.ach-eye[aria-pressed="true"] { color: var(--tint); }
+.ach-show-hidden { display: inline-flex; align-items: center; gap: 6px; }
+.ach-secret-text { font-style: italic; }
 .hours-played { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 6px 0 0; }
 .hours-played input { width: 90px; color: var(--text); }
 

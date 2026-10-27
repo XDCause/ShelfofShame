@@ -65,14 +65,24 @@ def game(app_id: int) -> dict | None:
 UNOBTAINABLE = 3   # SteamHunters' obtainability for "can't be earned any more"
 
 
-def unobtainable(app_id: int) -> set[str]:
-    """Steam's api names of the game's achievements that can't be earned any more."""
+def _achievements(app_id: int) -> list[dict]:
+    """The game's achievements as SteamHunters lists them: apiName, name, description, obtainability..."""
     r = _get(API.format(app_id=app_id) + "/achievements")
     if r.status_code == 404:
-        return set()
+        return []
     if r.status_code != 200 or "json" not in r.headers.get("content-type", ""):
         raise Unavailable(f"SteamHunters didn't answer (HTTP {r.status_code}).")
-    return {a["apiName"] for a in r.json() if a.get("obtainability") == UNOBTAINABLE and a.get("apiName")}
+    return [a for a in r.json() if a.get("apiName")]
+
+
+def unobtainable(app_id: int) -> set[str]:
+    """Steam's api names of the game's achievements that can't be earned any more."""
+    return {a["apiName"] for a in _achievements(app_id) if a.get("obtainability") == UNOBTAINABLE}
+
+
+def descriptions(app_id: int) -> dict[str, str]:
+    """{Steam api name: description} - hidden ones' too, which Steam leaves empty."""
+    return {a["apiName"]: a["description"].strip() for a in _achievements(app_id) if (a.get("description") or "").strip()}
 
 
 def dlc_names(app_id: int) -> list[str]:

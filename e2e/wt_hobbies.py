@@ -309,6 +309,30 @@ def video_games(page):
         expect(drawer(page).locator(".dlc-group").nth(1).locator(".achievements li").first).to_be_visible()
         shot(page, "d45_video_game_dlc", full=False)
         page.keyboard.press("Escape")
+    # A hidden achievement you haven't got (when the data has one): kept secret until its eye is pressed; Show hidden
+    # shows them all (the text is the stand-in's - SteamHunters isn't asked here)
+    secret = None
+    for g in get_json("/api/videogames?show=started")[:20]:
+        a = next((a for a in get_json(f"/api/videogames/{g['app_id']}")["achievements"] if a["hidden"] and not a["achieved"]), None)
+        if a:
+            secret = (g, a)
+            break
+    if secret:
+        g, a = secret
+        page.get_by_label("Search your games").fill(g["name"])
+        page.locator(".game-rows li", has_text=g["name"]).first.click()
+        item = drawer(page).locator(".achievements li", has=page.locator(".item-title", has_text=a["name"])).first
+        expect(item).to_contain_text("Hidden achievement")
+        item.get_by_role("button", name=f"Show what {a['name']} says").click()
+        expect(item).to_contain_text("(Stand-in) How to unlock")
+        item.get_by_role("button", name=f"Hide what {a['name']} says").click()
+        expect(item).to_contain_text("Hidden achievement")
+        drawer(page).get_by_role("button", name=re.compile(r"^Show hidden \(\d+\)")).click()
+        expect(item).to_contain_text("(Stand-in) How to unlock")
+        shot(page, "d46_video_game_hidden", full=False)
+        drawer(page).get_by_role("button", name="Hide hidden").click()
+        expect(item).to_contain_text("Hidden achievement")
+        page.keyboard.press("Escape")
     page.get_by_label("Search your games").fill("")
     # Epic / Ubisoft (when an Exophase profile is connected): the same table; a Ubisoft game's panel
     # lists its achievements (from its Steam version) to tick off.

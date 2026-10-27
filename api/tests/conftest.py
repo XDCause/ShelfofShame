@@ -24,7 +24,7 @@ EMPTIED = ("stock_movements, wishlist, barcode_catalog, product_info, supplies, 
            "colour_group_members, mixes, mix_parts, price_guide, journal_pages, tags, page_tags, "
            "journal_links, journal_images, journal_drawings, journal_notebooks, journal_templates, attachments, wanted_extras, wanted_prices, wanted_history, calendar_events, board_games, board_game_plays, gear, "
            "volleyball_games, volleyball_teams, volleyball_videos, vg_achievements, vg_games, vg_other_games, "
-           "chess_games, chess_archives, books, reading_log, book_quotes, vg_friends, volleyball_coach, goals, site_checks, hikes, hike_photos, hike_gear, garden_spaces, garden_containers, garden_plantings, garden_logs, garden_photos, garden_tasks, garden_items, shooting_ranges, rifles, ammo, shooting_sessions, shooting_groups, shooting_shots, shooting_media, rifle_logs, dope_rows, trips, trip_places, travel_countries, vg_playtime, banners, auth_account, auth_recovery_codes, auth_sessions, auth_passkeys, auth_failures, todos")
+           "chess_games, chess_archives, books, reading_log, book_quotes, vg_friends, volleyball_coach, goals, site_checks, hikes, hike_photos, hike_gear, garden_spaces, garden_containers, garden_plantings, garden_logs, garden_photos, garden_tasks, garden_items, shooting_ranges, rifles, ammo, shooting_sessions, shooting_groups, shooting_shots, shooting_media, rifle_logs, dope_rows, trips, trip_places, travel_countries, vg_playtime, vg_hidden_text, vg_hidden_read, banners, auth_account, auth_recovery_codes, auth_sessions, auth_passkeys, auth_failures, todos")
 _candidates = []   # EMPTIED and every table that refers to one (TRUNCATE ... CASCADE empties those too): found once
 
 

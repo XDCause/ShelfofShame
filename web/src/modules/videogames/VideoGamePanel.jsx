@@ -5,7 +5,7 @@ import Fold from '../../components/Fold.jsx'
 import { RowPhoto } from '../../components/RecordFields.jsx'
 import { useApp } from '../../core/app-context.js'
 import JournalMentions from '../../core/journal/JournalMentions.jsx'
-import { BellCurveIcon, ClockIcon, HourglassIcon, TrophyIcon } from '../../components/icons.jsx'
+import { BellCurveIcon, ClockIcon, EyeIcon, EyeOffIcon, HourglassIcon, TrophyIcon } from '../../components/icons.jsx'
 import { CompletionBar, GamePicture, HandTicked, playtime, rarity } from './steam.jsx'
 
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`
@@ -26,10 +26,20 @@ export default function VideoGamePanel({ id, onClose }) {
   const [q, setQ] = useState('')                  // search the achievements: name and description
   const [syncing, setSyncing] = useState(false)
   const [synced, setSynced] = useState('')
+  // Hidden achievements' text (Steam leaves it empty; SteamHunters has it - read once per game, by its Steam app id).
+  // Kept out of sight: the eye on one shows it, Show hidden shows them all (and the eye then hides that one).
+  const [texts, setTexts] = useState(null)
+  const [textsError, setTextsError] = useState('')
+  const [flipped, setFlipped] = useState(() => new Set())
+  const [showHidden, setShowHidden] = useState(false)
   useEffect(() => {
     (other ? api.getOtherGame(otherId) : api.getVideoGame(id)).then(setGame).catch((e) => setError(e.message))
     if (!other) api.steamAccount().then(setAccount).catch(() => {})
   }, [id, other, otherId])
+  const hiddenFrom = game?.achievements?.some((a) => a.hidden) ? (other ? game.steam_app_id : game.app_id) : null
+  useEffect(() => {
+    if (hiddenFrom) api.hiddenAchievementTexts(hiddenFrom).then((r) => setTexts(r.texts)).catch((e) => setTextsError(e.message))
+  }, [hiddenFrom])
 
   if (!game) return <Drawer title="Game" onClose={onClose}>{error ? <p className="alert error">{error}</p> : <p className="muted">Loading...</p>}</Drawer>
 
@@ -61,7 +71,16 @@ export default function VideoGamePanel({ id, onClose }) {
   const onTick = game.tickable ? async (a) => update(await api.tickOtherAchievement(otherId, a.api_name, !a.achieved)) : null
   const groups = dlcGroups(game.achievements)
   const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean)
-  const matches = (a) => words.every((w) => `${a.name} ${a.description ?? ''} ${a.dlc ?? ''}`.toLowerCase().includes(w))
+  // (a hidden one you haven't got is searched by its name only: its text would give it away)
+  const matches = (a) => words.every((w) => `${a.name} ${a.description ?? (a.achieved ? texts?.[a.api_name] : null) ?? ''} ${a.dlc ?? ''}`
+    .toLowerCase().includes(w))
+  const secrets = game.achievements.filter((a) => a.hidden && !a.achieved && texts?.[a.api_name]).length
+  const secret = { texts, showHidden, flipped, onFlip: (name) => setFlipped((s) => {
+    const next = new Set(s)
+    if (!next.delete(name)) next.add(name)
+    return next
+  }) }
+  const toggleHidden = () => { setShowHidden(!showHidden); setFlipped(new Set()) }
   const shows = (a) => (show === 'all' || (show === 'got' ? a.achieved : !a.achieved)) && matches(a)
   const steamId = other ? game.steam_app_id : id
   const removable = other ? !game.source_id : game.extra
@@ -153,12 +172,18 @@ export default function VideoGamePanel({ id, onClose }) {
                 {game.achievements_done < game.achievements_total ? 'Tick all' : 'Untick all'}
               </button>
             )}
+            {secrets > 0 && (
+              <button type="button" className="plain small ach-show-hidden" aria-pressed={showHidden} onClick={toggleHidden}>
+                {showHidden ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}{showHidden ? 'Hide hidden' : `Show hidden (${secrets})`}
+              </button>
+            )}
           </div>
+          {textsError && <p className="small muted">Hidden achievements' text: {textsError}</p>}
           {game.tickable && <p className="hint">Tick the ones you have{ubisoft ? ' (Ubisoft Connect: the game\'s Achievements page)' : ''}. The list is the
             game's Steam version's; rarity is Steam players'.</p>}
           {words.length > 0 && <p className="muted small">{plural(game.achievements.filter(shows).length, 'match', 'matches')}</p>}
           {/* While searching: one list (a match in a folded DLC would be out of sight) */}
-          {groups.length === 1 || words.length > 0 ? <AchievementList items={game.achievements.filter(shows)} onTick={onTick} /> : (
+          {groups.length === 1 || words.length > 0 ? <AchievementList items={game.achievements.filter(shows)} onTick={onTick} secret={secret} /> : (
             <div className="dlc-groups">
               {groups.map((g) => {
                 const items = g.items.filter(shows)
@@ -168,7 +193,7 @@ export default function VideoGamePanel({ id, onClose }) {
                     title={<>{g.dlc ? g.name : 'Main game'}{g.dlc && <span className="pill purple">DLC</span>}</>}
                     detail={<>{g.done} of {g.total}
                       <span className={percent === 100 ? 'fill-bar ok' : 'fill-bar tint'} aria-hidden="true"><span style={{ width: `${percent}%` }} /></span></>}>
-                    {items.length ? <AchievementList items={items} onTick={onTick} /> : <p className="muted small">None here.</p>}
+                    {items.length ? <AchievementList items={items} onTick={onTick} secret={secret} /> : <p className="muted small">None here.</p>}
                   </Fold>
                 )
               })}
@@ -299,13 +324,17 @@ function dlcGroups(achievements) {
   return [...groups.values()].sort((x, y) => (x.dlc == null ? -1 : y.dlc == null ? 1 : x.name.localeCompare(y.name)))
 }
 
-// onTick (Ubisoft): a tick button on each, to mark it as one you have.
-export function AchievementList({ items, onTick }) {
+// onTick (Ubisoft): a tick button on each, to mark it as one you have. secret (the game panel): hidden achievements'
+// text ({texts, showHidden, flipped, onFlip}) - one you've got shows it; one you haven't has an eye to show it.
+export function AchievementList({ items, onTick, secret: s }) {
   return (
     <ul className="list achievements">
       {items.map((a) => {
         const r = rarity(a.global_percent)
+        const text = a.description ?? s?.texts?.[a.api_name]
         const secret = a.hidden && !a.achieved
+        const eye = secret && text && s       // (the dashboard's lists have no eye: a locked hidden one stays hidden)
+        const shown = eye && s.showHidden !== s.flipped.has(a.api_name)
         return (
           <li key={a.api_name} className={a.achieved ? 'achievement got' : 'achievement'}>
             {onTick && (
@@ -317,10 +346,15 @@ export function AchievementList({ items, onTick }) {
               : <span className="achievement-icon thumb-empty" />}
             <span className="grow">
               <span className="item-title">{a.name}</span>
-              <span className="item-meta">{secret ? 'Hidden achievement' : a.description ?? ''}</span>
+              <span className="item-meta">{shown ? <span className="ach-secret-text">{text}</span> : secret ? 'Hidden achievement' : text ?? ''}</span>
               {a.unobtainable && !a.achieved && <span className="item-meta">Can't be earned any more - not counted</span>}
               {a.achieved && a.unlocked_at && <span className="item-meta">Unlocked {shortDate(a.unlocked_at)}</span>}
             </span>
+            {eye && (
+              <button type="button" className="plain ach-eye" onClick={() => s.onFlip(a.api_name)} aria-pressed={!!shown}
+                aria-label={`${shown ? 'Hide' : 'Show'} what ${a.name} says`} title={shown ? 'Hide it again' : 'Show the hidden text'}>
+                {shown ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}</button>
+            )}
             {a.unobtainable && <span className="pill" title="SteamHunters lists it as unobtainable">Unobtainable</span>}
             {r && <span className={`pill ${r.tone}`} title={r.label ? `${r.label}: ${r.text} of players have it` : `${r.text} of players have it`}>{r.text}</span>}
           </li>
