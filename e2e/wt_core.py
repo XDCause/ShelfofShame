@@ -76,9 +76,18 @@ def global_search(page):
     # and a nav click (then Ctrl+K) sent then was lost
     page.goto(BASE + "/")
     expect(page.locator(".home-banner h2")).to_be_visible()
-    page.keyboard.press("Control+k")
-    # focused a moment later (typing before it was lost); two boxes have this label, so the one with the focus
-    expect(page.locator('input[aria-label="Search everything"]:focus')).to_have_count(1)
+    # focused a moment later (typing before it was lost); two boxes have this label, so the one with the focus.
+    # Under a full run's load Home can show before the search listens for Ctrl+K (lost once, 2026-10-27), so it's
+    # pressed again until the box has the focus.
+    focused = page.locator('input[aria-label="Search everything"]:focus')
+    for _ in range(20):
+        page.keyboard.press("Control+k")
+        try:
+            focused.wait_for(timeout=500)
+            break
+        except Exception:
+            pass
+    expect(focused).to_have_count(1)
     page.keyboard.type("Sherman")
     expect(page.locator(".search-results li").first).to_contain_text("Sherman")
     page.keyboard.press("Enter")
