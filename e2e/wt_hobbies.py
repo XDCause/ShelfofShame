@@ -309,26 +309,30 @@ def video_games(page):
         expect(drawer(page).locator(".dlc-group").nth(1).locator(".achievements li").first).to_be_visible()
         shot(page, "d45_video_game_dlc", full=False)
         page.keyboard.press("Escape")
-    # A hidden achievement you haven't got (when the data has one): kept secret until its eye is pressed; Show hidden
-    # shows them all (the text is the stand-in's - SteamHunters isn't asked here)
+    # A hidden achievement you haven't got, with text to show (when the data has one): kept secret until its eye is
+    # pressed; Show hidden shows them all. The text is the stand-in's - or SteamHunters' real one where prod already
+    # read it (the data is prod's copy); a game read with nothing found ("Upcoming" ones) has no eye, so it's skipped.
     secret = None
     for g in get_json("/api/videogames?show=started")[:20]:
-        a = next((a for a in get_json(f"/api/videogames/{g['app_id']}")["achievements"] if a["hidden"] and not a["achieved"]), None)
+        locked = [a for a in get_json(f"/api/videogames/{g['app_id']}")["achievements"]
+                  if a["hidden"] and not a["achieved"] and not a.get("dlc")]          # (a DLC's start folded)
+        texts = get_json(f"/api/videogames/hidden/{g['app_id']}")["texts"] if locked else {}
+        a = next((a for a in locked if texts.get(a["api_name"])), None)
         if a:
-            secret = (g, a)
+            secret = (g, a, texts[a["api_name"]])
             break
     if secret:
-        g, a = secret
+        g, a, says = secret
         page.get_by_label("Search your games").fill(g["name"])
         page.locator(".game-rows li", has_text=g["name"]).first.click()
         item = drawer(page).locator(".achievements li", has=page.locator(".item-title", has_text=a["name"])).first
         expect(item).to_contain_text("Hidden achievement")
         item.get_by_role("button", name=f"Show what {a['name']} says").click()
-        expect(item).to_contain_text("(Stand-in) How to unlock")
+        expect(item).to_contain_text(says)
         item.get_by_role("button", name=f"Hide what {a['name']} says").click()
         expect(item).to_contain_text("Hidden achievement")
         drawer(page).get_by_role("button", name=re.compile(r"^Show hidden \(\d+\)")).click()
-        expect(item).to_contain_text("(Stand-in) How to unlock")
+        expect(item).to_contain_text(says)
         shot(page, "d46_video_game_hidden", full=False)
         drawer(page).get_by_role("button", name="Hide hidden").click()
         expect(item).to_contain_text("Hidden achievement")
