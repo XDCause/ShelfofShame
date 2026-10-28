@@ -743,3 +743,8 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
    - Also 2026-10-26: the 3 am run on the 26th (just after the laptop woke) logged nothing and was killed at the task's
      15-minute limit - the first docker command waited on a still-waking Docker Desktop. backup.ps1 now asks Docker in
      a job with a 30 s limit, up to 8 times, and fails loudly (log, status, notification) if it never answers.
+   - Also 2026-10-28 (user: "Why are not started games not showing medians or 100 percent rates"): SteamHunters was
+     asked only about started games (the 2026-10 rule "started games only", when the numbers only fed "Compared with
+     other players"). Prod had 71 untouched games with achievements and none had numbers. Now they're read too, but
+     monthly (UNTOUCHED_EVERY, full sync or not; started ones stay weekly / daily on a full sync) and after the started
+     ones, so the median and 100% rate can help pick what to start. Their DLC lists still wait until they're started.

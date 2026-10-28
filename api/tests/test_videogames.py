@@ -342,7 +342,7 @@ def test_app_ids_from_links():
 
 
 def test_how_other_players_did_from_steamhunters(client, fake):
-    """Started games only (not the demo), saved; a game SteamHunters doesn't know is remembered as read."""
+    """Games with achievements (not the demo), saved; a game SteamHunters doesn't know is remembered as read."""
     setup(client)
     assert sorted(c[1] for c in fake.calls if c[0] == "community") == [10, 20]
     celeste = client.get("/api/videogames/10").json()
@@ -359,6 +359,31 @@ def test_how_other_players_did_from_steamhunters(client, fake):
         conn.execute("UPDATE vg_games SET sh_synced_at = now() - interval '2 days'")
     client.post("/api/videogames/sync?full=true")
     assert sorted(c[1] for c in fake.calls if c[0] == "community") == [10, 20]   # ...but not older ones
+
+
+def test_games_not_started_get_other_players_numbers_monthly(client, fake):
+    """A game you haven't started yet still gets its median and 100% rate (to pick what to start), but
+    only once a month: nobody's playing it. Started games are asked first."""
+    for a in fake.mine[20]:
+        a.update(achieved=0, unlocktime=0)                                   # Hades: not started
+    fake.games[1]["playtime_forever"] = 0
+    setup(client)
+    assert [c[1] for c in fake.calls if c[0] == "community"] == [10, 20]       # Celeste (started) first
+    assert client.get("/api/videogames/20").json()["sh_synced_at"]
+    assert not [c for c in fake.calls if c[0] == "dlc" and c[1] == 20]        # its DLC list waits until it's started
+    with db() as conn:
+        conn.execute("UPDATE vg_games SET sh_synced_at = now() - interval '8 days'")
+    fake.calls.clear()
+    client.post("/api/videogames/sync?full=true")
+    assert [c[1] for c in fake.calls if c[0] == "community"] == [10]           # a week old: only the started one
+    fake.calls.clear()
+    client.post("/api/videogames/20/sync")
+    assert [c[1] for c in fake.calls if c[0] == "community"] == [20]           # syncing it alone: over a day old
+    with db() as conn:
+        conn.execute("UPDATE vg_games SET sh_synced_at = now() - interval '31 days' WHERE app_id = 20")
+    fake.calls.clear()
+    client.post("/api/videogames/sync")
+    assert [c[1] for c in fake.calls if c[0] == "community"] == [20]           # a month old: asked again
 
 
 def test_steamhunters_being_down_doesnt_spoil_the_sync(client, fake, monkeypatch):

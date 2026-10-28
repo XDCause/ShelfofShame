@@ -24,6 +24,7 @@ log = logging.getLogger("videogames")
 
 RARITY_EVERY = timedelta(days=7)     # rarity changes slowly: re-read it weekly at most
 COMMUNITY_EVERY = timedelta(days=7)  # SteamHunters' numbers: the same
+UNTOUCHED_EVERY = timedelta(days=30) # ...for games not started yet: monthly (nobody's playing them; they barely move)
 FRESH = timedelta(days=1)            # a full sync skips SteamHunters numbers newer than this...
 DLC_EVERY = timedelta(days=30)       # ...and DLC lists newer than this (they change with the achievements)
 STEAM_AT_ONCE = 4                    # Steam games read side by side (official API, your own key)
@@ -194,16 +195,26 @@ def sync_others(full: bool, read_now: set[int]) -> str:
 
 
 def community_due(full: bool, read_now: set[int]) -> list[tuple[int, str]]:
-    """Started games whose SteamHunters numbers are due: just read from Steam, a week old or never
-    read - or, on a full sync, all but those read in the last day."""
+    """Games whose SteamHunters numbers are due. Started ones: just read from Steam, a week old or
+    never read - or, on a full sync, all but those read in the last day. Ones not started yet (so
+    their median and 100% rate help pick what to start): never read or a month old, full sync or
+    not. Started games first: if SteamHunters stops answering, they're the ones that matter."""
     now = datetime.now(timezone.utc)
     with db() as conn:
-        rows = conn.execute("SELECT app_id, name, sh_synced_at FROM vg_games WHERE achievements_done > 0 AND NOT hidden "
-                            "ORDER BY last_played DESC NULLS LAST").fetchall()
-    if full:                    # a full sync re-reads every game from Steam: freshness decides here
-        return [(r["app_id"], r["name"]) for r in rows if not r["sh_synced_at"] or now - r["sh_synced_at"] > FRESH]
-    return [(r["app_id"], r["name"]) for r in rows
-            if not r["sh_synced_at"] or r["app_id"] in read_now or now - r["sh_synced_at"] > COMMUNITY_EVERY]
+        rows = conn.execute("SELECT app_id, name, sh_synced_at, achievements_done > 0 AS started FROM vg_games "
+                            "WHERE achievements_total > 0 AND NOT hidden "
+                            "ORDER BY achievements_done > 0 DESC, last_played DESC NULLS LAST").fetchall()
+
+    def due(r):
+        if not r["sh_synced_at"]:
+            return True
+        age = now - r["sh_synced_at"]
+        if not r["started"]:
+            return age > UNTOUCHED_EVERY
+        if full:                # a full sync re-reads every game from Steam: freshness decides here
+            return age > FRESH
+        return r["app_id"] in read_now or age > COMMUNITY_EVERY
+    return [(r["app_id"], r["name"]) for r in rows if due(r)]
 
 
 def sync_community(due: list[tuple[int, str]], progress=step) -> str:
@@ -314,7 +325,7 @@ def sync_one(app_id: int) -> str:
     with db() as conn:
         g = conn.execute("SELECT app_id, name, achievements_done, achievements_total, sh_has_dlc, sh_synced_at, "
                          "exo_synced_at, hidden FROM vg_games WHERE app_id = %s", (app_id,)).fetchone()
-    if not g["achievements_done"]:      # like the full sync: not started, nothing to compare
+    if not g["achievements_total"]:     # no achievements: nothing to compare
         return ""
     quiet = lambda _message: None       # noqa: E731 - SYNC's progress is the full sync's
     notes = []                          # only what went wrong: " (SteamHunters didn't answer, ...)"
@@ -322,7 +333,7 @@ def sync_one(app_id: int) -> str:
         notes.append(sync_community([(app_id, g["name"])], quiet))
         with db() as conn:
             g = conn.execute("SELECT * FROM vg_games WHERE app_id = %s", (app_id,)).fetchone()
-    if g["sh_has_dlc"] is not False and not g["exo_synced_at"]:
+    if g["achievements_done"] and g["sh_has_dlc"] is not False and not g["exo_synced_at"]:   # (started only, as the full sync)
         notes.append(sync_dlc([g], progress=quiet))
     return "; ".join(n.strip(" ()") for n in notes if n.startswith(" ("))
 

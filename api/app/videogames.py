@@ -2,7 +2,8 @@
 
     sync      (vgsync.py) reads Steam (steam.py) into vg_games / vg_achievements, then how other players did
               (steamhunters.py: median and fastest time to 100%, how many 100%'d it) for started
-              games - played since, a week old or never read (all of them on a full sync); then
+              games - played since, a week old or never read (all of them on a full sync) - and
+              for games not started yet once a month (to help pick what to start); then
               which achievements come with a DLC (exophase.py) for started games with DLC - once,
               again when their achievements change, and on a full sync. The first sync reads every
               game; after that only games played since the last sync (or never read), unless
