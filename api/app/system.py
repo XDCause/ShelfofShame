@@ -1,7 +1,7 @@
 """How the app itself is doing (health check, 2026-10-21): Settings > System lists every check; Home shows the ones
 that need a look (amber or red). Nothing here changes anything.
 
-    backup        the newest backup (backup.ps1 at 2 am, or Back up now): amber after 2 days, red after 7 or if it failed
+    backup        the newest backup (backup.ps1 at 8 pm, or Back up now): amber after 2 days, red after 7 or if it failed
     restore test  the weekly real restore into a throwaway database (backup.ps1): amber if over 9 days old, red if failed
     off-site      the encrypted copy in Google Drive (prod only, once setup-offsite.ps1 has run)
     network copy  the copy on the network drive (backup.ps1 -CopyTo)
@@ -75,7 +75,7 @@ def backup_checks(now: datetime, status: dict) -> list[dict]:
         state = "ok" if age <= timedelta(days=2) else "warn" if age <= timedelta(days=7) else "bad"
         out.append(check("backup", "Backup", state, f"Last backup {_ago(newest, now)}" +
                          (" (read back and checked)" if last.get("ok") and last.get("name") == files[0].name else ""), newest,
-                         None if state == "ok" else "Is the PC on at 2 am? Task Scheduler > \"Shelf of Shame backup\""))
+                         None if state == "ok" else "Is the PC on at 8 pm? Task Scheduler > \"Shelf of Shame backup\""))
     test = status.get("restore_test") or {}
     when = _at(test.get("at"))
     if not test:
@@ -157,7 +157,7 @@ def copy_check(now: datetime, copy: dict) -> dict | None:
                      f"Is the network drive plugged in and on? Open {server} in File Explorer to wake it")
     stale = not when or now - when > timedelta(days=3)
     return check("copy", "Network drive copy", "warn" if stale else "ok", f"Copied {_ago(when, now)} (checked: identical)", when,
-                 "Is the 2 am backup running? Task Scheduler > \"Shelf of Shame backup\"" if stale else None)
+                 "Is the 8 pm backup running? Task Scheduler > \"Shelf of Shame backup\"" if stale else None)
 
 
 def other_checks(now: datetime) -> list[dict]:

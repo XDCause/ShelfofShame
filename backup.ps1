@@ -320,6 +320,9 @@ if ($AppEnv -eq 'prod' -and (Test-Path $offsiteCfg)) {
     try {
         $cfg = Get-Content $offsiteCfg -Raw | ConvertFrom-Json
         if (-not (Test-Path $keyFile)) { throw 'no password set - run .\setup-offsite.ps1' }
+        # Right after a wake-up the task can start before Drive for desktop has mounted G: (2026-10-30: it checked at
+        # 7:52:15, Drive mounted at 7:52:18 and the copy failed) - give Drive up to 2 minutes to appear.
+        for ($wait = 0; $wait -lt 24 -and -not (Test-Path $cfg.folder); $wait++) { Start-Sleep -Seconds 5 }
         if (-not (Test-Path $cfg.folder)) { throw "$($cfg.folder) isn't there - is Google Drive for desktop running and signed in?" }
         $pass = Read-OffsiteKey $keyFile
         $sealed = Join-Path $env:TEMP "$name.gpg"

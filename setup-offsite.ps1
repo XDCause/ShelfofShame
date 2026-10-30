@@ -7,7 +7,7 @@
 # Before you start: install Google Drive for desktop (google.com/drive/download) and sign in. It shows your
 # Drive as a drive letter (usually G:) and uploads whatever is put in it.
 #
-# The password: YOU choose it (12 characters or more). It's kept on this PC so the 2 am backup can use it,
+# The password: YOU choose it (12 characters or more). It's kept on this PC so the nightly backup can use it,
 # protected by Windows so only your account on this PC can read it. Put it in a password manager as well:
 # if this PC is lost, it's the only way to open the copies on Drive. Nobody - not Google, not the app - can
 # open them without it.

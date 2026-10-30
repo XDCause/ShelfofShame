@@ -196,7 +196,7 @@ SUP-0001... numbering.
 | **Wipe and rebuild** (deletes all data!) | `docker compose down -v`, `.\start.ps1`, then re-run the import |
 | Update the Tamiya paint barcode catalogue (new colours) | `docker exec hobby-inventory-api python -m app.catalog_import` |
 | Update the Shop Tamiya product list (~1,000 products, ~3 min) | Settings > Tamiya catalogue > Refresh (or `docker exec hobby-inventory-api python -m app.tamiya_catalog`) |
-| Back up now (also runs nightly at 2 am) | Settings > Backups > Back up now, or `.\backup.ps1` (keeps the newest 14 in `backups\`) |
+| Back up now (also runs nightly at 8 pm) | Settings > Backups > Back up now, or `.\backup.ps1` (keeps the newest 14 in `backups\`) |
 | Back up and copy elsewhere | `.\backup.ps1 -CopyTo "D:\Backups"` |
 | Test-restore the newest backup now (it also happens weekly by itself) | `.\backup.ps1 -TestRestore` |
 | **Encrypted copy to Google Drive** (once; prod folder) | install Google Drive for desktop, then `.\setup-offsite.ps1` |

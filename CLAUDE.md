@@ -96,7 +96,7 @@ AI via MCP server (later) -----------------/
   certificate; security-headers.inc has the rest, CSP included). Tests: the `client` fixture is signed in, `anon` isn't;
   the walk-through signs in with a per-run password in its throwaway copy. The cookie is named per copy (otc_session /
   otc_session_dev): a browser keeps cookies per host, not per port.
-- **Backups**: nightly 2 am task "Shelf of Shame backup" runs prod's backup.ps1. Each backup is read back; once a week
+- **Backups**: nightly 8 pm task (2 am until 2026-10-30) "Shelf of Shame backup" runs prod's backup.ps1. Each backup is read back; once a week
   it's test-restored into a throwaway database and every table's rows compared. The whole backup goes to Google Drive
   (G:\My Drive\Off the Clock backups, set up with setup-offsite.ps1 - the user's password, never Claude's): each
   database backup encrypted (gpg AES-256; ~200 MB kept, budget 2 GB) and each video encrypted once (~5 GB; the user has

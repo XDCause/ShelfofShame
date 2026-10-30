@@ -748,6 +748,10 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
      other players"). Prod had 71 untouched games with achievements and none had numbers. Now they're read too, but
      monthly (UNTOUCHED_EVERY, full sync or not; started ones stay weekly / daily on a full sync) and after the started
      ones, so the median and 100% rate can help pick what to start. Their DLC lists still wait until they're started.
+   - Also 2026-10-30 (user): the backup task moved from 2 am to 8 pm - the laptop is often asleep at 2 am, so the run
+     came after waking, and that night's caught-up run checked for G: 3 s before Drive for desktop mounted it (off-site
+     copy failed). backup.ps1 now waits up to 2 minutes for the Drive folder. The time is the task's trigger (Task
+     Scheduler), not in the repo; the texts that said "2 am" (Settings, system.py hints, README, docs) say 8 pm.
    - Also 2026-11-07 (user: "Error: Gameology didn't answer (HTTP 429)" adding Hive Pocket Edition): Gameology's
      /products/<handle>.js answered 429 "too many requests" (Cloudflare, Retry-After 60) from the first ask and still
      a minute later, while its search answered. Not worked around: adding a game now uses the facts of the search you

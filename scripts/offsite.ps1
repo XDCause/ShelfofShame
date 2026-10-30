@@ -3,7 +3,7 @@
 # Encryption: gpg (it comes with Git for Windows), symmetric AES-256 with your password - a standard format, so
 # any gpg anywhere opens it:  gpg --decrypt hobby_inventory_<when>.dump.gpg > hobby_inventory_<when>.dump
 # The password is kept on this PC with Windows' own protection (DPAPI: only your Windows account on this PC can
-# read it), so the 2 am backup can use it. Keep the password somewhere else too (a password manager): if this PC
+# read it), so the nightly backup can use it. Keep the password somewhere else too (a password manager): if this PC
 # is lost, it's the only way to open the copies on Google Drive.
 # ASCII only (Windows PowerShell 5.1).
 

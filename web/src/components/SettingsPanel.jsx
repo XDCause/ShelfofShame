@@ -148,7 +148,7 @@ export function Backups() {      // (exported for its tests)
       <p className="small">
         {latest ? <>Last backup: <strong>{shortDate(latest.created_at)}</strong>, {new Date(latest.created_at)
           .toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' })}</> : 'No backups yet.'}
-        {' '}Every night at 2 am; the newest {data.keep} are kept.
+        {' '}Every night at 8 pm; the newest {data.keep} are kept.
       </p>
       <div className="button-row">
         <button type="button" className="primary" onClick={backUp} disabled={busy}>{busy ? 'Backing up...' : 'Back up now'}</button>
