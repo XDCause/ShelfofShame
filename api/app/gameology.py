@@ -37,6 +37,8 @@ def _get(path: str, params: dict | None = None):
         raise ShopError(f"Couldn't reach Gameology ({e.__class__.__name__}).") from None
     if r.status_code == 404:
         return None
+    if r.status_code == 429:
+        raise ShopError("Gameology is limiting requests right now (HTTP 429) - search for the game again, or try later.")
     if r.status_code != 200:
         raise ShopError(f"Gameology didn't answer (HTTP {r.status_code}).")
     return r.json()

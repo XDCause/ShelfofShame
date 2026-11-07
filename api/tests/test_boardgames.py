@@ -150,6 +150,27 @@ def test_adding_a_game_from_gameology_fills_blanks_and_fetches_the_photo(client,
     assert client.post("/api/board-games", json={"name": "X", "shop_handle": "../admin"}).status_code == 422
 
 
+def test_adding_the_game_you_just_found_uses_the_search(client, shop):
+    # 2026-11-07: Gameology's product answers were 429 "too many requests" while its search answered
+    from app import gameology
+    client.get("/api/board-games/lookup?q=catan")
+    asked = len(shop)
+    r = client.post("/api/board-games", json={"name": "Catan", "shop_handle": CATAN["handle"]})
+    assert r.status_code == 201 and len(shop) == asked                    # not asked again
+    assert (r.json()["min_players"], float(r.json()["shop_price"])) == (3, 69.95)
+
+    def busy(path, params=None):
+        raise gameology.ShopError("Gameology is limiting requests right now (HTTP 429) - search for the game again, or try later.")
+    gameology._get, real = busy, gameology._get
+    try:
+        r = client.post("/api/board-games", json={"name": "X", "shop_handle": RIVALS["handle"]})
+        assert r.status_code == 201                                       # from the search too
+        r = client.post("/api/board-games", json={"name": "Y", "shop_handle": "not-searched"})
+        assert r.status_code == 502 and "limiting requests" in r.json()["detail"]
+    finally:
+        gameology._get = real
+
+
 def test_filling_in_a_game_you_have(client, shop):
     game = client.post("/api/board-games", json={"name": "Settlers", "min_players": 5, "max_players": 5}).json()
     url = f"/api/board-games/{game['game_id']}/shop"

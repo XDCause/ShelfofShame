@@ -181,6 +181,9 @@ def shop_game(handle: str | None = None, gg_id: str | None = None) -> dict:
         if not p:
             raise HTTPException(404, "Good Games doesn't have that product any more.")
         return goodgames.board_game(p)
+    held = _gl_found.get(handle)
+    if held and time.time() - held[0] < GG_FOR:          # the search you just picked it from already has its facts
+        return {**held[1], "shop_name": "Gameology"}
     try:
         found_ = gameology.product(handle)
     except gameology.ShopError as e:
@@ -236,6 +239,10 @@ def fetch_photo(game_id: int, facts: dict):
 
 GG_FOR = 600                           # seconds a Good Games answer is kept (the box searches as you type)
 _gg_found: dict[str, tuple[float, list[dict]]] = {}
+# Gameology's search results by handle, kept as long: adding the game you picked uses them instead of asking for the
+# product again (2026-11-07: its /products/<handle>.js answered 429 "too many requests" from the first ask, for
+# minutes, while its search still answered - "Hive Pocket Edition" couldn't be added).
+_gl_found: dict[str, tuple[float, dict]] = {}
 
 
 def _good_games(q: str) -> list[dict]:
@@ -259,6 +266,10 @@ def lookup(q: str = Query(min_length=2, max_length=120), more: bool = False):
     notes, results = [], []
     try:
         results = [{**r, "source": "gameology", "shop_name": "Gameology"} for r in gameology.search(q)]
+        now = time.time()
+        for old in [k for k, (t, _) in _gl_found.items() if now - t >= GG_FOR]:
+            del _gl_found[old]
+        _gl_found.update({r["handle"]: (now, r) for r in results})
     except gameology.ShopError as e:
         notes.append(str(e))
     words = re.findall(r"[a-z0-9]+", q.lower())

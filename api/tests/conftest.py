@@ -89,7 +89,7 @@ def no_real_steam(monkeypatch):
     to fake one fails."""
     import httpx
 
-    from app import (bluesky, bookseries, bunnings, chess, goodgames, chesscom, exophase, frankfurter, hiking, linkpeek, openlibrary, openmeteo,
+    from app import (bluesky, boardgames, bookseries, bunnings, chess, goodgames, chesscom, exophase, frankfurter, hiking, linkpeek, openlibrary, openmeteo,
                      overpass,
                      reading, steam,
                      stedi, steamhunters, trumpeter, videogames, gameology, ucp, wikimedia)
@@ -134,6 +134,7 @@ def no_real_steam(monkeypatch):
     monkeypatch.setattr(trumpeter, "_get", refusing(connect_error))
     monkeypatch.setattr(linkpeek, "_get", refusing(linkpeek.LinkError))
     monkeypatch.setattr(trumpeter, "PAUSE", 0)
+    boardgames._gl_found.clear()
     hiking.LOOKING.clear()
     auth.CHALLENGES.clear()
     reading.COVERS.update(running=False, done=0, total=0, found=0, error=None)

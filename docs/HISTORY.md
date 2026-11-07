@@ -748,3 +748,8 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
      other players"). Prod had 71 untouched games with achievements and none had numbers. Now they're read too, but
      monthly (UNTOUCHED_EVERY, full sync or not; started ones stay weekly / daily on a full sync) and after the started
      ones, so the median and 100% rate can help pick what to start. Their DLC lists still wait until they're started.
+   - Also 2026-11-07 (user: "Error: Gameology didn't answer (HTTP 429)" adding Hive Pocket Edition): Gameology's
+     /products/<handle>.js answered 429 "too many requests" (Cloudflare, Retry-After 60) from the first ask and still
+     a minute later, while its search answered. Not worked around: adding a game now uses the facts of the search you
+     picked it from (kept 10 minutes by handle, _gl_found) - one ask fewer - and a 429 says Gameology is limiting
+     requests. Filling in a game you have / Check types still ask for the product and say so if it's refused.
