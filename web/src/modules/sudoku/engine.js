@@ -492,7 +492,8 @@ function makeEngine(N, variant) {
       return { technique: 'mistake', name: 'A mistake', level: 0, cells: wrong, units: [], eliminate: [],
         text: `${cellsText(wrong)} ${wrong.length === 1 ? "isn't" : "aren't"} right. Take ${wrong.length === 1 ? 'it' : 'them'} out and look again.` }
     }
-    const cands = candidates(values)
+    const plain = candidates(values)
+    const cands = [...plain]
     const badNotes = []
     for (let c = 0; c < CELLS; c++) {
       if (values[c] || !notes[c]) continue
@@ -504,11 +505,33 @@ function makeEngine(N, variant) {
         text: `Your notes in ${cellsText(badNotes)} leave out the digit that goes there. Check them again (or fill notes afresh).` }
     }
     const s = findStep(values, cands)
-    if (s) return s
+    if (s) return byYourNotes(s, values, plain, cands)
     const fewest = Math.min(...values.map((x, j) => (x ? N + 1 : count(cands[j]))))
     const c = values.findIndex((v, i) => !v && count(cands[i]) === fewest)
     return { technique: 'stuck', name: 'Beyond the techniques here', level: 5, cells: [c], units: [], eliminate: [], place: { cell: c, digit: solution[c] },
       text: `None of the techniques in the app help from here (it needs chains or trial and error). ${cellName(c)} is ${sym(solution[c])} - apply to place it.` }
+  }
+
+  // A hint found with the player's notes can lean on digits they've ruled out themselves (or an earlier hint did) that
+  // the board alone still allows. Say so - "9 can only go in r6c5" looks wrong when r9c5 could still be 9 on the board
+  // (user, 2026-11-11).
+  function byYourNotes(s, values, plain, cands) {
+    const naked = s.technique === 'naked_single'
+    const mask = naked || !s.digits?.length ? ALL : s.digits.reduce((m, d) => m | bit(d), 0)
+    const seen = new Set([...s.cells, ...s.units.flatMap((u) => UNITS[u])])
+    const ruled = []
+    for (const c of seen) {
+      if (values[c]) continue
+      const gone = plain[c] & ~cands[c] & mask
+      if (gone) ruled.push(`${list(digitsOf(gone).map(sym))} in ${cellName(c)}`)
+    }
+    if (!ruled.length) return s
+    const shown = ruled.length > 4 ? [...ruled.slice(0, 4), `${ruled.length - 4} more`] : ruled
+    if (naked) {
+      const { cell, digit } = s.place
+      return { ...s, text: `Going by your notes, ${cellName(cell)} can only be ${sym(digit)}: you've already ruled out ${list(shown)}.` }
+    }
+    return { ...s, text: `${s.text} (This goes by your notes: you've already ruled out ${list(shown)}, which the board alone still allows.)` }
   }
 
   const isSolved = (values, solution) => values.every((v, i) => v === solution[i])

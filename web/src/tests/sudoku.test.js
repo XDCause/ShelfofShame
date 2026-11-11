@@ -90,6 +90,21 @@ describe('hints', () => {
     expect(WIKI_ANSWER[h.place.cell]).toBe(h.place.digit)
   })
 
+  it("say when a hint leans on the player's own notes", () => {
+    const plainStep = hintFor([...WIKI], new Array(81).fill(0), WIKI_ANSWER)
+    expect(plainStep.text).not.toMatch(/your notes/)
+    // rule a wrong digit out of every empty cell that still allows one (keeping the answer): the hint then goes by notes
+    const cands = candidates([...WIKI])
+    const notes = cands.map((m, c) => {
+      if (WIKI[c]) return 0
+      const extra = m & ~bit(WIKI_ANSWER[c])
+      return extra ? m & ~(extra & -extra) : m
+    })
+    const h = hintFor([...WIKI], notes, WIKI_ANSWER)
+    expect(h.place.digit).toBe(WIKI_ANSWER[h.place.cell])
+    expect(h.text).toMatch(/your notes/)
+  })
+
   it('notice notes that leave out the answer', () => {
     const notes = new Array(81).fill(0)
     notes[2] = bit(1) | bit(2)                                // r1c3's answer is 4
