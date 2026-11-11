@@ -813,3 +813,94 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
      so saving a page that mentioned a trip failed. 92 adds 'trip' (and 'record'); TARGET_NAME names trips now.
    Tests: test_vinyl.py (Discogs and Last.fm faked with stand_ins' made-up catalogue); walk-through step vinyl (sync,
    connect Last.fm, add by search, play side B, crate / plays / stats / dashboard, the wishlist).
+
+5v. **Sudoku, the thirteenth hobby** (2026-11-11, the user: "I love them, I want to build the best tool possible" - after
+   a desk review: Good Sudoku and Sudoku.com lead on hints that teach the technique rather than fill the cell; Enjoy
+   Sudoku / HoDoKu / Sudoku Explainer on rating by the hardest technique needed; players ask for notes, mistake
+   checking that can be gentle, practice for a technique, typing in a book's puzzle). 93_sudoku.sql:
+   - The engine is in the browser (web/src/modules/sudoku/engine.js), so it needs no puzzle site and works in the
+     offline copy: a random full grid, clues removed in symmetric pairs while the answer stays unique (bitmask
+     backtracking), then graded by solving it like a person - full house, hidden / naked singles; pointing and box/line
+     reduction; naked pairs / triples / quads, hidden pairs / triples; X-Wing, Swordfish, XY-Wing, XYZ-Wing. Easy =
+     singles with 34+ clues; Medium = singles on a sparse grid or locked candidates; Hard = subsets; Expert = fish /
+     wings; Extreme = none of them finishes it (~15% of minimal puzzles). Made in a Web Worker (worker.js) so the
+     board never freezes; Expert takes ~0.1 s. Checked on 400 puzzles: no step ever contradicted the answer.
+   - Hints: a wrong digit first, then notes that rule out the answer, then the easiest step from where you are (your
+     notes count as eliminations) - shown in three stages: the technique and where to look, then the cells and why,
+     then apply. Learn explains every technique and makes a puzzle that needs it (practice).
+   - The daily puzzle comes from a seed made from the date (the same day, the same puzzle), easy Monday to Expert at
+     the weekend; daily streak and a solve streak. Type in a puzzle from a book: checked for one answer, graded.
+   - The API (sudoku.py) keeps games and checks each one (a valid answer that agrees with the clues and is the only one;
+     a solve must match the answer). A game made while the PC can't be reached is played on the device
+     (localStorage) and saved when it answers again.
+   - Everywhere else: activity (Solved), calendar ('sudoku'), goal sources (sudokus solved; Hard or harder), Home tiles.
+   - Same day, the user: "when the window is resized the grid plays up", "a 16 x 16 mode", "an achievement system":
+     - Resizing: the digits were sized from the WINDOW (vw) but the cells from the board, so at some widths (the sidebar
+       showing) a digit outgrew its cell and pushed the board out of square. Now the board is a container and every
+       size inside it is a share of its own width (cqi); the board and the controls wrap on the space there is (flex),
+       not at a fixed screen width. The walk-through checks it at 5 widths (square, inside the window, digits in cells).
+     - 16 x 16: the engine is made per size (engineFor(n): 4 x 4 boxes, digits 1-9 then A-G, typed as letters). Full
+       grids from a shuffled pattern (backtracking a 16 x 16 can take far too long); clues kept, never minimal - each
+       removal needs a full uniqueness check: Easy ~0.1 s, Hard ~10 s, Expert+ can take minutes, so 16 x 16 offers
+       Easy / Medium / Hard. sudoku_games.size; the server's checker is size-aware (bit masks).
+     - Achievements (sudoku.py ACHIEVEMENTS, 44 in 9 groups: milestones, difficulty, clean, speed, daily, streaks,
+       learning, giant, habits): worked out from the solved games every time, oldest first, so games from before an
+       award existed count; each knows the solve that earned it, and a solve answers with what it just earned.
+   - Then: "practice should be filled out until the point the X-Wing move is needed": practiceStart solves a practice
+     puzzle with easier steps up to the moment the technique is the next move, notes filled; the game opens on its lesson
+     (the idea, this case, what it rules out - struck in red - and Apply). A lesson isn't counted as a hint.
+   - Then (user: more achievements, a weekly, the hardest 100, the newspaper's puzzle, a ranking, events "with cool things
+     along the way"):
+     - Achievements: 80 now - per difficulty (Easy 25 / 100 ... Extreme 25), weekly, the Hardest 100, events, ranks, papers.
+     - The weekly: a 16 x 16 Hard made from the week's Monday (week_of, a Monday; once a week). Past dailies: the last three
+       weeks on Today, a missed one playable (it counts towards the daily streak).
+     - The Hardest 100 (hardest.js): made by the app, not copied - 100,000 puzzles none of its techniques finish (16 seeded
+       runs in parallel), ranked by a solver's search (logic, then guessing the cell with fewest candidates); the top
+       1,000 kept in hardest-1000.tsv. Games from a set: source 'set', set_key / set_stop (once each).
+     - Papers: NOT fetched - newspapers' sudokus are licensed (syndicated), often paywalled, and their terms forbid copying
+       (the SMH / Courier-Mail don't even put theirs on the open web). Instead "Today's paper": type or paste it in, say
+       which paper (sudoku_games.paper), and get hints, the grade, rating and achievements; links to the NYT's and The New
+       Daily's free pages.
+     - Rating: Elo against the puzzle (difficulty -> 800...1900; 16 x 16 +150; Hardest 100 up to 2200); score = pace vs par
+       (1.0 within par, down to 0.35) less mistakes (0.06) and hints (0.12); giving up = 0; K 40 for 20 games, then 24. Worked
+       out from the games each time, like the achievements; ranks Novice ... Legend (2000).
+     - Events (events.js): The Grand Tour (30 stops, always open) and the Patagonia Trail (25 stops named for the trip, open
+       1 Dec - 31 Jan); a winding path, each stop made from a seed of the event and stop, opening when the one before is
+       solved; board themes earned along the way (and from the Hardest 100), picked in Options.
+   - Then ("do all, leaving Killer for the moment"; "how hard is the top 100 really?"):
+     - Gauged on trial depth (when logic stalls: does assuming one candidate and following singles to a contradiction
+       crack it, or do trials need nesting?): ALL of the first Hardest 100 (and the 1,000) cracked with one level of
+       trial with singles - roughly "diabolical newspaper" level; AI Escargot and Inkala's 2012 puzzle (measured locally,
+       not stored) need more than two levels. Random generation almost never makes the truly fiendish ones, so the list
+       was refined by an evolutionary search ({-1+1} / {-2+2} clue moves that keep one answer and make it harder by
+       that measure; 16 workers x 20 minutes) - see hardest.js / hardest-1000.tsv for what it reached.
+     - Diagonal (X): engineFor(9, 'x') - both long diagonals are units (generation, the solver, hints, the server's
+       check); sudoku_games.variant; Easy-Hard (X Expert is rare to find). Shaded diagonals.
+     - Replays and the mistake map: every digit change is kept with its second (state.m); a finished game plays back at
+       1x / 4x / 16x; Stats shows where wrong digits land (by cell) and the digits you slip on.
+     - The Advent calendar: advent-<year>, 24 stops, door n opens on n December; themes Holly and Snowfall.
+     - Reading a photo of a paper's grid (photoRead.js, on the device): the grid's outline from its long dark lines (drag
+       the corners to fit), a homography straightens it, each cell's ink is matched against digits drawn in common
+       typefaces; the result goes on the type-in board to check before playing.
+     - The weekly became a 9 x 9 from the refined hardest list (weekly.js), a week at a time (user's call), not a 16 x 16.
+     - Events refreshed (user: "very simple and boring"): each event's landscape as its header, a contour-map ground,
+       a trail that turns solid as you walk it, medallion stops, gifts where themes are earned.
+   - Then the user solved "the weekly Extreme" in 3 minutes: it had 44 clues. The hardening search's {-2+2} move could
+     take the same clue away twice and add two (clues crept up), and the weekly pool reached down to 4-5 step chains.
+     The user's bar: "the top 1,000 should be almost impossible; the top 100 near the 2012 puzzle (10-11)". Nothing the
+     app made gets there (its best need 19-28 step chains, about 7.5-8.5 on the experts' scale), so (the user's call,
+     "both"):
+     - The library: 1,000 of the sudoku community's hardest (the enjoysudoku.com forum's collection, rated 11+, via the
+       tdoku project's benchmark data) - checked by the app, ranked by nested-search branches; NOT ours to publish, so in
+       data/sudoku/hardest-published.tsv (git-ignored) and loaded into sudoku_library by load-sudoku-library.ps1. Ranks
+       1-100 are the Hardest 100. Without it (a fresh copy) the app's own lists are used. (At first ranks 101-1000 were the
+       weekly - "too hard at this stage, just Extreme" (user): the weekly is back on the app's own Extreme list.)
+     - tools/sudoku-search: a search for the user's desktop (Ryzen 7 5700X; Node, worker threads, all but one) that
+       nudges the app's own hardest ({-1+1}, {-2+2} on distinct cells, {-1}) and scores like the experts - the shortest
+       singles chain at the worst stall, then whether ANY such chain works (tier 2: the famous puzzles' level), then
+       nested trials. Its found.tsv loads as the 'weekly' list, which the weekly then prefers.
+     - The weekly pool from the app's own list is cut to chains of 12+ and at most 30 clues (379); a web test keeps it so.
+     - The offline-copy walk-through step checked "no service worker or saved data left" straight after turning it off;
+       unregistering finishes in the background, so a slow full run failed it - it now waits for both.
+   Tests: test_sudoku.py, web tests for the engine (sudoku.test.js), walk-through step sudoku.
+

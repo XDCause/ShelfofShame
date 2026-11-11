@@ -15,7 +15,7 @@ import { AgendaView, ToPlan, WeekView, YearView } from './CalendarViews.jsx'
 const VIEWS = [['month', 'Month'], ['week', 'Week'], ['agenda', 'Agenda'], ['year', 'Year']]
 // what each activity kind belongs to (for hiding a hobby's "what happened")
 const KIND_HOBBY = { model: 'models', game: 'boardgames', volleyball: 'volleyball', videogame: 'videogames', chess: 'chess', book: 'reading',
-  trip: 'travel', shoot: 'shooting', hike: 'hiking', planting: 'gardening', gcontainer: 'gardening', gspace: 'gardening', record: 'vinyl' }
+  trip: 'travel', shoot: 'shooting', hike: 'hiking', planting: 'gardening', gcontainer: 'gardening', gspace: 'gardening', record: 'vinyl', sudoku: 'sudoku' }
 const longDay = (iso) => dayDate(iso).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
 const plus = (iso, n) => { const d = dayDate(iso); d.setDate(d.getDate() + n); return isoDay(d) }
 

@@ -58,6 +58,8 @@
  *                                    (most used: .offline)
  *   27-vinyl.css                     Vinyl: covers, the crate, the record panel, the dashboard
  *                                    (most used: .vinyl)
+ *   28-sudoku.css                    Sudoku: the board, the number pad, hints, Learn
+ *                                    (most used: .sdk)
  */
 @import './styles/01-base.css';
 @import './styles/02-inventory-panels.css';
@@ -86,3 +88,4 @@
 @import './styles/25-supplies-wishlist-extras.css';
 @import './styles/26-offline.css';
 @import './styles/27-vinyl.css';
+@import './styles/28-sudoku.css';

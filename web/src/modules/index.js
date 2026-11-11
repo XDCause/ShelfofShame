@@ -27,10 +27,11 @@ import chess from './chess/manifest.jsx'
 import reading from './reading/manifest.jsx'
 import models from './models/manifest.jsx'
 import videogames from './videogames/manifest.jsx'
+import sudoku from './sudoku/manifest.jsx'
 import vinyl from './vinyl/manifest.jsx'
 import volleyball from './volleyball/manifest.jsx'
 
-const ALL = [models, boardgames, volleyball, videogames, chess, reading, vinyl, car, travel, shooting, hiking, gardening]
+const ALL = [models, boardgames, volleyball, videogames, chess, reading, vinyl, sudoku, car, travel, shooting, hiking, gardening]
 export const SHOW_UNFINISHED = import.meta.env.VITE_APP_ENV !== 'prod'
 export const MODULES = ALL.filter((m) => SHOW_UNFINISHED || !m.underConstruction)
 

@@ -76,6 +76,7 @@ ORDER = [
     "chess",
     "reading",
     "vinyl",
+    "sudoku",
     "warhammer_range",
     "warhammer_minis",
     "gundam_range",

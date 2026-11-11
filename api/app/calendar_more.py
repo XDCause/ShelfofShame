@@ -28,7 +28,7 @@ router = APIRouter(prefix="/api", tags=["calendar"])
 # What each hobby's log shows as in the activity feed (activity.py kinds): a hobby event that day counts as done.
 HOBBY_KINDS = {"models": ("model",), "boardgames": ("game",), "volleyball": ("volleyball",), "videogames": ("videogame",),
                "chess": ("chess",), "reading": ("book",), "travel": ("trip",), "shooting": ("shoot",), "hiking": ("hike",),
-               "gardening": ("planting", "gcontainer", "gspace"), "vinyl": ("record",), "car": ()}
+               "gardening": ("planting", "gcontainer", "gspace"), "vinyl": ("record",), "sudoku": ("sudoku",), "car": ()}
 KIND_HOBBY = {k: h for h, kinds in HOBBY_KINDS.items() for k in kinds}
 
 
@@ -46,7 +46,7 @@ MONTH_WORD = {m.lower(): i for i, m in enumerate(months.month_name) if m} | \
 MONTH_RE = "|".join(sorted(MONTH_WORD, key=len, reverse=True))
 NTH = {"first": 1, "1st": 1, "second": 2, "2nd": 2, "third": 3, "3rd": 3, "fourth": 4, "4th": 4, "last": 5}
 HOBBY_WORDS = [  # (pattern, hobby) - the first that matches wins
-    (r"volley ?ball|vball", "volleyball"), (r"chess", "chess"),
+    (r"volley ?ball|vball", "volleyball"), (r"chess", "chess"), (r"sudokus?", "sudoku"),
     (r"shoot(?:ing)?|range day|rifle|rimfire|club match|prs", "shooting"),
     (r"hike|hiking|bushwalk|trail|summit", "hiking"), (r"garden(?:ing)?|repot|sow(?:ing)?|plant(?:ing)? out", "gardening"),
     (r"vinyl|record (?:store|shop|fair)s?|records? day|rsd|crate digging|gig|concert|listening party", "vinyl"),

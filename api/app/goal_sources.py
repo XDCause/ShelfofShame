@@ -63,6 +63,10 @@ SOURCES = {
     "records_played": ("Records played", "plays", "vinyl", "sum", "SELECT played_at::date AS day, 1 AS amount FROM vinyl_plays"),
     "records_added": ("Records added to the collection", "records", "vinyl", "sum",
                       "SELECT added_on AS day, 1 AS amount FROM vinyl_records WHERE status IN ('Owned', 'Gone')"),
+    "sudokus_solved": ("Sudokus solved", "puzzles", "sudoku", "sum",
+                       "SELECT finished_at::date AS day, 1 AS amount FROM sudoku_games WHERE status = 'solved'"),
+    "sudokus_hard": ("Hard or harder sudokus solved", "puzzles", "sudoku", "sum",
+                     "SELECT finished_at::date AS day, 1 AS amount FROM sudoku_games WHERE status = 'solved' AND difficulty IN ('Hard', 'Expert', 'Extreme')"),
     "journal_pages": ("Journal pages", "pages", None, "sum",
                       "SELECT COALESCE(entry_date, created_at::date) AS day, 1 AS amount FROM journal_pages"),
 }

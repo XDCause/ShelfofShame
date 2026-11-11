@@ -7,15 +7,15 @@ import { useApp } from '../app-context.js'
 // The calendar's shared parts (2026-10-21): colours, how a repeat reads, layers (what's shown), the forecast on
 // events, "Log it" for each hobby, quick add in plain words, search, countdowns and the hobby-time balance.
 
-export const HOBBY_TONE = { models: 'purple', boardgames: 'teal', volleyball: 'low', videogames: 'purple', chess: 'tint', reading: 'low', car: 'ok', travel: 'teal', shooting: 'out', hiking: 'ok', gardening: 'ok', vinyl: 'out' }
+export const HOBBY_TONE = { models: 'purple', boardgames: 'teal', volleyball: 'low', videogames: 'purple', chess: 'tint', reading: 'low', car: 'ok', travel: 'teal', shooting: 'out', hiking: 'ok', gardening: 'ok', vinyl: 'out', sudoku: 'tint' }
 export const KIND_TONE = { model: 'purple', supply: 'ok', page: 'teal', game: 'teal', volleyball: 'low', gear: 'ok', videogame: 'purple',
-  chess: 'tint', book: 'low', goal: 'ok', hike: 'ok', planting: 'ok', gcontainer: 'ok', gspace: 'ok', record: 'out' }
+  chess: 'tint', book: 'low', goal: 'ok', hike: 'ok', planting: 'ok', gcontainer: 'ok', gspace: 'ok', record: 'out', sudoku: 'tint' }
 export const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 export const hobbyName = (id) => MODULES.find((m) => m.id === id)?.name
 // What each hobby's log is in the activity feed (api/app/calendar_more.py HOBBY_KINDS): a hobby event's day is
 // "Logged" once that hobby's log has something on it.
 export const HOBBY_KINDS = { models: ['model'], boardgames: ['game'], volleyball: ['volleyball'], videogames: ['videogame'], chess: ['chess'],
-  reading: ['book'], travel: ['trip'], shooting: ['shoot'], hiking: ['hike'], gardening: ['planting', 'gcontainer', 'gspace'], vinyl: ['record'], car: [] }
+  reading: ['book'], travel: ['trip'], shooting: ['shoot'], hiking: ['hike'], gardening: ['planting', 'gcontainer', 'gspace'], vinyl: ['record'], sudoku: ['sudoku'], car: [] }
 
 const NTH = ['1st', '2nd', '3rd', '4th', 'last']
 const ord = (n) => `${n}${['th', 'st', 'nd', 'rd'][(n % 100 > 10 && n % 100 < 14) || n % 10 > 3 ? 0 : n % 10]}`

@@ -143,6 +143,11 @@ export const MountainIcon = (p) => (
 export const VinylIcon = (p) => (
   <Icon {...p}><circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="2.6" /><path d="M7.2 9.2a5.6 5.6 0 0 1 2.4-2.5M16.8 14.8a5.6 5.6 0 0 1-2.4 2.5" /></Icon>
 )
+// A sudoku: a 3 x 3 grid with a digit in it.
+export const SudokuIcon = (p) => (
+  <Icon {...p}><rect x="3.5" y="3.5" width="17" height="17" rx="2.5" /><path d="M9.2 3.5v17M14.8 3.5v17M3.5 9.2h17M3.5 14.8h17" />
+    <path d="M5.6 5.9h1.3v2.2" strokeWidth="1.4" /></Icon>
+)
 export const SproutIcon = (p) => (
   <Icon {...p}><path d="M12 21v-9" /><path d="M12 12c0-4 2.5-6.5 7-6.5 0 4.5-2.5 6.5-7 6.5z" /><path d="M12 14.5c0-3.2-2-5.2-5.8-5.2 0 3.6 2 5.2 5.8 5.2z" /><path d="M7.5 21h9" /></Icon>
 )

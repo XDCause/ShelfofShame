@@ -14,10 +14,10 @@ def home(page):
         expect(stats.filter(has_text=tile)).to_be_visible()
     # supplies 2, models 2, board games 2, volleyball 2, video games 2 = 10; chess (+ puzzles), reading 1 each;
     # hiking, gardening, shooting, travel and vinyl 2 each (2026-10-20: a second number each)
-    expect(stats).to_have_count(10 + CHESS + CHESS_PUZZLES + READING + 2 * HIKING + 2 * GARDEN + 2 * SHOOTING + 2 * TRAVEL + 2 * VINYL)
+    expect(stats).to_have_count(10 + CHESS + CHESS_PUZZLES + READING + 2 * HIKING + 2 * GARDEN + 2 * SHOOTING + 2 * TRAVEL + 2 * VINYL + 2 * SUDOKU)
     expect(page.locator(".home-card", has_text="Recent activity").locator(".pill").first).to_be_visible()
     expect(page.locator(".home-card", has_text="Coming up")).to_be_visible()
-    expect(page.locator(".quick-action")).to_have_count(15)       # + Log a chess game, Add a book, Add a record, Log a hike, Add a plant, Start shooting, Plan a trip
+    expect(page.locator(".quick-action")).to_have_count(16)       # + Log a chess game, Add a book, Add a record, Play sudoku, Log a hike, Add a plant, Start shooting, Plan a trip
     shot(page, "d00_home", full=False)
     stats.filter(has_text="To buy").click()
     expect(page).to_have_url(BASE + "/wishlist")
@@ -454,8 +454,9 @@ def offline_copy(page):
         d.locator("summary", has_text="Offline copy").click()
         d.get_by_label("Keep a copy on this device").uncheck()
         expect(d.locator(".offline-copy .alert.ok")).to_contain_text("Off")
-        assert p.evaluate("navigator.serviceWorker.getRegistrations().then((r) => r.length)") == 0
-        assert p.evaluate("caches.keys().then((k) => k.length)") == 0
+        # (unregistering finishes in the background: on a slow run the check came too soon - wait for both to be gone)
+        p.wait_for_function("""async () => (await navigator.serviceWorker.getRegistrations()).length === 0
+                                            && (await caches.keys()).length === 0""", timeout=15000)
     except Exception:
         shot(p, "FAIL_offline_copy_its_browser", full=False)          # (the step's own screenshot shows the other browser)
         raise
@@ -504,7 +505,7 @@ def phone(page):
         page.locator(".tabbar a", has_text=tab).click()
         fits(tab)
     page.locator(".tabbar a", has_text="Hobbies").click()
-    expect(page.locator(".hobby-card")).to_have_count(12)         # models, board games, volleyball, video games, chess, reading, vinyl, car, travel, shooting, hiking, gardening
+    expect(page.locator(".hobby-card")).to_have_count(13)         # models, board games, volleyball, video games, chess, reading, vinyl, sudoku, car, travel, shooting, hiking, gardening
     car = page.locator(".hobby-card", has_text="Building my car")
     expect(car.locator(".under-construction")).to_be_visible()     # the spanner: still to be built
     fits("Hobbies")

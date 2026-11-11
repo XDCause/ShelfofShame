@@ -44,7 +44,7 @@ GUNDAM_GRADES = {"EG": "1/144", "HG": "1/144", "RG": "1/144", "FM": "1/100", "MG
 
 # The hobby modules (web/src/modules/); a calendar event can belong to one (db/init/20_calendar.sql).
 MODULE_IDS = ["models", "boardgames", "volleyball", "videogames", "chess", "reading", "car", "travel", "shooting", "hiking",
-              "gardening", "vinyl"]   # 53 / 56 / 61 / 63 / 66 / 92
+              "gardening", "vinyl", "sudoku"]   # 53 / 56 / 61 / 63 / 66 / 92 / 93
 REPEATS = ["never", "weekly", "fortnightly", "monthly", "monthly_nth", "yearly", "weekdays"]   # 87_calendar_more.sql
 MOODS = ["great", "good", "okay", "meh", "rough"]                              # 25_mood.sql, best first
 GAME_STATUSES = ["Owned", "To sell", "Wanted", "Borrowed", "Played elsewhere", "Gone"]   # 21 / 47 / 54_board_game_elsewhere.sql

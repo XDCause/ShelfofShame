@@ -1121,3 +1121,157 @@ def vinyl(page):
 
     go(page, "Wishlist")
     expect(page.locator(".wanted, main").first).to_contain_text("Second Side")     # the Discogs wantlist, under Discogs
+
+
+@step("Sudoku: an Easy game - a hint in three stages, a note, undo, solve it; stats, Learn's practice, the daily puzzle")
+def sudoku(page):
+    go(page, "Sudoku")
+    tabs = page.locator(".section-tabs")
+    expect(page.locator(".sdk-daily")).to_contain_text("Daily puzzle")
+    page.locator(".sdk-pick-btn", has_text="Easy").first.click()
+    board = page.locator(".sdk-board")
+    expect(board).to_be_visible(timeout=30000)
+    expect(page).to_have_url(re.compile(r"game=\d+"))
+    game_id = re.search(r"game=(\d+)", page.url).group(1)
+    g = get_json(f"/api/sudoku/games/{game_id}")
+    puzzle, answer = g["puzzle"], g["solution"]
+    cells = board.locator(".sdk-cell")
+    expect(cells).to_have_count(81)
+
+    # a hint: the technique and where to look, then the cells and why, then applied
+    page.get_by_role("button", name="Hint", exact=True).click()
+    hint = page.locator(".sdk-hint")
+    expect(hint).to_contain_text("Try a")
+    hint.get_by_role("button", name="Show me").click()
+    expect(page.locator(".sdk-cell.hint-cell").first).to_be_visible()
+    hint.get_by_role("button", name="Apply").click()
+    expect(hint).to_be_hidden()
+    expect(page.locator(".sdk-stats")).to_contain_text("1 hint")
+
+    empty = [i for i in range(81) if puzzle[i] == "0"]
+    # a note (N, then a digit), then undo; a wrong digit counts as a mistake and Ctrl+Z takes it back
+    first = next(i for i in empty if not cells.nth(i).locator(".sdk-digit").count())
+    cells.nth(first).click()
+    page.keyboard.press("n")
+    page.keyboard.press("1")
+    expect(cells.nth(first).locator(".sdk-notes")).to_contain_text("1")
+    page.keyboard.press("n")
+    wrong = next(d for d in "123456789" if d != answer[first])
+    page.keyboard.press(wrong)
+    expect(cells.nth(first)).to_have_class(re.compile("wrong"))
+    page.keyboard.press("Control+z")
+    expect(cells.nth(first).locator(".sdk-digit")).to_have_count(0)
+    shot(page, "d58_sudoku_playing", full=False)
+
+    for i in empty:                                          # the rest, from the answer
+        if cells.nth(i).locator(".sdk-digit").count():
+            continue
+        cells.nth(i).click()
+        page.keyboard.press(answer[i])
+    done = page.locator(".sdk-done")
+    expect(done).to_contain_text("Solved!", timeout=15000)
+    expect(done).to_contain_text("1 mistake")
+    shot(page, "d59_sudoku_solved", full=False)
+    assert get_json(f"/api/sudoku/games/{game_id}")["status"] == "solved"
+    expect(done.locator(".sdk-earned")).to_contain_text("Achievement")         # what this solve earned
+    expect(done.locator(".sdk-rated")).to_contain_text("rating")               # and the rating it moved
+    done.get_by_role("button", name="▶ Watch the replay").click()               # every digit, played back
+    replay = page.locator(".sdk-replay")
+    expect(replay).to_contain_text("Move")
+    replay.get_by_role("slider", name="Move").fill("5")
+    expect(replay).to_contain_text("Move 5 of")
+    replay.get_by_role("button", name="Done").click()
+    tabs.get_by_role("link", name="Awards").click()
+    expect(page.locator(".sdk-awards-head")).to_contain_text("earned")
+    expect(page.locator(".sdk-award.got").first).to_be_visible()
+
+    # the board stays square, its digits inside their cells, however wide the window (user, 2026-11-11)
+    page.goto(f"{BASE}/sudoku/play?game={game_id}")
+    board = page.locator(".sdk-board")
+    expect(board).to_be_visible()
+    was = page.viewport_size
+    for width in (1280, 1000, 820, 600, 390):
+        page.set_viewport_size({"width": width, "height": 900})
+        page.wait_for_timeout(150)
+        box = board.bounding_box()
+        assert abs(box["width"] - box["height"]) <= 2, (width, box)
+        assert box["x"] >= 0 and box["x"] + box["width"] <= width + 1, (width, box)
+        cell, digit = cells.nth(0).bounding_box(), cells.nth(0).locator(".sdk-digit").bounding_box()
+        assert digit["height"] <= cell["height"] + 1 and digit["width"] <= cell["width"] + 1, (width, cell, digit)
+    page.set_viewport_size(was)
+
+    # Diagonal (X): the two diagonals shaded
+    page.goto(f"{BASE}/sudoku/play")
+    page.get_by_role("group", name="Kind").get_by_role("button", name="Diagonal (X)").click()
+    page.locator(".sdk-pick-btn", has_text="Easy").first.click()
+    expect(page.locator(".sdk-title")).to_contain_text("Diagonal (X)", timeout=30000)
+    expect(page.locator(".sdk-board .sdk-cell.diag")).to_have_count(17)
+
+    # a photo of a newspaper's grid, read onto the type-in board (drawn here, as a paper would print it)
+    page.goto(f"{BASE}/sudoku/play?enter=1")
+    clues = "530070000600195000098000060800060003400803001700020006060000280000419005000080079"
+    data = page.evaluate("""(clues) => {
+      const c = document.createElement('canvas'); c.width = 620; c.height = 640
+      const x = c.getContext('2d'); x.fillStyle = '#f4f1ea'; x.fillRect(0, 0, 620, 640)
+      const o = 40, s = 540, k = s / 9
+      x.strokeStyle = '#222'
+      for (let i = 0; i <= 9; i++) { x.lineWidth = i % 3 ? 1.5 : 4
+        x.beginPath(); x.moveTo(o, o + i * k); x.lineTo(o + s, o + i * k); x.stroke()
+        x.beginPath(); x.moveTo(o + i * k, o); x.lineTo(o + i * k, o + s); x.stroke() }
+      x.fillStyle = '#111'; x.font = '700 38px Arial'; x.textAlign = 'center'; x.textBaseline = 'middle'
+      for (let i = 0; i < 81; i++) if (clues[i] !== '0') x.fillText(clues[i], o + (i % 9 + 0.5) * k, o + (Math.floor(i / 9) + 0.5) * k + 2)
+      return c.toDataURL('image/png').split(',')[1] }""", clues)
+    with open(f"{OUT}/sudoku_photo_test.png", "wb") as f:
+        f.write(base64.b64decode(data))
+    page.locator('input[aria-label="Photo of the grid"]').set_input_files(f"{OUT}/sudoku_photo_test.png")
+    page.get_by_role("button", name="Read the digits").click()
+    expect(page.locator(".sdk-photo")).to_contain_text("Read 30 clues")
+    shown = "".join((cell.inner_text() or "0").strip() or "0" for cell in page.locator(".sdk-board .sdk-cell").all())
+    assert shown == clues, ("read wrong", [(i, clues[i], shown[i]) for i in range(81) if shown[i] != clues[i]])
+    shot(page, "d63_sudoku_photo", full=False)
+
+    # a 16 x 16: 256 cells, 4 x 4 boxes, letters for 10-16
+    page.goto(f"{BASE}/sudoku/play")
+    page.get_by_role("group", name="Kind").get_by_role("button", name="16 × 16").click()
+    page.locator(".sdk-pick-btn", has_text="Easy").first.click()
+    expect(page.locator(".sdk-board.giant")).to_be_visible(timeout=60000)
+    big = page.locator(".sdk-board .sdk-cell")
+    expect(big).to_have_count(256)
+    giant = get_json(f"/api/sudoku/games/{re.search(r'game=(\d+)', page.url).group(1)}")
+    spot = next(i for i in range(256) if giant["puzzle"][i] == "0" and giant["solution"][i] in "ABCDEFG")
+    big.nth(spot).click()
+    page.keyboard.press(giant["solution"][spot].lower())
+    expect(big.nth(spot).locator(".sdk-digit")).to_have_text(giant["solution"][spot])
+    shot(page, "d61_sudoku_giant", full=False)
+
+    tabs.get_by_role("link", name="Stats").click()
+    expect(page.locator(".sdk-table tr", has_text="Easy")).to_contain_text("1")
+    tabs.get_by_role("link", name="Learn").click()
+    tech = page.locator("#tech-pointing")
+    expect(tech).to_contain_text("Pointing pair")
+    tech.get_by_role("link", name="Practise it").click()
+    expect(page.locator(".sdk-title")).to_contain_text("Practising Pointing pair", timeout=30000)
+    lesson = page.locator(".sdk-lesson")                      # the board is at the moment it's needed: the lesson opens
+    expect(lesson).to_contain_text("Lesson: Pointing pair")
+    expect(lesson).to_contain_text("So it rules out:")
+    expect(page.locator(".sdk-notes .struck").first).to_be_visible()
+    shot(page, "d60_sudoku_practice", full=False)
+    lesson.get_by_role("button", name="Apply it").click()
+    expect(page.get_by_text("That's the Pointing pair")).to_be_visible()
+    expect(page.locator(".sdk-stats")).to_contain_text("0 hints")      # a lesson isn't a hint
+    tabs.get_by_role("link", name="Events").click()                    # the event path and the Hardest 100
+    path = page.locator(".sdk-event", has_text="The Grand Tour")
+    path.get_by_role("link", name=re.compile("^Stop 1: Easy")).click()
+    expect(page.locator(".sdk-title")).to_contain_text("The Grand Tour · Stop 1", timeout=30000)
+    tabs.get_by_role("link", name="Events").click()
+    if time.strftime("%Y-%m-%d") < "2026-12-01":                       # (the trail opens on 1 December)
+        expect(page.locator(".sdk-event", has_text="Patagonia Trail")).to_contain_text("Opens")
+    shot(page, "d62_sudoku_events", full=False)
+    page.get_by_role("link", name="Number 1", exact=True).click()
+    expect(page.locator(".sdk-title")).to_contain_text("Hardest 100 · number 1", timeout=30000)
+    tabs.get_by_role("link", name="Today").click()
+    expect(page.locator(".sdk-rating")).to_contain_text("Rating")
+    expect(page.locator(".sdk-weekly")).to_contain_text("The weekly")
+    expect(page.get_by_role("group", name="The last three weeks of daily puzzles")).to_be_visible()
+    page.get_by_role("link", name=re.compile("Play today's puzzle|Carry on")).first.click()
+    expect(page.locator(".sdk-title")).to_contain_text("Daily sudoku", timeout=30000)

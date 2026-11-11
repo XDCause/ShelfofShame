@@ -70,6 +70,8 @@ _travel = get_json("/api/travel/summary")
 TRAVEL = bool(_travel["now"] or _travel["upcoming"] or _travel["countries_been"])          # Home: the next trip / countries
 _vinyl = get_json("/api/vinyl/summary")
 VINYL = bool(_vinyl["owned"] or _vinyl["wanted"])                                       # Home: records + plays this month
+_sudoku = get_json("/api/sudoku/summary")
+SUDOKU = bool(_sudoku["solved"] or _sudoku["playing_count"])                                 # Home: the daily + this week
 MARK = f"e2e{int(time.time())}"   # a word only this run's journal page contains
 
 

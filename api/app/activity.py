@@ -19,6 +19,7 @@
     gardening   sowed / planted; harvests, repotting, problems, notes and photos   (garden_plantings, garden_logs)
                 (not every watering - that's what Today is for)
     vinyl       a record played (one entry per record per day); bought / added      (vinyl_plays, vinyl_records)
+    sudoku      a puzzle solved: difficulty, time, hints                            (sudoku_games)
 
 Each item: {at, day, kind, ref, verb, title, detail, photo_url}; the photo (if any) is the
 product's, the game's or the gear's. Newest first. Part of the core: Home shows the latest, and
@@ -223,6 +224,15 @@ WITH feed AS (
            CASE WHEN r.photo IS NOT NULL THEN '/api/vinyl/records/' || r.record_id || '/photo?v='
                 || (extract(epoch FROM r.photo_updated) * 1000)::bigint END
     FROM vinyl_records r WHERE r.status <> 'Wanted'
+  UNION ALL
+    SELECT g.finished_at, 'sudoku', g.game_id, 'Solved',
+           CASE WHEN g.daily_on IS NOT NULL THEN 'Daily sudoku' ELSE g.difficulty || CASE WHEN g.size = 16 THEN ' 16×16' ELSE '' END || ' sudoku' END,
+           concat_ws(' · ', CASE WHEN g.daily_on IS NOT NULL THEN g.difficulty END,
+                     CASE WHEN g.seconds >= 3600 THEN g.seconds / 3600 || ' h ' || mod(g.seconds, 3600) / 60 || ' min'
+                          ELSE g.seconds / 60 || ' min ' || mod(g.seconds, 60) || ' s' END,
+                     CASE WHEN g.hints = 0 AND g.mistakes = 0 THEN 'clean' WHEN g.hints > 0 THEN g.hints || CASE WHEN g.hints = 1 THEN ' hint' ELSE ' hints' END END),
+           NULL, NULL, NULL
+    FROM sudoku_games g WHERE g.status = 'solved'
 )
 SELECT f.at, (f.at AT TIME ZONE current_setting('TimeZone'))::date AS day,
        f.kind, f.ref, f.verb, f.title, NULLIF(f.detail, '') AS detail,

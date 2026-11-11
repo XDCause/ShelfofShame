@@ -37,3 +37,8 @@ certs/
 # The showcase (showcase.ps1): screenshots of every version, and its working folder
 showcase/
 .showcase/
+
+# Data that is not ours to publish (e.g. the sudoku library: data/sudoku/hardest-published.tsv). Loaded into the database.
+/data/
+# The sudoku search's results (tools/sudoku-search): brought to the app PC by hand, loaded into the database.
+/tools/sudoku-search/found.tsv

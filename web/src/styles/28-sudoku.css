@@ -1,0 +1,223 @@
+/* ---------- Sudoku (modules/sudoku, 2026-11-11) ---------- */
+/* The board (9 x 9, or 16 x 16: --n): thick lines between the boxes; clues in the text colour, your digits in the
+   hobby's tint; the selected cell, its row / column / box and the same digit softly lit; a wrong digit red; a hint's
+   area amber. Everything inside is sized from the BOARD's width (a container: cqi), never the window's - so it stays
+   square and its digits fit however the window is sized, with or without the sidebar (user, 2026-11-11: "when the
+   window is resized the grid plays up"). */
+.sdk-board-box { container-type: inline-size; width: 100%; }
+.sdk-board { --n: 9; position: relative; display: grid; grid-template-rows: repeat(var(--n), minmax(0, 1fr)); width: 100%; aspect-ratio: 1;
+  border: 2px solid var(--text); border-radius: 6px; overflow: hidden; background: var(--surface); user-select: none; touch-action: manipulation; }
+.sdk-row { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); min-height: 0; }
+.sdk-cell { position: relative; display: grid; place-items: center; min-width: 0; min-height: 0; padding: 0; margin: 0; border: 0;
+  border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); border-radius: 0; background: var(--surface);
+  color: var(--text); font: inherit; line-height: 1; overflow: hidden; cursor: pointer; }
+.sdk-row:last-child .sdk-cell { border-bottom: 0; }
+.sdk-cell:last-child { border-right: 0; }
+.sdk-cell.edge-r { border-right: 2px solid var(--text); }
+.sdk-cell.edge-b { border-bottom: 2px solid var(--text); }
+.sdk-cell.diag { background: color-mix(in srgb, var(--purple, var(--tint)) 9%, var(--surface)); }   /* Diagonal (X): the diagonals, shaded (before the highlights, which win) */
+.sdk-cell:focus-visible { outline: 3px solid var(--tint); outline-offset: -3px; z-index: 1; }
+.sdk-digit { font-size: calc(100cqi / var(--n) * 0.56); line-height: 1; font-variant-numeric: tabular-nums; }
+.sdk-cell.given .sdk-digit { font-weight: 700; }
+.sdk-cell.mine .sdk-digit { color: var(--tint); font-weight: 600; }
+.sdk-cell.peer { background: color-mix(in srgb, var(--tint) 7%, var(--surface)); }
+.sdk-cell.same { background: color-mix(in srgb, var(--tint) 22%, var(--surface)); }
+.sdk-cell.sel { background: color-mix(in srgb, var(--tint) 32%, var(--surface)); }
+.sdk-cell.hint-area { background: color-mix(in srgb, var(--low) 14%, var(--surface)); }
+.sdk-cell.hint-elim { background: color-mix(in srgb, var(--out) 10%, var(--surface)); }
+.sdk-cell.hint-cell { background: color-mix(in srgb, var(--low) 34%, var(--surface)); }
+.sdk-cell.wrong .sdk-digit { color: var(--out); }
+.sdk-cell.wrong { background: color-mix(in srgb, var(--out) 12%, var(--surface)); }
+.sdk-cell.revealed .sdk-digit { color: var(--muted); }
+.sdk-notes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); width: 100%; height: 100%;
+  padding: 1px; font-size: calc(100cqi / var(--n) * 0.25); line-height: 1; color: var(--muted); font-variant-numeric: tabular-nums; }
+.sdk-board.giant .sdk-notes { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, 1fr)); font-size: calc(100cqi / var(--n) * 0.2); }
+.sdk-notes span { display: grid; place-items: center; min-width: 0; min-height: 0; }
+.sdk-notes span.struck { color: var(--out); text-decoration: line-through; font-weight: 700; }
+.sdk-cell.same-note .sdk-notes { color: var(--text); }
+.sdk-hidden .sdk-cell { cursor: default; }
+
+/* The page: the board, and beside it the pad, the tools, the hint - side by side while there's room for both, else the
+   controls go under the board. (Flex wrapping on the space there is, not a fixed screen width.) */
+.sdk-top { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.sdk-title { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-width: 0; }
+.sdk-stats { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.sdk-clock { font-size: 1.15rem; font-weight: 650; font-variant-numeric: tabular-nums; }
+.sdk-layout { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; justify-content: center; }
+.sdk-board-wrap { position: relative; flex: 1 1 340px; min-width: 0; max-width: min(560px, 100%); }
+.sdk-play.giant .sdk-board-wrap { flex-basis: 480px; max-width: min(820px, 100%); }
+.sdk-paused { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 8px; text-align: center;
+  background: color-mix(in srgb, var(--surface) 85%, transparent); border-radius: 6px; }
+.sdk-side { container-type: inline-size; display: flex; flex-direction: column; gap: 12px; flex: 1 1 280px; min-width: 0; max-width: 560px; }
+.sdk-pad { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.sdk-pad.giant { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+@container (min-width: 440px) {
+  .sdk-pad { grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 5px; }
+  .sdk-pad.giant { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+}
+.sdk-key { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; min-width: 0; min-height: 52px; padding: 4px 2px;
+  border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text); }
+.sdk-pad.giant .sdk-key { min-height: 46px; }
+.sdk-key:hover:not(:disabled) { border-color: var(--tint); }
+.sdk-key:disabled { opacity: 0.45; }
+.sdk-key-digit { font-size: 1.45rem; font-weight: 650; line-height: 1.1; }
+.sdk-key-left { font-size: 0.72rem; color: var(--muted); }
+.sdk-key.note .sdk-key-digit { font-size: 1.05rem; color: var(--muted); }
+.sdk-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+.sdk-hint { padding: 12px 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--low) 45%, var(--border));
+  background: color-mix(in srgb, var(--low) 9%, var(--surface)); }
+.sdk-hint p { margin: 6px 0; }
+.sdk-keys { margin: 0; }
+.sdk-local { margin: 0 0 10px; }
+.sdk-done { padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); }
+.sdk-done.solved { border-color: color-mix(in srgb, var(--ok) 50%, var(--border)); background: color-mix(in srgb, var(--ok) 8%, var(--surface)); }
+.sdk-done-time { font-size: 1.6rem; font-variant-numeric: tabular-nums; }
+.sdk-earned { margin: 10px 0; }
+.sdk-earned p { margin: 0 0 6px; }
+.sdk-making { text-align: center; padding: 28px 16px; }
+
+/* New game, Today */
+.sdk-pick { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.sdk-pick.compact { grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); }
+.sdk-pick-btn { display: flex; flex-direction: column; gap: 3px; padding: 12px; border-radius: 12px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); text-decoration: none; border-left: 5px solid var(--tint); }
+.sdk-pick-btn.ok { border-left-color: var(--ok); }
+.sdk-pick-btn.teal { border-left-color: var(--teal, var(--tint)); }
+.sdk-pick-btn.low { border-left-color: var(--low); }
+.sdk-pick-btn.purple { border-left-color: var(--purple, var(--tint)); }
+.sdk-pick-btn.out { border-left-color: var(--out); }
+.sdk-pick-btn:hover { border-color: var(--tint); }
+.sdk-daily-date { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.sdk-daily.done { border-color: color-mix(in srgb, var(--ok) 45%, var(--border)); }
+.sdk-row-time { font-variant-numeric: tabular-nums; font-size: 0.9rem; }
+
+/* Learn */
+.sdk-learn-level { margin: 16px 0; }
+.sdk-learn-head { margin: 0 0 8px; font-size: 1rem; }
+.sdk-learn-head .pill { color: var(--text); }          /* (on the page background the tone's text colour is just under 4.5:1) */
+.sdk-learn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.sdk-tech { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; scroll-margin-top: 90px; }
+.sdk-tech h3 { margin: 0; font-size: 1rem; }
+.sdk-tech p { margin: 0; }
+.sdk-tech.focus { border-color: var(--tint); box-shadow: 0 0 0 2px color-mix(in srgb, var(--tint) 35%, transparent); }
+
+/* Stats */
+.sdk-table-wrap { overflow-x: auto; }
+.sdk-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 0.92rem; }
+.sdk-table th, .sdk-table td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.sdk-table thead th { color: var(--muted); font-weight: 600; font-size: 0.8rem; }
+
+/* Awards */
+.sdk-awards-head .fill-bar { display: block; }
+.sdk-award-group { margin: 16px 0; }
+.sdk-awards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+.sdk-awards.compact { grid-template-columns: 1fr; }
+.sdk-award { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px;
+  background: var(--surface); }
+.sdk-award.got { opacity: 1; border-color: color-mix(in srgb, var(--ok) 45%, var(--border)); background: color-mix(in srgb, var(--ok) 6%, var(--surface)); }
+.sdk-award-icon { font-size: 1.4rem; line-height: 1; filter: grayscale(1); opacity: 0.55; }   /* (not yet earned: only the icon fades - faded
+   text would fall below the contrast minimum) */
+.sdk-award.got .sdk-award-icon { filter: none; opacity: 1; }
+.sdk-award-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sdk-award-bar { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+.sdk-award-bar .fill-bar { flex: 1; }
+
+/* Practice: the lesson that opens with the board at the moment the technique is needed */
+.sdk-lesson { border-color: color-mix(in srgb, var(--tint) 45%, var(--border)); background: color-mix(in srgb, var(--tint) 7%, var(--surface)); }
+.sdk-lesson-steps { margin: 8px 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 6px; }
+
+/* Board themes (earned on the event paths and the Hardest 100: modules/sudoku/events.js THEMES). Each sets the colours the
+   board is drawn with, on the board only - so a theme looks the same in the app's light and dark modes. */
+.sdk-theme-paper { --surface: #f3efe4; --text: #1b1a17; --border: #cfc7b4; --tint: #2f4f7f; --muted: #5d584c; }
+.sdk-theme-forest { --surface: #eef3ea; --text: #1d2a1f; --border: #b9c8b6; --tint: #2f6b3a; --muted: #4c5d4f; }
+.sdk-theme-dusk { --surface: #2a2438; --text: #f1e9ff; --border: #4d4466; --tint: #ffb37a; --muted: #c4b8dc; }
+.sdk-theme-gold { --surface: #fbf5e3; --text: #2a2210; --border: #d9c48a; --tint: #8a5f00; --muted: #6a5a33; }
+.sdk-theme-glacier { --surface: #eaf4f8; --text: #10303d; --border: #a9cbd8; --tint: #1f6f8f; --muted: #3f6170; }
+.sdk-theme-torres { --surface: #fbefe9; --text: #3a1f1a; --border: #e2b9a8; --tint: #a53c27; --muted: #6e4b43; }
+.sdk-theme-condor { --surface: #1d1f24; --text: #eef0f3; --border: #3d414a; --tint: #9fc3ff; --muted: #b3b9c4; }
+.sdk-theme-obsidian { --surface: #121212; --text: #e8e8e8; --border: #333; --tint: #c3a6ff; --muted: #b0b0b0; }
+.sdk-theme-ember { --surface: #1f1410; --text: #ffe9dc; --border: #4a2c20; --tint: #ff8a57; --muted: #d8b8a8; }
+
+/* Today: past dailies, the weekly, rating */
+.sdk-past { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin-top: 8px; max-width: 320px; }
+.sdk-past-day { display: grid; place-items: center; min-height: 30px; border-radius: 8px; font-size: 0.8rem; text-decoration: none;
+  color: var(--text); background: var(--fill); border: 1px solid transparent; }
+.sdk-past-day.done { background: color-mix(in srgb, var(--ok) 22%, var(--surface)); }
+.sdk-past-day.started { background: color-mix(in srgb, var(--low) 22%, var(--surface)); }
+.sdk-past-day.today { border-color: var(--tint); font-weight: 700; }
+.sdk-weekly.done { border-color: color-mix(in srgb, var(--ok) 45%, var(--border)); }
+.sdk-rating .fill-bar { max-width: none; }
+.sdk-down { color: var(--out); font-weight: 600; }
+.sdk-rated { margin: 6px 0; }
+
+/* Events: the winding path */
+.sdk-event { overflow: hidden; }
+.sdk-path { position: relative; margin: 8px 0 4px; }
+.sdk-path-line { position: absolute; inset: 0; width: 100%; height: 100%; }
+.sdk-path-line polyline { fill: none; stroke: var(--border); stroke-width: 4; stroke-dasharray: 2 8; stroke-linecap: round; }
+.sdk-stop { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 3px; width: 116px; transform: translate(-50%, -20px);
+  text-align: center; text-decoration: none; color: var(--text); }
+.sdk-stop-dot { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--border);
+  background: var(--surface); font-weight: 700; font-variant-numeric: tabular-nums; }
+.sdk-stop.done .sdk-stop-dot { background: var(--ok); border-color: var(--ok); color: #fff; }
+.sdk-stop.current .sdk-stop-dot { border-color: var(--tint); box-shadow: 0 0 0 4px color-mix(in srgb, var(--tint) 30%, transparent); }
+.sdk-stop.locked { color: var(--muted); }
+.sdk-stop.locked .sdk-stop-dot { background: var(--fill); }
+.sdk-stop-text { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 0.72rem; line-height: 1.15; }
+.sdk-stop-text strong { font-size: 0.78rem; }
+
+/* The Hardest 100 */
+.sdk-hardest { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 4px; }
+.sdk-hardest-cell { display: grid; place-items: center; min-height: 30px; border-radius: 6px; font-size: 0.75rem; font-variant-numeric: tabular-nums;
+  text-decoration: none; color: var(--text); background: var(--fill); }
+.sdk-hardest-cell.done { background: var(--ok); color: #fff; font-weight: 700; }
+.sdk-hardest-cell.started { background: color-mix(in srgb, var(--low) 30%, var(--surface)); }
+
+/* Replay; the mistake heat map */
+.sdk-replay input[type="range"] { width: 100%; }
+.sdk-heat { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); max-width: 300px; aspect-ratio: 1; border: 2px solid var(--text); border-radius: 4px; overflow: hidden; }
+.sdk-heat-cell { display: grid; place-items: center; font-size: 0.7rem; color: var(--text); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--out) calc(var(--heat) * 55%), var(--surface)); }
+.sdk-heat-cell.edge-r { border-right: 2px solid var(--text); }
+.sdk-heat-cell.edge-b { border-bottom: 2px solid var(--text); }
+.sdk-theme-holly { --surface: #f6f1ea; --text: #1d2a1f; --border: #c9b9a4; --tint: #a3222b; --muted: #5a4f45; }
+.sdk-theme-snowfall { --surface: #f4f8fc; --text: #1a2633; --border: #c5d3e2; --tint: #2b5d99; --muted: #4a5a6c; }
+
+/* Reading a photo of a grid: the photo, and the four corners to drag onto the grid */
+.sdk-photo { display: flex; flex-direction: column; gap: 8px; }
+.sdk-photo-box { position: relative; width: 100%; max-width: 520px; touch-action: none; user-select: none; }
+.sdk-photo-box img { display: block; width: 100%; height: auto; border-radius: 8px; }
+.sdk-photo-box svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.sdk-photo-box polygon { fill: color-mix(in srgb, var(--tint) 12%, transparent); stroke: var(--tint); stroke-width: 3; vector-effect: non-scaling-stroke; }
+.sdk-photo-box circle { fill: var(--tint); stroke: #fff; stroke-width: 2; vector-effect: non-scaling-stroke; cursor: grab; }
+
+/* Events, refreshed (user, 2026-11-11: "the events background is very simple and boring"): each event's own landscape
+   as its header, a map-like ground with faint contour lines, a dashed trail that turns solid as you walk it, medallion
+   stops, gifts where a theme is earned. */
+.sdk-event { padding: 0; overflow: hidden; margin-bottom: 16px; }
+.sdk-event-hero { position: relative; min-height: 190px; display: flex; align-items: flex-end; color: #fff; }
+.sdk-event-hero .landscape { position: absolute; inset: 0; width: 100%; height: 100%; }
+.sdk-event-hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgb(6 10 14 / 0.05), rgb(6 10 14 / 0.72)); }
+.sdk-event-title { position: relative; z-index: 1; padding: 18px 20px 16px; max-width: 640px; }
+.sdk-event-title h2 { margin: 0 0 4px; font-size: 1.5rem; color: #fff; }
+.sdk-event-title p { margin: 0 0 8px; font-size: 0.9rem; color: #f2f2ee; }
+.sdk-event-meta { font-size: 0.82rem !important; margin: 6px 0 0 !important; }
+.sdk-event-progress { display: block; height: 7px; border-radius: 4px; background: rgb(255 255 255 / 0.25); overflow: hidden; max-width: 340px; }
+.sdk-event-progress > span { display: block; height: 100%; border-radius: 4px; background: #fff; }
+.sdk-event-note { margin: 12px 16px 0; }
+.sdk-event .sdk-path { margin: 0; background:
+  repeating-radial-gradient(circle at 20% 15%, transparent 0 34px, color-mix(in srgb, var(--event-hue) 9%, transparent) 35px 36px),
+  repeating-radial-gradient(circle at 85% 70%, transparent 0 46px, color-mix(in srgb, var(--event-hue) 7%, transparent) 47px 48px),
+  linear-gradient(to bottom, color-mix(in srgb, var(--event-hue) 10%, var(--surface)), var(--surface)); }
+.sdk-path-line polyline.trail { fill: none; stroke: color-mix(in srgb, var(--event-hue) 35%, var(--border)); stroke-width: 6; stroke-dasharray: 1 12;
+  stroke-linecap: round; stroke-linejoin: round; }
+.sdk-path-line polyline.walked { fill: none; stroke: var(--event-hue); stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; opacity: 0.85; }
+.sdk-event .sdk-stop-dot { width: 46px; height: 46px; border-width: 3px; box-shadow: 0 3px 8px rgb(0 0 0 / 0.18); background: var(--surface); }
+.sdk-event .sdk-stop.done .sdk-stop-dot { background: var(--event-hue); border-color: #fff; color: #fff; }
+.sdk-event .sdk-stop.current .sdk-stop-dot { border-color: var(--event-hue); animation: sdk-pulse 1.8s ease-in-out infinite; }
+.sdk-event .sdk-stop-text strong { background: color-mix(in srgb, var(--surface) 85%, transparent); padding: 1px 6px; border-radius: 6px; }
+.sdk-stop-reward { font-size: 0.7rem; color: var(--text); padding: 1px 6px; border-radius: 10px; background: color-mix(in srgb, var(--low) 18%, var(--surface)); }
+.sdk-stop-reward.got { background: color-mix(in srgb, var(--ok) 18%, var(--surface)); }
+@keyframes sdk-pulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--event-hue) 45%, transparent); }
+  50% { box-shadow: 0 0 0 10px color-mix(in srgb, var(--event-hue) 0%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .sdk-event .sdk-stop.current .sdk-stop-dot { animation: none; } }
