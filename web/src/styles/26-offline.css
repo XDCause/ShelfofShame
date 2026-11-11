@@ -6,6 +6,9 @@
 }
 .offline-banner span { flex: 1 1 260px; min-width: 0; }
 .offline-banner button { flex: none; }
+/* Home's top row (Next adventure, Recent activity) is pulled up over the hero (20-banners.css .home-now): with the
+   banner above it, it would cover the banner - so it stays in its place while the banner shows. */
+.content:has(> .offline-banner) .home .home-now { margin-top: 0; }
 
 /* Settings > Offline copy */
 .offline-copy { display: flex; flex-direction: column; gap: 6px; }

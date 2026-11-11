@@ -437,6 +437,12 @@ def offline_copy(page):
         expect(p.locator(".hike-list li").first if HIKING else p.get_by_text("No hikes yet")).to_be_visible()
         expect(p.locator(".offline-banner")).to_be_visible()
         shot(p, "d24_offline_banner", full=False)
+        p.goto(f"{BASE}/")                                     # Home: its top row is pulled up over the hero
+        expect(p.locator(".home-now")).to_be_visible()
+        expect(p.locator(".offline-banner")).to_be_visible()
+        banner, top_row = p.locator(".offline-banner").bounding_box(), p.locator(".home-now").bounding_box()
+        assert banner["y"] + banner["height"] <= top_row["y"], (banner, top_row)   # the cards don't cover the banner
+        shot(p, "d25_offline_home", full=False)
         said = p.evaluate("""() => fetch('/api/goals', {method: 'POST', headers: {'Content-Type': 'application/json'},
                              body: '{}'}).then(async (r) => [r.status, (await r.json()).detail])""")
         assert said[0] == 503 and "offline" in said[1], said   # read-only: a change gets a clear no
