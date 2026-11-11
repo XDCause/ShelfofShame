@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { api, today as todayIso } from '../../api.js'
 import Landscape from '../../components/Landscape.jsx'
 import { useApp } from '../../core/app-context.js'
 import { EVENTS, HARDEST, THEMES, eventOpen, stops } from './events.js'
-import { DIFF_TONE, clockText } from './sudokuParts.js'
+import { clockText } from './sudokuParts.js'
 
 // Sudoku > Events: each event's winding path (a stop opens when the one before is solved; board themes to earn along
 // the way) and the Hardest 100 (play them in any order; number 100 is the hardest).
@@ -27,62 +27,91 @@ export function EventsView() {
 
 const THEME_NAME = Object.fromEntries(THEMES.map((t) => [t.key, t.name]))
 
-// The path: stops on a winding line, done / next / locked; a reward flag where a theme is earned.
+// The path (user, 2026-11-11, with a screenshot of the kind of thing: "the events still look off"): the event's scene
+// fills the card and stays put while the road scrolls over it - starting at the bottom and winding up, big round stops
+// (done, next, locked; a gift where a theme is earned), the event's name and time left on top, and a Play button for
+// the next stop pinned at the bottom. It opens scrolled to where you're up to.
+const STEP = 118, TOP = 150, BOTTOM = 130
+const LANES = [50, 80, 50, 20]                        // across the card, %: centre, right, centre, left...
 function Path({ event, games, open }) {
+  const scroller = useRef(null)
   const all = stops(event)
   const solved = all.filter((s) => games[s.stop]?.status === 'solved').length
+  const day = todayIso()
   const next = all.find((s) => games[s.stop]?.status !== 'solved')
-  const W = 100, STEP = 84
-  const pos = (i) => ({ x: 50 + 26 * Math.sin(i * 0.9), y: 48 + i * STEP })
-  const pts = all.map((_, i) => { const p = pos(i); return `${(p.x * W) / 100},${p.y}` })
-  const walked = all.filter((s) => games[s.stop]?.status === 'solved').length   // (stops open in order: the trail so far)
-  const nextReward = all.find((s) => s.reward && games[s.stop]?.status !== 'solved')
+  const nextOpen = next && open && !(event.opens && event.opens(next.stop) > day)
+  const height = TOP + BOTTOM + (all.length - 1) * STEP
+  const pos = (i) => ({ x: LANES[i % LANES.length], y: height - BOTTOM - i * STEP })
+  // the road: a smooth S between each pair of stops
+  const road = all.map((_, i) => {
+    const p = pos(i)
+    if (!i) return `M ${p.x} ${p.y}`
+    const q = pos(i - 1)
+    return `C ${q.x} ${q.y - STEP * 0.55} ${p.x} ${p.y + STEP * 0.55} ${p.x} ${p.y}`
+  }).join(' ')
+  const walked = all.slice(0, Math.min(all.length, solved + 1)).map((_, i) => {
+    const p = pos(i)
+    if (!i) return `M ${p.x} ${p.y}`
+    const q = pos(i - 1)
+    return `C ${q.x} ${q.y - STEP * 0.55} ${p.x} ${p.y + STEP * 0.55} ${p.x} ${p.y}`
+  }).join(' ')
+  const at = Math.min(all.length - 1, solved)
+  useEffect(() => {                                   // start where you're up to
+    const el = scroller.current
+    if (el) el.scrollTop = Math.max(0, pos(at).y - el.clientHeight * 0.62)
+  }, [at, height])                                    // eslint-disable-line react-hooks/exhaustive-deps
   const art = event.art ?? {}
+  const ends = event.to && open ? Math.ceil((new Date(`${event.to}T23:59:59`) - new Date(`${day}T12:00:00`)) / 86400000) : null
+  const nextReward = all.find((s) => s.reward && games[s.stop]?.status !== 'solved')
   return (
-    <section className="card sdk-event" style={{ '--event-hue': art.hue ?? 'var(--tint)' }}>
-      <header className="sdk-event-hero">
-        <Landscape scene={art.scene} seed={art.seed} time={art.time} extras={art.extras} hue={art.hue} strip />
-        <div className="sdk-event-title">
-          <h2>{event.name}</h2>
-          <p>{event.blurb}</p>
-          <span className="sdk-event-progress" role="img" aria-label={`${solved} of ${event.length} stops`}>
-            <span style={{ width: `${(100 * solved) / event.length}%` }} /></span>
-          <p className="sdk-event-meta">{solved} of {event.length} stops
-            {nextReward && ` · next reward: ${THEME_NAME[nextReward.reward]} at ${nextReward.name}`}</p>
+    <section className="sdk-event sdk-trail" style={{ '--event-hue': art.hue ?? 'var(--tint)' }} aria-label={event.name}>
+      <div className="sdk-trail-bg" aria-hidden="true">
+        <Landscape scene={art.scene} seed={art.seed} time={art.time} extras={art.extras} hue={art.hue} />
+      </div>
+      <div className="sdk-trail-scroll" ref={scroller}>
+        <div className="sdk-trail-map" style={{ height }}>
+          <svg className="sdk-trail-road" viewBox={`0 0 100 ${height}`} preserveAspectRatio="none" aria-hidden="true">
+            <path className="edge" d={road} vectorEffect="non-scaling-stroke" />
+            <path className="road" d={road} vectorEffect="non-scaling-stroke" />
+            {solved > 0 && <path className="walked" d={walked} vectorEffect="non-scaling-stroke" />}
+          </svg>
+          {all.map((s, i) => {
+            const g = games[s.stop]
+            const done = g?.status === 'solved'
+            const notYet = event.opens && event.opens(s.stop) > day
+            const current = open && s.stop === next?.stop && !notYet
+            const playable = done || g || current
+            const p = pos(i)
+            const label = `${s.name}: ${s.difficulty}${s.size === 16 ? ' 16 × 16' : ''}${done ? `, solved in ${clockText(g.seconds)}` : current ? ', next' : g ? ', started' : notYet ? ', opens on its day' : ', locked'}${s.reward ? `, earns the ${THEME_NAME[s.reward]} theme` : ''}`
+            const face = done ? '✓' : s.reward ? '🎁' : notYet ? '🔒' : s.stop
+            const cls = `sdk-trail-stop${done ? ' done' : ''}${current ? ' current' : ''}${!playable ? ' locked' : ''}${s.reward ? ' gift' : ''}`
+            const inner = (
+              <>
+                <span className="sdk-trail-dot">{face}</span>
+                <span className="sdk-trail-name">{s.reward && !done ? `${s.stop} · ${THEME_NAME[s.reward]}` : s.name}</span>
+              </>
+            )
+            const style = { left: `${p.x}%`, top: p.y }
+            return playable ? (
+              <Link key={s.stop} className={cls} style={style} aria-label={label}
+                to={g ? `/sudoku/play?game=${g.game_id}` : `/sudoku/play?set=${event.key}&stop=${s.stop}`}>{inner}</Link>
+            ) : <span key={s.stop} className={cls} style={style} aria-label={label} role="img">{inner}</span>
+          })}
         </div>
+      </div>
+      <header className="sdk-trail-head">
+        <h2>{event.name}</h2>
+        <p className="sdk-trail-sub">{solved} of {event.length} stops{ends != null && ` · ends in ${ends} day${ends === 1 ? '' : 's'}`}
+          {nextReward && ` · next gift: ${THEME_NAME[nextReward.reward]}`}</p>
+        <span className="sdk-trail-progress" role="img" aria-label={`${solved} of ${event.length} stops`}><span style={{ width: `${(100 * solved) / event.length}%` }} /></span>
       </header>
-      {!open && <p className="alert small sdk-event-note">{solved ? 'This event has closed - your stops stay.' : `Opens ${new Date(`${event.from}T12:00:00`).toLocaleDateString('en-AU', { day: 'numeric', month: 'long' })}.`}</p>}
-      <div className="sdk-path" style={{ height: 56 + all.length * STEP }}>
-        <svg className="sdk-path-line" viewBox={`0 0 ${W} ${56 + all.length * STEP}`} preserveAspectRatio="none" aria-hidden="true">
-          <polyline className="trail" points={pts.join(' ')} vectorEffect="non-scaling-stroke" />
-          {walked > 0 && <polyline className="walked" points={pts.slice(0, walked + (walked < all.length ? 1 : 0)).join(' ')} vectorEffect="non-scaling-stroke" />}
-        </svg>
-        {all.map((s, i) => {
-          const g = games[s.stop]
-          const done = g?.status === 'solved'
-          const notYet = event.opens && event.opens(s.stop) > todayIso()        // an Advent door: opens on its day
-          const current = open && s.stop === next?.stop && !notYet
-          const playable = done || g || current
-          const p = pos(i)
-          const label = `${s.name}: ${s.difficulty}${s.size === 16 ? ' 16 × 16' : ''}${done ? `, solved in ${clockText(g.seconds)}` : current ? ', next' : g ? ', started' : notYet ? ', opens on its day' : ', locked'}`
-          const node = (
-            <>
-              <span className="sdk-stop-dot">{done ? '✓' : notYet ? '🔒' : s.stop}</span>
-              <span className="sdk-stop-text">
-                <strong>{s.name}</strong>
-                <span className={`pill ${DIFF_TONE[s.difficulty]}`}>{s.difficulty}{s.size === 16 ? ' · 16×16' : ''}</span>
-                {s.reward && <span className={`sdk-stop-reward${done ? ' got' : ''}`}>{done ? '🏆' : '🎁'} {THEME_NAME[s.reward]}</span>}
-              </span>
-            </>
-          )
-          const cls = `sdk-stop${done ? ' done' : ''}${current ? ' current' : ''}${!playable ? ' locked' : ''}${p.x > 50 ? ' right' : ''}`
-          return playable ? (
-            <Link key={s.stop} className={cls} style={{ left: `${p.x}%`, top: p.y }} aria-label={label}
-              to={g ? `/sudoku/play?game=${g.game_id}` : `/sudoku/play?set=${event.key}&stop=${s.stop}`}>{node}</Link>
-          ) : (
-            <span key={s.stop} className={cls} style={{ left: `${p.x}%`, top: p.y }} aria-label={label} role="img">{node}</span>
-          )
-        })}
+      <div className="sdk-trail-play">
+        {!open ? <span className="sdk-trail-button off">{solved ? 'This event has closed - your stops stay' : `Opens ${new Date(`${event.from}T12:00:00`).toLocaleDateString('en-AU', { day: 'numeric', month: 'long' })}`}</span>
+          : !next ? <span className="sdk-trail-button off">Finished! 🎉</span>
+            : nextOpen ? (
+              <Link className="sdk-trail-button" to={games[next.stop] ? `/sudoku/play?game=${games[next.stop].game_id}` : `/sudoku/play?set=${event.key}&stop=${next.stop}`}>
+                <strong>{games[next.stop] ? 'Carry on' : 'Play'}</strong><span>{next.name} · {next.difficulty}{next.size === 16 ? ' · 16 × 16' : ''}</span></Link>
+            ) : <span className="sdk-trail-button off">Next door opens {next.name}</span>}
       </div>
     </section>
   )
