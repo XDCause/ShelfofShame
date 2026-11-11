@@ -139,6 +139,10 @@ export const BootIcon = (p) => (
 export const MountainIcon = (p) => (
   <Icon {...p}><path d="M2.5 19.5 9 8.5l3.5 5.5 2.5-3.5 6.5 9z" /><path d="m7.2 11.6 1.8 1.4 1.6-1.6" /></Icon>
 )
+// A record: the disc, its grooves and the label in the middle.
+export const VinylIcon = (p) => (
+  <Icon {...p}><circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="2.6" /><path d="M7.2 9.2a5.6 5.6 0 0 1 2.4-2.5M16.8 14.8a5.6 5.6 0 0 1-2.4 2.5" /></Icon>
+)
 export const SproutIcon = (p) => (
   <Icon {...p}><path d="M12 21v-9" /><path d="M12 12c0-4 2.5-6.5 7-6.5 0 4.5-2.5 6.5-7 6.5z" /><path d="M12 14.5c0-3.2-2-5.2-5.8-5.2 0 3.6 2 5.2 5.8 5.2z" /><path d="M7.5 21h9" /></Icon>
 )

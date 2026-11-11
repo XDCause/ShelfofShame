@@ -1,7 +1,7 @@
 """More for the wishlist (2026-10-21; from a look at GiftList, Swym, Keepa / CamelCamelCamel, Qapital).
 
-What you want lives in five places - kind 'wish' (the supplies wishlist), 'model', 'game', 'gear', 'garden' (rows marked
-Wanted) - so everything here is keyed by (kind, ref) (89_wishlist_more.sql):
+What you want lives in six places - kind 'wish' (the supplies wishlist), 'model', 'game', 'gear', 'garden', 'record' (rows
+marked Wanted; records: 92_vinyl.sql) - so everything here is keyed by (kind, ref) (89_wishlist_more.sql):
 
     extras    GET /wanted/extras: per item - its hobby, how long it's been on the list, what it's for (a build / a goal),
               a target price and whether the last price is under it, money saved for it, in stock or not
@@ -23,13 +23,13 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 
-from . import bluesky, goodgames, linkpeek
+from . import bluesky, discogs, goodgames, linkpeek
 from .db import GEAR_HOBBIES, db, found, insert_row
 from .ucp import ShopError
 
 router = APIRouter(prefix="/api", tags=["wishlist"])
 
-Kind = Literal["wish", "model", "game", "gear", "garden"]
+Kind = Literal["wish", "model", "game", "gear", "garden", "record"]
 # kind -> (table, id column, "wanted" test, owned change, its hobby (SQL), created column, price column)
 TABLES = {
     "wish": ("wishlist", "wish_id", "NOT got_it", None, "'models'", "created_at", "est_price"),
@@ -37,8 +37,10 @@ TABLES = {
     "game": ("board_games", "game_id", "status = 'Wanted'", "status = 'Owned'", "'boardgames'", "created_at", "shop_price"),
     "gear": ("gear", "gear_id", "condition = 'Wanted'", "condition = 'New'", "hobby", "created_at", "shop_price"),
     "garden": ("garden_items", "item_id", "status = 'Wanted'", "status = 'Have'", "'gardening'", "created_at", "price"),
+    "record": ("vinyl_records", "record_id", "status = 'Wanted'", "status = 'Owned'", "'vinyl'", "created_at", "lowest_price"),
 }
-WANTED_BACK = {"model": "status = 'Wanted'", "game": "status = 'Wanted'", "gear": "condition = 'Wanted'", "garden": "status = 'Wanted'"}
+WANTED_BACK = {"model": "status = 'Wanted'", "game": "status = 'Wanted'", "gear": "condition = 'Wanted'", "garden": "status = 'Wanted'",
+               "record": "status = 'Wanted'"}
 
 
 def _row(conn, kind: str, ref: int) -> dict:
@@ -161,6 +163,12 @@ def _check(conn, kind: str, row: dict) -> dict | None:
             if p.get("handle") == row["shop_handle"]:
                 return {"price": p["price"], "available": p["available"], "source": "Good Games"}
         return {"price": None, "available": False, "source": "Good Games"}       # not listed: not in stock
+    if kind == "record" and row.get("discogs_release_id"):
+        try:
+            r = discogs.release(row["discogs_release_id"]) or {}
+        except discogs.DiscogsError as e:
+            raise ShopError(str(e)) from None
+        return {"price": r.get("lowest_price"), "available": bool(r.get("num_for_sale")), "source": "Discogs"}
     return None
 
 
@@ -239,15 +247,17 @@ def got(kind: Kind, ref: int, body: GotIn | None = None):
                               "purchased_from = COALESCE(%(shop)s, purchased_from)",
                      "game": ", purchase_date = current_date, price_paid = COALESCE(%(paid)s, price_paid)",
                      "gear": ", purchase_date = current_date, price_paid = COALESCE(%(paid)s, price_paid)",
-                     "garden": ""}[kind]
+                     "garden": "",
+                     "record": ", purchase_date = current_date, added_on = current_date, "
+                               "price_paid = COALESCE(%(paid)s, price_paid), bought_from = COALESCE(%(shop)s, bought_from)"}[kind]
             conn.execute(f"UPDATE {table} SET {owned}{extra} WHERE {key} = %(ref)s", {"paid": paid, "shop": shop, "ref": ref})
-            remember(conn, kind, ref, row["name"], hobby, shop, expected, paid, row[created])
+            remember(conn, kind, ref, row.get("name") or row.get("title"), hobby, shop, expected, paid, row[created])
         conn.execute("DELETE FROM wanted_extras WHERE kind = %s AND ref = %s", (kind, ref))
-    return {"kind": kind, "ref": ref, "name": row["name"], "paid": paid}
+    return {"kind": kind, "ref": ref, "name": row.get("name") or row.get("title"), "paid": paid}
 
 
 @router.post("/wanted/{kind}/{ref}/ungot")
-def ungot(kind: Literal["model", "game", "gear", "garden"], ref: int):
+def ungot(kind: Literal["model", "game", "gear", "garden", "record"], ref: int):
     """Undo "bought" (a mistaken tick): wanted again, out of the history."""
     table, key, *_ = TABLES[kind]
     with db() as conn:

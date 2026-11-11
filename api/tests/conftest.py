@@ -24,7 +24,7 @@ EMPTIED = ("stock_movements, wishlist, barcode_catalog, product_info, supplies, 
            "colour_group_members, mixes, mix_parts, price_guide, journal_pages, tags, page_tags, "
            "journal_links, journal_images, journal_drawings, journal_notebooks, journal_templates, attachments, wanted_extras, wanted_prices, wanted_history, calendar_events, board_games, board_game_plays, gear, "
            "volleyball_games, volleyball_teams, volleyball_videos, vg_achievements, vg_games, vg_other_games, "
-           "chess_games, chess_archives, books, reading_log, book_quotes, vg_friends, volleyball_coach, goals, site_checks, hikes, hike_photos, hike_gear, garden_spaces, garden_containers, garden_plantings, garden_logs, garden_photos, garden_tasks, garden_items, shooting_ranges, rifles, ammo, shooting_sessions, shooting_groups, shooting_shots, shooting_media, rifle_logs, dope_rows, trips, trip_places, travel_countries, vg_playtime, vg_hidden_text, vg_hidden_read, banners, auth_account, auth_recovery_codes, auth_sessions, auth_passkeys, auth_failures, todos")
+           "chess_games, chess_archives, books, reading_log, book_quotes, vg_friends, volleyball_coach, goals, site_checks, hikes, hike_photos, hike_gear, garden_spaces, garden_containers, garden_plantings, garden_logs, garden_photos, garden_tasks, garden_items, shooting_ranges, rifles, ammo, shooting_sessions, shooting_groups, shooting_shots, shooting_media, rifle_logs, dope_rows, trips, trip_places, travel_countries, vg_playtime, vg_hidden_text, vg_hidden_read, banners, auth_account, auth_recovery_codes, auth_sessions, auth_passkeys, auth_failures, todos, vinyl_records, vinyl_values, vinyl_plays")
 _candidates = []   # EMPTIED and every table that refers to one (TRUNCATE ... CASCADE empties those too): found once
 
 
@@ -57,6 +57,8 @@ def clean_database():
         conn.execute("DELETE FROM garden_guides WHERE custom")
         conn.execute("UPDATE shooting_settings SET licence_expires = NULL, licence_note = NULL, club_shoots_needed = NULL, clean_every = 200")
         conn.execute("UPDATE travel_settings SET passport_expires = NULL")
+        conn.execute("UPDATE vinyl_settings SET discogs_username = NULL, discogs_synced_at = NULL, discogs_error = NULL, "
+                     "discogs_mirror = false, lastfm_user = NULL, lastfm_session = NULL, lastfm_token = NULL, lastfm_auto = true")
         conn.execute("DELETE FROM packing_lists WHERE name NOT IN ('Essentials', 'Overseas', 'Beach', 'Cold weather', 'Camping', "
                      "'Road trip', 'Hiking trip', 'Shooting trip', 'Volleyball tournament')")
         conn.execute("UPDATE garden_settings SET climate = 'Subtropical', place_name = NULL, lat = NULL, lon = NULL")
@@ -89,8 +91,8 @@ def no_real_steam(monkeypatch):
     to fake one fails."""
     import httpx
 
-    from app import (bluesky, boardgames, bookseries, bunnings, chess, goodgames, chesscom, exophase, frankfurter, hiking, linkpeek, openlibrary, openmeteo,
-                     overpass,
+    from app import (bluesky, boardgames, bookseries, bunnings, chess, goodgames, chesscom, discogs, exophase, frankfurter, hiking, lastfm, linkpeek,
+                     openlibrary, openmeteo, overpass, vinyl_sync,
                      reading, steam,
                      stedi, steamhunters, trumpeter, videogames, gameology, ucp, wikimedia)
 
@@ -134,6 +136,12 @@ def no_real_steam(monkeypatch):
     monkeypatch.setattr(trumpeter, "_get", refusing(connect_error))
     monkeypatch.setattr(linkpeek, "_get", refusing(linkpeek.LinkError))
     monkeypatch.setattr(trumpeter, "PAUSE", 0)
+    monkeypatch.setattr(discogs, "_call", refusing(discogs.DiscogsError))
+    monkeypatch.setattr(discogs, "cover", refusing(discogs.DiscogsError))
+    monkeypatch.setattr(discogs, "pause", lambda: None)
+    monkeypatch.setattr(lastfm, "_post", refusing(lastfm.LastfmError))
+    vinyl_sync.SYNC.update(running=False, stage=None, done=0, total=0, error=None)
+    vinyl_sync.VALUES.update(running=False, done=0, total=0, error=None)
     boardgames._gl_found.clear()
     hiking.LOOKING.clear()
     auth.CHALLENGES.clear()

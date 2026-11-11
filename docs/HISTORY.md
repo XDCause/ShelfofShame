@@ -783,3 +783,33 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
      covers pages, not service worker scripts). Walk-through step offline_copy (its own browser: the worker mustn't
      leak into other steps): on, saved, offline -> a goal, a journal page and the hikes from the copy, a change refused,
      back online, off. Web tests: the banner's on/off and finding ids in any answer.
+
+5u. **Vinyl, the twelfth hobby** (2026-11-11, the user: "a way to digitally see my full collection, get stats and so much
+   more" - after a desk review of Discogs and the apps built on it (MOVINYL, Groovv, Discographic, Eggcrate, Rekkrd,
+   Phonox): nearly all are Discogs' data with a nicer shelf, stats, a listening log and value tracking. The user has a
+   Discogs account (33 records, out of date) and a token; asked for everything in version 2 too; values "the same way
+   as hobby inventory" = like the wishlist's prices: checked weekly, kept as a history). 92_vinyl.sql:
+   - discogs.py: the official API with the user's personal token (DISCOGS_TOKEN in .env), 1.1 s between calls in a row
+     (60 a minute allowed). Never the web pages. Grades are the Goldmine scale Discogs uses (M ... P; a sleeve can be
+     Generic / No cover), stored short. Discogs' artist "Name (2)" numbering is dropped; formats -> medium (Vinyl / CD /
+     Cassette), LP / EP / Single / Box set, size, discs and a variant line (colour, weight, Limited / Reissue...).
+   - Sync (vinyl_sync.py, in the background with progress): collection (folder 0) and wantlist in; a copy already here
+     (by instance, else a release with none) is linked and only gets blanks filled (grades / notes from Discogs' three
+     standard fields, stars) - the app is the truth, nothing here is removed; a wanted record now in the collection
+     becomes Owned. Then each new record's full release (+ its master's first year, for decades), then covers
+     (downloaded once into the row, so the offline copy has them), then values. "Keep Discogs in step" (off by default)
+     adds records added here to the Discogs collection.
+   - Values: Discogs' price suggestion for your record's grade (VG+ if ungraded), converted to AUD with frankfurter.py,
+     else the cheapest copy for sale. Weekly by itself (start_weekly, only with a token), or "Check values now"; one a
+     day in vinyl_values (the value-over-time chart). "Set my own value" isn't overwritten. Wanted records get the lowest
+     price in the wishlist's price history (kind 'record' in wanted_extras / wanted_prices, with its delete trigger).
+   - Listening log: plays with sides and a note; Last.fm (lastfm.py, the desktop auth flow - no callback URL to the PC)
+     scrobbles the sides' tracks timed back from when the play was logged (Last.fm takes 14 days back at most).
+     "What should I play?" picks a never-played record, else one of the ten dustiest. Gathering dust = no play in a year.
+   - Everywhere else: activity (played / bought / added), calendar (hobby 'vinyl'; "record store day", "gig"...), goal
+     sources (records played / added), journal @mentions ('record'), the wishlist (under Discogs), Supplies' value
+     report (Records), the offline walk (each record's panel), Home tiles. CSV export for insurance.
+   - Found on the way: the journal offered @trip mentions since 77_travel but journal_links' CHECK never allowed 'trip',
+     so saving a page that mentioned a trip failed. 92 adds 'trip' (and 'record'); TARGET_NAME names trips now.
+   Tests: test_vinyl.py (Discogs and Last.fm faked with stand_ins' made-up catalogue); walk-through step vinyl (sync,
+   connect Last.fm, add by search, play side B, crate / plays / stats / dashboard, the wishlist).

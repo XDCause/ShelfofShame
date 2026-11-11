@@ -3,7 +3,7 @@ import { Link } from 'react-router'
 import { api, imageUrl, money } from '../api.js'
 import { useApp } from '../core/app-context.js'
 import { MODULES } from '../modules/index.js'
-import { BoxIcon, DiceIcon, PlaneIcon, ShoeIcon, SproutIcon } from './icons.jsx'
+import { BoxIcon, DiceIcon, PlaneIcon, ShoeIcon, SproutIcon, VinylIcon } from './icons.jsx'
 import { ExtraTags, WishHistory, extraOf, hobbyName } from './wishExtras.jsx'
 import WishlistView from './WishlistView.jsx'
 
@@ -11,7 +11,7 @@ import WishlistView from './WishlistView.jsx'
 // Group by shop (your default shop first, with the supplies wishlist itself - ticks, "Add to inventory" - then Good Games,
 // Blue Sky...) or by hobby. Every card can be ticked when you buy it (a kit In stash, a game Owned, gear New; Undo);
 // Details holds what it's for, a target price, saving up and its prices (wishExtras.jsx).
-const KIND_ICON = { model: PlaneIcon, game: DiceIcon, gear: ShoeIcon, garden: SproutIcon }
+const KIND_ICON = { model: PlaneIcon, game: DiceIcon, gear: ShoeIcon, garden: SproutIcon, record: VinylIcon }
 const ORDER = Object.fromEntries(MODULES.map((m, i) => [m.id, i]))
 const store = (key, fallback) => ({
   read: () => { try { return localStorage.getItem(key) ?? fallback } catch { return fallback } },

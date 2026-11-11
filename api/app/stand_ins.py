@@ -10,8 +10,8 @@ same shape the real site gives. Only main.py calls it, and only with OUTSIDE_SIT
 """
 import logging
 
-from . import (bluesky, bookseries, bunnings, chesscom, exophase, frankfurter, gameology, goodgames, hasegawa, hlj, linkpeek, openlibrary,
-               openmeteo, overpass, stedi, steam, steamhunters, tamiya, trumpeter, webphoto, wikimedia)
+from . import (bluesky, bookseries, bunnings, chesscom, discogs, exophase, frankfurter, gameology, goodgames, hasegawa, hlj, lastfm,
+               linkpeek, openlibrary, openmeteo, overpass, stedi, steam, steamhunters, tamiya, trumpeter, webphoto, wikimedia)
 
 log = logging.getLogger("stand_ins")
 PNG = (b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
@@ -94,6 +94,66 @@ TRUMPETER = {
     "08888": {"title": "Stand-in Trumpeter Tool", "item": "08888", "barcode": None, "scale": None, "item_type": "Modeling Tools",
               "is_tool": True, "size": None, "parts": None, "etched": None, "released": None, "features": None, "intro": None},
 }
+# Discogs: three made-up pressings in "your collection", one on the wantlist, one more only found by searching (the
+# barcode 5012345678900). Shapes as Discogs' API gives them (discogs.py reads them).
+def _release(rid, artist, title, year, fmt, genres, styles, tracks, barcode=None, master=None, text=None, lowest=18.5):
+    return {"id": rid, "title": title, "artists": [{"name": artist, "anv": "", "join": ""}], "year": year, "released": f"{year}-03-01",
+            "country": "Australia", "labels": [{"name": "Stand-in Records", "catno": f"SIR-{rid}"}],
+            "formats": [{"name": "Vinyl", "qty": "1", "descriptions": fmt, **({"text": text} if text else {})}],
+            "genres": genres, "styles": styles, "master_id": master,
+            "tracklist": [{"position": pos, "type_": "track", "title": name, "duration": length} for pos, name, length in tracks],
+            "identifiers": [{"type": "Barcode", "value": barcode}] if barcode else [],
+            "images": [{"type": "primary", "uri": f"https://i.discogs.example/{rid}.jpg", "uri150": f"https://i.discogs.example/{rid}-150.jpg"}],
+            "community": {"have": 1200 + rid % 100, "want": 300 + rid % 50, "rating": {"average": 4.2, "count": 80}},
+            "lowest_price": lowest, "num_for_sale": 12}
+
+
+DISCOGS_RELEASES = {r["id"]: r for r in [
+    _release(9001, "The Stand-ins", "Needle Drop", 1979, ["LP", "Album"], ["Rock"], ["Post-Punk"],
+             [("A1", "Lead-in Groove", "3:41"), ("A2", "Crackle", "4:02"), ("B1", "Run-out", "5:10"), ("B2", "Locked Groove", "2:55")],
+             master=5001, lowest=42.0),
+    _release(9002, "Mock Orchestra", "Test Pressing Suite", 1994, ['12"', "EP"], ["Electronic"], ["House"],
+             [("A", "Side A Mix", "6:30"), ("B", "Side B Dub", "7:05")], text="Red Translucent"),
+    _release(9003, "Placeholder Trio", "Spin Cycle", 1963, ["LP", "Album", "Reissue"], ["Jazz"], ["Hard Bop"],
+             [("A1", "Wash", "5:00"), ("B1", "Rinse", "6:00")], master=5003, lowest=30.0),
+    _release(9004, "The Stand-ins", "Second Side", 1982, ["LP", "Album"], ["Rock"], ["New Wave"],
+             [("A1", "Flip", "3:30"), ("B1", "Over", "3:45")], lowest=25.0),
+    _release(9005, "Barcode Band", "Scanned In", 2021, ["LP", "Album", "Limited Edition"], ["Pop"], ["Indie Pop"],
+             [("A1", "Beep", "3:00"), ("B1", "Boop", "3:20")], barcode="5012345678900", text="Clear"),
+]}
+DISCOGS_MASTERS = {5001: 1978, 5003: 1959}
+DISCOGS_COLLECTION = [(9001, 70001, "2024-06-01T10:00:00-07:00", ["Near Mint (NM or M-)", "Very Good Plus (VG+)", "First pressing"]),
+                      (9002, 70002, "2025-02-14T10:00:00-07:00", []),
+                      (9003, 70003, "2026-01-20T10:00:00-07:00", ["Very Good (VG)", "", ""])]
+DISCOGS_WANTS = [9004]
+
+
+def _basic(rid):
+    r = DISCOGS_RELEASES[rid]
+    return {"id": rid, "master_id": r["master_id"], "title": r["title"], "year": r["year"], "artists": r["artists"],
+            "labels": r["labels"], "formats": r["formats"], "genres": r["genres"], "styles": r["styles"],
+            "cover_image": r["images"][0]["uri"], "thumb": r["images"][0]["uri150"]}
+
+
+def discogs_collection(user):
+    for rid, instance, added, notes in DISCOGS_COLLECTION:
+        yield {"id": rid, "instance_id": instance, "date_added": added, "rating": 0, "basic_information": _basic(rid),
+               "notes": [{"field_id": i + 1, "value": v} for i, v in enumerate(notes) if v]}
+
+
+def discogs_search(q=None, barcode=None):
+    hits = []
+    for r in DISCOGS_RELEASES.values():
+        words = f"{r['artists'][0]['name']} {r['title']} {r['labels'][0]['catno']}".lower()
+        if (barcode and any(i["value"] == barcode for i in r["identifiers"])) or (q and all(w in words for w in q.lower().split())):
+            hits.append(discogs.found_release({"id": r["id"], "title": f"{r['artists'][0]['name']} - {r['title']}", "year": str(r["year"]),
+                                               "country": r["country"], "label": [r["labels"][0]["name"]], "catno": r["labels"][0]["catno"],
+                                               "format": [f["name"] for f in r["formats"]] + r["formats"][0]["descriptions"],
+                                               "thumb": r["images"][0]["uri150"], "master_id": r["master_id"],
+                                               "genre": r["genres"], "style": r["styles"]}))
+    return hits
+
+
 FORECAST = {"daily": {"time": ["2026-01-10", "2026-01-11", "2026-01-12"], "temperature_2m_max": [29, 31, 27],
                       "temperature_2m_min": [19, 20, 18], "precipitation_sum": [0, 2, 0], "precipitation_probability_max": [10, 40, 5],
                       "wind_gusts_10m_max": [25, 30, 20], "uv_index_max": [9, 10, 8], "weather_code": [1, 63, 3]}}
@@ -183,4 +243,25 @@ def install():
                                             "rates": {"JPY": 100.0, "NZD": 1.1, "USD": 0.65, "EUR": 0.6}}
     # A photo from a web address
     webphoto.fetch = lambda url: (PNG, "image/png")
+    # Vinyl: Discogs (a made-up collection) and Last.fm (accepts every scrobble)
+    discogs._call = _refuse(discogs.DiscogsError, "Discogs")
+    discogs.token = lambda: "stand-in"
+    discogs.has_token = lambda: True
+    discogs.pause = lambda: None
+    discogs.identity = lambda: "stand-in-collector"
+    discogs.collection = discogs_collection
+    discogs.wants = lambda user: iter([{"id": rid, "basic_information": _basic(rid), "notes": "", "date_added": "2026-03-01T10:00:00-07:00"}
+                                       for rid in DISCOGS_WANTS])
+    discogs.release = lambda rid: DISCOGS_RELEASES.get(int(rid))
+    discogs.master_year = lambda mid: DISCOGS_MASTERS.get(int(mid))
+    discogs.search = discogs_search
+    discogs.price_suggestion = lambda rid: {"NM": (40.0, "USD"), "VG+": (30.0, "USD"), "VG": (20.0, "USD")} if int(rid) != 9002 else {}
+    discogs.add_to_collection = lambda user, rid: 80000 + int(rid)
+    discogs.cover = lambda url: (PNG, "image/png")
+    lastfm._post = _refuse(lastfm.LastfmError, "Last.fm")
+    lastfm.configured = lambda: True
+    lastfm.get_token = lambda: "stand-in-token"
+    lastfm.allow_url = lambda token: "https://www.last.fm/api/auth/?token=stand-in-token"
+    lastfm.get_session = lambda token: ("stand-in-listener", "stand-in-session")
+    lastfm.scrobble = lambda key, tracks: len(tracks)
     log.warning("Outside websites are stand-ins (OUTSIDE_SITES=stand-ins): nothing is fetched from them.")

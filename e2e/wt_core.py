@@ -13,11 +13,11 @@ def home(page):
     for tile in ("Shelf of shame", "Board games", "Volleyball", "Next game"):
         expect(stats.filter(has_text=tile)).to_be_visible()
     # supplies 2, models 2, board games 2, volleyball 2, video games 2 = 10; chess (+ puzzles), reading 1 each;
-    # hiking, gardening, shooting and travel 2 each (2026-10-20: a second number each)
-    expect(stats).to_have_count(10 + CHESS + CHESS_PUZZLES + READING + 2 * HIKING + 2 * GARDEN + 2 * SHOOTING + 2 * TRAVEL)
+    # hiking, gardening, shooting, travel and vinyl 2 each (2026-10-20: a second number each)
+    expect(stats).to_have_count(10 + CHESS + CHESS_PUZZLES + READING + 2 * HIKING + 2 * GARDEN + 2 * SHOOTING + 2 * TRAVEL + 2 * VINYL)
     expect(page.locator(".home-card", has_text="Recent activity").locator(".pill").first).to_be_visible()
     expect(page.locator(".home-card", has_text="Coming up")).to_be_visible()
-    expect(page.locator(".quick-action")).to_have_count(14)       # + Log a chess game, Add a book, Log a hike, Add a plant, Start shooting, Plan a trip
+    expect(page.locator(".quick-action")).to_have_count(15)       # + Log a chess game, Add a book, Add a record, Log a hike, Add a plant, Start shooting, Plan a trip
     shot(page, "d00_home", full=False)
     stats.filter(has_text="To buy").click()
     expect(page).to_have_url(BASE + "/wishlist")
@@ -504,7 +504,7 @@ def phone(page):
         page.locator(".tabbar a", has_text=tab).click()
         fits(tab)
     page.locator(".tabbar a", has_text="Hobbies").click()
-    expect(page.locator(".hobby-card")).to_have_count(11)         # models, board games, volleyball, video games, chess, reading, car, travel, shooting, hiking, gardening
+    expect(page.locator(".hobby-card")).to_have_count(12)         # models, board games, volleyball, video games, chess, reading, vinyl, car, travel, shooting, hiking, gardening
     car = page.locator(".hobby-card", has_text="Building my car")
     expect(car.locator(".under-construction")).to_be_visible()     # the spanner: still to be built
     fits("Hobbies")

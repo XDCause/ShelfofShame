@@ -48,9 +48,9 @@ export async function stops() {
     ...MODULES.flatMap((m) => m.pages.map((p) => go(`/${m.id}/${p.path}`, `${m.name}: ${p.label}`))),
   ]
   const quietly = (call) => call().catch(() => [])
-  const [goals, pages, trips, hikes, books] = await Promise.all([
+  const [goals, pages, trips, hikes, books, records] = await Promise.all([
     quietly(() => api.goals()), quietly(() => api.listPages({ limit: 1000 })), quietly(() => api.trips()),
-    quietly(() => api.hikes()), quietly(() => api.books()),
+    quietly(() => api.hikes()), quietly(() => api.books()), quietly(() => api.vinylRecords({ status: 'all' })),
   ])
   list.push(
     ...idsIn(goals, 'goal_id').map((id) => go(`/goals/${id}`, 'Goals')),
@@ -58,6 +58,7 @@ export async function stops() {
     ...idsIn(trips, 'trip_id').map((id) => ({ open: ['trip', id], label: 'Trips' })),
     ...idsIn(hikes, 'hike_id').map((id) => ({ open: ['hike', id], label: 'Hikes' })),
     ...idsIn(books, 'book_id').map((id) => ({ open: ['book', id], label: 'Books' })),
+    ...idsIn(records, 'record_id').map((id) => ({ open: ['record', id], label: 'Records' })),
   )
   return list
 }

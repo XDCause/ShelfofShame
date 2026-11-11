@@ -75,6 +75,7 @@ ORDER = [
     "video_games",
     "chess",
     "reading",
+    "vinyl",
     "warhammer_range",
     "warhammer_minis",
     "gundam_range",

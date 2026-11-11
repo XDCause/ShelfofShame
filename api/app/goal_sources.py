@@ -60,6 +60,9 @@ SOURCES = {
                  "SELECT happened_on AS day, 1 AS amount FROM garden_logs WHERE kind = 'Harvested'"),
     "trips": ("Trips taken", "trips", "travel", "sum",
               "SELECT start_date AS day, 1 AS amount FROM trips WHERE start_date IS NOT NULL AND status <> 'Cancelled'"),
+    "records_played": ("Records played", "plays", "vinyl", "sum", "SELECT played_at::date AS day, 1 AS amount FROM vinyl_plays"),
+    "records_added": ("Records added to the collection", "records", "vinyl", "sum",
+                      "SELECT added_on AS day, 1 AS amount FROM vinyl_records WHERE status IN ('Owned', 'Gone')"),
     "journal_pages": ("Journal pages", "pages", None, "sum",
                       "SELECT COALESCE(entry_date, created_at::date) AS day, 1 AS amount FROM journal_pages"),
 }

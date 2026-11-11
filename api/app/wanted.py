@@ -5,6 +5,7 @@
     board games  Wanted games: Good Games
     gear         Wanted gear: the shop it was found at (Blue Sky Athletics for Way of Wade), else "No shop yet"
     garden       Wanted garden supplies / seeds: Bunnings when it came from a Bunnings link, else "No shop yet"
+    records      Wanted records (vinyl): Discogs, at the cheapest copy for sale there
 
 GET /api/wanted -> {default_shop, supplies (how many on the wishlist), shops: [{shop, items, total}]}; the
 default shop comes first (the wishlist's own list sits under it on the page), "No shop yet" last.
@@ -16,6 +17,7 @@ from .db import db
 from .settings import get_setting
 from .garden_items import ITEM_SELECT
 from .gear import GEAR_SELECT
+from .vinyl import PHOTO as VINYL_PHOTO
 
 router = APIRouter(prefix="/api", tags=["wishlist"])
 
@@ -38,6 +40,9 @@ def wanted():
         games = conn.execute(GAME_SELECT + " WHERE g.status = 'Wanted' ORDER BY lower(g.name)").fetchall()
         gear = conn.execute(GEAR_SELECT + " WHERE g.condition = 'Wanted' ORDER BY lower(g.name)").fetchall()
         garden = conn.execute(ITEM_SELECT + " WHERE i.status = 'Wanted' ORDER BY lower(i.name)").fetchall()
+        records = conn.execute(f"""SELECT r.record_id, r.title, r.artist, r.format, r.medium, r.year, r.lowest_price,
+                                          r.discogs_release_id, {VINYL_PHOTO} AS photo_url
+                                   FROM vinyl_records r WHERE r.status = 'Wanted' ORDER BY lower(COALESCE(r.artist, '')), lower(r.title)""").fetchall()
 
     shops: dict[str, list] = {}
     for m in kits:
@@ -62,6 +67,12 @@ def wanted():
             "detail": " · ".join(filter(None, [i["brand"], i["bunnings_item"] and f"I/N {i['bunnings_item']}",
                                                i["store_aisle"] and f"{i['store_aisle']}" + (f" at {i['store_name']}" if i["store_name"] else "")])),
             "price": i["price"], "photo_url": i["photo_url"], "url": i["url"]})
+    for r in records:
+        shops.setdefault("Discogs", []).append({
+            "kind": "record", "id": r["record_id"], "name": r["title"], "label": "Record",
+            "detail": " · ".join(filter(None, [r["artist"], r["format"] if r["medium"] == "Vinyl" else r["medium"], r["year"] and str(r["year"])])),
+            "price": r["lowest_price"], "photo_url": r["photo_url"],
+            "url": r["discogs_release_id"] and f"https://www.discogs.com/release/{r['discogs_release_id']}"})
     shops.setdefault(default, [])
     order = sorted(shops, key=lambda s: (s != default, s == NO_SHOP, s.lower()))
     return {"default_shop": default, "supplies": supplies,

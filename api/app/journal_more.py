@@ -32,7 +32,7 @@ SCORE = {"great": 5, "good": 4, "okay": 3, "meh": 2, "rough": 1}
 # The activity feed's kinds, by hobby (insights and reviews group by these; a page written isn't an activity here).
 HOBBY = {"model": "Models", "game": "Board games", "volleyball": "Volleyball", "videogame": "Video games", "chess": "Chess",
          "book": "Reading", "hike": "Hiking", "shoot": "Precision shooting", "trip": "Travel", "planting": "Gardening",
-         "gcontainer": "Gardening", "gspace": "Gardening", "goal": "Goals", "supply": "Supplies", "gear": "Gear"}
+         "gcontainer": "Gardening", "gspace": "Gardening", "record": "Vinyl", "goal": "Goals", "supply": "Supplies", "gear": "Gear"}
 NOT_A_HOBBY = {"Goals", "Supplies", "Gear"}         # (insights: mood on hobby days only)
 COLOURS = ("teal", "purple", "ok", "low", "tint", "out")
 

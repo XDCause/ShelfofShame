@@ -310,6 +310,10 @@ def value_report():
         add("gardening", "Garden supplies", conn.execute(
             "SELECT name, kind AS detail, COALESCE(qty, 1) AS qty, price * COALESCE(qty, 1) AS value FROM garden_items "
             "WHERE status IN ('Have', 'Running low') ORDER BY kind, name").fetchall())
+        add("vinyl", "Records", conn.execute(
+            "SELECT concat_ws(' - ', artist, title) AS name, concat_ws(' · ', CASE WHEN medium = 'Vinyl' THEN format ELSE medium END, "
+            "label, catno, media_condition, 'worth about $' || trim_scale(value)) AS detail, 1 AS qty, price_paid AS value "
+            "FROM vinyl_records WHERE status = 'Owned' ORDER BY lower(COALESCE(artist, '')), lower(title)").fetchall())
         now = conn.execute("SELECT current_date AS d").fetchone()["d"]
     sections = [s for s in sections if s["count"]]
     total = round(sum(s["total"] for s in sections), 2)

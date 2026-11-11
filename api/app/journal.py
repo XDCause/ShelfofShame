@@ -160,6 +160,8 @@ CASE l.target_kind
     WHEN 'videogame' THEN (SELECT name FROM vg_games WHERE app_id = l.target_id)
     WHEN 'chess' THEN (SELECT 'Chess vs ' || opp_name FROM chess_games WHERE game_id = l.target_id)
     WHEN 'book' THEN (SELECT title FROM books WHERE book_id = l.target_id)
+    WHEN 'trip' THEN (SELECT name FROM trips WHERE trip_id = l.target_id)
+    WHEN 'record' THEN (SELECT title || COALESCE(' (' || artist || ')', '') FROM vinyl_records WHERE record_id = l.target_id)
 END"""
 
 
@@ -299,7 +301,10 @@ def mentionable(q: str = ""):
              ORDER BY status = 'reading' DESC, updated_at DESC LIMIT 8)
             UNION ALL
             (SELECT 'trip', trip_id, name || COALESCE(' (' || to_char(start_date, 'Mon YYYY') || ')', ''), 'Trip' FROM trips
-             WHERE name ILIKE %(q)s OR destination ILIKE %(q)s ORDER BY start_date DESC NULLS FIRST LIMIT 8)""", {"q": like}).fetchall()
+             WHERE name ILIKE %(q)s OR destination ILIKE %(q)s ORDER BY start_date DESC NULLS FIRST LIMIT 8)
+            UNION ALL
+            (SELECT 'record', record_id, title || COALESCE(' (' || artist || ')', ''), 'Record' FROM vinyl_records
+             WHERE title ILIKE %(q)s OR artist ILIKE %(q)s ORDER BY status = 'Owned' DESC, lower(title) LIMIT 8)""", {"q": like}).fetchall()
     return rows
 
 

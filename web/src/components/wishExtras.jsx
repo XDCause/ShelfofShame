@@ -112,8 +112,8 @@ export function WantedPanel({ kind, wantedRef: ref, name, onClose }) {
             <input type="number" min="0" step="0.01" value={seen} onChange={(e) => setSeen(e.target.value)} placeholder="$ you saw" aria-label="A price you saw" />
             <button type="submit" className="secondary" disabled={busy}>Add price</button>
           </form>
-          {(kind === 'gear' || kind === 'game') && (
-            <button type="button" className="plain" disabled={busy} onClick={() => run(() => api.checkWanted(kind, ref), 'Checked the shop')}>Check the shop now</button>
+          {(kind === 'gear' || kind === 'game' || kind === 'record') && (
+            <button type="button" className="plain" disabled={busy} onClick={() => run(() => api.checkWanted(kind, ref), 'Checked the shop')}>{kind === 'record' ? 'Check Discogs now' : 'Check the shop now'}</button>
           )}
         </div>
         {x.stock_checked && <p className="small muted">{x.in_stock ? 'In stock' : 'Out of stock'} when checked {shortDate(x.stock_checked.slice(0, 10))}</p>}

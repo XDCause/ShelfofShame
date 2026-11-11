@@ -68,6 +68,8 @@ GARDEN = bool(_garden["growing"] or _garden["spaces"])                          
 SHOOTING = bool(get_json("/api/shooting/summary")["all_time"]["sessions"])   # Home: rounds this year
 _travel = get_json("/api/travel/summary")
 TRAVEL = bool(_travel["now"] or _travel["upcoming"] or _travel["countries_been"])          # Home: the next trip / countries
+_vinyl = get_json("/api/vinyl/summary")
+VINYL = bool(_vinyl["owned"] or _vinyl["wanted"])                                       # Home: records + plays this month
 MARK = f"e2e{int(time.time())}"   # a word only this run's journal page contains
 
 

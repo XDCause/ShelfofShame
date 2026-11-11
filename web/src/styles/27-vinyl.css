@@ -1,0 +1,76 @@
+/* ---------- Vinyl (modules/vinyl, 2026-11-11) ---------- */
+/* Covers are square (a sleeve). No cover yet: a drawn record - grooves and a coloured label with the title. */
+.vinyl-cover { width: 72px; aspect-ratio: 1; object-fit: cover; border-radius: 4px; flex: none; background: var(--fill);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.25); }
+.vinyl-cover.small { width: 44px; }
+.vinyl-cover.large { width: 148px; }
+.vinyl-blank { display: grid; place-items: center; background:
+  radial-gradient(circle, transparent 0 31%, rgb(255 255 255 / 0.06) 31.5% 32%, transparent 32.5% 40%, rgb(255 255 255 / 0.06) 40.5% 41%,
+    transparent 41.5% 52%, rgb(255 255 255 / 0.06) 52.5% 53%, transparent 53.5%),
+  radial-gradient(circle, #1d1d1f 0 70%, var(--fill) 70.5%); }
+.vinyl-blank-label { display: grid; place-items: center; width: 40%; aspect-ratio: 1; border-radius: 50%; overflow: hidden; padding: 4px;
+  background: hsl(var(--disc-hue) 55% 48%); color: #fff; font-size: 0.5rem; font-weight: 700; line-height: 1.1; text-align: center; }
+.vinyl-blank-label span { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.vinyl-cover.small .vinyl-blank-label span { display: none; }
+
+/* The crate: covers in a grid. */
+.vinyl-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
+.vinyl-filters select { min-width: 0; max-width: 100%; }
+.vinyl-grid { list-style: none; margin: 12px 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(156px, 1fr)); }
+.vinyl-card { display: flex; flex-direction: column; gap: 8px; width: 100%; height: 100%; padding: 10px; text-align: left;
+  border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text); }
+.vinyl-card:hover { border-color: color-mix(in srgb, var(--tint) 45%, var(--border)); }
+.vinyl-card .vinyl-cover { width: 100%; }
+.vinyl-card-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.vinyl-card .item-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.vinyl-card-pills { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.vinyl-card-pills:empty { display: none; }
+
+/* The dashboard: now spinning, the pick, rows of covers. */
+.vinyl-now { display: flex; gap: 14px; align-items: center; margin-bottom: 12px; }
+.vinyl-now .grow { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.vinyl-now-label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tint); }
+.vinyl-pick-row { display: flex; gap: 12px; align-items: flex-start; }
+.vinyl-pick-row .grow { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.vinyl-pick-row .vinyl-cover { width: 96px; }
+.vinyl-shelf { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(84px, 1fr); gap: 10px; margin-bottom: 8px;
+  overflow-x: auto; scroll-snap-type: x mandatory; }
+.vinyl-shelf > * { scroll-snap-align: start; }
+.vinyl-shelf .vinyl-cover { width: 100%; }
+.vinyl-card-artist { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* The record panel. */
+.vinyl-head { display: flex; gap: 16px; align-items: flex-start; }
+.vinyl-head .grow { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.vinyl-head p { margin: 0; }
+.vinyl-artist { font-size: 1.05rem; font-weight: 650; }
+.vinyl-grades { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.vinyl-stars { color: var(--low); letter-spacing: 1px; }
+.vinyl-facts { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 0; font-size: 0.92rem; }
+.vinyl-facts dt { color: var(--muted); }
+.vinyl-facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.vinyl-notes { white-space: pre-wrap; margin: 8px 0 0; }
+.vinyl-tracks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.vinyl-tracks li { display: flex; gap: 10px; align-items: baseline; }
+.vinyl-pos { width: 2.6em; flex: none; color: var(--muted); font-variant-numeric: tabular-nums; }
+.vinyl-play-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+.vinyl-play-form input:not([type="checkbox"]) { flex: 1 1 200px; min-width: 0; }
+.vinyl-play-form .chip-row { flex-basis: 100%; margin: 0; }
+.vinyl-play-log li { display: flex; gap: 8px; align-items: center; }
+.vinyl-value { font-size: 1.3rem; }
+.vinyl-warn { color: var(--low); }
+.vinyl-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+.vinyl-form label { display: flex; flex-direction: column; gap: 3px; font-size: 0.85rem; color: var(--muted); min-width: 0; }
+.vinyl-form .wide { grid-column: 1 / -1; }
+.vinyl-results li .grow { min-width: 0; }
+
+/* Connect */
+.vinyl-connect .home-card { margin-bottom: 12px; }
+.vinyl-connect ol { margin: 6px 0; padding-left: 1.3em; }
+.vinyl-connect code { overflow-wrap: anywhere; }
+
+@media (max-width: 640px) {
+  .vinyl-grid { grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: 8px; }
+  .vinyl-head { flex-direction: column; }
+  .vinyl-cover.large { width: min(220px, 100%); }
+}

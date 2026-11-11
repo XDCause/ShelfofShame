@@ -15,7 +15,8 @@ export const quote = (text) => block('quote', text)
 export const mention = (kind, ref, label) => ({ type: 'mention', props: { kind, ref: String(ref), label } })
 
 // What a feed item (activity.py) can be @mentioned as; the rest are written as plain words.
-const MENTION_KIND = { model: 'model', game: 'game', videogame: 'videogame', chess: 'chess', book: 'book', trip: 'trip', supply: 'supply', gear: 'gear' }
+const MENTION_KIND = { model: 'model', game: 'game', videogame: 'videogame', chess: 'chess', book: 'book', trip: 'trip', supply: 'supply', gear: 'gear',
+  record: 'record' }
 export const didLine = (d) => {
   const kind = MENTION_KIND[d.kind]
   const name = kind ? [mention(kind, d.ref, d.title)] : [d.title]

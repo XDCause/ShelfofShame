@@ -45,6 +45,9 @@ services:
       BACKUP_DIR: /backups
       APP_ENV: ${APP_ENV:-prod}   # "dev" shows a DEV badge in the app
       STEAM_API_KEY: ${STEAM_API_KEY:-}   # Video games hobby (steamcommunity.com/dev/apikey); empty = not set up
+      DISCOGS_TOKEN: ${DISCOGS_TOKEN:-}   # Vinyl hobby (Discogs > Settings > Developers); empty = not set up
+      LASTFM_API_KEY: ${LASTFM_API_KEY:-}         # Vinyl: scrobbling plays (last.fm/api/account/create); optional
+      LASTFM_API_SECRET: ${LASTFM_API_SECRET:-}
       MEDIA_DIR: /media
       DAILY_SYNCS: ${DAILY_SYNCS:-on}   # "off" = no daily Steam / chess.com syncs (the walk-through's own copy)
       OUTSIDE_SITES: ${OUTSIDE_SITES:-live}   # "stand-ins" = made-up answers from every outside site (the walk-through's copy)

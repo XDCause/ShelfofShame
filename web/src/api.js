@@ -540,6 +540,30 @@ export const api = {
   wantBookRec: (work) => request(`/reading/recommendations/${work}/want`, send('POST')),
   dismissBookRec: (work) => request(`/reading/recommendations/${work}/dismiss`, send('POST')),
   bringBackBookRecs: () => request('/reading/recommendations/dismissed', send('DELETE')),
+  // Vinyl (api/app/vinyl.py, vinyl_sync.py)
+  vinylRecords: (params = {}) => request(`/vinyl/records?${new URLSearchParams(Object.entries(params).filter(([, v]) => v != null && v !== ''))}`),
+  vinylRecord: (id) => request(`/vinyl/records/${id}`),
+  addVinylRecord: (data) => request('/vinyl/records', send('POST', data)),
+  updateVinylRecord: (id, data) => request(`/vinyl/records/${id}`, send('PATCH', data)),
+  deleteVinylRecord: (id) => request(`/vinyl/records/${id}`, send('DELETE')),
+  refreshVinylRecord: (id) => request(`/vinyl/records/${id}/refresh`, send('POST')),
+  vinylLookup: ({ q, barcode }) => request(`/vinyl/lookup?${new URLSearchParams(Object.entries({ q, barcode }).filter(([, v]) => v))}`),
+  logVinylPlay: (id, data = {}) => request(`/vinyl/records/${id}/plays`, send('POST', data)),
+  vinylPlays: (limit = 200) => request(`/vinyl/plays?limit=${limit}`),
+  deleteVinylPlay: (playId) => request(`/vinyl/plays/${playId}`, send('DELETE')),
+  scrobbleVinylPlay: (playId) => request(`/vinyl/plays/${playId}/scrobble`, send('POST')),
+  vinylPick: (skip = []) => request(`/vinyl/pick?${skip.map((s) => `skip=${s}`).join('&')}`),
+  vinylSummary: () => request('/vinyl/summary'),
+  vinylStats: (months = 24) => request(`/vinyl/stats?months=${months}`),
+  vinylSettings: () => request('/vinyl/settings'),
+  setVinylSettings: (data) => request('/vinyl/settings', send('PUT', data)),
+  syncDiscogs: () => request('/vinyl/discogs/sync', send('POST')),
+  discogsSyncStatus: () => request('/vinyl/discogs/sync'),
+  checkVinylValues: () => request('/vinyl/values/check', send('POST')),
+  vinylValuesStatus: () => request('/vinyl/values/check'),
+  lastfmStart: () => request('/vinyl/lastfm/start', send('POST')),
+  lastfmFinish: () => request('/vinyl/lastfm/finish', send('POST')),
+  lastfmDisconnect: () => request('/vinyl/lastfm', send('DELETE')),
   chessAccount: () => request('/chess/account'),
   setChessAccount: (username) => request('/chess/account', send('PUT', { username })),
   syncChess: (full = false) => request(`/chess/sync${full ? '?full=true' : ''}`, send('POST')),
@@ -630,6 +654,7 @@ export const api = {
 // Plain links (downloads open straight from these).
 export const backupUrl = (name) => `/api/backups/${enc(name)}`
 export const exportUrl = (kind) => `/api/export/${kind}.csv`
+export const vinylExportUrl = '/api/vinyl/export.csv'
 export const logPhotoUrl = (photoId) => `/api/model-log-photos/${photoId}`   // a photo never changes: its id is enough
 
 // The photo's last-updated time goes in the URL, so a replaced photo gets a new URL and the

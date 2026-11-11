@@ -156,6 +156,7 @@ export default function App() {
     else if (kind === 'garden') openPanel('gitem', { id })
     else if (kind === 'shoot') openPanel('shootsession', { id })
     else if (kind === 'trip') openPanel('trip', { id })
+    else if (kind === 'record') openPanel('record', { id })
   }, [openModel, openItem, navigate, openPanel])
   // The hidden copy "Save everything now" walks through (offline/saveAll.js): it's told where to go next.
   useEffect(() => {

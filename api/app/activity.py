@@ -18,6 +18,7 @@
     travel      a trip, on the day it started: where, how long                      (trips)
     gardening   sowed / planted; harvests, repotting, problems, notes and photos   (garden_plantings, garden_logs)
                 (not every watering - that's what Today is for)
+    vinyl       a record played (one entry per record per day); bought / added      (vinyl_plays, vinyl_records)
 
 Each item: {at, day, kind, ref, verb, title, detail, photo_url}; the photo (if any) is the
 product's, the game's or the gear's. Newest first. Part of the core: Home shows the latest, and
@@ -207,6 +208,21 @@ WITH feed AS (
     LEFT JOIN garden_containers gc ON gc.container_id = l.container_id
     LEFT JOIN garden_spaces gs ON gs.space_id = l.space_id
     WHERE l.kind IN ('Note', 'Photo', 'Harvested', 'Repotted', 'Pest', 'Problem', 'Treated', 'Sprouted', 'Flowered')
+  UNION ALL
+    SELECT max(p.played_at), 'record', p.record_id, 'Played', r.title,
+           concat_ws(' · ', r.artist, CASE WHEN count(*) > 1 THEN count(*) || ' times' END,
+                     NULLIF(string_agg(DISTINCT 'side ' || p.sides, ', '), '')), NULL, NULL,
+           CASE WHEN r.photo IS NOT NULL THEN '/api/vinyl/records/' || r.record_id || '/photo?v='
+                || (extract(epoch FROM r.photo_updated) * 1000)::bigint END
+    FROM vinyl_plays p JOIN vinyl_records r USING (record_id)
+    GROUP BY p.record_id, r.record_id, (p.played_at AT TIME ZONE current_setting('TimeZone'))::date
+  UNION ALL
+    SELECT {_on_day('COALESCE(r.purchase_date, r.added_on)', 'r.created_at')}, 'record', r.record_id,
+           CASE WHEN r.purchase_date IS NOT NULL THEN 'Bought' ELSE 'Added' END, r.title,
+           concat_ws(' · ', r.artist, CASE WHEN r.medium = 'Vinyl' THEN r.format ELSE r.medium END), NULL, NULL,
+           CASE WHEN r.photo IS NOT NULL THEN '/api/vinyl/records/' || r.record_id || '/photo?v='
+                || (extract(epoch FROM r.photo_updated) * 1000)::bigint END
+    FROM vinyl_records r WHERE r.status <> 'Wanted'
 )
 SELECT f.at, (f.at AT TIME ZONE current_setting('TimeZone'))::date AS day,
        f.kind, f.ref, f.verb, f.title, NULLIF(f.detail, '') AS detail,

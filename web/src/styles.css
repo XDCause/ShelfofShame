@@ -56,6 +56,8 @@
  *                                    (most used: .sx, .inv, .wx, .wanted, .sw, .shop)
  *   26-offline.css                   the offline copy: its banner and its Settings section
  *                                    (most used: .offline)
+ *   27-vinyl.css                     Vinyl: covers, the crate, the record panel, the dashboard
+ *                                    (most used: .vinyl)
  */
 @import './styles/01-base.css';
 @import './styles/02-inventory-panels.css';
@@ -83,3 +85,4 @@
 @import './styles/24-calendar-extras.css';
 @import './styles/25-supplies-wishlist-extras.css';
 @import './styles/26-offline.css';
+@import './styles/27-vinyl.css';

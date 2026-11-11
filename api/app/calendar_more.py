@@ -28,7 +28,7 @@ router = APIRouter(prefix="/api", tags=["calendar"])
 # What each hobby's log shows as in the activity feed (activity.py kinds): a hobby event that day counts as done.
 HOBBY_KINDS = {"models": ("model",), "boardgames": ("game",), "volleyball": ("volleyball",), "videogames": ("videogame",),
                "chess": ("chess",), "reading": ("book",), "travel": ("trip",), "shooting": ("shoot",), "hiking": ("hike",),
-               "gardening": ("planting", "gcontainer", "gspace"), "car": ()}
+               "gardening": ("planting", "gcontainer", "gspace"), "vinyl": ("record",), "car": ()}
 KIND_HOBBY = {k: h for h, kinds in HOBBY_KINDS.items() for k in kinds}
 
 
@@ -49,6 +49,7 @@ HOBBY_WORDS = [  # (pattern, hobby) - the first that matches wins
     (r"volley ?ball|vball", "volleyball"), (r"chess", "chess"),
     (r"shoot(?:ing)?|range day|rifle|rimfire|club match|prs", "shooting"),
     (r"hike|hiking|bushwalk|trail|summit", "hiking"), (r"garden(?:ing)?|repot|sow(?:ing)?|plant(?:ing)? out", "gardening"),
+    (r"vinyl|record (?:store|shop|fair)s?|records? day|rsd|crate digging|gig|concert|listening party", "vinyl"),
     (r"board ?games?|games? night|catan|wingspan|d&d|dnd", "boardgames"), (r"book club|reading|library", "reading"),
     (r"model|airbrush|warhammer|gundam|paint(?:ing)? night|kit build|hobby show", "models"),
     (r"gaming|video ?games?|steam|xbox|playstation|ps5|lan party", "videogames"),
