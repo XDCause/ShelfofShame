@@ -1290,5 +1290,6 @@ def sudoku(page):
     expect(page.locator(".sdk-past-detail")).to_contain_text("Not played")
     days.get_by_role("button").first.click()                         # and closes again
     expect(page.locator(".sdk-past-detail")).to_have_count(0)
-    page.get_by_role("link", name=re.compile("Play today's puzzle|Carry on")).first.click()
+    # the daily card's own button, whatever it says (dev's copy may have today's daily started or solved already)
+    page.locator(".sdk-daily").get_by_role("link", name=re.compile("^(Play today's puzzle|Carry on|See it)$")).click()
     expect(page.locator(".sdk-title")).to_contain_text("Daily sudoku", timeout=30000)
