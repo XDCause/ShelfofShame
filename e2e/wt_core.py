@@ -402,6 +402,61 @@ def settings_more(page):
     page.keyboard.press("Escape")
 
 
+@step("Offline copy: on + Save everything now; with the PC unreachable the app opens from it, read-only; back; off")
+def offline_copy(page):
+    # Its own browser (a service worker stays with its browser: the other steps mustn't get one), watched for page
+    # errors only - while "offline" the copy's 503 answers for anything never saved are expected.
+    ctx = signed_in(page.context.browser.new_context(viewport={"width": 1280, "height": 860},
+                                                     timezone_id="Australia/Brisbane", ignore_https_errors=True))
+    p = ctx.new_page()
+    p.route(OUTSIDE, offline)
+    p.on("pageerror", lambda e: errors.append(f"[offline copy] page error: {e}"))
+    try:
+        goal = get_json("/api/goals")["goals"][0]                     # (the goals step's own goal is deleted by then)
+        journal = next(j["page_id"] for j in get_json(f"/api/journal?q={MARK}"))
+        p.goto(BASE + "/")
+        expect(p.locator(".home-stat").first).to_be_visible(timeout=15000)
+        p.get_by_role("button", name="Settings").click()
+        d = drawer(p)
+        d.locator("summary", has_text="Offline copy").click()
+        d.get_by_label("Keep a copy on this device").check()
+        expect(d.locator(".offline-progress")).to_be_visible()
+        expect(d.locator(".offline-copy .alert.ok")).to_contain_text("On, and saved", timeout=600000)
+        expect(d.locator(".offline-copy")).to_contain_text("Everything saved:")
+        shot(p, "d23_offline_settings", full=False)
+        p.keyboard.press("Escape")
+
+        ctx.set_offline(True)                                  # the PC at home is off
+        p.goto(f"{BASE}/goals/{goal['goal_id']}")              # a fresh load: the app itself comes from the copy
+        expect(p.locator(".offline-banner")).to_contain_text("Offline")
+        expect(p.get_by_label("Goal", exact=True)).to_have_value(goal["title"])
+        p.goto(f"{BASE}/journal/{journal}")
+        expect(p.locator(".offline-banner")).to_be_visible()
+        expect(p.locator("main")).to_contain_text(MARK)
+        p.goto(f"{BASE}/hiking/hikes")                         # a hobby's page (loaded on demand) too
+        expect(p.locator(".hike-list li").first if HIKING else p.get_by_text("No hikes yet")).to_be_visible()
+        expect(p.locator(".offline-banner")).to_be_visible()
+        shot(p, "d24_offline_banner", full=False)
+        said = p.evaluate("""() => fetch('/api/goals', {method: 'POST', headers: {'Content-Type': 'application/json'},
+                             body: '{}'}).then(async (r) => [r.status, (await r.json()).detail])""")
+        assert said[0] == 503 and "offline" in said[1], said   # read-only: a change gets a clear no
+
+        ctx.set_offline(False)                                 # it's back
+        p.locator(".offline-banner").get_by_role("button", name="Try again").click()
+        expect(p.locator(".offline-banner")).to_have_count(0)
+        p.get_by_role("button", name="Settings").click()
+        d.locator("summary", has_text="Offline copy").click()
+        d.get_by_label("Keep a copy on this device").uncheck()
+        expect(d.locator(".offline-copy .alert.ok")).to_contain_text("Off")
+        assert p.evaluate("navigator.serviceWorker.getRegistrations().then((r) => r.length)") == 0
+        assert p.evaluate("caches.keys().then((k) => k.length)") == 0
+    except Exception:
+        shot(p, "FAIL_offline_copy_its_browser", full=False)          # (the step's own screenshot shows the other browser)
+        raise
+    finally:
+        ctx.close()
+
+
 # ---------------------------------------------------------------- phone
 @step("Phone: tab bar, nav bar, sheets, every page fits the screen")
 def phone(page):

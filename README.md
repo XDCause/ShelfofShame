@@ -162,6 +162,20 @@ Then use **https://&lt;pc&gt;.local:8443** (the PC's name, e.g. travel-laptop.lo
 certificate covers all of these; `.\make-cert.ps1` remakes it if the PC's names or addresses change (dev.ps1,
 start.ps1 and promote.ps1 run it).
 
+**An offline copy for travelling** (Settings > Offline copy). When the PC at home can't be reached - off, asleep,
+restarting for an update - a phone with the copy turned on still opens the app and shows your data, read-only,
+with an amber *Offline* banner; changes wait until the app is back. Set it up before you go, on each phone:
+
+1. Install the CA (above): a browser only keeps an offline copy for a site it trusts.
+2. Open the app at the address you'll use while away - the Tailscale one, https://&lt;pc&gt;.&lt;tailnet&gt;.ts.net:8443
+   (each address keeps its own copy and its own sign-in) - and add it to the Home Screen (iPhone: Share > Add to
+   Home Screen; Android: Install app). On an iPhone that's also what stops Safari clearing the copy.
+3. Open it from the Home Screen, sign in, Settings > Offline copy > **Keep a copy on this device**. It saves
+   everything once (~2 minutes); pages you open afterwards stay up to date. Press **Save everything now** the day
+   before you leave.
+
+Signing out of the device drops the copy; turning it off removes it all.
+
 ## First-time setup
 
 1. Install and start Docker Desktop.

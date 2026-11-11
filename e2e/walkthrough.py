@@ -92,6 +92,7 @@ ORDER = [
     "travel",
     "bunnings_button",
     "settings_more",
+    "offline_copy",
     "no_panel",
 ]
 AREAS = (wt_core, wt_hobbies, wt_journal, wt_models, wt_supplies, wt_wishlist)   # (importing them registers their steps)
@@ -119,7 +120,9 @@ def sign_in_page(browser, zone):
 
 
 with sync_playwright() as p:
-    browser = p.chromium.launch()
+    # (the copy's own certificate isn't trusted here: ignore_https_errors covers pages, but a service worker - the
+    # offline copy - is only registered for a trusted site, so the whole browser is told to accept it)
+    browser = p.chromium.launch(args=["--ignore-certificate-errors"])
     # The user's time zone: "today" in the browser must be the same day the app dates pages by.
     zone = "Australia/Brisbane"
     if not ONLY or "sign_in_ui" in ONLY:

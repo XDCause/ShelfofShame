@@ -34,6 +34,8 @@ import { LabelsPage, PlacePage, PlacesPage, ShopMode, Stocktake, ValueReport } f
 import { GiftList, LinkPanel, WantedPanel } from './components/wishExtras.jsx'
 import { corePageFor, SectionTabs, Sidebar, TabBar } from './core/Navigation.jsx'
 import { MODULE_PANELS, MODULES, moduleFor, pageFor } from './modules/index.js'
+import OfflineBanner from './offline/OfflineBanner.jsx'
+import { SAVING } from './offline/state.js'
 
 const APP_NAME = 'Off the Clock'
 
@@ -155,6 +157,17 @@ export default function App() {
     else if (kind === 'shoot') openPanel('shootsession', { id })
     else if (kind === 'trip') openPanel('trip', { id })
   }, [openModel, openItem, navigate, openPanel])
+  // The hidden copy "Save everything now" walks through (offline/saveAll.js): it's told where to go next.
+  useEffect(() => {
+    if (!SAVING) return
+    const directed = (e) => {
+      const to = e.origin === window.location.origin && e.source === window.parent && e.data?.otcSave
+      if (to?.go) { setPanel(null); navigate(to.go) }
+      else if (to?.open) openThing(...to.open)
+    }
+    window.addEventListener('message', directed)
+    return () => window.removeEventListener('message', directed)
+  }, [navigate, openThing])
   const app = useMemo(() => ({
     lookups, settings, refreshKey, changed, openItem, openModel, openAdd, openPanel, openThing, adjusted, showToast,
   }), [lookups, settings, refreshKey, changed, openItem, openModel, openAdd, openPanel, openThing, adjusted, showToast])
@@ -226,6 +239,7 @@ export default function App() {
                 <Elapsed since={timer.started_at} />
               </button>
             )}
+            <OfflineBanner onRetry={changed} />
             {error && <p className="alert error">{error}</p>}
             {flash && (
               <Notice type={flash.type} onClose={clearFlash}>{flash.text}</Notice>

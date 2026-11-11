@@ -1,11 +1,13 @@
 // Every call to the backend goes through here. The browser only ever talks to /api/...,
 // which nginx forwards to the API container. The front end never touches the database.
+import { noteAnswer } from './offline/state.js'
 
 async function request(path, options = {}) {
   const res = await fetch(`/api${path}`, {
     ...options,
     headers: { 'Content-Type': 'application/json', ...options.headers },
   })
+  noteAnswer(res)     // the server's answer, or the offline copy's (offline/sw.js): the Offline banner
   // Signed out (the 30 days are up, or this device was signed out from another): the sign-in screen (core/auth).
   if (res.status === 401 && !path.startsWith('/auth/')) window.dispatchEvent(new Event('otc-signed-out'))
   if (res.status === 204) return null

@@ -36,4 +36,6 @@ export default [
       '@eslint-react/jsx-no-useless-fragment': ['error', { allowExpressions: true }],
     },
   },
+  // The offline copy's service worker runs in the worker's own world (self, clients, caches), not a page's.
+  { files: ['src/offline/sw.js'], languageOptions: { sourceType: 'script', globals: { ...globals.serviceworker } } },
 ]

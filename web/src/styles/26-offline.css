@@ -1,0 +1,17 @@
+/* ---------- The offline copy (src/offline, 2026-11-11) ---------- */
+/* The banner while the app answers from this device's copy: amber like "low", the retry button beside the text. */
+.offline-banner {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 12px; padding: 10px 14px;
+  border-radius: 12px; color: var(--low); background: var(--low-bg); font-size: 0.92rem;
+}
+.offline-banner span { flex: 1 1 260px; min-width: 0; }
+.offline-banner button { flex: none; }
+
+/* Settings > Offline copy */
+.offline-copy { display: flex; flex-direction: column; gap: 6px; }
+.offline-copy .hint { margin: 0; }
+.offline-progress { display: flex; flex-direction: column; gap: 4px; }
+.offline-progress progress { width: 100%; height: 8px; accent-color: var(--tint); }
+
+/* "Save everything now" walks the app in a hidden frame (offline/saveAll.js): off-screen, never seen or clicked. */
+.offline-walker { position: fixed; left: -20000px; top: 0; border: 0; visibility: hidden; pointer-events: none; }

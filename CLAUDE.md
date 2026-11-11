@@ -34,7 +34,7 @@ AI via MCP server (later) -----------------/
 **Only the API talks to PostgreSQL.** Exceptions are admin/dev tools: DBeaver, psql, the scripts (backup, migrate).
 
 ## Where to look
-- **Why things are the way they are: docs/HISTORY.md** (entries 3zzt - 5s; 1 - 3zzs are in docs/HISTORY-early.md).
+- **Why things are the way they are: docs/HISTORY.md** (entries 3zzt - 5t; 1 - 3zzs are in docs/HISTORY-early.md).
   Search both before changing something old - most odd-looking code has a lesson behind it. Design system:
   docs/DESIGN.md. Plans: docs/ROADMAP.md. **BEFORE_GOING_PUBLIC.md: add a row whenever a new data source, scraper,
   copied content or single-user shortcut is added.**
@@ -115,6 +115,10 @@ AI via MCP server (later) -----------------/
 - Write multi-line edit scripts as .py files with the Write tool (shell heredocs and "\a", "\r" in Python strings have
   mangled paths), and never pass robocopy (or anything with /SWITCHES) through Git Bash - it rewrites them as paths.
 - Every photo URL must change when the photo changes (served with a 1-year cache).
+- The offline copy (Settings > Offline copy, web/src/offline, HISTORY 5t) saves every GET /api answer on the
+  phone and is read-only. A route that changes something must not be a GET; pages may write on open, but the
+  "Save everything now" frame can't. A new page with its own address is walked if it's a hobby page (manifest);
+  a new kind of detail panel worth having offline goes in saveAll.js's stops().
 - Playwright's Chromium can't play H.264; browser tests of playback need WebM.
 - An element with an id is also a window global (`window.__NEXT_DATA__` can be the <script> element): check its shape.
 - A new outside source needs a stand-in in stand_ins.py (and a fake in conftest), or the walk-through would ask it live.

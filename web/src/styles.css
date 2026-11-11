@@ -54,6 +54,8 @@
  *                                    (most used: .cal, .day, .calendar)
  *   25-supplies-wishlist-extras.css  Supplies' hobbies and tools, the wishlist's extras
  *                                    (most used: .sx, .inv, .wx, .wanted, .sw, .shop)
+ *   26-offline.css                   the offline copy: its banner and its Settings section
+ *                                    (most used: .offline)
  */
 @import './styles/01-base.css';
 @import './styles/02-inventory-panels.css';
@@ -80,3 +82,4 @@
 @import './styles/23-journal-extras.css';
 @import './styles/24-calendar-extras.css';
 @import './styles/25-supplies-wishlist-extras.css';
+@import './styles/26-offline.css';

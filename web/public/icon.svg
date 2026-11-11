@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- The app's mark (components/icons.jsx LogoMark) on moss, inside the middle 60% so a phone may crop it to any shape -->
+  <rect width="512" height="512" fill="#3d6a2c"/>
+  <g transform="translate(112 148) scale(9)" fill="none" stroke="#efe8d8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M1.5 21.5 11 8l4.2 6 3.3-4.5 12 12z"/><path d="M8.2 12 11 14.6 13.4 12.6"/><circle cx="23.5" cy="5.5" r="2.6"/>
+    <path d="M1.5 21.5h29"/>
+  </g>
+</svg>

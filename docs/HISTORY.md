@@ -757,3 +757,29 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
      a minute later, while its search answered. Not worked around: adding a game now uses the facts of the search you
      picked it from (kept 10 minutes by handle, _gl_found) - one ask fewer - and a 429 says Gameology is limiting
      requests. Filling in a game you have / Check types still ask for the product and say so if it's refused.
+
+5t. **An offline copy on the phone** (2026-11-11, the user, off to Patagonia with the laptop at home: "if I'm across
+   the world and the laptop does a Windows update I need an offline version" - read-only for now; changes offline
+   (Goals, Journal, Calendar first) may come later). Settings > Offline copy, per device, off until turned on:
+   - A service worker (web/src/offline/sw.js; vite.config.js's offlineWorker writes dist/sw.js with every built file
+     and a version made from their contents). Turned on, it saves the app's files; every GET /api answer (JSON or a
+     photo) is asked of the server first and saved. When the server can't be reached (an error; or no answer in 6 s
+     AND /api/health doesn't answer in 2.5 s - a shop lookup can just be slow) the saved answer is given, marked
+     X-OTC-Saved; failing an exact match, the newest saved one that differs only in dates (pages ask "today"-based
+     ranges) - never another search or filter's. A change (POST...) with the server down: 503
+     "You're offline..." at once. Sign-in answers aren't kept (/api/auth/status is: the app opens on it).
+   - api.js notes every answer (offline/state.js) -> the amber Offline banner with Try again. Signing out drops the
+     saved data; turning it off removes the worker and everything saved.
+   - "Save everything now" (offline/saveAll.js): the app in a hidden same-origin frame, walked by postMessage (App
+     listens only when it IS that frame: SAVING) through Home, goals and each goal, the journal and each page (up to
+     1000), the calendar this month + 3, the agenda, supplies, the wishlist, every hobby page, and each trip, hike and
+     book's panel - 93 stops, ~95 s on the walk-through's data, 27 MB. A frame may only read (sw.js refuses it a change:
+     some pages write when opened). Its own fetch is counted so a slow answer isn't missed.
+   - A Home Screen app: manifest.webmanifest + icons (the mark on moss, drawn by Playwright from public/icon.svg).
+     On an iPhone that's also what stops Safari clearing the copy after 7 days unused; a Home Screen app has its own
+     sign-in and storage, so it's turned on in there. nginx serves .webmanifest as application/manifest+json.
+   - A service worker needs a TRUSTED https site: a phone without the app's CA installed gets "doesn't trust the app's
+     certificate" (and the walk-through's browser now starts with --ignore-certificate-errors: ignore_https_errors
+     covers pages, not service worker scripts). Walk-through step offline_copy (its own browser: the worker mustn't
+     leak into other steps): on, saved, offline -> a goal, a journal page and the hikes from the copy, a change refused,
+     back online, off. Web tests: the banner's on/off and finding ids in any answer.

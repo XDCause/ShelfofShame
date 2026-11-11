@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api, timeAgo } from '../../api.js'
+import { forgetSaved } from '../../offline/offline.js'
 import { cancelled, createPasskey, passkeysWork } from './passkeys.js'
 
 // Settings > Security: sign out, the password, the authenticator app (and recovery codes), passkeys, signed-in devices.
@@ -10,7 +11,7 @@ export default function Security() {
   if (!status) return <p className="muted small">Loading...</p>
   return (
     <div className="security">
-      <button type="button" className="secondary" onClick={async () => { await api.signOut(); window.location.assign('/') }}>
+      <button type="button" className="secondary" onClick={async () => { await api.signOut(); await forgetSaved(); window.location.assign('/') }}>
         Sign out of this device</button>
       <Password />
       <Authenticator on={status.totp_on} onChanged={reload} />
