@@ -5,6 +5,7 @@ track, and a landmark's own photo (its OpenStreetMap wikimedia_commons or wikida
     near(lat, lon, radius)   photos taken within `radius` m (at most 10 km) -> [{title, lat, lon}]
     images(titles)           each photo's thumbnail, page, author and licence (50 per request)
     wikidata_images(ids)     Wikidata items' main photo (P18) -> {"Q123": "File:..."}
+    download(url)            a photo's bytes and type (checked like any download) - Sudoku's event photos are kept
 
 Thumbnails are shown straight from Wikimedia (they allow it); the author and licence are shown with
 each one, as the licences require.
@@ -63,6 +64,18 @@ def images(titles: list[str], width: int = 480) -> dict[str, dict]:
                 "licence": _plain((meta.get("LicenseShortName") or {}).get("value")),
             }
     return out
+
+
+def download(url: str) -> tuple[bytes | None, str | None]:
+    """A Commons thumbnail's bytes and type, or (None, None)."""
+    from .images import fetched_photo
+    if not url.startswith(("https://upload.wikimedia.org/", "https://thumb.wikimedia.org/")):   # (Commons' own hosts only)
+        return None, None
+    try:
+        r = httpx.get(url, headers=HEADERS, timeout=TIMEOUT, follow_redirects=True)
+    except httpx.HTTPError as e:
+        raise CommonsError(f"Couldn't reach Wikimedia Commons ({e.__class__.__name__}).") from None
+    return fetched_photo(r)
 
 
 def wikidata_images(ids: list[str]) -> dict[str, str]:

@@ -32,7 +32,9 @@ from fastapi import APIRouter, HTTPException, Path, Query, Response
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel, Field
 
+from . import wikimedia
 from .db import db, found, insert_row, update_row
+from .images import photo_response
 from .videogames import streaks
 
 router = APIRouter(prefix="/api", tags=["sudoku"])
@@ -304,6 +306,60 @@ def library(list_key: str = Path(pattern=SET_KEY), first: int = Query(1, ge=1), 
     return {"list": list_key, "credit": LIBRARY_CREDIT.get(list_key) if rows else None, "puzzles": rows}
 
 
+# Each event's photo: a free-licensed one from Wikimedia Commons (credited on the card, as its licence asks). Downloaded the
+# first time it's shown and kept in sudoku_event_photos - never in the repo. Each year's Advent calendar shares one.
+EVENT_PHOTOS = {
+    "grand-tour": "File:Isterdalen from above Stigfossen, Rauma, M\u00f8re og Romsdal, Norway, 2025 May.jpg",   # Trollstigen's hairpins
+    "patagonia-trail": "File:Cuernos del Paine, Parque Nacional Torres del Paine, Chile1.jpg",
+    "advent": "File:Museumsquartier Wien, Vorweihnachtsstimmung 2014 HDR - 5575.jpg",
+}
+
+
+def _photo_key(event_key: str) -> str | None:
+    key = "advent" if event_key.startswith("advent-") else event_key
+    return key if key in EVENT_PHOTOS else None
+
+
+def _event_photo(conn, key: str) -> dict | None:
+    row = conn.execute("SELECT photo_key, author, licence, page, fetched_at FROM sudoku_event_photos WHERE photo_key = %s", (key,)).fetchone()
+    if row:
+        return row
+    try:
+        info = wikimedia.images([EVENT_PHOTOS[key]], width=1600).get(EVENT_PHOTOS[key])
+        image, image_type = wikimedia.download(info["thumb"]) if info else (None, None)
+    except wikimedia.CommonsError:
+        return None
+    if not image:
+        return None
+    conn.execute("""INSERT INTO sudoku_event_photos (photo_key, title, image, image_type, author, licence, page)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s) ON CONFLICT (photo_key) DO NOTHING""",
+                 (key, EVENT_PHOTOS[key], image, image_type, info.get("author"), info.get("licence"), info.get("page")))
+    return conn.execute("SELECT photo_key, author, licence, page, fetched_at FROM sudoku_event_photos WHERE photo_key = %s", (key,)).fetchone()
+
+
+@router.get("/sudoku/events/{event_key}/photo-info")
+def event_photo_info(event_key: str = Path(pattern=SET_KEY)):
+    """An event's photo - fetched from Wikimedia Commons the first time - with who took it and its licence; null if
+    there isn't one (or Commons couldn't be reached: the card draws its own landscape instead)."""
+    key = _photo_key(event_key)
+    if not key:
+        return None
+    with db() as conn:
+        row = _event_photo(conn, key)
+    if not row:
+        return None
+    return {"url": f"/api/sudoku/events/{event_key}/photo?v={int(row['fetched_at'].timestamp())}", "author": row["author"],
+            "licence": row["licence"], "page": row["page"]}
+
+
+@router.get("/sudoku/events/{event_key}/photo")
+def event_photo(event_key: str = Path(pattern=SET_KEY)):
+    key = _photo_key(event_key)
+    with db() as conn:
+        row = key and conn.execute("SELECT image, image_type FROM sudoku_event_photos WHERE photo_key = %s", (key,)).fetchone()
+    return photo_response(row["image"] if row else None, row["image_type"] if row else None)
+
+
 @router.get("/sudoku/games/{game_id}")
 def get_game(game_id: int):
     with db() as conn:
@@ -529,7 +585,7 @@ ACHIEVEMENTS = [
     ("hardest_25", "Hardest 100", "A quarter of the way", "Solve 25 of the Hardest 100.", 25),
     ("hardest_50", "Hardest 100", "Halfway down the list", "Solve 50 of the Hardest 100.", 50),
     ("hardest_100", "Hardest 100", "The whole list", "Solve all of the Hardest 100.", 100),
-    ("hardest_top", "Hardest 100", "Number one", "Solve number 100 - the hardest of them all.", 1),
+    ("hardest_top", "Hardest 100", "Number one", "Solve number 1 - the hardest of them all.", 1),
     ("event_10", "Events", "On the trail", "Reach stop 10 on an event's path.", 10),
     ("event_done", "Events", "Journey's end", "Finish an event's whole path.", 1),
     ("events_all", "Events", "Every road", "Finish The Grand Tour and the Patagonia Trail.", len(EVENTS)),
@@ -658,7 +714,7 @@ def awards(conn) -> list[dict]:
             hardest.add(g["set_stop"])
             for key in ("hardest_1", "hardest_10", "hardest_25", "hardest_50", "hardest_100"):
                 hit(key, len(hardest), g)
-            if g["set_stop"] == 100:
+            if g["set_stop"] == 1:
                 hit("hardest_top", 1, g)
         elif event_length(g["set_key"]):
             done = event_stops.setdefault(g["set_key"], set())
@@ -739,7 +795,7 @@ def rank_of(r: int) -> dict:
 def puzzle_rating(g: dict) -> int:
     r = PUZZLE_RATING[g["difficulty"]] + (150 if g["size"] == 16 else 0) + (75 if g.get("variant") == "x" else 0)
     if g["set_key"] == "hardest":
-        r += 100 + 2 * (g["set_stop"] or 0)        # the list gets harder as it goes: #100 is rated 2200
+        r += 100 + 2 * (101 - (g["set_stop"] or 100))   # it counts down: number 1, the hardest, is rated 2200
     return r
 
 

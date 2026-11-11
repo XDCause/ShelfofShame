@@ -578,6 +578,7 @@ export const api = {
   sudokuDailies: (days = 21) => request(`/sudoku/dailies?days=${days}`),
   sudokuSet: (key) => request(`/sudoku/sets/${key}`),
   sudokuRating: () => request('/sudoku/rating'),
+  sudokuEventPhoto: (key) => request(`/sudoku/events/${key}/photo-info`),
   sudokuLibrary: (key, first = 1, last = 1000) => request(`/sudoku/library/${key}?first=${first}&last=${last}`),
   chessAccount: () => request('/chess/account'),
   setChessAccount: (username) => request('/chess/account', send('PUT', { username })),

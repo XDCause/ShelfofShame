@@ -1278,8 +1278,9 @@ def sudoku(page):
     if time.strftime("%Y-%m-%d") < "2026-12-01":                       # (the trail opens on 1 December)
         expect(page.locator(".sdk-event", has_text="Patagonia Trail")).to_contain_text("Opens")
     shot(page, "d62_sudoku_events", full=False)
-    page.get_by_role("link", name="Number 1", exact=True).click()
-    expect(page.locator(".sdk-title")).to_contain_text("Hardest 100 · number 1", timeout=30000)
+    expect(page.get_by_role("img", name="Number 99, locked")).to_be_visible()     # it counts down: 99 waits for 100
+    page.get_by_role("link", name="Number 100, next").click()
+    expect(page.locator(".sdk-title")).to_contain_text("Hardest 100 · number 100", timeout=30000)
     tabs.get_by_role("link", name="Today").click()
     expect(page.locator(".sdk-rating")).to_contain_text("Rating")
     expect(page.locator(".sdk-weekly")).to_contain_text("The weekly")

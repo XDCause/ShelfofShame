@@ -31,9 +31,28 @@ const THEME_NAME = Object.fromEntries(THEMES.map((t) => [t.key, t.name]))
 // fills the card and stays put while the road scrolls over it - starting at the bottom and winding up, big round stops
 // (done, next, locked; a gift where a theme is earned), the event's name and time left on top, and a Play button for
 // the next stop pinned at the bottom. It opens scrolled to where you're up to.
-const STEP = 118, TOP = 150, BOTTOM = 130
-const LANES = [50, 80, 50, 20]                        // across the card, %: centre, right, centre, left...
+const TOP = 150, BOTTOM = 130
+// Each event's own way up the card (user, 2026-11-11: "some design variation in the layout of the stops"):
+//   snake       centre, right, centre, left... joined by smooth S-bends (The Grand Tour)
+//   switchback  a mountain path: straight legs zig-zagging across, a turn every few stops (the Patagonia Trail)
+//   garland     a gentle swing from side to side, like tinsel (the Advent calendar)
+const LAYOUTS = {
+  snake: { step: 118, x: (i) => [50, 80, 50, 20][i % 4], curve: 'S' },
+  switchback: { step: 96, x: (i) => [18, 40, 62, 84, 62, 40][i % 6], curve: 'L' },
+  garland: { step: 104, x: (i) => 50 + 30 * Math.sin(i * 0.75), curve: 'S' },
+}
+function roadThrough(points, curve, step) {
+  return points.map((p, i) => {
+    if (!i) return `M ${p.x} ${p.y}`
+    const q = points[i - 1]
+    return curve === 'L' ? `L ${p.x} ${p.y}` : `C ${q.x} ${q.y - step * 0.55} ${p.x} ${p.y + step * 0.55} ${p.x} ${p.y}`
+  }).join(' ')
+}
 function Path({ event, games, open }) {
+  const layout = LAYOUTS[event.layout] ?? LAYOUTS.snake
+  const STEP = layout.step
+  const [photo, setPhoto] = useState(null)
+  useEffect(() => { api.sudokuEventPhoto(event.key).then(setPhoto).catch(() => setPhoto(null)) }, [event.key])
   const scroller = useRef(null)
   const all = stops(event)
   const solved = all.filter((s) => games[s.stop]?.status === 'solved').length
@@ -41,20 +60,10 @@ function Path({ event, games, open }) {
   const next = all.find((s) => games[s.stop]?.status !== 'solved')
   const nextOpen = next && open && !(event.opens && event.opens(next.stop) > day)
   const height = TOP + BOTTOM + (all.length - 1) * STEP
-  const pos = (i) => ({ x: LANES[i % LANES.length], y: height - BOTTOM - i * STEP })
-  // the road: a smooth S between each pair of stops
-  const road = all.map((_, i) => {
-    const p = pos(i)
-    if (!i) return `M ${p.x} ${p.y}`
-    const q = pos(i - 1)
-    return `C ${q.x} ${q.y - STEP * 0.55} ${p.x} ${p.y + STEP * 0.55} ${p.x} ${p.y}`
-  }).join(' ')
-  const walked = all.slice(0, Math.min(all.length, solved + 1)).map((_, i) => {
-    const p = pos(i)
-    if (!i) return `M ${p.x} ${p.y}`
-    const q = pos(i - 1)
-    return `C ${q.x} ${q.y - STEP * 0.55} ${p.x} ${p.y + STEP * 0.55} ${p.x} ${p.y}`
-  }).join(' ')
+  const pos = (i) => ({ x: layout.x(i), y: height - BOTTOM - i * STEP })
+  const points = all.map((_, i) => pos(i))
+  const road = roadThrough(points, layout.curve, STEP)
+  const walked = roadThrough(points.slice(0, Math.min(all.length, solved + 1)), layout.curve, STEP)
   const at = Math.min(all.length - 1, solved)
   useEffect(() => {                                   // start where you're up to
     const el = scroller.current
@@ -64,9 +73,9 @@ function Path({ event, games, open }) {
   const ends = event.to && open ? Math.ceil((new Date(`${event.to}T23:59:59`) - new Date(`${day}T12:00:00`)) / 86400000) : null
   const nextReward = all.find((s) => s.reward && games[s.stop]?.status !== 'solved')
   return (
-    <section className="sdk-event sdk-trail" style={{ '--event-hue': art.hue ?? 'var(--tint)' }} aria-label={event.name}>
+    <section className={`sdk-event sdk-trail sdk-trail-${event.layout ?? 'snake'}`} style={{ '--event-hue': art.hue ?? 'var(--tint)' }} aria-label={event.name}>
       <div className="sdk-trail-bg" aria-hidden="true">
-        <Landscape scene={art.scene} seed={art.seed} time={art.time} extras={art.extras} hue={art.hue} />
+        {photo ? <img src={photo.url} alt="" /> : <Landscape scene={art.scene} seed={art.seed} time={art.time} extras={art.extras} hue={art.hue} />}
       </div>
       <div className="sdk-trail-scroll" ref={scroller}>
         <div className="sdk-trail-map" style={{ height }}>
@@ -83,8 +92,10 @@ function Path({ event, games, open }) {
             const playable = done || g || current
             const p = pos(i)
             const label = `${s.name}: ${s.difficulty}${s.size === 16 ? ' 16 × 16' : ''}${done ? `, solved in ${clockText(g.seconds)}` : current ? ', next' : g ? ', started' : notYet ? ', opens on its day' : ', locked'}${s.reward ? `, earns the ${THEME_NAME[s.reward]} theme` : ''}`
-            const face = done ? '✓' : s.reward ? '🎁' : notYet ? '🔒' : s.stop
-            const cls = `sdk-trail-stop${done ? ' done' : ''}${current ? ' current' : ''}${!playable ? ' locked' : ''}${s.reward ? ' gift' : ''}`
+            const last = s.stop === all.length
+            const milestone = !last && s.stop % 5 === 0
+            const face = done ? '✓' : s.reward ? '🎁' : last ? '🏁' : notYet ? '🔒' : s.stop
+            const cls = `sdk-trail-stop${done ? ' done' : ''}${current ? ' current' : ''}${!playable ? ' locked' : ''}${s.reward ? ' gift' : ''}${milestone ? ' milestone' : ''}${last ? ' finish' : ''}`
             const inner = (
               <>
                 <span className="sdk-trail-dot">{face}</span>
@@ -105,6 +116,10 @@ function Path({ event, games, open }) {
           {nextReward && ` · next gift: ${THEME_NAME[nextReward.reward]}`}</p>
         <span className="sdk-trail-progress" role="img" aria-label={`${solved} of ${event.length} stops`}><span style={{ width: `${(100 * solved) / event.length}%` }} /></span>
       </header>
+      {photo && (
+        <p className="sdk-trail-credit">Photo: {photo.page ? <a href={photo.page} target="_blank" rel="noreferrer">{photo.author ?? 'Wikimedia Commons'}</a> : photo.author}
+          {photo.licence && `, ${photo.licence}`} · Wikimedia Commons</p>
+      )}
       <div className="sdk-trail-play">
         {!open ? <span className="sdk-trail-button off">{solved ? 'This event has closed - your stops stay' : `Opens ${new Date(`${event.from}T12:00:00`).toLocaleDateString('en-AU', { day: 'numeric', month: 'long' })}`}</span>
           : !next ? <span className="sdk-trail-button off">Finished! 🎉</span>
@@ -117,12 +132,16 @@ function Path({ event, games, open }) {
   )
 }
 
+// The Hardest 100 counts down (user, 2026-11-11): start at 100; winning a number unlocks the one below; number 1 is the
+// hardest of them all.
+export const hardestOpen = (games, n) => n === 100 || Boolean(games[n]) || games[n + 1]?.status === 'solved'
 function Hardest({ games }) {
   const { refreshKey } = useApp()
   const [credit, setCredit] = useState(undefined)
   useEffect(() => { api.sudokuLibrary('hardest', 1, 1).then((l) => setCredit(l.credit)).catch(() => setCredit(null)) }, [refreshKey])
   const solved = Object.values(games).filter((g) => g.status === 'solved').length
-  const next = HARDEST.findIndex((_, i) => games[i + 1]?.status !== 'solved') + 1
+  let next = 0
+  for (let n = 100; n >= 1; n--) if (games[n]?.status !== 'solved') { next = n; break }
   return (
     <section className="card home-card">
       <div className="section-head">
@@ -132,22 +151,28 @@ function Hardest({ games }) {
       {credit ? (
         <p className="small">The hardest sudokus known - each rated 11 or more on the experts' scale (the famous 2012 "world's hardest"
           is around 10-11). Nothing here can be solved by the usual techniques, or by one chain of "if this, then that": they need
-          guesses inside guesses. Easiest first; number 100 is the brute. The hints show the next digit when logic runs out.
+          guesses inside guesses. Start at 100 and count down - winning one unlocks the next; number 1 is the brute. The hints
+          show the next digit when logic runs out.
           <span className="muted"> {credit}</span></p>
       ) : (
         <p className="small">The app's own hardest: puzzles none of its techniques can finish, ranked by the longest chain of
           "if this, then that" they need (19 to 28 steps). Very hard - but not the world's hardest, which this PC's library
-          adds when it's loaded. Easiest first; play them in any order.</p>
+          adds when it's loaded. Start at 100 and count down; number 1 is the hardest.</p>
       )}
       {next > 0 && <Link className="button primary" to={games[next] ? `/sudoku/play?game=${games[next].game_id}` : `/sudoku/play?set=hardest&stop=${next}`}>
         {games[next] ? `Carry on with number ${next}` : `Play number ${next}`}</Link>}
-      <ol className="sdk-hardest" aria-label="The Hardest 100">
+      <ol className="sdk-hardest" aria-label="The Hardest 100, counting down">
         {HARDEST.map((_, i) => {
-          const g = games[i + 1]
+          const n = 100 - i
+          const g = games[n]
+          const openNow = hardestOpen(games, n)
+          const label = `Number ${n}${g?.status === 'solved' ? `, solved in ${clockText(g.seconds)}` : g ? ', started' : openNow ? ', next' : ', locked'}`
           return (
-            <li key={i}>
-              <Link className={`sdk-hardest-cell${g?.status === 'solved' ? ' done' : g ? ' started' : ''}`} to={g ? `/sudoku/play?game=${g.game_id}` : `/sudoku/play?set=hardest&stop=${i + 1}`}
-                aria-label={`Number ${i + 1}${g?.status === 'solved' ? `, solved in ${clockText(g.seconds)}` : g ? ', started' : ''}`}>{i + 1}</Link>
+            <li key={n}>
+              {openNow ? (
+                <Link className={`sdk-hardest-cell${g?.status === 'solved' ? ' done' : g ? ' started' : ' next'}`} aria-label={label}
+                  to={g ? `/sudoku/play?game=${g.game_id}` : `/sudoku/play?set=hardest&stop=${n}`}>{n}</Link>
+              ) : <span className="sdk-hardest-cell locked" role="img" aria-label={label}>🔒</span>}
             </li>
           )
         })}

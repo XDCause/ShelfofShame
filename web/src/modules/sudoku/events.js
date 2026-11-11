@@ -31,7 +31,7 @@ const ramp = (steps) => (stop) => steps.find(([upTo]) => stop <= upTo)
 export const EVENTS = [
   {
     key: 'grand-tour', name: 'The Grand Tour', always: true, length: 30,
-    art: { scene: 'hills', seed: 51, time: 'golden', extras: ['clouds', 'birds', 'trees'], hue: '#5b7fd6' },
+    art: { scene: 'hills', seed: 51, time: 'golden', extras: ['clouds', 'birds', 'trees'], hue: '#5b7fd6' }, layout: 'snake',
     blurb: 'Thirty stops from gentle to fierce, open all year. A 16 × 16 waits at stops 15 and 25.',
     level: ramp([[6, 'Easy', 9], [12, 'Medium', 9], [14, 'Hard', 9], [15, 'Medium', 16], [20, 'Hard', 9], [24, 'Expert', 9],
       [25, 'Hard', 16], [29, 'Expert', 9], [30, 'Extreme', 9]]),
@@ -40,7 +40,7 @@ export const EVENTS = [
   },
   {
     key: 'patagonia-trail', name: 'Patagonia Trail', from: '2026-12-01', to: '2027-01-31', length: 25,
-    art: { scene: 'peaks', seed: 25, time: 'dawn', extras: ['snow', 'lake', 'clouds'], hue: '#4f9ec4' },
+    art: { scene: 'peaks', seed: 25, time: 'dawn', extras: ['snow', 'lake', 'clouds'], hue: '#4f9ec4' }, layout: 'switchback',
     blurb: 'For the trip: 25 stops from Punta Arenas to Fitz Roy. Open 1 December to 31 January.',
     level: ramp([[4, 'Easy', 9], [9, 'Medium', 9], [14, 'Hard', 9], [16, 'Medium', 16], [21, 'Expert', 9], [24, 'Hard', 16], [25, 'Extreme', 9]]),
     name_of: (stop) => PATAGONIA[stop - 1],
@@ -53,7 +53,7 @@ export function advent(year) {
   const day = (n) => `${year}-12-${String(n).padStart(2, '0')}`
   return {
     key: `advent-${year}`, name: `Advent calendar ${year}`, from: day(1), to: `${year}-12-31`, length: 24, opens: day,
-    art: { scene: 'night', seed: year % 97, time: 'blue', extras: ['moon', 'snow', 'trees'], hue: '#7a5bd6' },
+    art: { scene: 'night', seed: year % 97, time: 'blue', extras: ['moon', 'snow', 'trees'], hue: '#7a5bd6' }, layout: 'garland',
     blurb: 'A puzzle a day from 1 December to Christmas Eve, a little harder each week - one door opens each morning.',
     level: ramp([[6, 'Easy', 9], [12, 'Medium', 9], [18, 'Hard', 9], [23, 'Expert', 9], [24, 'Extreme', 9]]),
     name_of: (stop) => `${stop} December`,

@@ -90,8 +90,11 @@ function Maker({ size, variant, difficulty, daily, day: pastDay, weekly, set, st
         if (had) { go(had.game_id); return }
       }
       if (set) {
-        const had = (await api.sudokuSet(set).catch(() => ({})))[stop]
-        if (had) { go(had.game_id); return }
+        const games = await api.sudokuSet(set).catch(() => ({}))
+        if (games[stop]) { go(games[stop].game_id); return }
+        if (set === 'hardest' && stop !== 100 && games[stop + 1]?.status !== 'solved') {
+          throw new Error(`Number ${stop} is still locked - win number ${stop + 1} first (the Hardest 100 counts down from 100).`)
+        }
       }
       let made
       if (set === 'hardest' || weekly) {                // one of the Hardest 100, or this week's: the puzzle is in a list
@@ -104,7 +107,7 @@ function Maker({ size, variant, difficulty, daily, day: pastDay, weekly, set, st
         const lib = (await (weekly ? api.sudokuLibrary('weekly', 1, 100000) : api.sudokuLibrary('hardest', stop, stop))
           .catch(() => ({ puzzles: [] }))).puzzles ?? []
         const text = weekly ? (lib.length ? lib[((n % lib.length) + lib.length) % lib.length].puzzle : WEEKLY[((n % WEEKLY.length) + WEEKLY.length) % WEEKLY.length])
-          : lib[0]?.puzzle ?? HARDEST[stop - 1]
+          : lib[0]?.puzzle ?? HARDEST[100 - stop]           // (the app's own list is easiest first; the numbers count down)
         const puzzle = e9.parse(text)
         made = { puzzle, solution: e9.solve(puzzle), grade: { ...e9.grade(puzzle), difficulty: 'Extreme' } }
       } else {
@@ -615,7 +618,9 @@ function HintCard({ hint, eng, onShow, onClose }) {
 
 function Finished({ status, seconds, mistakes, hints, record, best, earned, rated, onNew, onReplay }) {
   const event = record.set_key && EVENT[record.set_key]
-  const nextStop = record.set_key && status === 'solved' && record.set_stop < (record.set_key === 'hardest' ? HARDEST.length : event?.length ?? 0) ? record.set_stop + 1 : null
+  const nextStop = !record.set_key || status !== 'solved' ? null
+    : record.set_key === 'hardest' ? (record.set_stop > 1 ? record.set_stop - 1 : null)        // (it counts down to number 1)
+      : record.set_stop < (event?.length ?? 0) ? record.set_stop + 1 : null
   const reward = event?.rewards[record.set_stop] && status === 'solved' ? THEMES.find((th) => th.key === event.rewards[record.set_stop]) : null
   const newBest = best && status === 'solved' && best.best === seconds && best.solved > 1
   const easier = Object.keys(record.techniques ?? {}).length - 1

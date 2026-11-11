@@ -225,3 +225,19 @@
 @keyframes sdk-trail-pulse { 0%, 100% { box-shadow: 0 0 0 6px rgb(255 255 255 / 0.4), 0 6px 16px rgb(0 0 0 / 0.4); }
   50% { box-shadow: 0 0 0 14px rgb(255 255 255 / 0.12), 0 6px 16px rgb(0 0 0 / 0.4); } }
 @media (prefers-reduced-motion: reduce) { .sdk-trail-stop.current .sdk-trail-dot { animation: none; } }
+.sdk-trail-bg img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sdk-trail-credit { position: absolute; right: 10px; bottom: 92px; z-index: 2; margin: 0; padding: 2px 8px; border-radius: 8px; font-size: 0.68rem;
+  color: #fff; background: rgb(8 12 18 / 0.6); max-width: 70%; }
+.sdk-trail-credit a { color: #fff; }
+/* milestones (every fifth stop) and the finish: bigger medallions */
+.sdk-trail-stop.milestone .sdk-trail-dot { width: 78px; height: 78px; border-width: 4px; box-shadow: 0 0 0 4px color-mix(in srgb, var(--event-hue) 55%, transparent), 0 4px 12px rgb(0 0 0 / 0.35); }
+.sdk-trail-stop.finish .sdk-trail-dot { width: 88px; height: 88px; font-size: 2.2rem; box-shadow: 0 0 0 6px rgb(255 214 102 / 0.75), 0 6px 18px rgb(0 0 0 / 0.4); }
+/* the switchback: a narrow mountain path */
+.sdk-trail-switchback .sdk-trail-road .road { stroke-width: 11; stroke-dasharray: 18 7; stroke-linecap: butt; }
+.sdk-trail-switchback .sdk-trail-road .edge { stroke-width: 17; }
+/* the garland: a softer, golden ribbon */
+.sdk-trail-garland .sdk-trail-road .road { stroke: rgb(255 226 150 / 0.85); stroke-width: 12; }
+.sdk-trail-garland .sdk-trail-road .edge { stroke: rgb(120 20 30 / 0.35); }
+/* the Hardest 100: what's next, what's locked */
+.sdk-hardest-cell.next { background: color-mix(in srgb, var(--tint) 25%, var(--surface)); font-weight: 700; outline: 2px solid var(--tint); }
+.sdk-hardest-cell.locked { opacity: 0.55; font-size: 0.7rem; }

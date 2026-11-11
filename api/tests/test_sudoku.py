@@ -190,12 +190,12 @@ def test_more_achievements(client):
     for _ in range(2):
         g = game(client, difficulty="Hard", source="typed", paper="The Age")
         client.patch(f"/api/sudoku/games/{g['game_id']}", json={"state": state(SOLUTION), "status": "solved"})
-    h = game(client, source="set", set_key="hardest", set_stop=100, difficulty="Extreme")
+    h = game(client, source="set", set_key="hardest", set_stop=1, difficulty="Extreme")       # number 1: the hardest
     done = client.patch(f"/api/sudoku/games/{h['game_id']}", json={"state": state(SOLUTION), "status": "solved"}).json()
     assert {"hardest_1", "hardest_top"} <= {a["key"] for a in done["new_awards"]}
     a = {x["key"]: x for x in client.get("/api/sudoku/achievements").json()}
     assert a["hard_10"]["progress"] == 2 and a["paper"]["unlocked_at"] and a["paper_10"]["progress"] == 2 and a["papers_3"]["progress"] == 1
-    assert client.get("/api/sudoku/summary").json()["sets"]["hardest"] == {"solved": 1, "furthest": 100}
+    assert client.get("/api/sudoku/summary").json()["sets"]["hardest"] == {"solved": 1, "furthest": 1}
 
 
 def _x_answer() -> str:
@@ -256,3 +256,23 @@ def test_library(client):
     assert [p["rank"] for p in r["puzzles"]] == [1, 2] and "tdoku" in r["credit"]
     assert [p["rank"] for p in client.get("/api/sudoku/library/hardest?first=101&last=1000").json()["puzzles"]] == [101]
     assert client.get("/api/sudoku/library/Bad Key").status_code == 422
+
+
+def test_event_photos(client, monkeypatch):
+    from app import wikimedia
+    from app.stand_ins import PNG
+    asked = []
+    monkeypatch.setattr(wikimedia, "images", lambda titles, width=480: asked.append(titles[0]) or {
+        titles[0]: {"thumb": "https://upload.wikimedia.org/x.jpg", "page": "https://commons.wikimedia.org/wiki/x", "author": "Diego Delso",
+                    "licence": "CC BY-SA 3.0"}})
+    monkeypatch.setattr(wikimedia, "download", lambda url: (PNG, "image/png"))
+    info = client.get("/api/sudoku/events/patagonia-trail/photo-info").json()
+    assert info["author"] == "Diego Delso" and info["licence"] == "CC BY-SA 3.0" and asked == [sudoku.EVENT_PHOTOS["patagonia-trail"]]
+    assert client.get(info["url"]).content == PNG
+    client.get("/api/sudoku/events/patagonia-trail/photo-info")
+    assert len(asked) == 1                                                     # kept: Commons is asked once
+    assert client.get("/api/sudoku/events/advent-2027/photo-info").json()["url"].startswith("/api/sudoku/events/advent-2027/photo")
+    assert client.get("/api/sudoku/events/hardest/photo-info").json() is None   # not an event
+    monkeypatch.setattr(wikimedia, "images", lambda titles, width=480: {})
+    assert client.get("/api/sudoku/events/grand-tour/photo-info").json() is None   # Commons has nothing: the drawn scene
+    assert client.get("/api/sudoku/events/grand-tour/photo").status_code == 404

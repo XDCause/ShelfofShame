@@ -902,5 +902,16 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
      - The weekly pool from the app's own list is cut to chains of 12+ and at most 30 clues (379); a web test keeps it so.
      - The offline-copy walk-through step checked "no service worker or saved data left" straight after turning it off;
        unregistering finishes in the background, so a slow full run failed it - it now waits for both.
+   - Then: "the events still look off" (with a screenshot of the kind of thing) and "design variation in the layout of the
+     stops", a photo that fits each event ("from Google images" - free-licensed Wikimedia Commons ones instead: Trollstigen
+     for The Grand Tour, the Cuernos del Paine for Patagonia, a Christmas market for Advent; credited on the card, kept in
+     sudoku_event_photos), and "the Hardest 100 should count down - win number 100 to unlock 99 ... number 1 the hardest":
+     - The trail: the event's photo (or its drawn landscape) fills the card and stays put; the road scrolls over it from
+       stop 1 at the bottom; big medallion stops (milestones every fifth, a 🏁 at the end, 🎁 where a theme is earned); the
+       name, progress and days left on top; Play for the next stop pinned at the bottom. Three layouts: a snake (The Grand
+       Tour), a switchback mountain path (Patagonia), a garland (Advent).
+     - The Hardest 100: number n is the library's rank n (1 = hardest); only 100 is open at first, each one opens when the
+       one above it is won (the play page refuses a locked one too); "Number one" is now solving number 1.
+     - Commons now serves thumbnails from thumb.wikimedia.org: wikimedia.download takes that host and upload. only.
    Tests: test_sudoku.py, web tests for the engine (sudoku.test.js), walk-through step sudoku.
 

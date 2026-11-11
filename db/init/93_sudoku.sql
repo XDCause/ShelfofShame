@@ -85,6 +85,19 @@ CREATE TABLE IF NOT EXISTS sudoku_library (
     PRIMARY KEY (list_key, rank)
 );
 
+-- Each event's photo (a free-licensed one from Wikimedia Commons, api/app/sudoku.py EVENT_PHOTOS): downloaded once and
+-- kept here - never in the repo - with who took it and its licence, which the app shows with it.
+CREATE TABLE IF NOT EXISTS sudoku_event_photos (
+    photo_key  TEXT PRIMARY KEY,                    -- 'grand-tour', 'patagonia-trail', 'advent'
+    title      TEXT NOT NULL,                       -- its Commons file
+    image      BYTEA NOT NULL,
+    image_type TEXT NOT NULL,
+    author     TEXT,
+    licence    TEXT,
+    page       TEXT,
+    fetched_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- Calendar events for the Sudoku hobby too (keep in step with db.MODULE_IDS).
 DO $$
 BEGIN
