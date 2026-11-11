@@ -140,11 +140,16 @@
 
 /* Today: past dailies, the weekly, rating */
 .sdk-past { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin-top: 8px; max-width: 320px; }
-.sdk-past-day { display: grid; place-items: center; min-height: 30px; border-radius: 8px; font-size: 0.8rem; text-decoration: none;
+.sdk-past-day { display: grid; place-items: center; min-height: 30px; padding: 0; border-radius: 8px; font: inherit; font-size: 0.8rem; cursor: pointer; text-decoration: none;
   color: var(--text); background: var(--fill); border: 1px solid transparent; }
 .sdk-past-day.done { background: color-mix(in srgb, var(--ok) 22%, var(--surface)); }
 .sdk-past-day.started { background: color-mix(in srgb, var(--low) 22%, var(--surface)); }
 .sdk-past-day.today { border-color: var(--tint); font-weight: 700; }
+.sdk-past-day[aria-pressed="true"] { outline: 2px solid var(--tint); outline-offset: 1px; }
+/* A daily's details, under the three weeks (user, 2026-11-11: "a small section underneath with the difficulty") */
+.sdk-past-detail { margin-top: 8px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--fill); max-width: 360px; }
+.sdk-past-detail p { margin: 0 0 6px; }
+.sdk-past-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .sdk-weekly.done { border-color: color-mix(in srgb, var(--ok) 45%, var(--border)); }
 .sdk-rating .fill-bar { max-width: none; }
 .sdk-down { color: var(--out); font-weight: 600; }

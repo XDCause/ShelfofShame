@@ -116,6 +116,7 @@ export function TodayView() {
 function PastDailies({ today }) {
   const { refreshKey } = useApp()
   const [games, setGames] = useState(null)
+  const [open, setOpen] = useState(null)              // the day whose details show underneath
   useEffect(() => { api.sudokuDailies(21).then(setGames).catch(() => setGames([])) }, [refreshKey])
   if (!games) return null
   const byDay = Object.fromEntries(games.map((g) => [g.daily_on, g]))
@@ -124,18 +125,39 @@ function PastDailies({ today }) {
     d.setDate(d.getDate() - 20 + i)
     return d.toLocaleDateString('en-CA')
   })
+  const stateOf = (day) => { const g = byDay[day]; return g?.status === 'solved' ? 'done' : g ? 'started' : day === today ? 'today' : 'missed' }
   return (
-    <div className="sdk-past" role="group" aria-label="The last three weeks of daily puzzles">
-      {days.map((day) => {
-        const g = byDay[day]
-        const state = g?.status === 'solved' ? 'done' : g ? 'started' : day === today ? 'today' : 'missed'
-        const text = new Date(`${day}T12:00:00`).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
-        return (
-          <Link key={day} className={`sdk-past-day ${state}`} to={g ? `/sudoku/play?game=${g.game_id}` : `/sudoku/play?daily=1&day=${day}`}
-            aria-label={`${text}: ${state === 'done' ? `solved in ${clockText(g.seconds)}` : state === 'started' ? 'started' : state === 'today' ? "today's" : 'not played - play it'}`}>
-            {Number(day.slice(8))}</Link>
-        )
-      })}
+    <>
+      <div className="sdk-past" role="group" aria-label="The last three weeks of daily puzzles">
+        {days.map((day) => {
+          const g = byDay[day]
+          const state = stateOf(day)
+          const text = new Date(`${day}T12:00:00`).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+          return (
+            <button key={day} type="button" className={`sdk-past-day ${state}`} aria-pressed={open === day} aria-controls="sdk-past-detail"
+              onClick={() => setOpen(open === day ? null : day)}
+              aria-label={`${text}: ${(g?.difficulty ?? dailyDifficulty(day))}, ${state === 'done' ? `solved in ${clockText(g.seconds)}` : state === 'started' ? 'started' : state === 'today' ? "today's" : 'not played'}`}>
+              {Number(day.slice(8))}</button>
+          )
+        })}
+      </div>
+      {open && <PastDay day={open} game={byDay[open]} state={stateOf(open)} />}
+    </>
+  )
+}
+
+// A daily puzzle's details, under the three weeks: its day, difficulty, how it went, and a way in.
+function PastDay({ day, game: g, state }) {
+  const difficulty = g?.difficulty ?? dailyDifficulty(day)
+  const when = new Date(`${day}T12:00:00`).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
+  return (
+    <div className="sdk-past-detail" id="sdk-past-detail" aria-live="polite">
+      <p className="sdk-past-head"><strong>{when}</strong> <span className={`pill ${DIFF_TONE[difficulty]}`}>{difficulty}</span></p>
+      <p className="muted small">{state === 'done' ? `Solved in ${clockText(g.seconds)}${g.hints ? ` · ${plural(g.hints, 'hint')}` : ''}${g.mistakes ? ` · ${plural(g.mistakes, 'mistake')}` : ''}${!g.hints && !g.mistakes ? ' · clean' : ''}`
+        : state === 'started' ? `Started: ${g.filled} of 81 filled · ${clockText(g.seconds)} so far`
+          : state === 'today' ? "Today's puzzle - not started yet." : 'Not played - you can still do it (it counts towards your daily streak).'}</p>
+      <Link className={`button small ${state === 'done' ? 'secondary' : 'primary'}`} to={g ? `/sudoku/play?game=${g.game_id}` : `/sudoku/play?daily=1&day=${day}`}>
+        {state === 'done' ? 'See it' : state === 'started' ? 'Carry on' : 'Play it'}</Link>
     </div>
   )
 }

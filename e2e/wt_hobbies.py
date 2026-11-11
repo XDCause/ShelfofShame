@@ -1283,6 +1283,11 @@ def sudoku(page):
     tabs.get_by_role("link", name="Today").click()
     expect(page.locator(".sdk-rating")).to_contain_text("Rating")
     expect(page.locator(".sdk-weekly")).to_contain_text("The weekly")
-    expect(page.get_by_role("group", name="The last three weeks of daily puzzles")).to_be_visible()
+    days = page.get_by_role("group", name="The last three weeks of daily puzzles")
+    days.get_by_role("button").first.click()                         # a day opens its details underneath: the difficulty
+    expect(page.locator(".sdk-past-detail")).to_contain_text(re.compile("Easy|Medium|Hard|Expert"))
+    expect(page.locator(".sdk-past-detail")).to_contain_text("Not played")
+    days.get_by_role("button").first.click()                         # and closes again
+    expect(page.locator(".sdk-past-detail")).to_have_count(0)
     page.get_by_role("link", name=re.compile("Play today's puzzle|Carry on")).first.click()
     expect(page.locator(".sdk-title")).to_contain_text("Daily sudoku", timeout=30000)
