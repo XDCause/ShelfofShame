@@ -431,7 +431,9 @@ function Game({ record }) {
   }, [sel])
 
   // ---- how each cell looks
-  const bad = settings.mistakes === 'off' ? new Set() : eng.conflicts(values)
+  // "Show a wrong digit straight away" checks against the answer - only the wrong one is red, even when it clashes with a
+  // right one (user, 2026-11-11: both 9s in a box were red, so the right one looked wrong). "Only clashes" marks both.
+  const bad = settings.mistakes === 'conflicts' ? eng.conflicts(values) : new Set()
   const selDigit = sel != null ? values[sel] : 0
   const hintUnits = hint ? new Set(hint.step.units.flatMap((u) => eng.UNITS[u])) : new Set()
   const hintCells = hint && hint.level >= 2 ? new Set(hint.step.cells) : new Set()
@@ -441,7 +443,7 @@ function Game({ record }) {
     if (sel != null && i !== sel && eng.PEERS[sel].includes(i)) out.push('peer')
     if (settings.sameDigit && selDigit && values[i] === selDigit && i !== sel) out.push('same')
     if (settings.sameDigit && selDigit && !values[i] && notes[i] & bit(selDigit)) out.push('same-note')
-    if (!given[i] && values[i] && (bad.has(i) || (settings.mistakes === 'answer' && values[i] !== solution[i]))) out.push('wrong')
+    if (!given[i] && values[i] && (settings.mistakes === 'answer' ? values[i] !== solution[i] : bad.has(i))) out.push('wrong')
     if (hintUnits.has(i)) out.push('hint-area')
     if (hintCells.has(i)) out.push('hint-cell')
     if (hint?.level >= 2 && hint.step.eliminate.some((e) => e.cell === i)) out.push('hint-elim')

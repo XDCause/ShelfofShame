@@ -1161,6 +1161,17 @@ def sudoku(page):
     expect(cells.nth(first)).to_have_class(re.compile("wrong"))
     page.keyboard.press("Control+z")
     expect(cells.nth(first).locator(".sdk-digit")).to_have_count(0)
+    # a right digit and a wrong copy of it in the same row: only the wrong one is red (user, 2026-11-11)
+    row = next(r for r in range(9) if sum(1 for c in range(9) if puzzle[r * 9 + c] == "0" and not cells.nth(r * 9 + c).locator(".sdk-digit").count()) >= 2)
+    a, b = [r for r in (row * 9 + c for c in range(9)) if puzzle[r] == "0" and not cells.nth(r).locator(".sdk-digit").count()][:2]
+    cells.nth(a).click()
+    page.keyboard.press(answer[a])
+    cells.nth(b).click()
+    page.keyboard.press(answer[a])                             # (wrong: the row already has it)
+    expect(cells.nth(b)).to_have_class(re.compile("wrong"))
+    expect(cells.nth(a)).not_to_have_class(re.compile("wrong"))
+    page.keyboard.press("Control+z")
+    page.keyboard.press("Control+z")
     shot(page, "d58_sudoku_playing", full=False)
 
     for i in empty:                                          # the rest, from the answer
@@ -1170,7 +1181,7 @@ def sudoku(page):
         page.keyboard.press(answer[i])
     done = page.locator(".sdk-done")
     expect(done).to_contain_text("Solved!", timeout=15000)
-    expect(done).to_contain_text("1 mistake")
+    expect(done).to_contain_text("2 mistakes")
     shot(page, "d59_sudoku_solved", full=False)
     assert get_json(f"/api/sudoku/games/{game_id}")["status"] == "solved"
     expect(done.locator(".sdk-earned")).to_contain_text("Achievement")         # what this solve earned
