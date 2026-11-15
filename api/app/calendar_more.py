@@ -312,7 +312,8 @@ def weather():
 DONE_MINUTES = {   # hobby -> minutes done per day, from that hobby's own log (others keep no time: sessions only)
     "models": "SELECT ended_at::date AS day, sum(extract(epoch FROM ended_at - started_at) / 60)::int AS minutes "
               "FROM model_sessions WHERE ended_at IS NOT NULL GROUP BY 1",
-    "boardgames": "SELECT played_on AS day, sum(minutes) AS minutes FROM board_game_plays WHERE minutes IS NOT NULL GROUP BY 1",
+    "boardgames": "SELECT played_on AS day, sum(coalesce(minutes, 0) + coalesce(setup_minutes, 0) + coalesce(teach_minutes, 0)) "
+                  "AS minutes FROM board_game_plays WHERE coalesce(minutes, setup_minutes, teach_minutes) IS NOT NULL GROUP BY 1",
     "hiking": "SELECT hiked_on AS day, sum(COALESCE(moving_s, elapsed_s) / 60) AS minutes FROM hikes "
               "WHERE COALESCE(moving_s, elapsed_s) IS NOT NULL GROUP BY 1",
     "reading": "SELECT logged_on AS day, sum(minutes) AS minutes FROM reading_log WHERE minutes IS NOT NULL GROUP BY 1",

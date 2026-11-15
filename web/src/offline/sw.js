@@ -12,10 +12,23 @@ const BUILD = { version: 'dev', files: [] } // (filled in by vite.config.js)
 
 const SHELL = `otc-shell-${BUILD.version}`
 const DATA = 'otc-data'
+// A phone on Tailscale can take several seconds to answer after it wakes or on a weak signal (the tunnel reconnecting):
+// that isn't "offline" (user, 2026-11-15: the app showed Offline on the phone and stayed that way). So the waits leave
+// room for it, and the moment the server answers again every open page is told (BACK): the app reloads its pages and the
+// banner goes, instead of sitting on the saved copy until you tap Try again.
 const WAIT = 6000          // ms before a read that hasn't answered is given the saved copy (it still updates it later)
-const WAIT_DOWN = 2500     // ...once the server is known to be unreachable
+const WAIT_DOWN = 3500     // ...once the server is known to be unreachable
+const CHECK = 4500         // ms the "is it there at all?" check waits
 const NOT_SAVED = ['/api/auth/']       // sign-in answers aren't kept (except /api/auth/status: the app opens on it)
+const BACK = 'otc-server-back'      // (OfflineBanner.jsx listens for this word)
 let down = false           // the last attempt to reach the server failed
+
+// The server answered: if it had been unreachable, tell the open pages (OfflineBanner.jsx reloads them).
+function up() {
+  if (!down) return
+  down = false
+  self.clients.matchAll({ type: 'window' }).then((all) => all.forEach((c) => c.postMessage(BACK))).catch(() => {})
+}
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(SHELL).then((c) => c.addAll(BUILD.files)).then(() => self.skipWaiting()))
@@ -56,7 +69,7 @@ async function change(event) {
   const timer = setTimeout(() => stop.abort(), 8000)
   try {
     const res = await fetch(event.request, { signal: stop.signal })
-    down = false
+    up()
     return res
   } catch {
     return answer(503, OFFLINE)
@@ -97,7 +110,7 @@ async function saved(req) {
 // Is the server there at all? (A slow answer - a shop lookup can take a minute - isn't "offline".)
 async function reachable() {
   const stop = new AbortController()
-  const timer = setTimeout(() => stop.abort(), 2500)
+  const timer = setTimeout(() => stop.abort(), CHECK)
   try {
     return (await fetch('/api/health', { signal: stop.signal, cache: 'no-store' })).ok
   } catch {
@@ -111,7 +124,7 @@ async function read(event) {
   const req = event.request
   const asked = fetch(req)
   // (saved even when it answers after the saved copy was given; attached first, so it copies before the page reads it)
-  event.waitUntil(asked.then((res) => { down = false; return keepable(res) ? keep(req, res.clone()) : null },
+  event.waitUntil(asked.then((res) => { const kept = keepable(res) ? keep(req, res.clone()) : null; up(); return kept },
     () => { down = true }))
   const late = new Promise((resolve) => setTimeout(() => resolve('late'), down ? WAIT_DOWN : WAIT))
   try {
@@ -129,7 +142,7 @@ async function read(event) {
 async function page(req) {
   try {
     const res = await Promise.race([fetch(req), new Promise((_, no) => setTimeout(no, down ? WAIT_DOWN : WAIT))])
-    down = false
+    up()
     return res
   } catch {
     down = true

@@ -82,6 +82,7 @@ ORDER = [
     "gundam_range",
     "board_game_kinds",
     "board_game_elsewhere",
+    "board_game_table",
     "volleyball_coach",
     "video_game_friends",
     "wishlist_shops",

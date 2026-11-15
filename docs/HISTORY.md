@@ -915,3 +915,40 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
      - Commons now serves thumbnails from thumb.wikimedia.org: wikimedia.download takes that host and upload. only.
    Tests: test_sudoku.py, web tests for the engine (sudoku.test.js), walk-through step sudoku.
 
+5w. **Board games at the table** (2026-11-15, the user, after a games event: "the tab is very retroactive" - they wanted
+   to start a play as they sat down, with a timer for the teach and the game; the people they play with kept for next
+   time, a static group and new people; more on scores; then "who was the starting player, where it was played, a photo
+   upload button and so much more"). A desk review of what people use at the table: BG Stats (timer, saved players and
+   places, teams, game-specific score sheets, +/- scoring), Board Record (a score sheet per game, by round or category),
+   Clepsydris (highest / lowest / co-op / solo scoring, time per team), Board Game Now (live +/- or an end-of-game
+   calculator). None times the teach on its own - this does. 94_board_game_table.sql:
+   - Live plays (board_game_live, api/app/boardgames_live.py, web LivePlay.jsx): Start a play (Games page, a game's
+     panel, Home's quick actions) - the game, who's playing, where, expansions - and the clock runs on setup, the teach
+     or playing; tap a stage to move on, pause for a break. The server keeps each stage's from / to (a phone that locks or
+     reloads loses nothing) and the screen counts on from them. Who goes first (a spin), scores as you go (+1 / +5 / any
+     amount, undo; or the game's score sheet), a round counter, the game's teach notes during the teach, photos, notes;
+     the screen stays on (Wake Lock). Finish: final scores, who won (tap the trophy to break a tie), co-op won or lost,
+     how good it was (1-5) - saved as an ordinary play (minutes = playing time; setup_minutes and teach_minutes apart),
+     so the calendar (which now counts all three), goals and activity never see a half-played game. "Next game" keeps
+     the people and the place. A play going on shows on Home and the Games page.
+   - Players (board_game_players, boardgames_people.py): everyone once (one is you: is_me); pickers list you first, then
+     the people played with most in the last 90 days; groups add a crew in one tap; a new name is added as you go.
+     Seats (board_game_play_players): score (typed, the score sheet's parts, or the +/- taps), place, won, colour /
+     faction, first play of that game. Who won comes from how the game is scored (board_games.scoring: highest, lowest,
+     co-op, none) unless you said. players / winner stay as text written from the seats, so everything that read them
+     still does. Rename (rewrites the text), merge a duplicate (refused if they played together), remove only someone
+     in no plays.
+   - Old plays: "Alex Morgan, Robin and Kit" became a player each; a winner by first name ("Alex") is the listed
+     player it starts, not a fourth person (the first try made one - caught on the walk-through's screenshot and tried
+     on a copy of prod's data); "Everyone" won together; "Team blue" isn't a person.
+   - Plays also keep where, expansions used, who went first, rounds, fun and photos (board_game_play_photos: taken
+     live, moved to the play on finishing). New best / record on saving ("Sam's best at Catan: 92 (was 85)").
+   - Players page: you against each player (nemesis, the one you beat most, best co-op partner), win rates, per game
+     average teach / play time, your best, the record and who holds it, fun; where you play; groups. The Games page's
+     "What should we play?": players, time, weight -> your games, longest-unplayed first, or "pick one for us".
+   - The phone kept showing Offline (same day): a read slower than 6 s (Tailscale waking up) plus a 2.5 s health check
+     marked the server down, and nothing noticed it come back until Try again. sw.js now tells the open pages the
+     moment the server answers again (they reload), the app checks again when the phone wakes, and the waits are
+     longer (health check 4.5 s, 3.5 s once down).
+   Tests: test_boardgames_table.py, boardgamesTable.test.js, walk-through step board_game_table (and the two old play
+   steps use the new form); the UI audit opens the live play.

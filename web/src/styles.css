@@ -60,6 +60,8 @@
  *                                    (most used: .vinyl)
  *   28-sudoku.css                    Sudoku: the board, the number pad, hints, Learn
  *                                    (most used: .sdk)
+ *   29-boardgames-table.css          board games at the table: a live play's clock and scores, players, What should we play
+ *                                    (most used: .bgt)
  */
 @import './styles/01-base.css';
 @import './styles/02-inventory-panels.css';
@@ -89,3 +91,4 @@
 @import './styles/26-offline.css';
 @import './styles/27-vinyl.css';
 @import './styles/28-sudoku.css';
+@import './styles/29-boardgames-table.css';

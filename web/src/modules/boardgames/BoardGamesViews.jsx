@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api, shortDate } from '../../api.js'
-import { DiceIcon, TrophyIcon } from '../../components/icons.jsx'
+import { DiceIcon, TimerIcon, TrophyIcon } from '../../components/icons.jsx'
 import { useApp } from '../../core/app-context.js'
 import { useShared } from '../../core/useShared.js'
 import { KINDS, gameMeta } from './GamePanel.jsx'
@@ -42,10 +42,13 @@ export function GamesView() {
         <div><span>Most played</span><strong className="ellipsis">{summary.most_played?.name ?? '—'}</strong>
           {summary.most_played && <small className="muted">{summary.most_played.plays} plays</small>}</div>
       </div>
+      <NowPlaying live={summary.live} />
       <div className="toolbar game-toolbar">
+        <button type="button" className="primary" onClick={() => openPanel('liveplay')}>▶ Start a play</button>
         <button type="button" className="secondary" onClick={() => openPanel('play')}>Log a play</button>
-        <button type="button" className="primary" onClick={() => openPanel('boardgame', { id: null })}>+ Add game</button>
+        <button type="button" className="secondary" onClick={() => openPanel('boardgame', { id: null })}>+ Add game</button>
       </div>
+      <WhatToPlay games={games} />
       <div className="chip-rows">
           {kinds.length > 1 && (
             <div className="chip-row scroll" role="group" aria-label="Type">
@@ -118,7 +121,8 @@ export function PlaysView() {
     <section className="page">
       <div className="toolbar">
         <p className="summary grow"><strong>{plays.length}</strong> play{plays.length === 1 ? '' : 's'} logged</p>
-        <button type="button" className="primary" onClick={() => openPanel('play')}>+ Log a play</button>
+        <button type="button" className="primary" onClick={() => openPanel('liveplay')}>▶ Start a play</button>
+        <button type="button" className="secondary" onClick={() => openPanel('play')}>+ Log a play</button>
       </div>
       {plays.length === 0 && (
         <EmptyState Icon={DiceIcon} title="No plays yet" action="+ Log a play" onAction={() => openPanel('play')}>
@@ -134,11 +138,14 @@ export function PlaysView() {
                   <span className="thumb thumb-icon purple"><DiceIcon size={20} /></span>
                   <span className="grow">
                     <span className="item-title">{p.game_name}</span>
-                    <span className="item-meta">{[shortDate(p.played_on), p.game_status === 'Played elsewhere' && 'played elsewhere', p.players,
-                      p.minutes && `${p.minutes} min`].filter(Boolean).join(' · ')}</span>
+                    <span className="item-meta">{[shortDate(p.played_on), p.game_status === 'Played elsewhere' && 'played elsewhere',
+                      p.seats.some((s) => s.score != null) ? p.seats.map((s) => `${s.name} ${s.score != null ? Number(s.score) : ''}`.trim()).join(', ') : p.players,
+                      p.location, p.minutes && `${p.minutes} min`, p.fun && '★'.repeat(p.fun)].filter(Boolean).join(' · ')}</span>
                   </span>
+                  {p.photos.length > 0 && <span className="pill">📷 {p.photos.length}</span>}
                   {!p.finished ? <span className="pill low">Abandoned</span>
-                    : p.winner && <span className="pill ok"><TrophyIcon size={14} /> {p.winner}</span>}
+                    : p.scoring === 'coop' && p.coop_won === false ? <span className="pill low">The game won</span>
+                      : p.winner && <span className="pill ok"><TrophyIcon size={14} /> {p.winner}</span>}
                 </button>
               </li>
             ))}
@@ -149,3 +156,88 @@ export function PlaysView() {
   )
 }
 
+
+// Plays going on now (started with "Start a play"): back to the table in one tap.
+function NowPlaying({ live }) {
+  const { openPanel } = useApp()
+  if (!live?.length) return null
+  return (
+    <div className="bgt-now">
+      {live.map((l) => (
+        <button key={l.live_id} type="button" className="card bgt-now-card" onClick={() => openPanel('liveplay', { id: l.live_id })}>
+          <span className="stat-icon teal"><TimerIcon size={22} /></span>
+          <span className="grow">
+            <span className="bgt-now-label">Playing now</span>
+            <span className="item-title">{l.game_name}</span>
+            <span className="muted small">since {new Date(l.started_at).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' })}</span>
+          </span>
+          <span className="pill teal">Open</span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
+const TIMES = [['', 'Any length'], ['30', 'Up to 30 min'], ['60', 'Up to an hour'], ['90', 'Up to 90 min'], ['120', 'Up to 2 hours']]
+const WEIGHTS = [['', 'Any weight'], ['light', 'Light'], ['medium', 'Medium'], ['heavy', 'Heavy']]
+const weightFits = (w, want) => !want || w == null || (want === 'light' ? w < 2.2 : want === 'medium' ? w >= 2 && w < 3.4 : w >= 3.2)
+
+// "What should we play?": your games that take this many players in the time you have (and the weight you're in the
+// mood for), the ones you haven't played for longest first - or let the app pick.
+function WhatToPlay({ games }) {
+  const { openPanel } = useApp()
+  const [open, setOpen] = useState(false)
+  const [players, setPlayers] = useState('4')
+  const [time, setTime] = useState('')
+  const [weight, setWeight] = useState('')
+  const [picked, setPicked] = useState(null)
+  const [all, setAll] = useState(false)
+  const n = Number(players) || 0
+  const fits = games.filter((g) => g.kind === 'game' && ['Owned', 'To sell', 'Borrowed'].includes(g.status)
+    && (!n || ((g.min_players ?? 1) <= n && (g.max_players ?? 99) >= n))
+    && (!time || !g.play_minutes || g.play_minutes <= Number(time))
+    && weightFits(g.weight == null ? null : Number(g.weight), weight))
+    .sort((a, b) => (a.last_played ?? '').localeCompare(b.last_played ?? '') || (b.rating ?? 0) - (a.rating ?? 0))
+  if (!open) {
+    return <button type="button" className="plain small bgt-what-open" onClick={() => setOpen(true)}>🎲 What should we play?</button>
+  }
+  const shown = picked ? [picked] : all ? fits : fits.slice(0, 6)
+  return (
+    <section className="card bgt-what" aria-label="What should we play?">
+      <div className="section-head">
+        <h3 className="section-title">What should we play?</h3>
+        <button type="button" className="icon-btn small" aria-label="Close" onClick={() => setOpen(false)}>✕</button>
+      </div>
+      <div className="bgt-what-filters">
+        <label className="field"><span className="field-label">Players</span>
+          <input type="number" min="1" max="20" inputMode="numeric" value={players} onChange={(e) => { setPlayers(e.target.value); setPicked(null) }} /></label>
+        <label className="field"><span className="field-label">Time</span>
+          <select value={time} onChange={(e) => { setTime(e.target.value); setPicked(null) }}>{TIMES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
+        <label className="field"><span className="field-label">Weight</span>
+          <select value={weight} onChange={(e) => { setWeight(e.target.value); setPicked(null) }}>{WEIGHTS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
+      </div>
+      {fits.length === 0 ? <p className="muted small">Nothing on your shelf fits that. Try more time or another weight.</p> : (
+        <>
+          <ul className="list compact">
+            {shown.map((g) => (
+              <li key={g.game_id} className="bgt-what-row">
+                <span className="grow">
+                  <span className="item-title">{g.name}</span>
+                  <span className="item-meta">{[gameMeta(g), g.last_played ? `last played ${shortDate(g.last_played)}` : 'never played'].filter(Boolean).join(' · ')}</span>
+                </span>
+                <button type="button" className="primary small" onClick={() => openPanel('liveplay', { gameId: g.game_id })}>▶ Play</button>
+              </li>
+            ))}
+          </ul>
+          <div className="button-row">
+            <button type="button" className="secondary" onClick={() => setPicked(fits[Math.floor(Math.random() * fits.length)])}>
+              {picked ? 'Pick again' : 'Pick one for us'}</button>
+            {(picked || (!all && fits.length > 6)) && (
+              <button type="button" className="plain" onClick={() => { setPicked(null); setAll(true) }}>Show them all ({fits.length})</button>
+            )}
+          </div>
+        </>
+      )}
+    </section>
+  )
+}

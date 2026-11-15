@@ -1,0 +1,113 @@
+/* ---------- Board games at the table (modules/boardgames: LivePlay, PlayersView, tableParts; 2026-11-15) ---------- */
+/* Who's playing: the chosen people in order, then your groups and usual people as chips, then someone new. */
+.bgt-picker { display: flex; flex-direction: column; gap: 10px; }
+.bgt-chosen { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; counter-reset: bgt-seat; }
+.bgt-chosen-chip { display: inline-flex; align-items: center; gap: 2px; padding: 2px 4px 2px 10px; border-radius: 999px;
+  background: var(--tint-soft); color: var(--text); font-weight: 600; counter-increment: bgt-seat; }
+.bgt-chosen-chip::before { content: counter(bgt-seat); font-size: 0.72rem; color: var(--muted); margin-right: 6px; font-variant-numeric: tabular-nums; }
+.bgt-groups .chip-filter { font-weight: 600; }
+.bgt-new { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.bgt-new input, .bgt-new select { flex: 1 1 180px; min-width: 0; }
+.bgt-log-section { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 14px; }
+.bgt-expansions { border: 0; padding: 0; margin: 8px 0; display: flex; flex-direction: column; gap: 6px; }
+.bgt-scoring { border: 0; padding: 0; margin: 0 0 8px; }
+
+/* Scores after the game: a row per player (name, score or the score sheet, colour / faction, a trophy). */
+.bgt-score-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.bgt-score-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--border);
+  border-radius: 10px; background: var(--surface); }
+.bgt-score-name { flex: 1 1 120px; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
+.bgt-score-input { width: 96px; }
+.bgt-colour-input { flex: 1 1 120px; min-width: 0; }
+.bgt-trophy { opacity: 0.35; filter: grayscale(1); }
+.bgt-trophy.on { opacity: 1; filter: none; }
+.bgt-parts { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-end; flex: 1 1 100%; }
+.bgt-part { display: flex; flex-direction: column; gap: 2px; font-size: 0.75rem; color: var(--muted); flex: 1 1 84px; min-width: 0; }
+.bgt-part input { width: 100%; }
+.bgt-part-total { align-self: center; font-size: 1.1rem; font-variant-numeric: tabular-nums; min-width: 3ch; text-align: right; }
+
+.bgt-fun { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; margin: 6px 0; }
+.bgt-fun .field-label { margin-right: 8px; }
+.bgt-star { font-size: 1.25rem; color: var(--muted); }
+.bgt-star.on { color: var(--low); }
+
+.bgt-photos { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.bgt-photo-row { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.bgt-photo-row li { position: relative; }
+.bgt-photo-row img { display: block; width: 96px; height: 96px; object-fit: cover; border-radius: 8px; background: var(--fill); }
+.bgt-photo-row .icon-btn { position: absolute; top: 2px; right: 2px; background: var(--elevated); }
+
+/* The live play: a big clock (the stage running now), the stages to tap, pause, the round counter. */
+.bgt-clock { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 12px; margin-bottom: 12px; text-align: center;
+  border-radius: var(--radius); background: color-mix(in srgb, var(--teal) 12%, var(--surface)); border: 1px solid var(--border); }
+.bgt-clock-stage { margin: 0; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--teal); }
+.bgt-clock-time { margin: 0; font-family: var(--font-display); font-size: clamp(2.6rem, 12vw, 3.6rem); font-weight: 700; line-height: 1;
+  font-variant-numeric: tabular-nums; }
+.bgt-clock p.muted { margin: 0; }
+.bgt-stages { width: 100%; }
+.bgt-stages button { display: flex; flex-direction: column; align-items: center; gap: 1px; line-height: 1.2; }
+.bgt-stage-time { font-size: 0.75rem; font-variant-numeric: tabular-nums; opacity: 0.8; }
+.bgt-clock-buttons { justify-content: center; flex-wrap: wrap; }
+.bgt-rounds { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.bgt-teach { margin-bottom: 12px; }
+.bgt-teach textarea { width: 100%; }
+
+.bgt-first { margin: 0 0 8px; font-weight: 600; }
+.bgt-first.spinning { color: var(--tint); }
+.bgt-board { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.bgt-seat { padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); display: flex;
+  flex-direction: column; gap: 8px; }
+.bgt-seat.leading { border-color: color-mix(in srgb, var(--ok) 55%, var(--border)); }
+.bgt-seat-head { display: flex; align-items: baseline; gap: 8px; justify-content: space-between; }
+.bgt-seat-name { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
+.bgt-seat-total { font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bgt-seat-total small { font-size: 0.75rem; font-family: inherit; font-weight: 500; }
+.bgt-bumps { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.bgt-bumps > button.secondary { min-width: 48px; font-variant-numeric: tabular-nums; }
+.bgt-bumps input { width: 72px; }
+
+.bgt-done { display: flex; flex-direction: column; gap: 8px; text-align: center; padding: 12px 0; }
+.bgt-done-title { margin: 0; font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; }
+
+/* A play in a game's panel: tap it for the standings, photos and how good it was. */
+.bgt-play { flex-direction: column; align-items: stretch; }
+.bgt-play-main { display: flex; align-items: flex-start; gap: 6px; }
+.bgt-play-open { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: 4px 0; text-align: left;
+  background: none; border: 0; color: inherit; font: inherit; cursor: pointer; }
+.bgt-play-scores { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 0.88rem; font-variant-numeric: tabular-nums; }
+.bgt-won { font-weight: 700; color: var(--ok); }
+.bgt-play-more { display: flex; flex-direction: column; gap: 10px; padding: 6px 0 10px; }
+.bgt-standings { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.bgt-standings li { display: grid; grid-template-columns: 3ch minmax(0, 1fr) auto; gap: 8px; align-items: baseline; font-variant-numeric: tabular-nums; }
+.bgt-game-stats { margin: 0 0 8px; }
+
+/* The Games page: plays going on now, "What should we play?". */
+.bgt-now { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.bgt-now-card { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; color: var(--text); cursor: pointer;
+  border: 1px solid color-mix(in srgb, var(--teal) 45%, var(--border)); }
+.bgt-now-card .grow { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.bgt-now-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--teal); }
+.bgt-what-open { margin: 0 0 10px; }
+.bgt-what { margin-bottom: 14px; }
+.bgt-what-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-bottom: 8px; }
+.bgt-what-filters input, .bgt-what-filters select { width: 100%; }
+.bgt-what-row { display: flex; align-items: center; gap: 10px; }
+.bgt-what-row .grow { display: flex; flex-direction: column; min-width: 0; }
+
+/* The Players page. */
+.bgt-whoami { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 12px 0; }
+.bgt-whoami p { margin: 0; flex: 1 1 240px; }
+.bgt-rivals { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin: 12px 0; }
+.bgt-rival { display: flex; flex-direction: column; gap: 2px; }
+.bgt-rival strong { font-size: 1.15rem; overflow-wrap: anywhere; }
+.bgt-rival-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.bgt-initial { font-weight: 700; }
+.bgt-player-edit { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; padding: 8px 12px 12px; }
+.bgt-player-edit .bgt-new { width: 100%; }
+.bgt-group-row, .bgt-place { display: flex; align-items: center; gap: 10px; }
+.bgt-group-row .grow { display: flex; flex-direction: column; min-width: 0; }
+.bgt-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+.bgt-table th, .bgt-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--separator); white-space: nowrap; }
+.bgt-table tbody th { font-weight: 600; white-space: normal; min-width: 120px; text-transform: none; letter-spacing: normal;
+  font-size: inherit; color: var(--text); }
+.bgt-table thead th { font-size: 0.75rem; color: var(--muted); font-weight: 600; }

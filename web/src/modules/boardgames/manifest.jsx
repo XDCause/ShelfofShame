@@ -1,4 +1,4 @@
-import { DiceIcon, TrophyIcon } from '../../components/icons.jsx'
+import { DiceIcon, TimerIcon, TrophyIcon, UsersIcon } from '../../components/icons.jsx'
 import { BoardGamesTiles } from './HomeTiles.jsx'
 import { part } from '../lazy.js'
 
@@ -7,9 +7,12 @@ const GamesView = part(() => import('./BoardGamesViews.jsx'), 'GamesView')
 const PlaysView = part(() => import('./BoardGamesViews.jsx'), 'PlaysView')
 const GamePanel = part(() => import('./GamePanel.jsx'))
 const PlayPanel = part(() => import('./GamePanel.jsx'), 'PlayPanel')
+const LivePlayPanel = part(() => import('./LivePlay.jsx'))
+const PlayersView = part(() => import('./PlayersView.jsx'), 'PlayersView')
 
 // Board games: your collection and every time you played. Pages live at /boardgames/<path>.
-// Plays show on the calendar; "played @Catan" in the journal offers to log one.
+// Plays show on the calendar; "played @Catan" in the journal offers to log one. "Start a play" (LivePlay.jsx) times
+// and scores one at the table; Players (PlayersView.jsx): everyone you play with, groups, records.
 export default {
   id: 'boardgames',
   name: 'Board games',
@@ -19,10 +22,12 @@ export default {
   what: 'Your games and every play',
   Icon: DiceIcon,
   home: { Tiles: BoardGamesTiles },
-  actions: [{ label: 'Log a play', Icon: TrophyIcon, run: (app) => app.openPanel('play') }],
-  panels: { boardgame: GamePanel, play: PlayPanel },
+  actions: [{ label: 'Start a play', Icon: TimerIcon, run: (app) => app.openPanel('liveplay') },
+    { label: 'Log a play', Icon: TrophyIcon, run: (app) => app.openPanel('play') }],
+  panels: { boardgame: GamePanel, play: PlayPanel, liveplay: LivePlayPanel },
   pages: [
     { path: 'games', label: 'Games', Icon: DiceIcon, render: () => <GamesView /> },
     { path: 'plays', label: 'Plays', Icon: TrophyIcon, render: () => <PlaysView /> },
+    { path: 'players', label: 'Players', Icon: UsersIcon, render: () => <PlayersView /> },
   ],
 }

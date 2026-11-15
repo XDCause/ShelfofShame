@@ -42,7 +42,8 @@ THEMES = ["light", "dark"]
 AXE_SIZES = ("pc", "phone")      # colour and names don't change with width: axe at two sizes is enough (and it's slow)
 # Panels worth a look: (page, what to click to open one). Clicked only if it's there.
 PANELS = [("/supplies", "tr.row"), ("/models/kits", ".model-card"), ("/reading/books", ".book-card"),
-          ("/boardgames/games", ".bg-card, .board-game-card, .game-card"), ("/videogames/games", ".game-row"),
+          ("/boardgames/games", ".bg-card, .board-game-card, .game-card"), ("/boardgames/games", ".bgt-now-card"),
+          ("/videogames/games", ".game-row"),
           ("/travel/trips", ".trip-card, .row-button"), ("/calendar", ".cal-day, .calendar-day")]
 # Problems looked at and accepted (a key: "kind|selector"), with why.
 ACCEPTED = {

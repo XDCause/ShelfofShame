@@ -3,7 +3,8 @@
     games   board_games: Owned / To sell / Wanted / Borrowed / Gone, players, play time, price, rating, photo
     lookup  find a game at Gameology (gameology.py: a shop whose products carry BGG's facts) and
             fill in players, time, age, weight, categories, mechanisms, its photo and price
-    plays   board_game_plays: the day, who played, who won, how long, notes
+    plays   board_game_plays: the day, who played (seats with scores: boardgames_people.py), how long (setup, teach,
+            playing), where, expansions, who went first, how fun, notes, photos. Played live: boardgames_live.py.
 
 Plays show on the calendar and in Recent activity (activity.py). Writing "played @Catan" in the
 journal offers to log a play (journal_actions.py).
@@ -17,7 +18,8 @@ from typing import Literal
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 
-from . import gameology, goodgames
+from . import boardgames_people as people, gameology, goodgames
+from .boardgames_people import PHOTOS, SeatIn
 from .db import GAME_STATUSES, db, found, insert_row, tidy_text, update_row
 from .images import add_photo_routes
 
@@ -25,6 +27,7 @@ router = APIRouter(prefix="/api", tags=["board games"])
 
 Status = Literal[tuple(GAME_STATUSES)]
 Kind = Literal["game", "expansion", "other"]     # a game, an expansion for one, or something else (coins, sleeves...)
+Scoring = Literal["highest", "lowest", "coop", "none"]   # who wins: the highest / lowest score, the table together, no score
 # A BoardGameGeek link is shown as a link, so only web addresses (no "javascript:...").
 WEB_LINK = r"^https?://\S+$"
 
@@ -46,6 +49,9 @@ class GameIn(BaseModel):
     min_age: int | None = Field(None, ge=1, le=99)
     kind: Kind = "game"
     base_game_id: int | None = None             # an expansion's base game
+    scoring: Scoring = "highest"
+    score_parts: list[str] = Field(default_factory=list, max_length=30)   # its score sheet: "Birds", "Eggs"...
+    teach_notes: str | None = None
     gg_id: str | None = Field(None, pattern=r"^\d{1,20}$")                       # or found at Good Games (its product number)
     shop_handle: str | None = Field(None, pattern=r"^[a-z0-9][a-z0-9-]{0,200}$")   # found at Gameology: its facts and
                                                                 # photo are read from there (not taken from the browser)
@@ -68,6 +74,9 @@ class GamePatch(BaseModel):
     min_age: int | None = Field(None, ge=1, le=99)
     kind: Kind | None = None
     base_game_id: int | None = None
+    scoring: Scoring | None = None
+    score_parts: list[str] | None = Field(None, max_length=30)
+    teach_notes: str | None = None
 
 
 class ShopIn(BaseModel):
@@ -78,9 +87,18 @@ class ShopIn(BaseModel):
 
 class PlayIn(BaseModel):
     played_on: date | None = None   # default today
-    players: str | None = None
+    seats: list[SeatIn] | None = Field(None, max_length=30)   # who played, their scores (else players / winner as text)
+    players: str | None = None      # "Sam, Jo and me": each name becomes a player
     winner: str | None = None
-    minutes: int | None = Field(None, gt=0)
+    minutes: int | None = Field(None, gt=0)       # playing time
+    setup_minutes: int | None = Field(None, ge=0)
+    teach_minutes: int | None = Field(None, ge=0)
+    location: str | None = Field(None, max_length=120)
+    expansions: list[int] = Field(default_factory=list, max_length=30)
+    first_player_id: int | None = None
+    coop_won: bool | None = None    # a co-op game: did the table win?
+    rounds: int | None = Field(None, ge=0, le=999)
+    fun: int | None = Field(None, ge=1, le=5)
     notes: str | None = None
     finished: bool = True           # false = abandoned before the end (no winner)
 
@@ -93,9 +111,18 @@ class ElsewhereIn(PlayIn):
 
 class PlayPatch(BaseModel):
     played_on: date | None = None
+    seats: list[SeatIn] | None = Field(None, max_length=30)
     players: str | None = None
     winner: str | None = None
     minutes: int | None = Field(None, gt=0)
+    setup_minutes: int | None = Field(None, ge=0)
+    teach_minutes: int | None = Field(None, ge=0)
+    location: str | None = Field(None, max_length=120)
+    expansions: list[int] | None = Field(None, max_length=30)
+    first_player_id: int | None = None
+    coop_won: bool | None = None
+    rounds: int | None = Field(None, ge=0, le=999)
+    fun: int | None = Field(None, ge=1, le=5)
     notes: str | None = None
     finished: bool | None = None
 
@@ -104,7 +131,7 @@ GAME_SELECT = """
 SELECT g.game_id, g.name, g.publisher, g.year, g.min_players, g.max_players, g.play_minutes, g.status,
        g.purchase_date, g.price_paid, g.rating, g.notes, g.bgg_url, g.created_at, g.updated_at,
        g.designer, g.min_age, g.bgg_id, g.weight, g.categories, g.mechanisms, g.shop_handle, g.shop_url,
-       g.shop_price, g.shop_name, g.kind, g.base_game_id, base.name AS base_name,
+       g.shop_price, g.shop_name, g.kind, g.base_game_id, base.name AS base_name, g.scoring, g.score_parts, g.teach_notes,
        (SELECT count(*) FROM board_games x WHERE x.base_game_id = g.game_id)::int AS add_ons,
        g.photo IS NOT NULL AS has_photo,
        CASE WHEN g.photo IS NOT NULL THEN '/api/board-games/' || g.game_id || '/photo?v='
@@ -113,15 +140,35 @@ SELECT g.game_id, g.name, g.publisher, g.year, g.min_players, g.max_players, g.p
        (SELECT max(played_on) FROM board_game_plays p WHERE p.game_id = g.game_id) AS last_played
 FROM board_games g LEFT JOIN board_games base ON base.game_id = g.base_game_id"""
 
-PLAY_SELECT = """
-SELECT p.*, g.name AS game_name, g.status AS game_status FROM board_game_plays p JOIN board_games g USING (game_id)"""
+PLAY_SELECT = f"""
+SELECT p.*, g.name AS game_name, g.status AS game_status, g.scoring,
+       COALESCE((SELECT json_agg(json_build_object('player_id', s.player_id, 'name', pl.name, 'is_me', pl.is_me,
+                    'score', s.score, 'parts', s.parts, 'place', s.place, 'won', s.won, 'team', s.team, 'colour', s.colour,
+                    'first_time', s.first_time) ORDER BY s.seat)
+                 FROM board_game_play_players s JOIN board_game_players pl USING (player_id) WHERE s.play_id = p.play_id),
+                '[]'::json) AS seats,
+       (SELECT name FROM board_game_players WHERE player_id = p.first_player_id) AS first_player,
+       COALESCE((SELECT array_agg(e.name ORDER BY e.name) FROM board_games e WHERE e.game_id = ANY(p.expansions)),
+                '{{}}') AS expansion_names,
+       {PHOTOS.format(col="play_id", ref="p.play_id")} AS photos
+FROM board_game_plays p JOIN board_games g USING (game_id)"""
 
 
 def fetch_game(conn, game_id: int) -> dict:
     game = found(conn.execute(GAME_SELECT + " WHERE g.game_id = %s", (game_id,)).fetchone(), "Board game")
     game["play_log"] = conn.execute(PLAY_SELECT + " WHERE p.game_id = %s ORDER BY p.played_on DESC, p.play_id DESC",
                                     (game_id,)).fetchall()
+    game["stats"] = people.game_stats(conn, game_id).get(game_id)
+    game["add_on_list"] = conn.execute("SELECT game_id, name FROM board_games WHERE base_game_id = %s "
+                                       "AND status NOT IN ('Gone', 'Wanted') ORDER BY name", (game_id,)).fetchall()
     return game
+
+
+def tidy_parts(data: dict) -> dict:
+    """A score sheet's parts: trimmed, no blanks, each once (none given = an empty sheet)."""
+    if "score_parts" in data:
+        data["score_parts"] = list(dict.fromkeys(p.strip()[:40] for p in data["score_parts"] or [] if p.strip()))
+    return data
 
 
 def unfinished_has_no_winner(data: dict):
@@ -129,11 +176,31 @@ def unfinished_has_no_winner(data: dict):
         data["winner"] = None
 
 
+def check_play(conn, game_id: int, data: dict):
+    """A play's expansions are this game's; who went first is one of your players."""
+    if data.get("expansions"):
+        data["expansions"] = list(dict.fromkeys(data["expansions"]))
+        ok = {r["game_id"] for r in conn.execute("SELECT game_id FROM board_games WHERE game_id = ANY(%s) AND base_game_id = %s",
+                                                 (data["expansions"], game_id)).fetchall()}
+        if set(data["expansions"]) - ok:
+            raise HTTPException(422, "An expansion there isn't one of this game's.")
+    if data.get("first_player_id") is not None and not conn.execute(
+            "SELECT 1 FROM board_game_players WHERE player_id = %s", (data["first_player_id"],)).fetchone():
+        raise HTTPException(422, "Who went first isn't one of your players.")
+
+
 def add_play(conn, game_id: int, body: PlayIn) -> dict:
-    data = tidy_text(body.model_dump(exclude={"game_name"}))
+    """A play and who sat at it: the seats given, or the players / winner text made into seats."""
+    data = tidy_text(body.model_dump(exclude={"game_name", "seats"}))
     data["played_on"] = data["played_on"] or date.today()
     unfinished_has_no_winner(data)
+    if not data["finished"]:
+        data["coop_won"] = None
+    check_play(conn, game_id, data)
+    seats = body.seats if body.seats is not None else people.seats_from_text(data["players"], data["winner"])
     play_id = insert_row(conn, "board_game_plays", {"game_id": game_id, **data}, "play_id")
+    if seats:
+        people.save_seats(conn, play_id, seats)
     return conn.execute(PLAY_SELECT + " WHERE p.play_id = %s", (play_id,)).fetchone()
 
 
@@ -159,8 +226,11 @@ def summary():
                    count(*) FILTER (WHERE played_on >= date_trunc('year', current_date))::int AS plays_this_year,
                    count(*)::int AS plays,
                    count(*) FILTER (WHERE NOT finished)::int AS abandoned,
-                   (SELECT count(*) FROM board_games WHERE status = 'Played elsewhere')::int AS played_elsewhere
+                   (SELECT count(*) FROM board_games WHERE status = 'Played elsewhere')::int AS played_elsewhere,
+                   (SELECT count(*) FROM board_game_players)::int AS players
             FROM board_game_plays""").fetchone()
+        row["live"] = conn.execute("SELECT l.live_id, l.started_at, g.name AS game_name FROM board_game_live l "
+                                   "JOIN board_games g USING (game_id) ORDER BY l.started_at").fetchall()
         row["most_played"] = conn.execute("""
             SELECT g.game_id, g.name, count(*)::int AS plays FROM board_game_plays p JOIN board_games g USING (game_id)
             GROUP BY g.game_id, g.name ORDER BY count(*) DESC, max(p.played_on) DESC LIMIT 1""").fetchone()
@@ -294,7 +364,7 @@ def lookup(q: str = Query(min_length=2, max_length=120), more: bool = False):
 def add_game(body: GameIn, background: BackgroundTasks):
     """Add a game. With a shop_handle, the shop's facts fill in what you left blank and its photo
     is fetched in the background."""
-    data = tidy_text(body.model_dump())
+    data = tidy_parts(tidy_text(body.model_dump()))
     handle, gg_id = data.pop("shop_handle"), data.pop("gg_id")
     facts = shop_game(handle, gg_id) if handle or gg_id else None
     with db() as conn:
@@ -387,11 +457,11 @@ def get_game(game_id: int):
 
 @router.patch("/board-games/{game_id}")
 def update_game(game_id: int, body: GamePatch):
-    data = tidy_text(body.model_dump(exclude_unset=True))
+    data = tidy_parts(tidy_text(body.model_dump(exclude_unset=True)))
     if "name" in data and not data["name"]:
         raise HTTPException(422, "A game needs a name.")
-    if data.get("status", "x") is None or data.get("kind", "x") is None:
-        raise HTTPException(422, "Status and type can't be empty.")
+    if data.get("status", "x") is None or data.get("kind", "x") is None or data.get("scoring", "x") is None:
+        raise HTTPException(422, "Status, type and scoring can't be empty.")
     with db() as conn:
         current = fetch_game(conn, game_id)
         _check_base(conn, current, data)
@@ -440,10 +510,12 @@ add_photo_routes(router, "/board-games", "board_games", "game_id", "Board game")
 # ---------------------------------------------------------------------------
 @router.post("/board-games/{game_id}/plays", status_code=201)
 def log_play(game_id: int, body: PlayIn):
-    """You played it: logging a play of a game you only wanted doesn't change its status."""
+    """You played it: logging a play of a game you only wanted doesn't change its status. Answers with the play and
+    anything it beat (a personal best, the record)."""
     with db() as conn:
         fetch_game(conn, game_id)
-        return add_play(conn, game_id, body)
+        play = add_play(conn, game_id, body)
+        return {**play, "highlights": people.highlights(conn, play["play_id"])}
 
 
 @router.post("/board-games/plays", status_code=201)
@@ -456,7 +528,8 @@ def log_play_elsewhere(body: ElsewhereIn):
                             "ORDER BY status = 'Gone' LIMIT 1", (name,)).fetchone()
         game_id = game["game_id"] if game else insert_row(
             conn, "board_games", {"name": name, "status": "Played elsewhere", "kind": "game"}, "game_id")
-        return add_play(conn, game_id, body)
+        play = add_play(conn, game_id, body)
+        return {**play, "highlights": people.highlights(conn, play["play_id"])}
 
 
 @router.patch("/board-game-plays/{play_id}")
@@ -466,10 +539,26 @@ def update_play(play_id: int, body: PlayPatch):
         raise HTTPException(422, "A play needs a day.")
     if data.get("finished", "x") is None:
         raise HTTPException(422, "Finished must be true or false.")
+    if "expansions" in data and data["expansions"] is None:
+        raise HTTPException(422, "Expansions must be a list.")
     unfinished_has_no_winner(data)
+    data.pop("seats", None)
     with db() as conn:
-        found(conn.execute("SELECT play_id FROM board_game_plays WHERE play_id = %s", (play_id,)).fetchone(), "Play")
+        play = found(conn.execute("SELECT game_id, players, winner FROM board_game_plays WHERE play_id = %s",
+                                  (play_id,)).fetchone(), "Play")
+        check_play(conn, play["game_id"], data)
         update_row(conn, "board_game_plays", "play_id", play_id, data)
+        if body.seats is not None:
+            people.save_seats(conn, play_id, body.seats)
+        elif "players" in data or "winner" in data:            # text, as before: made into seats
+            text = {**play, **{k: data[k] for k in ("players", "winner") if k in data}}
+            people.save_seats(conn, play_id, people.seats_from_text(text["players"], text["winner"]))
+        elif {"finished", "coop_won", "played_on"} & data.keys():   # who won follows how it ended
+            kept = conn.execute("SELECT player_id, score, parts, adds, team, colour, CASE WHEN won AND place IS NULL "
+                                "THEN true END AS won FROM board_game_play_players WHERE play_id = %s ORDER BY seat",
+                                (play_id,)).fetchall()
+            if kept:
+                people.save_seats(conn, play_id, [{**s, "adds": list(s["adds"])} for s in kept], resolved=True)
         return conn.execute(PLAY_SELECT + " WHERE p.play_id = %s", (play_id,)).fetchone()
 
 

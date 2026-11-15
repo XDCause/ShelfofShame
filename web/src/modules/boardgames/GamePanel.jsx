@@ -4,6 +4,7 @@ import Drawer from '../../components/Drawer.jsx'
 import RecordFields, { RowPhoto, useRecordForm } from '../../components/RecordFields.jsx'
 import { useApp } from '../../core/app-context.js'
 import JournalMentions from '../../core/journal/JournalMentions.jsx'
+import { FunPicker, PlayPhotos, PlayerPicker, SCORING, SeatScores, minutesText, placeText, scoreText, seatsOut } from './tableParts.jsx'
 
 const GAME_FIELDS = [
   { name: 'name', label: 'Name', required: true, wide: true },
@@ -19,13 +20,15 @@ const GAME_FIELDS = [
   { name: 'price_paid', label: 'Price paid', type: 'money' },
   { name: 'bgg_url', label: 'BoardGameGeek link', type: 'url', wide: true, placeholder: 'https://boardgamegeek.com/...' },
   { name: 'notes', label: 'Notes', type: 'textarea' },
+  { name: 'teach_notes', label: 'Teach notes', type: 'textarea', placeholder: 'What to cover when you teach it: the goal, a turn, how it ends, tips' },
 ]
 
 const PLAY_FIELDS = [
   { name: 'played_on', label: 'Day', type: 'date', required: true },
-  { name: 'minutes', label: 'How long (minutes)', type: 'number', min: 1 },
-  { name: 'players', label: 'Who played', wide: true, placeholder: 'e.g. Sam, Jo, me' },
-  { name: 'winner', label: 'Who won' },
+  { name: 'location', label: 'Where', list: 'bgt-log-places', placeholder: 'e.g. Home, an event' },
+  { name: 'setup_minutes', label: 'Setup (minutes)', type: 'number' },
+  { name: 'teach_minutes', label: 'Teach (minutes)', type: 'number' },
+  { name: 'minutes', label: 'Playing (minutes)', type: 'number', min: 1 },
   { name: 'notes', label: 'Notes', type: 'textarea' },
 ]
 
@@ -218,26 +221,24 @@ export default function GamePanel({ id, onClose }) {
       <section className="panel-section">
         <div className="section-head">
           <h4 className="section-title">Plays <span className="muted">· {game.plays}</span></h4>
-          {!logging && <button type="button" className="secondary" onClick={() => setLogging(true)}>+ Log a play</button>}
+          {!logging && (
+            <span className="button-row">
+              {game.status !== 'Wanted' && game.kind === 'game' && (
+                <button type="button" className="primary" onClick={() => { onClose(); openPanel('liveplay', { gameId: game.game_id }) }}>▶ Start a play</button>
+              )}
+              <button type="button" className="secondary" onClick={() => setLogging(true)}>+ Log a play</button>
+            </span>
+          )}
         </div>
+        {game.stats && <GameStats stats={game.stats} scoring={game.scoring} />}
         {logging && (
           <PlayForm gameId={game.game_id} onCancel={() => setLogging(false)}
-            onSaved={() => { setLogging(false); run(() => reload('Play logged ✓')) }} />
+            onSaved={(p) => { setLogging(false); run(() => reload(p.highlights?.[0] ?? 'Play logged ✓')) }} />
         )}
         {game.play_log.length === 0 && !logging && <p className="muted small">Not played yet.</p>}
         {game.play_log.length > 0 && (
           <ul className="list compact plays">
-            {game.play_log.map((p) => (
-              <li key={p.play_id} className="play-row">
-                <span className="grow">
-                  <span className="item-title">{shortDate(p.played_on)}{!p.finished ? <span className="pill low">Abandoned</span>
-                    : p.winner && <span className="pill ok">🏆 {p.winner}</span>}</span>
-                  <span className="item-meta">{[p.players, p.minutes && `${p.minutes} min`, p.notes].filter(Boolean).join(' · ')}</span>
-                </span>
-                <button type="button" className="icon-btn small" aria-label={`Delete the play on ${shortDate(p.played_on)}`}
-                  onClick={() => run(async () => { await api.deletePlay(p.play_id); await reload('Play deleted') })}>✕</button>
-              </li>
-            ))}
+            {game.play_log.map((p) => <PlayRow key={p.play_id} play={p} onChanged={(msg) => run(() => reload(msg))} />)}
           </ul>
         )}
       </section>
@@ -253,6 +254,8 @@ function GameForm({ game, onClose, onCancel, onSaved }) {
   const [status, setStatus] = useState(game?.status ?? 'Owned')
   const [kind, setKind] = useState(game?.kind ?? 'game')
   const [baseId, setBaseId] = useState(game?.base_game_id ? String(game.base_game_id) : '')
+  const [scoring, setScoring] = useState(game?.scoring ?? 'highest')
+  const [parts, setParts] = useState((game?.score_parts ?? []).join(', '))
   const [bases, setBases] = useState([])       // your games that are games (an expansion's base)
   useEffect(() => {
     api.listBoardGames().then((all) => setBases(all.filter((g) => g.kind === 'game' && g.game_id !== game?.game_id))).catch(() => {})
@@ -274,7 +277,8 @@ function GameForm({ game, onClose, onCancel, onSaved }) {
     setBusy(true)
     setError('')
     try {
-      const body = { ...payload(), status, kind, base_game_id: kind !== 'game' && baseId ? Number(baseId) : null,
+      const body = { ...payload(), status, kind, base_game_id: kind !== 'game' && baseId ? Number(baseId) : null, scoring,
+        score_parts: parts.split(',').map((x) => x.trim()).filter(Boolean),
         ...(!game && picked && shopRef(picked)) }
       onSaved(game ? await api.updateBoardGame(game.game_id, body) : await api.addBoardGame(body))
     } catch (err) {
@@ -316,6 +320,25 @@ function GameForm({ game, onClose, onCancel, onSaved }) {
             </label>
           )}
         </div>
+        {kind === 'game' && (
+          <fieldset className="bgt-scoring">
+            <label className="field">
+              <span className="field-label">Scoring</span>
+              <select value={scoring} onChange={(e) => setScoring(e.target.value)} aria-label="Scoring">
+                {SCORING.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+              </select>
+            </label>
+            {(scoring === 'highest' || scoring === 'lowest') && (
+              <label className="field wide">
+                <span className="field-label">Score sheet (optional)</span>
+                <input value={parts} onChange={(e) => setParts(e.target.value)} placeholder="e.g. Birds, Bonus cards, Goals, Eggs, Food, Tucked"
+                  aria-label="Score sheet" />
+                <span className="hint">The parts a score is made of, separated by commas: each player fills them in and they're added up.
+                  Leave it empty to keep one total with +/- buttons.</span>
+              </label>
+            )}
+          </fieldset>
+        )}
         <RecordFields fields={GAME_FIELDS} form={form} set={set} />
       </form>
     </Drawer>
@@ -333,13 +356,35 @@ function PlayForm({ gameId, games, onSaved, onCancel, day = null }) {
   const [unfinished, setUnfinished] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [roster, setRoster] = useState(null)
+  const [game, setGame] = useState(null)        // the picked game in full: how it's scored, its expansions
+  const [seats, setSeats] = useState([])
+  const [coopWon, setCoopWon] = useState(null)
+  const [expansions, setExpansions] = useState([])
+  const [fun, setFun] = useState(null)
+  const [firstId, setFirstId] = useState('')
   const elsewhere = pick === ELSEWHERE
+  useEffect(() => {
+    api.boardGamePlayers().then((r) => {
+      setRoster(r)
+      const me = r.players.find((p) => p.is_me)
+      if (me) setSeats((s) => (s.length ? s : [{ player_id: me.player_id, name: me.name, is_me: true, adds: [] }]))
+    }).catch(() => setRoster({ players: [], groups: [], places: [] }))
+  }, [])
+  useEffect(() => {
+    setExpansions([])
+    if (!pick || pick === ELSEWHERE) { setGame(null); return }
+    api.getBoardGame(pick).then(setGame).catch(() => setGame(null))
+  }, [pick])
+  const scoring = game?.scoring ?? 'highest'
 
   const save = async () => {
     if (!pick || (elsewhere && !otherName.trim())) { setError(elsewhere ? 'Which game was it?' : 'Which game?'); return }
     setBusy(true)
     setError('')
-    const play = { ...payload(), finished: !unfinished, ...(unfinished ? { winner: null } : {}) }
+    const first = seats.find((s) => (s.player_id != null ? `p${s.player_id}` : `n${s.name}`) === firstId)
+    const play = { ...payload(), finished: !unfinished, seats: seatsOut(unfinished ? seats.map((s) => ({ ...s, won: null })) : seats),
+      coop_won: scoring === 'coop' && !unfinished ? coopWon : null, expansions, fun, first_player_id: first?.player_id ?? null }
     try {
       onSaved(elsewhere ? await api.addPlayElsewhere({ ...play, game_name: otherName.trim() }) : await api.addPlay(pick, play))
     } catch (e) {
@@ -380,7 +425,40 @@ function PlayForm({ gameId, games, onSaved, onCancel, day = null }) {
         <input type="checkbox" role="switch" checked={unfinished} onChange={(e) => setUnfinished(e.target.checked)} />
         <span>Didn't finish (abandoned)</span>
       </label>
-      <RecordFields fields={unfinished ? PLAY_FIELDS.filter((f) => f.name !== 'winner') : PLAY_FIELDS} form={form} set={set} />
+      <div className="bgt-log-section">
+        <span className="field-label">Who played</span>
+        {roster ? <PlayerPicker chosen={seats} onChange={setSeats} roster={roster} max={game?.max_players} /> : <p className="muted small">Loading...</p>}
+      </div>
+      {!unfinished && seats.length > 0 && (
+        <div className="bgt-log-section">
+          <span className="field-label">{scoring === 'coop' ? 'How did it go?' : scoring === 'none' ? 'Who won' : 'Scores'}</span>
+          <SeatScores seats={seats} onChange={setSeats} scoring={scoring} parts={game?.score_parts ?? []} coopWon={coopWon} onCoopWon={setCoopWon} />
+        </div>
+      )}
+      {seats.length > 1 && (
+        <label className="field">
+          <span className="field-label">Who went first</span>
+          <select value={firstId} onChange={(e) => setFirstId(e.target.value)} aria-label="Who went first">
+            <option value="">—</option>
+            {seats.map((s) => { const k = s.player_id != null ? `p${s.player_id}` : `n${s.name}`; return <option key={k} value={k} disabled={s.player_id == null}>{s.name}</option> })}
+          </select>
+        </label>
+      )}
+      {game?.add_on_list?.length > 0 && (
+        <fieldset className="bgt-expansions">
+          <legend className="field-label">Expansions in</legend>
+          {game.add_on_list.map((e) => (
+            <label key={e.game_id} className="check-row">
+              <input type="checkbox" checked={expansions.includes(e.game_id)}
+                onChange={(ev) => setExpansions(ev.target.checked ? [...expansions, e.game_id] : expansions.filter((x) => x !== e.game_id))} />
+              {e.name}
+            </label>
+          ))}
+        </fieldset>
+      )}
+      <RecordFields fields={PLAY_FIELDS} form={form} set={set} />
+      <datalist id="bgt-log-places">{(roster?.places ?? []).map((pl) => <option key={pl} value={pl} />)}</datalist>
+      <FunPicker value={fun} onChange={setFun} />
       <div className="button-row">
         <button type="button" className="primary" onClick={save} disabled={busy}>{busy ? 'Saving...' : 'Save play'}</button>
         <button type="button" className="plain" onClick={onCancel}>Cancel</button>
@@ -400,7 +478,85 @@ export function PlayPanel({ gameId = null, day = null, onClose }) {
       {!games ? <p className="muted">Loading...</p> : games.length === 0
         ? <p className="empty">Add a game first (Board games, "+ Add game").</p>
         : <PlayForm gameId={gameId} games={games} onCancel={onClose} day={day}
-            onSaved={(p) => { changed(); showToast(`Logged a play of ${p.game_name}`); onClose() }} />}
+            onSaved={(p) => { changed(); showToast(p.highlights?.[0] ? `⭐ ${p.highlights[0]}` : `Logged a play of ${p.game_name}`); onClose() }} />}
     </Drawer>
+  )
+}
+
+// A game's numbers so far: how long it takes to teach and play, how fun it is, your best and the record.
+function GameStats({ stats, scoring }) {
+  const bits = [
+    stats.avg_teach != null && `teach ${minutesText(stats.avg_teach)}`,
+    stats.avg_minutes != null && `play ${minutesText(stats.avg_minutes)}`,
+    stats.my_plays > 0 && `you've won ${stats.my_wins} of ${stats.my_plays}${scoring === 'coop' ? ' (co-op)' : ''}`,
+    stats.my_best != null && `your best ${scoreText(stats.my_best)}`,
+    stats.record && `record ${scoreText(stats.record.score)} (${stats.record.is_me ? 'you' : stats.record.name})`,
+    stats.avg_fun != null && `fun ★ ${Number(stats.avg_fun)}`,
+  ].filter(Boolean)
+  return bits.length ? <p className="muted small bgt-game-stats">{bits.join(' · ')}</p> : null
+}
+
+// One play: when, who won, the scores (place by place), times, where, expansions, photos. Tap for photos and more.
+function PlayRow({ play: p, onChanged }) {
+  const [open, setOpen] = useState(false)
+  const [confirm, setConfirm] = useState(false)
+  const [error, setError] = useState('')
+  const scores = p.seats.filter((s) => s.score != null)
+  const meta = [
+    !scores.length && p.players,
+    p.location,
+    [p.setup_minutes != null && `setup ${p.setup_minutes}`, p.teach_minutes != null && `teach ${p.teach_minutes}`,
+      p.minutes != null && `${p.teach_minutes != null || p.setup_minutes != null ? 'play ' : ''}${p.minutes} min`].filter(Boolean).join(' / '),
+    p.first_player && `${p.first_player} went first`,
+    p.expansion_names?.length > 0 && `with ${p.expansion_names.join(', ')}`,
+    p.rounds && `${p.rounds} rounds`,
+    p.fun && '★'.repeat(p.fun),
+  ].filter(Boolean)
+  const run = async (fn, msg) => {
+    setError('')
+    try { await fn(); onChanged(msg) } catch (e) { setError(e.message) }
+  }
+  return (
+    <li className="play-row bgt-play">
+      <div className="bgt-play-main">
+        <button type="button" className="bgt-play-open" aria-expanded={open} onClick={() => setOpen(!open)}>
+          <span className="item-title">{shortDate(p.played_on)}{!p.finished ? <span className="pill low">Abandoned</span>
+            : p.scoring === 'coop' ? (p.coop_won ? <span className="pill ok">Won together</span> : p.coop_won === false && <span className="pill low">The game won</span>)
+              : p.winner && <span className="pill ok">🏆 {p.winner}</span>}
+            {p.photos.length > 0 && <span className="pill">📷 {p.photos.length}</span>}</span>
+          {scores.length > 0 && (
+            <span className="bgt-play-scores">{p.seats.map((s) => (
+              <span key={s.player_id} className={s.won ? 'bgt-won' : ''}>{s.name} {scoreText(s.score)}{s.first_time && <span className="muted"> (new)</span>}</span>
+            ))}</span>
+          )}
+          {meta.length > 0 && <span className="item-meta">{meta.join(' · ')}</span>}
+        </button>
+        <button type="button" className="icon-btn small" aria-label={`Delete the play on ${shortDate(p.played_on)}`}
+          onClick={() => setConfirm(!confirm)}>✕</button>
+      </div>
+      {confirm && (
+        <span className="confirm small">Delete this play?
+          <button type="button" className="danger small" onClick={() => run(() => api.deletePlay(p.play_id), 'Play deleted')}>Delete</button>
+          <button type="button" className="plain small" onClick={() => setConfirm(false)}>Cancel</button>
+        </span>
+      )}
+      {error && <p className="alert error small">{error}</p>}
+      {open && (
+        <div className="bgt-play-more">
+          {p.seats.some((s) => s.place != null || s.colour) && (
+            <ol className="bgt-standings">
+              {p.seats.map((s) => (
+                <li key={s.player_id}>{s.place ? <strong>{placeText(s.place)}</strong> : <span />}<span>{s.name}{s.colour && <span className="muted"> · {s.colour}</span>}</span>
+                  <span>{scoreText(s.score)}{s.parts && <span className="muted small"> ({Object.entries(s.parts).map(([k, v]) => `${k} ${scoreText(v)}`).join(', ')})</span>}</span></li>
+              ))}
+            </ol>
+          )}
+          {p.notes && <p className="detail-desc">{p.notes}</p>}
+          <PlayPhotos photos={p.photos} onAdd={(blob) => api.addPlayPhoto(p.play_id, blob).then(() => onChanged('Photo added ✓'))}
+            onRemove={(ph) => run(() => api.deletePlayPhoto(ph.photo_id), 'Photo removed')} />
+          <FunPicker value={p.fun} onChange={(n) => run(() => api.updatePlay(p.play_id, { fun: n }), 'Saved ✓')} />
+        </div>
+      )}
+    </li>
   )
 }
