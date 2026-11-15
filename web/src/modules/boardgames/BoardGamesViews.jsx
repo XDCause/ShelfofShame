@@ -41,7 +41,7 @@ export function GamesView() {
         <div><span>Plays this month</span><strong>{summary.plays_this_month}</strong>
           {summary.abandoned > 0 && <small className="muted">{summary.abandoned} abandoned in all</small>}</div>
         <div><span>Most played</span><strong className="ellipsis">{summary.most_played?.name ?? '—'}</strong>
-          {summary.most_played && <small className="muted">{summary.most_played.plays} plays</small>}</div>
+          {summary.most_played && <small className="muted">{summary.most_played.plays} play{summary.most_played.plays === 1 ? '' : 's'}</small>}</div>
       </div>
       <NowPlaying live={summary.live} />
       <div className="toolbar game-toolbar">

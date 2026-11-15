@@ -144,6 +144,11 @@
 }
 @media (max-width: 700px) {
   .calendar > .section-tabs { margin-bottom: 0; }
+  /* On a phone the month comes first: quick add, search and the countdowns move below it (2026-11-16 - the grid
+     started at the very bottom of the screen). (The page is a flex column: order moves them, nothing else changes.) */
+  .calendar > .cal-tools { order: 3; }
+  .calendar > .cal-countdowns { order: 2; }
+  .calendar > .alert { order: -1; }
   .day-todo { padding: 0; height: 4px; border: 0; border-radius: 2px; background: var(--muted); color: transparent; }
   .day-holiday { font-size: 0.6rem; }
 }

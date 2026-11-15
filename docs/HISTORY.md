@@ -1031,3 +1031,8 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
      8445 opened in the firewall (an admin step - the user's).
    - Fixed on the way: Vinyl's "Never played" message read backwards; the Play something modes use the segmented
      control (the chosen one looked disabled).
+   - Layout pass (every page's phone screenshot from the walk-through; the UI audit itself found nothing): the
+     calendar's month now comes first on a phone (quick add, search and countdowns move below it - it started at the
+     very bottom of the screen); toolbar buttons keep their words on one line ("+ New / page"); the "Playing now"
+     tile shows how long it's been going, with the game's name under it (a long name in the number font overflowed);
+     "1 plays"; the hikes search's placeholder fits a phone.

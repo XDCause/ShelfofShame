@@ -8,6 +8,7 @@
 /* ---------- Fixes found by the UI audit (e2e/ui_audit.py) ---------- */
 .item-cell .item-title { overflow-wrap: anywhere; }                  /* a long supply name on a 320 px phone */
 .toolbar > .summary.grow { flex: 1 1 14em; }                         /* the count wraps above its button, not under it */
+.toolbar > button { white-space: nowrap; }   /* a toolbar wraps its buttons, not their words ("+ New / page" on a phone, 2026-11-16) */
 .sidebar .brand { min-height: 40px; }                                /* the logo is a link: a full-size target */
 .day-event .day-time { opacity: 1; }                                 /* (faded, a calendar event's time was 2.9:1) */
 :root[data-theme='dark'] .tabbar a { color: #b4baa8; }               /* the tab bar's labels over the page: 5:1 */

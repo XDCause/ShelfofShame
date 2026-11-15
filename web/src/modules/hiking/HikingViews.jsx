@@ -141,7 +141,7 @@ export function HikesView() {
     <section className="page hiking">
       <div className="toolbar">
         <input type="search" className="search" value={q} onChange={(e) => setQ(e.target.value)}
-          placeholder="Search hikes, trails, places, people..." aria-label="Search your hikes" />
+          placeholder="Search hikes..." title="Hikes, trails, places, people" aria-label="Search your hikes" />
         {years.length > 1 && (
           <select value={year} onChange={(e) => setYear(e.target.value)} aria-label="Year">
             <option value="">Every year</option>
