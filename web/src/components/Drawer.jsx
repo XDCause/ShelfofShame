@@ -21,13 +21,16 @@ function markOpen() {
 }
 function unmarkSoon() {
   if (SAVING) return
-  setTimeout(() => {
+  // A microtask, not a timer: it runs once React has finished this update (a panel swapped for another is open again
+  // by then) but before anything else can happen - a timer's gap let a page load that started just after a panel
+  // closed be cancelled by this back (the walk-through's page.goto, 2026-11-16).
+  queueMicrotask(() => {
     if (open.length || !pushed) return
     pushed = false
     if (!window.history.state?.otcPanel) return         // a page was opened on top: leave history alone
     ours = true
     window.history.back()
-  }, 0)
+  })
 }
 if (!SAVING && typeof window !== 'undefined') {
   window.addEventListener('popstate', () => {
