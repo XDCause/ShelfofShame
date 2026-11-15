@@ -5,7 +5,7 @@ import { BoxIcon, CalendarIcon, CartIcon, ChevronIcon, JournalIcon, PenIcon } fr
 import { BannerArt, BannerPicture } from '../components/PageBanner.jsx'
 import { CORE_AREAS } from './areas.js'
 import { useBanners } from './banners.js'
-import { MODULES } from '../modules/index.js'
+import { useHobbies } from './useHobbies.js'
 import { KIND_ICON, KIND_NAME, VERB_TONE } from './activityKinds.js'
 import { useApp } from './app-context.js'
 import { ComingUp } from './calendar/CalendarPage.jsx'
@@ -90,8 +90,9 @@ export default function Home() {
   const { refreshKey } = useApp()
   const { data: activity } = useShared(`activity-${refreshKey}`, () => api.activity(6))
   const newPage = useNewPage()
-  const cards = MODULES.filter((m) => m.home?.Cards)
-  const features = MODULES.filter((m) => m.home?.Feature)
+  const hobbies = useHobbies()
+  const cards = hobbies.filter((m) => m.home?.Cards)
+  const features = hobbies.filter((m) => m.home?.Feature)
 
   return (
     <section className="page home">
@@ -156,13 +157,14 @@ function RecentActivity({ items }) {
 function QuickActions({ newPage }) {
   const app = useApp()
   const navigate = useNavigate()
+  const hobbies = useHobbies()
   const actions = [
     { label: 'New page', Icon: JournalIcon, run: () => newPage() },
     { label: 'Whiteboard', Icon: PenIcon, run: () => newPage({ kind: 'whiteboard' }) },
     { label: 'Add event', Icon: CalendarIcon, run: () => app.openPanel('event', {}) },
     { label: 'Add supply', Icon: BoxIcon, run: () => app.openAdd(null) },
     { label: 'Wishlist', Icon: CartIcon, run: () => navigate('/wishlist?add=1') },
-    ...MODULES.flatMap((m) => (m.actions ?? []).map((a) => ({ ...a, run: () => a.run({ ...app, navigate }) }))),
+    ...hobbies.flatMap((m) => (m.actions ?? []).map((a) => ({ ...a, run: () => a.run({ ...app, navigate }) }))),
   ]
   return (
     <section className="card home-card" aria-labelledby="home-actions">
@@ -181,15 +183,16 @@ function QuickActions({ newPage }) {
 // Each hobby's numbers in its own small card (name, icon, a link to it): a grid on a computer, a row
 // you swipe through on a phone - so Home stays short. A hobby with nothing to show (not set up yet)
 // leaves its card out.
-const GLANCE = [
-  { id: 'supplies', name: 'Supplies', Icon: BoxIcon, to: '/supplies', Tiles: SuppliesTiles, ...CORE_AREAS.supplies },
-  ...MODULES.filter((m) => m.home?.Tiles).map((m) => ({ id: m.id, name: m.name, Icon: m.Icon, to: `/${m.id}/${m.pages[0].path}`,
-    Tiles: m.home.Tiles, hue: m.hue, banner: m.banner })),
-]
+// (Supplies first, then the hobbies in the user's order: favourites, then A-Z.)
+const SUPPLIES_CARD = { id: 'supplies', name: 'Supplies', Icon: BoxIcon, to: '/supplies', Tiles: SuppliesTiles, ...CORE_AREAS.supplies }
 
 // Each card: a strip of the hobby's picture (yours, or its landscape) under its name, then its numbers.
 function Glance() {
   const banners = useBanners()
+  const hobbies = useHobbies()
+  const GLANCE = [SUPPLIES_CARD,
+    ...hobbies.filter((m) => m.home?.Tiles).map((m) => ({ id: m.id, name: m.name, Icon: m.Icon, to: `/${m.id}/${m.pages[0].path}`,
+      Tiles: m.home.Tiles, hue: m.hue, banner: m.banner }))]
   return (
     <div className="glance">
       {GLANCE.map((g) => (

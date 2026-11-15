@@ -16,7 +16,7 @@ from fastapi import APIRouter, HTTPException, Response
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
-from .db import PAINT_TYPES, db, found, insert_row, update_row
+from .db import MODULE_IDS, PAINT_TYPES, db, found, insert_row, update_row
 
 router = APIRouter(prefix="/api", tags=["settings"])
 
@@ -25,13 +25,15 @@ router = APIRouter(prefix="/api", tags=["settings"])
 # ---------------------------------------------------------------------------
 # your_name: Home says "Good morning, <name>". banner_pictures: "on" shows the Picture button on every banner (off by
 # default - it's clutter once your pictures are chosen; pictures already chosen show either way).
-DEFAULTS = {"default_shop": "Hobbyrama", "your_name": None, "banner_pictures": "off"}
+DEFAULTS = {"default_shop": "Hobbyrama", "your_name": None, "banner_pictures": "off", "favourite_hobbies": None}
 
 
 class SettingsPatch(BaseModel):
     default_shop: str | None = Field(None, max_length=100)
     your_name: str | None = Field(None, max_length=40)
     banner_pictures: Literal["on", "off"] | None = None
+    # the starred hobbies (module ids): they sit first in every hobby list. Kept as one comma-separated text value.
+    favourite_hobbies: list[str] | None = None
 
 
 def get_setting(conn, key: str) -> str | None:
@@ -39,20 +41,33 @@ def get_setting(conn, key: str) -> str | None:
     return row["value"] if row else DEFAULTS.get(key)
 
 
+def all_settings(conn) -> dict:
+    out = {key: get_setting(conn, key) for key in DEFAULTS}
+    out["favourite_hobbies"] = [h for h in (out["favourite_hobbies"] or "").split(",") if h]   # text -> list
+    return out
+
+
 @router.get("/settings")
 def read_settings():
     with db() as conn:
-        return {key: get_setting(conn, key) for key in DEFAULTS}
+        return all_settings(conn)
 
 
 @router.patch("/settings")
 def change_settings(body: SettingsPatch):
+    changes = body.model_dump(exclude_unset=True)
+    if "favourite_hobbies" in changes:
+        favourites = changes["favourite_hobbies"] or []
+        unknown = [h for h in favourites if h not in MODULE_IDS]
+        if unknown:
+            raise HTTPException(422, f"Not a hobby: {', '.join(unknown)}.")
+        changes["favourite_hobbies"] = ",".join(dict.fromkeys(favourites))      # no repeats, order kept
     with db() as conn:
-        for key, value in body.model_dump(exclude_unset=True).items():
+        for key, value in changes.items():
             value = (value or "").strip() or None
             conn.execute("INSERT INTO settings (key, value) VALUES (%s, %s) "
                          "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", (key, value))
-        return {key: get_setting(conn, key) for key in DEFAULTS}
+        return all_settings(conn)
 
 
 # ---------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../api.js'
 import Drawer from '../../components/Drawer.jsx'
-import { MODULES } from '../../modules/index.js'
+import { useHobbies } from '../useHobbies.js'
 import { useApp } from '../app-context.js'
 import { REPEATS } from './todoParts.jsx'
 
@@ -9,6 +9,7 @@ import { REPEATS } from './todoParts.jsx'
 // repeats. Saves on Save; Delete asks first.
 export default function TodoPanel({ id, onClose }) {
   const { changed, showToast } = useApp()
+  const MODULES = useHobbies()      // favourites first, then A-Z
   const [f, setF] = useState(null)
   const [goals, setGoals] = useState([])
   const [error, setError] = useState('')

@@ -2,7 +2,8 @@ import { useEffect } from 'react'
 import { Link, NavLink, useLocation } from 'react-router'
 import { useApp } from './app-context.js'
 import { BoltIcon, BoxIcon, CalendarIcon, CartIcon, GearIcon, GridIcon, HomeIcon, JournalIcon, LogoMark, TargetIcon, WrenchIcon } from '../components/icons.jsx'
-import { MODULES, moduleFor } from '../modules/index.js'
+import { moduleFor } from '../modules/index.js'
+import { useHobbies } from './useHobbies.js'
 
 // A spanner after a hobby's name: it's a placeholder, still to be built (manifest underConstruction).
 export function UnderConstruction() {
@@ -54,6 +55,7 @@ const nudge = () => NUDGES[Math.floor(Date.now() / 86400000) % NUDGES.length]
 export function Sidebar({ env = 'prod' }) {
   const { openPanel } = useApp()
   const { pathname } = useLocation()
+  const hobbies = useHobbies()      // favourites first, then A-Z
   // On a short screen the hobbies list scrolls: keep the hobby you're in visible in it.
   useEffect(() => { document.querySelector('.side-hobbies .active')?.scrollIntoView({ block: 'nearest' }) }, [pathname])
   return (
@@ -69,7 +71,7 @@ export function Sidebar({ env = 'prod' }) {
         <p className="side-section">Hobbies</p>
         {/* only the hobbies scroll (a short window): the main pages above and Settings below stay put */}
         <div className="side-hobbies">
-          {MODULES.map((m) => (
+          {hobbies.map((m) => (
             <NavLink key={m.id} to={`/${m.id}`} className="side-link" title={m.what} data-hobby={m.id} style={{ '--hue': m.hue }}>
               <m.Icon size={20} /><span>{m.name}{m.underConstruction && <UnderConstruction />}</span>
             </NavLink>

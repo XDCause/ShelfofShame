@@ -11,7 +11,7 @@ from tests.conftest import FIXTURES
 
 # ---------------------------------------------------------------- default shop
 def test_default_shop_is_hobbyrama_and_can_change(client):
-    rest = {"your_name": None, "banner_pictures": "off"}
+    rest = {"your_name": None, "banner_pictures": "off", "favourite_hobbies": []}
     assert client.get("/api/settings").json() == {"default_shop": "Hobbyrama", **rest}
     assert client.patch("/api/settings", json={"default_shop": " Frontline Hobbies "}).json() == \
         {"default_shop": "Frontline Hobbies", **rest}
@@ -31,6 +31,17 @@ def test_the_banner_picture_button_is_off_until_turned_on(client):
     assert client.get("/api/settings").json()["banner_pictures"] == "on"
     assert client.patch("/api/settings", json={"banner_pictures": "off"}).json()["banner_pictures"] == "off"
     assert client.patch("/api/settings", json={"banner_pictures": "maybe"}).status_code == 422
+
+
+def test_favourite_hobbies_are_saved_and_checked(client):
+    assert client.get("/api/settings").json()["favourite_hobbies"] == []
+    got = client.patch("/api/settings", json={"favourite_hobbies": ["chess", "models", "chess"]}).json()
+    assert got["favourite_hobbies"] == ["chess", "models"]                 # no repeats
+    assert client.get("/api/settings").json()["favourite_hobbies"] == ["chess", "models"]
+    assert client.patch("/api/settings", json={"your_name": "Sam"}).json()["favourite_hobbies"] == ["chess", "models"]
+    assert client.patch("/api/settings", json={"favourite_hobbies": ["chess", "knitting"]}).status_code == 422
+    assert client.get("/api/settings").json()["favourite_hobbies"] == ["chess", "models"]   # a bad list changed nothing
+    assert client.patch("/api/settings", json={"favourite_hobbies": []}).json()["favourite_hobbies"] == []
 
 
 def test_buying_without_a_shop_uses_the_default(client, ids):

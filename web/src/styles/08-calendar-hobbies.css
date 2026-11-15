@@ -43,7 +43,12 @@
 .event-day .item-title { margin: 0 0 8px; }
 
 /* ---------- Hobbies page, hobby pages ---------- */
-.hobby-card { display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+.hobby-card { display: flex; flex-direction: column; gap: 12px; overflow: hidden; position: relative; }
+/* The favourite star, top right over the picture: starred hobbies sit first in every list. */
+.hobby-star { position: absolute; top: 8px; right: 8px; z-index: 1; width: 36px; height: 36px; display: grid; place-items: center;
+  border: 0; border-radius: 50%; background: var(--elevated); color: var(--muted); font-size: 1.2rem; line-height: 1; }
+.hobby-star.on { color: var(--low); }
+.hobby-star:hover { color: var(--text); }
 /* The hobby's picture across the top of its card (yours, or its landscape). */
 .hobby-art { display: block; height: 92px; margin: -20px -20px 0; }
 @media (max-width: 480px) { .hobby-card .home-stat { flex-direction: column; align-items: flex-start; gap: 8px; } .hobby-card .stat-icon { width: 34px; height: 34px; } }

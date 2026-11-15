@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { api, clock, dayDate, isoDay, shortDate } from '../../api.js'
 import { MODULES } from '../../modules/index.js'
+import { useHobbies } from '../useHobbies.js'
 import { useApp } from '../app-context.js'
 
 // The calendar's shared parts (2026-10-21): colours, how a repeat reads, layers (what's shown), the forecast on
@@ -56,6 +57,7 @@ export function useLayers() {
 }
 
 export function LayersMenu({ layers }) {
+  const hobbies = useHobbies()      // favourites first, then A-Z
   return (
     <details className="cal-menu">
       <summary className="secondary">Show{layers.hidden ? ` · ${layers.hidden} hidden` : ''} ▾</summary>
@@ -65,7 +67,7 @@ export function LayersMenu({ layers }) {
           <label key={id} className="cal-check"><input type="checkbox" checked={layers.on(id)} onChange={() => layers.toggleLayer(id)} /> {label}</label>
         ))}
         <p className="cal-menu-head">Hobbies</p>
-        {MODULES.map((m) => (
+        {hobbies.map((m) => (
           <label key={m.id} className="cal-check"><input type="checkbox" checked={layers.hobbyOn(m.id)} onChange={() => layers.toggleHobby(m.id)} />
             <i className={`cal-dot ${HOBBY_TONE[m.id] ?? 'tint'}`} aria-hidden="true" /> {m.name}</label>
         ))}

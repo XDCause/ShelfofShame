@@ -4,7 +4,7 @@ import { Link } from 'react-router'
 import { api, shortDate, today } from '../../api.js'
 import Drawer from '../../components/Drawer.jsx'
 import FitTextarea from '../../components/FitTextarea.jsx'
-import { MODULES } from '../../modules/index.js'
+import { useHobbies } from '../useHobbies.js'
 import { useApp } from '../app-context.js'
 import { hobbyName, PaceBadge, periodChoices, periodValue, ProgressBar, STATUS } from './goalParts.jsx'
 
@@ -52,6 +52,7 @@ export function useSources() {
 
 // The "What it counts" choices, grouped by hobby.
 export function SourceOptions({ sources }) {
+  const MODULES = useHobbies()      // favourites first, then A-Z
   const byHobby = MODULES.map((m) => [m.name, sources.filter((s) => s.hobby === m.id)]).filter(([, list]) => list.length)
   const other = sources.filter((s) => !s.hobby || !MODULES.some((m) => m.id === s.hobby))
   return (
@@ -140,6 +141,7 @@ export function InsideGoal({ parent, onClose, onAdded }) {
 
 // Set up: everything about the goal you'd change now and then.
 export function SetUp({ goal: g, save, open }) {
+  const MODULES = useHobbies()
   const [startOpen] = useState(open)      // decided once (a new goal: open); after that it stays as you leave it
   const sources = useSources()
   const [bigger, setBigger] = useState([])

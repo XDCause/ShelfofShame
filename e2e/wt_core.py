@@ -490,7 +490,18 @@ def phone(page):
     drawer(page).get_by_text("Photo options").click()             # a touch screen: camera or gallery
     expect(drawer(page).get_by_role("button", name="Take photo")).to_be_visible()
     expect(drawer(page).get_by_role("button", name="Gallery")).to_be_visible()
+    page.go_back()                                              # the phone's back button: closes the panel, stays here
+    expect(drawer(page)).to_have_count(0)
+    expect(page).to_have_url(BASE + "/supplies")
+    page.locator("tr.row").first.click()                        # closed with Esc: no extra back step left behind
+    expect(drawer(page)).to_be_visible()
     page.keyboard.press("Escape")
+    expect(drawer(page)).to_have_count(0)
+    page.wait_for_timeout(200)
+    page.go_back()
+    expect(page).to_have_url(BASE + "/")
+    page.locator(".tabbar a", has_text="Supplies").click()
+    expect(page).to_have_url(BASE + "/supplies")
     def fits(name):
         page.wait_for_timeout(300)
         safe = re.sub(r"\W+", "_", name.lower())

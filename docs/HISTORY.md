@@ -952,3 +952,10 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
      longer (health check 4.5 s, 3.5 s once down).
    Tests: test_boardgames_table.py, boardgamesTable.test.js, walk-through step board_game_table (and the two old play
    steps use the new form); the UI audit opens the live play.
+   - Same day, two more from the user: "when I hit the back button on the phone with a model open it should just back
+     me out of the popup" - Drawer.jsx keeps one extra history entry while any panel is open: back closes the top
+     panel; a panel closed another way takes its entry back out (only if no panel replaced it and no page was opened
+     on top), so back never needs pressing twice (walk-through: phone). And "a star for favourite so they sit at the
+     top, otherwise alphabetically": settings.favourite_hobbies (the key/value settings table), modules/order.js
+     orderModules + core/useHobbies.js used by every hobby list (sidebar, Hobbies page with the stars, Home, calendar,
+     goals, to-dos). Built by a subagent from a brief, then checked here.

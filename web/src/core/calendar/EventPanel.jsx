@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { api, dayDate, today } from '../../api.js'
 import Drawer from '../../components/Drawer.jsx'
 import RecordFields, { useRecordForm } from '../../components/RecordFields.jsx'
-import { MODULES } from '../../modules/index.js'
+import { useHobbies } from '../useHobbies.js'
 import { useApp } from '../app-context.js'
 import { WEEKDAYS, isLogged, useLogIt, weatherLine } from './calendarParts.jsx'
 
@@ -31,6 +31,7 @@ export default function EventPanel({ id = null, day = null, hobby = null, title 
 }
 
 function EventForm({ event, day, defaults, lookups, prefill, onClose, onSaved }) {
+  const MODULES = useHobbies()      // favourites first, then A-Z
   const fields = [
     { name: 'title', label: 'What', required: true, wide: true, placeholder: 'e.g. Volleyball comp, Games night' },
     { name: 'hobby', label: 'Hobby', type: 'select', options: MODULES.map((m) => [m.id, m.name]) },
@@ -201,6 +202,7 @@ function PlaceFinder({ place, onPlace }) {
 
 // What to bring: tick items off; add your own, the hobby's gear, or a packing list's items; untick all for next time.
 function Checklist({ items, onChange, hobby }) {
+  const MODULES = useHobbies()
   const [text, setText] = useState('')
   const [offer, setOffer] = useState(null)
   useEffect(() => { api.bringOptions(hobby || '').then(setOffer).catch(() => setOffer(null)) }, [hobby])

@@ -171,8 +171,8 @@ export default function App() {
     return () => window.removeEventListener('message', directed)
   }, [navigate, openThing])
   const app = useMemo(() => ({
-    lookups, settings, refreshKey, changed, openItem, openModel, openAdd, openPanel, openThing, adjusted, showToast,
-  }), [lookups, settings, refreshKey, changed, openItem, openModel, openAdd, openPanel, openThing, adjusted, showToast])
+    lookups, settings, setSettings, refreshKey, changed, openItem, openModel, openAdd, openPanel, openThing, adjusted, showToast,
+  }), [lookups, settings, setSettings, refreshKey, changed, openItem, openModel, openAdd, openPanel, openThing, adjusted, showToast])
 
   // Where we are: "Kits" in "Models", the Journal, or Home.
   const module = moduleFor(pathname)
