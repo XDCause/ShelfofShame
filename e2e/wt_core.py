@@ -17,7 +17,7 @@ def home(page):
     expect(stats).to_have_count(10 + CHESS + CHESS_PUZZLES + READING + 2 * HIKING + 2 * GARDEN + 2 * SHOOTING + 2 * TRAVEL + 2 * VINYL + 2 * SUDOKU)
     expect(page.locator(".home-card", has_text="Recent activity").locator(".pill").first).to_be_visible()
     expect(page.locator(".home-card", has_text="Coming up")).to_be_visible()
-    expect(page.locator(".quick-action")).to_have_count(16)       # + Log a chess game, Add a book, Add a record, Play sudoku, Log a hike, Add a plant, Start shooting, Plan a trip
+    expect(page.locator(".quick-action")).to_have_count(17)       # + Log a chess game, Add a book, Add a record, Play sudoku, Log a hike, Add a plant, Start shooting, Plan a trip, Start a play
     shot(page, "d00_home", full=False)
     stats.filter(has_text="To buy").click()
     expect(page).to_have_url(BASE + "/wishlist")
@@ -396,7 +396,7 @@ def settings_more(page):
     d.locator("summary", has_text="Tamiya catalogue").click()
     expect(d.locator(".settings > .fold", has_text="Tamiya catalogue")).to_contain_text("Tamiya products")
     d.locator("summary", has_text="Lookup sites").click()             # the weekly site check (no live run here)
-    expect(d.locator(".site-check")).to_have_count(16)
+    expect(d.locator(".site-check")).to_have_count(17)          # (+ the Lichess explorer)
     expect(d.get_by_role("button", name="Check now")).to_be_visible()
     shot(page, "d22_settings", full=False)
     page.keyboard.press("Escape")
@@ -447,9 +447,8 @@ def offline_copy(page):
                              body: '{}'}).then(async (r) => [r.status, (await r.json()).detail])""")
         assert said[0] == 503 and "offline" in said[1], said   # read-only: a change gets a clear no
 
-        ctx.set_offline(False)                                 # it's back
-        p.locator(".offline-banner").get_by_role("button", name="Try again").click()
-        expect(p.locator(".offline-banner")).to_have_count(0)
+        ctx.set_offline(False)                                 # it's back: the app notices by itself (no Try again needed)
+        expect(p.locator(".offline-banner")).to_have_count(0, timeout=15000)
         p.get_by_role("button", name="Settings").click()
         d.locator("summary", has_text="Offline copy").click()
         d.get_by_label("Keep a copy on this device").uncheck()

@@ -8,6 +8,9 @@ import { useApp } from '../../core/app-context.js'
 import Stat, { Change } from '../../core/Stat.jsx'
 import { CLASSES, ChessSetup, ChessSyncBar, OtbForm, RatingChange, ResultPill, className, useChessAccount } from './chessParts.jsx'
 import { useChessSummary } from './HomeTiles.jsx'
+import OpeningExplorer from './OpeningExplorer.jsx'
+import OpeningTrainer from './OpeningTrainer.jsx'
+import { ReviewsSummary } from './Review.jsx'
 
 // The Chess hobby's pages: a dashboard (ratings, the rating over time, this week, recent games),
 // every game (filters, over-the-board games added here), and your openings.
@@ -69,6 +72,7 @@ export function Dashboard() {
                 <p className="muted small">{s.otb_games ? `${s.otb_games} game${s.otb_games === 1 ? '' : 's'} logged.` : 'Club nights and tournaments, logged by hand.'}</p>
                 <button type="button" className="secondary" onClick={() => navigate('/chess/games?add=1')}>+ Log a game</button>
               </section>
+              <ReviewsSummary />
             </div>
             <section className="card home-card">
               <h2 className="home-card-title">Recent games</h2>
@@ -171,7 +175,34 @@ export function GamesView() {
 }
 
 // How you do with each opening as White or Black: games, wins / draws / losses, your score.
+// The Openings tab: your results (below), a board to explore openings on, and the trainer that drills the lines you pick.
 export function OpeningsView() {
+  const [view, setView] = useState('results')
+  const [explore, setExplore] = useState({ moves: [], n: 0 })      // the line Explore opens on (n makes a fresh board for each request)
+  const [prefill, setPrefill] = useState(null)                       // a line sent from Explore to "Learn an opening"
+  const open = (id) => { setPrefill(null); setView(id) }
+  return (
+    <>
+      <div className="toolbar ot-views">
+        <div className="segmented" role="group" aria-label="Openings">
+          {[['results', 'Your results'], ['explore', 'Explore'], ['train', 'Train']].map(([id, label]) => (
+            <button key={id} type="button" aria-pressed={view === id} onClick={() => open(id)}>{label}</button>
+          ))}
+        </div>
+      </div>
+      {view === 'results' && <OpeningResults />}
+      {view === 'explore' && (
+        <section className="page">
+          <OpeningExplorer key={explore.n} start={explore.moves} onLearn={(line) => { setPrefill(line); setView('train') }} />
+        </section>
+      )}
+      {view === 'train' && <OpeningTrainer key={prefill ? prefill.moves.join(' ') : 'train'} prefill={prefill}
+        onExplore={(moves) => { setExplore((e) => ({ moves, n: e.n + 1 })); setPrefill(null); setView('explore') }} />}
+    </>
+  )
+}
+
+function OpeningResults() {
   const { refreshKey } = useApp()
   const navigate = useNavigate()
   const [colour, setColour] = useState('white')

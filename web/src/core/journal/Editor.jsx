@@ -77,8 +77,8 @@ export default function Editor({ pageId, initialContent, onChange, onOpenMention
   // What @ offers: models, supplies, pages, games and gear matching what's typed after it.
   const mentionItems = async (query) => (await api.mentionable(query)).map((m) => ({
     title: m.label,
-    subtext: WHAT[m.kind],
-    group: WHAT[m.kind],
+    subtext: m.what ?? WHAT[m.kind],
+    group: m.what ?? WHAT[m.kind],
     onItemClick: () => editor.insertInlineContent([
       { type: 'mention', props: { kind: m.kind, ref: String(m.id), label: m.label } }, ' ',
     ]),

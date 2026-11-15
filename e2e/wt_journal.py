@@ -23,7 +23,7 @@ def journal_write(page):
     editor = page.locator(".bn-editor")
     editor.click(timeout=20000)                                          # the editor loads on demand
     page.keyboard.type("Started the hull of the @Sher")
-    page.get_by_role("option", name=re.compile("Sherman")).click()
+    page.get_by_role("option", name=re.compile("M4A3E8 Sherman")).click()      # (the kit: a record can match "Sherman" too)
     page.keyboard.type(f"today. Primer next. {MARK}")
     expect(page.locator(".save-status")).to_have_text("Saved", timeout=10000)
     expect(page.locator(".journal-links")).to_contain_text("Sherman")

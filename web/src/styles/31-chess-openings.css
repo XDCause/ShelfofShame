@@ -1,0 +1,71 @@
+/* Chess openings (2026-11-15): Explore (a board, the moves people play, theory, your own games), Train (the openings
+ * you are learning, the drill). Classes start with ot-. The board itself is styled in 30-chess-review.css (pb-*). */
+
+.ot-views { margin-bottom: 14px; }
+
+/* The board on the left, what to know about the position beside it; stacked on a phone (board first). */
+.ot-explore { display: grid; grid-template-columns: minmax(0, 480px) minmax(0, 1fr); gap: 20px; align-items: start; }
+.ot-boardside { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.ot-side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.ot-controls { display: flex; flex-wrap: wrap; gap: 6px; }
+.ot-controls button { min-width: 44px; min-height: 36px; }
+
+.ot-movelist { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 4px; margin: 0; font-size: 0.92rem; }
+.ot-ply-wrap { display: inline-flex; align-items: baseline; gap: 2px; }
+.ot-num { color: var(--muted); font-size: 0.85rem; }
+.ot-ply { background: none; border: 0; border-radius: 6px; padding: 3px 6px; min-height: 28px; font-weight: 600; }
+.ot-ply:hover { background: var(--fill); }
+.ot-ply.now { background: var(--tint-soft); color: var(--tint); }
+
+.ot-name { line-height: 1.4; }
+.ot-advice { padding: 10px 14px; border-radius: 12px; background: var(--ok-bg); color: var(--ok); }
+.ot-tablehead { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+
+/* The moves played from here: move, how often, white / draw / black, average rating; each with "How to meet it". */
+.ot-moves { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.ot-move { display: flex; align-items: center; gap: 6px; border-radius: 10px; }
+.ot-move:hover { background: var(--fill-2); }
+.ot-move-main { flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: 4.2em 3.2em minmax(60px, 1fr) 3em; gap: 8px; align-items: center;
+  background: none; border: 0; text-align: left; padding: 8px 6px; min-height: 44px; border-radius: 10px; }
+.ot-san { font-weight: 700; }
+.ot-book { color: var(--teal); font-size: 0.7rem; }
+.ot-share { font-variant-numeric: tabular-nums; }
+.ot-rating { text-align: right; font-variant-numeric: tabular-nums; }
+.ot-meet { flex: none; min-height: 44px; padding: 0 8px; }
+.ot-wdl { display: flex; height: 12px; border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+.ot-wdl-w { background: #f6f1e4; }
+.ot-wdl-d { background: #a9a79b; }
+.ot-wdl-b { background: #2c312b; }
+
+.ot-theory { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.ot-theory-move { border: 0; cursor: pointer; min-height: 32px; }
+.ot-mine p { margin: 2px 0; }
+.ot-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.ot-engine { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.ot-engine li { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+/* Train */
+.ot-reps { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); }
+.ot-rep { display: flex; flex-direction: column; gap: 8px; }
+.ot-rep p { margin: 0; }
+.ot-rep-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.ot-rep-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.ot-progress { height: 8px; border-radius: 4px; background: var(--fill); overflow: hidden; }
+.ot-progress span { display: block; height: 100%; background: var(--ok); }
+
+.ot-search { display: flex; flex-direction: column; gap: 4px; }
+.ot-suggest { display: flex; flex-wrap: wrap; gap: 8px; }
+.ot-suggest .chip { border: 0; cursor: pointer; min-height: 36px; padding: 6px 12px; }
+.ot-results { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.ot-result { min-height: 48px; }
+.ot-confirm { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.ot-confirm p { margin: 0; }
+
+.ot-drill h3, .ot-done h2 { margin: 0; }
+.ot-right { color: var(--ok); }
+.ot-wrong { color: var(--out); }
+
+@media (max-width: 760px) {
+  .ot-explore { grid-template-columns: minmax(0, 1fr); }
+  .ot-move-main { grid-template-columns: 3.4em 2.8em minmax(40px, 1fr) 2.6em; gap: 6px; }
+}

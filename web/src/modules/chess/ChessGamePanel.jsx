@@ -4,10 +4,11 @@ import Drawer from '../../components/Drawer.jsx'
 import { useApp } from '../../core/app-context.js'
 import JournalMentions from '../../core/journal/JournalMentions.jsx'
 import Board from './Board.jsx'
+import GameReview from './Review.jsx'
 import { OtbForm, RatingChange, ResultPill, timeControl } from './chessParts.jsx'
 
-// One game: how it went (result, ratings, accuracy, opening), the moves on a board, your notes,
-// journal pages about it. Over-the-board games can be changed or removed; online ones come from
+// One game: how it went (result, ratings, accuracy, opening), the moves on a board - or its review (Review.jsx: Stockfish,
+// when you press Review this game) - your notes, journal pages about it. Over-the-board games can be changed or removed; online ones come from
 // chess.com (only their notes are yours to change).
 export default function ChessGamePanel({ id, onClose }) {
   const { changed } = useApp()
@@ -68,7 +69,7 @@ export default function ChessGamePanel({ id, onClose }) {
         </section>
       )}
 
-      {game.pgn ? <section className="panel-section"><Board pgn={game.pgn} colour={game.colour} /></section>
+      {game.pgn ? <section className="panel-section">{game.rules === 'chess' ? <GameReview game={game} /> : <Board pgn={game.pgn} colour={game.colour} />}</section>
         : otb && <p className="panel-section small muted">No moves saved. Edit details to paste them (PGN) and replay the game here.</p>}
 
       <section className="panel-section">

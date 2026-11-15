@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { api } from '../api.js'
-import { BookIcon, BoxIcon, ChessIcon, DiceIcon, GamepadIcon, JournalIcon, PlaneIcon, SearchIcon, ShoeIcon, SuitcaseIcon } from '../components/icons.jsx'
+import { BookIcon, BoxIcon, ChessIcon, DiceIcon, GamepadIcon, JournalIcon, PlaneIcon, SearchIcon, ShoeIcon, SuitcaseIcon, VinylIcon } from '../components/icons.jsx'
 import { useApp } from './app-context.js'
 
 const ICON = { model: PlaneIcon, supply: BoxIcon, page: JournalIcon, game: DiceIcon, gear: ShoeIcon, videogame: GamepadIcon, chess: ChessIcon,
-  book: BookIcon, trip: SuitcaseIcon }
+  book: BookIcon, trip: SuitcaseIcon, record: VinylIcon }
+// (a kind with no icon here gets the search icon, and its label from the API: a new kind must never blank the app -
+// 2026-11-16, vinyl records in the results crashed it: React error #130)
 const WHAT = { model: 'Kit', supply: 'Supply', page: 'Journal page', game: 'Board game', gear: 'Gear', videogame: 'Video game', chess: 'Chess game',
-  book: 'Book', trip: 'Trip' }
+  book: 'Book', trip: 'Trip', record: 'Record' }
 const isMac = /Mac|iPhone|iPad/.test(navigator.platform)
 
 // Search everything from the nav bar: kits, supplies, journal pages, board games and gear. Ctrl+K (⌘K) jumps here;
@@ -66,14 +68,14 @@ export default function GlobalSearch() {
       {results.length > 0 && (
         <ul className="search-results" role="listbox" aria-label="Search results">
           {results.map((r, i) => {
-            const Icon = ICON[r.kind]
+            const Icon = ICON[r.kind] ?? SearchIcon
             return (
               <li key={`${r.kind}-${r.id}`} role="option" aria-selected={i === active}>
                 <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => pick(r)}
                   onMouseEnter={() => setActive(i)}>
                   <span className={`thumb thumb-icon ${r.kind}`}><Icon size={18} /></span>
                   <span className="grow">{r.label}</span>
-                  <span className="muted small">{WHAT[r.kind]}</span>
+                  <span className="muted small">{WHAT[r.kind] ?? r.what}</span>
                 </button>
               </li>
             )

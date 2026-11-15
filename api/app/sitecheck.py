@@ -16,7 +16,7 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, BackgroundTasks
 
-from . import (bluesky, bunnings, exophase, frankfurter, gameology, goodgames, hasegawa, hlj, stedi, trumpeter, openlibrary, openmeteo, overpass, steam,
+from . import (bluesky, bunnings, exophase, frankfurter, gameology, goodgames, hasegawa, hlj, lichess, stedi, trumpeter, openlibrary, openmeteo, overpass, steam,
                steamhunters, tamiya, wikimedia)
 from .db import db
 
@@ -153,6 +153,12 @@ def _frankfurter():
     return f"1 USD = {r['aud_per']['USD']:.4f} AUD ({r['date']})"
 
 
+def _lichess():
+    a = lichess.explore("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", "masters", fresh=True)    # (one cheap look-up)
+    expect(a["total"] > 1000 and any(m["san"] == "e4" for m in a["moves"]), "Lichess' explorer has no e4 from the starting position")
+    return f"{a['total']:,} master games from the start, e4 first"
+
+
 # (site, what the app uses it for, the check)
 CHECKS = [
     ("Tamiya", "paint and kit look-ups, photos", _tamiya),
@@ -174,6 +180,7 @@ CHECKS = [
     ("Bunnings", "garden supplies and seeds from a product link", _bunnings),
     ("Open-Meteo", "weather tips for the balcony garden; places and weather for trips", _openmeteo),
     ("Frankfurter", "exchange rates for trips' money in other currencies", _frankfurter),
+    ("Lichess explorer", "the chess opening trainer: what people play from a position", _lichess),
 ]
 STATE = {"running": False}
 _lock = threading.Lock()

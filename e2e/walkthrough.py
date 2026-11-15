@@ -83,6 +83,7 @@ ORDER = [
     "board_game_kinds",
     "board_game_elsewhere",
     "board_game_table",
+    "chess_review",
     "volleyball_coach",
     "video_game_friends",
     "wishlist_shops",

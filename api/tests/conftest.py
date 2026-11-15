@@ -24,7 +24,7 @@ EMPTIED = ("stock_movements, wishlist, barcode_catalog, product_info, supplies, 
            "colour_group_members, mixes, mix_parts, price_guide, journal_pages, tags, page_tags, "
            "journal_links, journal_images, journal_drawings, journal_notebooks, journal_templates, attachments, wanted_extras, wanted_prices, wanted_history, calendar_events, board_games, board_game_plays, board_game_players, board_game_groups, gear, "
            "volleyball_games, volleyball_teams, volleyball_videos, vg_achievements, vg_games, vg_other_games, "
-           "chess_games, chess_archives, books, reading_log, book_quotes, vg_friends, volleyball_coach, goals, site_checks, hikes, hike_photos, hike_gear, garden_spaces, garden_containers, garden_plantings, garden_logs, garden_photos, garden_tasks, garden_items, shooting_ranges, rifles, ammo, shooting_sessions, shooting_groups, shooting_shots, shooting_media, rifle_logs, dope_rows, trips, trip_places, travel_countries, vg_playtime, vg_hidden_text, vg_hidden_read, banners, auth_account, auth_recovery_codes, auth_sessions, auth_passkeys, auth_failures, todos, vinyl_records, vinyl_values, vinyl_plays, sudoku_games, sudoku_library, sudoku_event_photos")
+           "chess_games, chess_archives, chess_explorer_cache, chess_repertoire, books, reading_log, book_quotes, vg_friends, volleyball_coach, goals, site_checks, hikes, hike_photos, hike_gear, garden_spaces, garden_containers, garden_plantings, garden_logs, garden_photos, garden_tasks, garden_items, shooting_ranges, rifles, ammo, shooting_sessions, shooting_groups, shooting_shots, shooting_media, rifle_logs, dope_rows, trips, trip_places, travel_countries, vg_playtime, vg_hidden_text, vg_hidden_read, banners, auth_account, auth_recovery_codes, auth_sessions, auth_passkeys, auth_failures, todos, vinyl_records, vinyl_values, vinyl_plays, sudoku_games, sudoku_library, sudoku_event_photos")
 _candidates = []   # EMPTIED and every table that refers to one (TRUNCATE ... CASCADE empties those too): found once
 
 
@@ -91,7 +91,7 @@ def no_real_steam(monkeypatch):
     to fake one fails."""
     import httpx
 
-    from app import (bluesky, boardgames, bookseries, bunnings, chess, goodgames, chesscom, discogs, exophase, frankfurter, hiking, lastfm, linkpeek,
+    from app import (bluesky, boardgames, bookseries, bunnings, chess, chess_trainer, goodgames, lichess, chesscom, discogs, exophase, frankfurter, hiking, lastfm, linkpeek,
                      openlibrary, openmeteo, overpass, vinyl_sync,
                      reading, steam,
                      stedi, steamhunters, trumpeter, videogames, gameology, ucp, wikimedia)
@@ -112,6 +112,10 @@ def no_real_steam(monkeypatch):
     monkeypatch.setattr(steam, "store_search", refusing(steam.SteamError))
     monkeypatch.setattr(chesscom, "_get", refusing(chesscom.ChessError))
     monkeypatch.setattr(chesscom, "pause", lambda: None)
+    monkeypatch.setattr(lichess, "_get", refusing(lichess.LichessError))        # the opening explorer (tests fake it themselves)
+    monkeypatch.setattr(chess_trainer, "Engine", chess_trainer.NoEngine)        # no Stockfish unless a test brings its own
+    chess_trainer._mine.update(stamp=None, index={})
+    chess_trainer.PROGRESS.clear()
     monkeypatch.setattr(openlibrary, "_get", refusing(openlibrary.BookError))
     monkeypatch.setattr(bookseries, "_wikidata", refusing(bookseries.SeriesError))
     monkeypatch.setattr(goodgames, "_call", refusing(ucp.ShopError))

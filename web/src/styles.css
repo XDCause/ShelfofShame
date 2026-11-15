@@ -62,6 +62,10 @@
  *                                    (most used: .sdk)
  *   29-boardgames-table.css          board games at the table: a live play's clock and scores, players, What should we play
  *                                    (most used: .bgt)
+ *   30-chess-review.css              chess: the board you can play on, the game review (accuracy, kinds of move, the graph)
+ *                                    (most used: .cr, .pb)
+ *   31-chess-openings.css            chess openings: the explorer (moves, results, theory), the trainer and its drill
+ *                                    (most used: .ot)
  */
 @import './styles/01-base.css';
 @import './styles/02-inventory-panels.css';
@@ -92,3 +96,5 @@
 @import './styles/27-vinyl.css';
 @import './styles/28-sudoku.css';
 @import './styles/29-boardgames-table.css';
+@import './styles/30-chess-review.css';
+@import './styles/31-chess-openings.css';

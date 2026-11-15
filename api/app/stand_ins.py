@@ -10,8 +10,8 @@ same shape the real site gives. Only main.py calls it, and only with OUTSIDE_SIT
 """
 import logging
 
-from . import (bluesky, bookseries, bunnings, chesscom, discogs, exophase, frankfurter, gameology, goodgames, hasegawa, hlj, lastfm,
-               linkpeek, openlibrary, openmeteo, overpass, stedi, steam, steamhunters, tamiya, trumpeter, webphoto, wikimedia)
+from . import (bluesky, bookseries, bunnings, chess_openings, chesscom, discogs, exophase, frankfurter, gameology, goodgames, hasegawa, hlj, lastfm,
+               lichess, linkpeek, openlibrary, openmeteo, overpass, stedi, steam, steamhunters, tamiya, trumpeter, webphoto, wikimedia)
 
 log = logging.getLogger("stand_ins")
 PNG = (b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
@@ -159,6 +159,29 @@ FORECAST = {"daily": {"time": ["2026-01-10", "2026-01-11", "2026-01-12"], "tempe
                       "wind_gusts_10m_max": [25, 30, 20], "uv_index_max": [9, 10, 8], "weather_code": [1, 63, 3]}}
 
 
+def lichess_explorer(source, params):
+    """The Lichess opening explorer's answer (raw, as the site sends it) for any position: the bundled theory moves
+    first, then the legal moves that look like development, with made-up counts that thin out as the game goes on."""
+    import chess
+    board = chess.Board(params["fen"])
+    plies = board.fullmove_number * 2 - (1 if board.turn else 0)
+    total = (40000 if source == "lichess" else 4000) // (1 + plies // 2)
+    theory = [t["san"] for t in chess_openings.theory(board)]
+
+    def keen(san):
+        usual = ["e4", "d4", "Nf3", "c4", "e5", "c5", "Nf6", "d5", "e6", "Nc6", "Nc3", "Bc4", "Bb5"]
+        return (usual.index(san) if san in usual else 99, 0 if san in theory else 1, 0 if san.startswith("O-O") else 1 if san[0] in "NB" else 2, san)
+    sans = sorted((board.san(m) for m in board.legal_moves), key=keen)[:4]
+    shares = [50, 28, 14, 8][:len(sans)]
+    moves = []
+    for san, share in zip(sans, shares):
+        n = max(1, total * share // 100)
+        moves.append({"uci": board.parse_san(san).uci(), "san": san, "white": n * 4 // 10, "draws": n // 5,
+                      "black": n - n * 4 // 10 - n // 5, "averageRating": 1500 if source == "lichess" else 2450})
+    return {"white": sum(m["white"] for m in moves), "draws": sum(m["draws"] for m in moves),
+            "black": sum(m["black"] for m in moves), "moves": moves}
+
+
 def _refuse(error, what):
     def no(*_a, **_k):
         raise error(f"{what} {NOT_ASKED}.")
@@ -223,6 +246,8 @@ def install():
     exophase._get = _refuse(exophase.Unavailable, "Exophase")
     exophase.search = lambda words, environment: []          # Epic / Ubisoft "find a game": nothing found
     chesscom._get = _refuse(chesscom.ChessError, "chess.com")
+    lichess._get = lichess_explorer             # (the opening trainer's explorer: made-up counts for any position)
+    lichess.PAUSE = 0
     # Books
     openlibrary._get = lambda params: []
     bookseries._wikidata = lambda query: []

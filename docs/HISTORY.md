@@ -959,3 +959,38 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
      top, otherwise alphabetically": settings.favourite_hobbies (the key/value settings table), modules/order.js
      orderModules + core/useHobbies.js used by every hobby list (sidebar, Hobbies page with the stars, Home, calendar,
      goals, to-dos). Built by a subagent from a brief, then checked here.
+
+5x. **Chess: game review and an opening trainer** (2026-11-15, the user: "a chess review tool to see blunders and
+   brilliants, much like chess.com's game review... the game rating vs your rating then, accuracy, a bar of who's
+   winning, what I should have played, teach me the lines - and a way to train an opening's lines, what they're likely
+   to play and how to combat it"). A desk review first: chess.com's Game Review (expected points from rating + eval;
+   best / excellent / good / inaccuracy / mistake / blunder by the points lost; brilliant, great and miss by their own
+   rules; its formula isn't public), Lichess (a published win% curve and per-move accuracy, a harmonic / volatility
+   mix for the game, "Learn from your mistakes"), Chessable's MoveTrainer and Listudy (lines learned by playing them,
+   spaced repetition), Lichess's opening names (CC0) and opening explorer (now needs a token: the user made one with no
+   scopes and put it in .env themselves - LICHESS_TOKEN, passed to the API by docker-compose).
+   - Review (95_chess_review.sql, api/app/chess_review.py, web Review.jsx + PlayBoard.jsx): one game, when you press
+     Review this game (the user: not every game in the background - "it will take a lot of time and grow too far").
+     Stockfish 17.1 from Debian in the API image (python-chess drives it), depth 16 with the two best lines, ~25 s for
+     a 40-move game; kept in chess_reviews. Win% and accuracy are Lichess's formulas; the kinds of move follow
+     chess.com's thresholds (brilliant = as good as best and leaves a piece en prise for less, not already winning;
+     great = the only move that holds, not a recapture; miss = a mistake straight after the opponent's). Game rating
+     is a rough 2900 x accuracy^2.5. The screen: both sides' accuracy and ratings then, counts of each kind, accuracy by
+     phase, the opening and where it left the book ("next time, play d5 instead of d6"), the board with a win-chance
+     bar and arrows, a graph of the game (tap / arrow keys to jump), each move explained with the best move and the
+     engine's line (step through it), key moments, Retry your mistakes (find the better move on the board). A review
+     still running when the app restarts says so and can be started again. The Dashboard sums reviewed games.
+   - Opening names offline: api/app/data/chess_openings.tsv (Lichess's chess-openings, CC0) read by chess_openings.py
+     (name a position, in book, theory moves, search).
+   - Opening trainer (96_chess_openings_trainer.sql, api/app/lichess.py + chess_trainer.py, web OpeningExplorer.jsx +
+     OpeningTrainer.jsx; built by a subagent from a brief, then checked here): the Openings tab is now Your results |
+     Explore | Train. Explore: play moves, see what players near your rating (or masters) play, theory, your own
+     record from the position, "How to meet it" (masters' choice the engine agrees with, else the engine's). Train:
+     pick an opening and colour, the app builds the lines (your move at your turns; their 2-3 likeliest replies),
+     then drills them - learn first, then spaced repetition (SM-2). Explorer answers are cached 30 days; without the
+     token or the site, theory from the CC0 list. Weekly site check: Lichess explorer.
+   - Found on the way (the walk-through on a copy of prod's data, now with vinyl records): the top-bar search had no
+     icon for a record, and a missing icon was an undefined component - React error #130, a blank app. It now falls
+     back to the search icon and the API's own label; the journal's @mention list shows "Record" too.
+   Tests: test_chess_review.py (the real engine at depth 8), test_chess_trainer.py, openingHelpers.test.js,
+   walk-through step chess_review.

@@ -1131,6 +1131,51 @@ def board_game_table(page):
     page.keyboard.press("Escape")
 
 
+@step("Chess review: Review this game (Stockfish) - accuracy, the blunder, the best move, the graph, retry; Openings: explore and train")
+def chess_review(page):
+    game = page.request.post(f"{BASE}/api/chess/games", data={
+        "played_on": "2026-11-01", "colour": "black", "opp_name": f"Scholar-{MARK}", "result": "loss", "my_rating": 900,
+        "opp_rating": 1000, "pgn": "1. e4 e5 2. Bc4 Nc6 3. Qh5 Nf6 4. Qxf7# 1-0"}).json()
+    go(page, "Chess")
+    page.locator(".section-tabs").get_by_role("link", name="Games").click()
+    page.locator(".chess-row", has_text=f"Scholar-{MARK}").click()
+    d = drawer(page)
+    d.get_by_role("button", name="Review this game").click()
+    expect(d.locator(".cr-accuracy").first).to_be_visible(timeout=90000)               # the engine's done
+    expect(d.locator(".cr-counts")).to_contain_text("Blunder")
+    d.locator(".cr-moves").get_by_role("button", name=re.compile("^Nf6")).click()
+    expect(d.locator(".cr-move")).to_contain_text("blunder")
+    expect(d.locator(".cr-move")).to_contain_text("Best was")
+    expect(d.locator(".pb-arrows line")).to_have_count(1)                               # the best move's arrow
+    d.locator(".cr-graph").click(position={"x": 5, "y": 40})                            # the graph jumps to the start
+    expect(d.locator(".chess-ply").first).to_contain_text("Start")
+    shot(page, "d62_chess_review", full=False)
+    d.get_by_role("button", name=re.compile("^Retry your mistakes")).click()
+    expect(d.locator(".cr-retry")).to_contain_text("Find a better move")
+    d.get_by_role("button", name="Show me").click()
+    expect(d.locator(".cr-retry")).to_contain_text("The engine's move")
+    d.get_by_role("button", name="Next").click()
+    d.get_by_role("button", name="Back to the review").click()
+    page.keyboard.press("Escape")
+    # The Dashboard counts reviewed games
+    page.locator(".section-tabs").get_by_role("link", name="Dashboard").click()
+    expect(page.locator(".cr-summary")).to_contain_text("reviewed game")
+    # Openings: explore the start (the stand-in explorer), then build lines to learn
+    page.locator(".section-tabs").get_by_role("link", name="Openings").click()
+    page.get_by_role("group", name="Openings").get_by_role("button", name="Explore").click()
+    expect(page.locator(".pb-board .sq")).to_have_count(64, timeout=15000)
+    expect(page.get_by_text("How to meet it").first).to_be_visible(timeout=15000)
+    shot(page, "d63_opening_explore", full=False)
+    page.get_by_role("group", name="Openings").get_by_role("button", name="Train").click()
+    page.get_by_role("button", name="+ Learn an opening").click()
+    page.get_by_placeholder("Sicilian Najdorf, London, Italian...").fill("Italian Game")
+    page.locator(".ot-result").first.click()
+    page.get_by_role("button", name="Build the lines").click()
+    expect(page.get_by_text(re.compile("Building the lines|learned"))).to_be_visible(timeout=15000)
+    shot(page, "d64_opening_train", full=False)
+    page.request.delete(f"{BASE}/api/chess/games/{game['game_id']}")
+
+
 @step("Board games: game / expansion / other groups and filter; To sell")
 def board_game_kinds(page):
     base = page.request.post(f"{BASE}/api/board-games", data={"name": f"Base-{MARK}"}).json()
@@ -1198,7 +1243,7 @@ def vinyl(page):
     row = page.locator(".vinyl .row-button", has_text=f"Spun {MARK}")
     expect(row).to_contain_text("Last.fm ✓")                              # scrobbled (the stand-in Last.fm)
     tabs.get_by_role("link", name="Stats").click()
-    expect(page.locator(".home-card", has_text="Top artists")).to_contain_text("The Stand-ins")
+    expect(page.locator(".home-card", has_text="Top artists")).to_contain_text(re.compile(r"\d+ records?"))   # (real collections fill the top)
     expect(page.locator(".home-card", has_text="Decades")).to_be_visible()
     shot(page, "d56_vinyl_stats", full=False)
     tabs.get_by_role("link", name="Dashboard").click()

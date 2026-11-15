@@ -53,7 +53,7 @@ def test_every_real_check_is_listed():
 import pytest  # noqa: E402
 
 from app import (bluesky, bunnings, exophase, frankfurter, gameology, goodgames, hasegawa, hlj, openlibrary,  # noqa: E402
-                 openmeteo, overpass, steam, steamhunters, stedi, tamiya, trumpeter, wikimedia)
+                 lichess, openmeteo, overpass, steam, steamhunters, stedi, tamiya, trumpeter, wikimedia)
 
 # check -> (what to fake, a good answer, a changed answer): the site's module function, faked both ways
 CASES = {
@@ -73,6 +73,7 @@ CASES = {
     "_overpass": ((overpass, "landmarks"), [{"kind": "peak", "name": "Constitution Hill", "ele": "287"}], [{"kind": "lookout", "name": "x"}]),
     "_bunnings": ((bunnings, "fetch"), {"bunnings_item": "2962117", "price": 12.98, "image": "https://x/i.jpg", "name": "Osmocote"},
                   {"bunnings_item": "2962117", "price": None, "image": "u", "name": "x"}),
+    "_lichess": ((lichess, "explore"), {"total": 2500000, "moves": [{"san": "e4"}]}, {"total": 2500000, "moves": [{"san": "d4"}]}),
     "_frankfurter": ((frankfurter, "rates"), {"aud_per": {"USD": 1.52, "JPY": 0.0101}, "date": "2026-10-21"}, {"aud_per": {"USD": 1.5}}),
 }
 
