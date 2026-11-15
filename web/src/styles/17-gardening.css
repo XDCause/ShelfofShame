@@ -160,3 +160,7 @@
   .garden-timeline-months { margin-left: 110px; }
   .garden-weather { gap: 4px; }
 }
+.garden-worth-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.garden-worth-table th, .garden-worth-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--separator); }
+.garden-worth-table th { color: var(--muted); font-weight: 600; }
+.garden-worth-input { width: 90px; padding: 4px 6px; }

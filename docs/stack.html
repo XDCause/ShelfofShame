@@ -302,7 +302,7 @@ mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0 1
     {"name": "Precision shooting", "hobby": "shooting", "hue": "#9aa33f", "where": "modules/shooting", "what": "Rifles, ammo, ranges, sessions, groups, each shot, the live board, your DOPE.",
      "api": ["shooting", "shooting_sessions", "shooting_shots", "shotmath"], "sites": []},
     {"name": "Hiking", "hobby": "hiking", "hue": "#4f9e62", "where": "modules/hiking", "what": "Hikes from GPX files: distance, climb, routes on a map (Leaflet), splits, landmarks and photos nearby, gear.",
-     "api": ["hiking", "gpx", "overpass", "wikimedia"], "sites": ["overpass", "wikimedia"]},
+     "api": ["hiking", "gpx", "hikepace", "overpass", "wikimedia"], "sites": ["overpass", "wikimedia"]},
     {"name": "Gardening", "hobby": "gardening", "hue": "#78b043", "where": "modules/gardening", "what": "A balcony garden: layout, plants, watering and feeding, logs and photos, harvests, a plant guide and doctor.",
      "api": ["garden", "garden_logs", "garden_today", "garden_guide", "garden_doctor", "garden_items", "bunnings", "openmeteo"], "sites": ["bunnings", "openmeteo"]},
     {"name": "Building my car", "hobby": "car", "hue": "#7f97a6", "where": "modules/car", "what": "A modified Toyota 86. A placeholder for now.", "wip": true,
@@ -348,7 +348,8 @@ mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0 1
     {"group": "Scripts", "what": "PowerShell 5.1, in the app's folder (ASCII only).", "items": [
       ["start.ps1", "", "start the app (and make the HTTPS certificate the first time)"],
       ["dev.ps1", "", "rebuild the dev copy; -Refresh copies prod's data in"],
-      ["promote.ps1", "", "dev to prod: tests, backup, merge, migrate, rebuild; -Push to GitHub"],
+      ["stage.ps1", "", "dev to staging: tests, a fresh copy of prod's data, migrate, rebuild (-Setup the first time)"],
+      ["promote.ps1", "", "staging (or dev) to prod: backup, merge, migrate, rebuild; -Push to GitHub"],
       ["migrate.ps1", "", "apply the db/init files a copy hasn't had"],
       ["load-sudoku-library.ps1", "", "load the sudoku library (the hardest puzzles, kept out of the repo) into a copy's database"],
       ["backup.ps1", "", "back up, read back, weekly test restore, copies elsewhere"],

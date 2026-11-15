@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { forecastText, goalPaceText } from './paceText.js'
 import { api } from '../../api.js'
 import Drawer from '../../components/Drawer.jsx'
 import { BookIcon } from '../../components/icons.jsx'
@@ -90,6 +91,7 @@ export function Progress({ book: b }) {
         {b.percent != null && b.current_page != null && ` · ${b.percent}%`}
       </span>
       {b.percent != null && <span className="fill-bar tint"><span style={{ width: `${b.percent}%` }} /></span>}
+      {b.forecast && <span className="item-meta reading-pace-line">{forecastText(b.forecast)}</span>}
     </span>
   )
 }
@@ -315,6 +317,7 @@ export function GoalCard({ summary: s }) {
               : <strong>Right on pace</strong>}
         {!g.reached && ` · ${g.left} to go in ${g.days_left} days`}
       </p>
+      {goalPaceText(g) && <p className={`small reading-goal-pace ${g.behind_by > 0 ? '' : 'ok-text'}`}>{goalPaceText(g)}</p>}
       {error && <p className="alert error small">{error}</p>}
     </section>
   )

@@ -8,7 +8,7 @@ import { useApp } from '../../core/app-context.js'
 import EmptyState from '../../core/EmptyState.jsx'
 import Stat from '../../core/Stat.jsx'
 import { Stars } from '../reading/readingParts.jsx'
-import { GpxImport, hikeMeta, hikeTime, km, metres, pace, useHikingSummary } from './hikingParts.jsx'
+import { GpxImport, hikeMeta, hikeTime, km, metres, pace, useHikingSummary, RouteEstimate } from './hikingParts.jsx'
 import { plural } from './HomeTiles.jsx'
 
 // The Hiking hobby's pages: a dashboard (this year, km per month, personal bests, latest hikes)
@@ -162,6 +162,7 @@ export function HikesView() {
         </>
       )}
       <Fold title="Import from AllTrails" open={hikes?.length === 0 && !q && !year}><GpxImport /></Fold>
+      <Fold title="Estimate a route"><RouteEstimate /></Fold>
     </section>
   )
 }

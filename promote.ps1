@@ -1,4 +1,5 @@
-# Move tested changes from the dev copy to prod (your real data).
+# Move tested changes to prod (your real data): from the staging copy when there is one (stage.ps1: dev -> staging
+# -> prod), otherwise straight from the dev copy.
 #
 #   .\promote.ps1            # tests + browser walk-through on dev, then update prod
 #   .\promote.ps1 -Quick     # API tests only on dev (skip the ~2 minute browser walk-through)
@@ -21,6 +22,8 @@ param([switch]$Quick, [switch]$Push, [switch]$Retest)
 . "$PSScriptRoot\scripts\common.ps1"
 Set-Location -Path $Root
 $DevRoot = "$Root-dev"
+$StageRoot = "$Root-staging"
+$Source = if (Test-Path $StageRoot) { 'staging' } else { 'dev' }      # where prod's next code comes from (stage.ps1)
 
 function Fail([string]$msg) { Write-Host $msg -ForegroundColor Red; exit 1 }
 function Step([string]$msg) { Write-Host ''; Write-Host "== $msg" -ForegroundColor Cyan }
@@ -31,10 +34,11 @@ if ((git rev-parse --abbrev-ref HEAD) -ne 'main') { Fail 'The prod folder must b
 if (git status --porcelain) { Fail 'The prod folder has uncommitted changes. Commit them on dev instead.' }
 if (-not (Test-Path $DevRoot)) { Fail "No dev copy at $DevRoot. Set it up with .\dev.ps1 -Setup" }
 if (git -C $DevRoot status --porcelain) { Fail 'The dev copy has uncommitted changes. Commit (or discard) them first.' }
+if ($Source -eq 'staging' -and (git -C $StageRoot status --porcelain)) { Fail 'The staging folder has uncommitted changes.' }
 
 # 2. What's moving
-$commits = @(git log --oneline main..dev)
-if ($commits.Count -eq 0) { Write-Host 'Nothing to promote: main already has everything on dev.' -ForegroundColor Green; exit 0 }
+$commits = @(git log --oneline "main..$Source")
+if ($commits.Count -eq 0) { Write-Host "Nothing to promote: main already has everything on $Source." -ForegroundColor Green; exit 0 }
 Step "$($commits.Count) change(s) to promote:"
 $commits | ForEach-Object { Write-Host "  $_" }
 $before = git rev-parse --short HEAD
@@ -46,6 +50,14 @@ $api = Get-Stamp 'api' $DevRoot
 $e2e = Get-Stamp 'e2e' $DevRoot
 $web = Get-Stamp 'web' $DevRoot               # (the web code's own tests, run_web_tests.ps1)
 $passed = ($api[0] -eq $devTree) -and ($Quick -or ($e2e[0] -eq $devTree -and $web[0] -eq $devTree))
+if ($Source -eq 'staging') {
+    # Staging's code passed every test when it was staged (stage.ps1 stamps that exact code): nothing to run here.
+    if ((Get-Stamp 'staged' $StageRoot)[0] -ne (Get-TreeHash $StageRoot 'staging^{tree}')) {
+        Fail 'Staging''s code has no passing tests on record - stage it with .\stage.ps1 (it tests first).'
+    }
+    $passed = $true
+    $api = $e2e = $web = Get-Stamp 'staged' $StageRoot
+}
 if ($passed -and -not $Retest) {
     $when = if ($Quick) { $api[1] } else { @($api[1], $e2e[1], $web[1]) | Sort-Object | Select-Object -First 1 }
     Step "Tests: already passed on exactly this code in dev (since $when) - not run again (-Retest to run them)"
@@ -73,9 +85,9 @@ To go back to how prod was before this promote:
 "@
 
 # 5. Code
-Step 'Moving main to dev'
-git merge --ff-only dev
-if ($LASTEXITCODE -ne 0) { Fail 'main has commits dev doesn''t (fast-forward impossible) - prod not touched. Merge main into dev, test, then promote.' }
+Step "Moving main to $Source"
+git merge --ff-only $Source
+if ($LASTEXITCODE -ne 0) { Fail "main has commits $Source doesn't (fast-forward impossible) - prod not touched. Merge main into dev, test, then promote." }
 
 # 6. Database
 Step 'Database changes'
@@ -94,7 +106,7 @@ if (-not (Wait-Healthy @($DbContainer, $ApiContainer, $WebContainer))) { Fail ("
 
 if ($Push) {
     Step 'Pushing to GitHub'
-    git push origin main dev
+    if ($Source -eq 'staging') { git push origin main dev staging } else { git push origin main dev }
 }
 
 Write-Host ''

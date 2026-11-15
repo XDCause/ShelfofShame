@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { api, shortDate } from '../../api.js'
+import { api, shortDate, today } from '../../api.js'
 import { DiceIcon, TimerIcon, TrophyIcon } from '../../components/icons.jsx'
 import { useApp } from '../../core/app-context.js'
 import { useShared } from '../../core/useShared.js'
 import { KINDS, gameMeta } from './GamePanel.jsx'
 import EmptyState from '../../core/EmptyState.jsx'
+import { unplayedGames } from './statsHelpers.js'
 
 const STATUS_TONE = { Owned: 'ok', 'To sell': 'low', Wanted: 'tint', Borrowed: 'purple', 'Played elsewhere': 'teal', Gone: '' }
 const monthOf = (day) => new Date(`${day}T12:00:00`).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })
@@ -49,6 +50,7 @@ export function GamesView() {
         <button type="button" className="secondary" onClick={() => openPanel('boardgame', { id: null })}>+ Add game</button>
       </div>
       <WhatToPlay games={games} />
+      <Unplayed games={games} />
       <div className="chip-rows">
           {kinds.length > 1 && (
             <div className="chip-row scroll" role="group" aria-label="Type">
@@ -184,6 +186,27 @@ const weightFits = (w, want) => !want || w == null || (want === 'light' ? w < 2.
 
 // "What should we play?": your games that take this many players in the time you have (and the weight you're in the
 // mood for), the ones you haven't played for longest first - or let the app pick.
+// Games on your shelf that never reach the table: never played, and not played for a year.
+function Unplayed({ games }) {
+  const { openPanel } = useApp()
+  const { never, stale } = unplayedGames(games, today())
+  if (!never.length && !stale.length) return null
+  const rows = (list, detail) => list.map((g) => (
+    <li key={g.game_id}><button type="button" className="row-button" onClick={() => openPanel('boardgame', { id: g.game_id })}>
+      <span className="grow item-title">{g.name}</span><span className="muted small">{detail(g)}</span></button></li>))
+  return (
+    <details className="fold bgs-unplayed">
+      <summary><span className="fold-title">Unplayed</span>
+        <span className="fold-detail">{never.length} never played · {stale.length} not in a year</span></summary>
+      <div className="fold-body">
+        {never.length > 0 && <><h4 className="bgs-unplayed-head">Never played</h4><ul className="list compact">{rows(never, () => 'on the shelf')}</ul></>}
+        {stale.length > 0 && <><h4 className="bgs-unplayed-head">Not played in 12 months</h4>
+          <ul className="list compact">{rows(stale, (g) => `last ${shortDate(g.last_played)}`)}</ul></>}
+      </div>
+    </details>
+  )
+}
+
 function WhatToPlay({ games }) {
   const { openPanel } = useApp()
   const [open, setOpen] = useState(false)

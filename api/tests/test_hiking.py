@@ -281,3 +281,32 @@ def test_hiking_gear_hikes_and_km(client):
     assert client.get(f"/api/gear/{boots['gear_id']}").json()["hiked_m"] == 8500
     client.patch(f"/api/gear/{pack['gear_id']}", json={"condition": "Needs replacing"})
     assert client.get("/api/volleyball/summary").json()["gear_to_replace"] == 0              # hiking gear isn't volleyball's
+
+
+def test_pace_maths():
+    from app import hikepace
+    assert abs(hikepace.naismith_h(10000, 600) - 3.0) < 1e-9            # 10 km = 2 h, 600 m up = 1 h
+    assert abs(hikepace.tobler_kmh(-0.05) - 6.0) < 1e-9                 # the fastest ground is a gentle downhill
+    assert hikepace.tobler_kmh(-0.35) < hikepace.tobler_kmh(-0.05)
+    # hikes made with a flat speed of 4 km/h and 300 m an hour up are fitted back to those numbers
+    rows = [{"distance_m": km * 1000, "ascent_m": up, "moving_s": round((km / 4 + up / 300) * 3600), "descent_h": 0}
+            for km, up in [(5, 100), (10, 600), (8, 50), (12, 900)]]
+    fit = hikepace.fit_pace(rows)
+    assert fit["fitted"] and abs(fit["flat_kmh"] - 4) < 0.05 and abs(fit["climb_mph"] - 300) < 5
+    assert hikepace.fit_pace(rows[:2]) == {"flat_kmh": 5.0, "climb_mph": 600.0, "hikes": 2, "fitted": False}
+    # equally steep hikes can't separate flat from climbing: Naismith's numbers
+    same = [{"distance_m": km * 1000, "ascent_m": km * 50, "moving_s": km * 900, "descent_h": 0} for km in (4, 6, 8)]
+    assert hikepace.fit_pace(same)["fitted"] is False
+
+
+def test_estimate_a_route_saves_nothing(client):
+    before = len(client.get("/api/hiking/hikes").json())
+    r = client.post("/api/hiking/estimate", content=track(walk(31, climb=10, every=60), name="Planned Ridge"))
+    assert r.status_code == 200
+    e = r.json()
+    assert e["name"] == "Planned Ridge" and abs(e["ascent_m"] - 300) < 1
+    assert abs(e["naismith_s"] - (0.6 + 0.5) * 3600) < 600        # 3 km + 300 m up: about 1.1 h
+    assert e["personal_s"] > 0 and "fitted" in e["pace"]
+    assert client.get("/api/hiking/pace").json()["flat_kmh"] > 0
+    assert client.post("/api/hiking/estimate", content=b"nope").status_code == 422
+    assert len(client.get("/api/hiking/hikes").json()) == before

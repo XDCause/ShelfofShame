@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { api, duration } from '../../api.js'
 import RecordFields, { useRecordForm } from '../../components/RecordFields.jsx'
 import { useApp } from '../../core/app-context.js'
+import { hoursMinutes } from './hikingMath.js'
 import { useShared } from '../../core/useShared.js'
 
 // The Hiking hobby's shared pieces: number formats, the elevation profile, the photo viewer, the
@@ -244,6 +245,55 @@ export function PhotoViewer({ photos, index, setIndex, onCaption, onDelete, onCl
           <button type="button" className="secondary" onClick={onClose}>Close</button>
         </div>
       </div>
+    </div>
+  )
+}
+
+// "Estimate a route": pick a planned route's GPX and see how long it should take - at your own pace (fitted
+// from your timed hikes) and by Naismith's rule. Nothing is saved.
+export function RouteEstimate() {
+  const [pace, setPace] = useState(null)
+  const [result, setResult] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  useEffect(() => { api.hikingPace().then(setPace).catch(() => {}) }, [])
+  const pick = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setBusy(true)
+    setError('')
+    try {
+      setResult({ ...(await api.estimateRoute(file)), file: file.name })
+    } catch (err) {
+      setResult(null)
+      setError(err.message)
+    }
+    setBusy(false)
+  }
+  return (
+    <div className="route-estimate">
+      {pace && (
+        <p className="muted small">{pace.fitted
+          ? `Your pace, from ${pace.hikes} timed hikes: ${pace.flat_kmh} km/h on the flat, ${pace.climb_mph} m climbed per hour.`
+          : `Naismith's rule (5 km/h, 600 m climbed per hour): ${pace.hikes} timed hike${pace.hikes === 1 ? '' : 's'} so far, `
+            + 'and your own pace needs 3 or more of 2 km+ with a mix of flat and hilly.'}</p>
+      )}
+      <label className="button plain">
+        {busy ? 'Working it out...' : 'Choose a route (GPX)'}
+        <input type="file" accept=".gpx,application/gpx+xml,text/xml,application/xml" hidden disabled={busy} onChange={pick} />
+      </label>
+      {error && <p className="alert error">{error}</p>}
+      {result && (
+        <dl className="route-estimate-result">
+          <dt>Route</dt><dd>{result.name || result.file}{result.is_loop ? ' (loop)' : ''}</dd>
+          <dt>Distance</dt><dd>{km(result.distance_m)}</dd>
+          <dt>Climb / descent</dt><dd>{metres(result.ascent_m)} up · {metres(result.descent_m)} down</dd>
+          <dt>Your estimate</dt><dd><strong>{hoursMinutes(result.personal_s)}</strong>{result.pace.fitted ? '' : ' (Naismith\'s numbers)'}</dd>
+          <dt>Naismith's rule</dt><dd>{hoursMinutes(result.naismith_s)}</dd>
+        </dl>
+      )}
+      <p className="muted small">Moving time only: add breaks. Steep downhills are slower (Tobler's hiking function).</p>
     </div>
   )
 }

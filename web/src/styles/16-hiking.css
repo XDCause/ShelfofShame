@@ -81,3 +81,8 @@
 .hike-gear-pick { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 0; padding: 0; border: 0; }
 .hike-gear-pick .check-row { display: flex; gap: 10px; align-items: center; font-size: 0.92rem; }
 .hike-gear-pick .button-row { margin-top: 6px; }
+.route-estimate { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.route-estimate-result { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 0; }
+.route-estimate-result dt { color: var(--muted); }
+.route-estimate-result dd { margin: 0; }
+.hike-steepest { margin: 8px 0 0; }

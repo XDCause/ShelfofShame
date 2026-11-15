@@ -167,3 +167,33 @@ def test_live_target_mode(client):
     g = s["groups_list"][0]
     assert (g["shots"], g["hits"], g["hit_rate"]) == (4, 3, 75)           # on the paper: 3 of 4
     assert g["size_mm"] == 7.2 and g["spread"]["flyers"] == 0
+
+
+def test_ammo_comparison(client):
+    rifle = client.post("/api/shooting/rifles", json={"name": "Compare rifle", "scope_unit": "MIL"}).json()
+    good = client.post("/api/shooting/ammo", json={"name": "Compare good", "lot": "A1"}).json()
+    poor = client.post("/api/shooting/ammo", json={"name": "Compare poor", "lot": "B2"}).json()
+
+    def fire(ammo, sizes, velocities=None):
+        client.post("/api/shooting/sessions", json={"rifle_id": rifle["rifle_id"], "ammo_id": ammo["ammo_id"], "groups": [
+            {"distance": 100, "shots": 5, "size_mm": s, **({"velocities": velocities} if velocities else {})} for s in sizes]})
+    fire(good, [20, 30], [325, 327, 326])         # 0.69 and 1.03 MOA (100 m: 29.089 mm = 1 MOA)
+    fire(poor, [60, 50, 70])
+    cmp_ = client.get("/api/shooting/ammo-compare").json()
+    rows = {a["name"]: a for a in cmp_["ammo"]}
+    g, p = rows["Compare good"], rows["Compare poor"]
+    assert (g["groups"], g["lot"], g["best"], p["best"]) == (2, "A1", True, False)
+    assert g["best_moa"] < g["avg_moa"] < p["best_moa"] and g["sd"] == 1.0 and g["es"] == 2.0 and p["sd"] is None
+    assert [a["name"] for a in cmp_["ammo"]].index("Compare good") < [a["name"] for a in cmp_["ammo"]].index("Compare poor")
+    pair = next(x for x in cmp_["pairs"] if x["name"] == "Compare good")
+    assert pair["rifle_name"] == "Compare rifle" and pair["groups"] == 2
+
+
+def test_compare_needs_groups_of_three_shots():
+    from app import shotmath
+    mk = lambda moa, shots: {"moa": moa, "shots": shots, "velocity": None}  # noqa: E731
+    rows = shotmath.compare([{"name": "one", "groups": [mk(0.3, 2), mk(1.0, 5)]},
+                             {"name": "two", "groups": [mk(0.9, 3), mk(0.8, 3)]}, {"name": "none", "groups": []}])
+    assert [r["name"] for r in rows] == ["two", "one", "none"]
+    assert rows[0]["best"] and rows[0]["avg_moa"] == 0.85
+    assert rows[1]["groups"] == 1 and not rows[1]["best"]      # only one counted group: not enough for "best"

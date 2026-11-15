@@ -1,15 +1,15 @@
-fastapi==0.156.8
+fastapi==0.163.1
 uvicorn[standard]==0.54.0
-psycopg[binary]==3.3.6
+psycopg[binary]==3.3.9
 psycopg-pool==3.3.3
 httpx==0.28.1
 beautifulsoup4==4.15.0
 # signing in (auth.py): Argon2 password hashes, authenticator codes, passkeys, the authenticator's QR code
 argon2-cffi==25.1.0
-pyotp==2.10.0
+pyotp==2.11.2
 webauthn==3.0.1
 segno==1.6.6
 # chess game review (chess_review.py): reads games, drives Stockfish
 chess==1.11.2
 # tests (run_tests.ps1)
-pytest==9.1.1
+pytest==9.2.0

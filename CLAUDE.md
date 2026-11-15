@@ -13,8 +13,12 @@ Git author: XDCause <121413369+XDCause@users.noreply.github.com> (GitHub no-repl
   working directory is the prod folder, so be careful.
 - Build in dev with `.\dev.ps1`; `.\dev.ps1 -Refresh` copies prod's data into dev. Test with `.\test_all.ps1` (see
   Quality gates for when).
-- Commit on dev. **Promote only when the user asks**: `.\promote.ps1` in the prod folder (tests dev, backs up prod,
-  `git merge --ff-only dev`, migrate.ps1, rebuild). `-Push` pushes both branches.
+- Commit on dev. **Staging (since 2026-11-16): dev -> staging -> prod.** `.\stage.ps1` moves dev's tested commits to
+  the staging copy (`C:\Users\xdhar\hobby-inventory-staging`, branch `staging`, https://<pc>.local:8445, a STAGING
+  badge, its own database refreshed from prod on every stage, no daily syncs or site checks) for the user to look
+  over. **Stage and promote only when the user asks.** `.\promote.ps1` in the prod folder then moves main to staging
+  (when the staging copy exists; to dev when it doesn't): backs up prod, `git merge --ff-only`, migrate.ps1, rebuild.
+  `-Push` pushes the branches.
 - **Schema changes:** a new numbered idempotent db\init file (IF NOT EXISTS, guarded constraints). `migrate.ps1`
   applies pending files and records them in `schema_migrations`; run it in dev after adding one (dev.ps1 doesn't).
 
@@ -34,7 +38,7 @@ AI via MCP server (later) -----------------/
 **Only the API talks to PostgreSQL.** Exceptions are admin/dev tools: DBeaver, psql, the scripts (backup, migrate).
 
 ## Where to look
-- **Why things are the way they are: docs/HISTORY.md** (entries 3zzt - 5x; 1 - 3zzs are in docs/HISTORY-early.md).
+- **Why things are the way they are: docs/HISTORY.md** (entries 3zzt - 5y; 1 - 3zzs are in docs/HISTORY-early.md).
   Search both before changing something old - most odd-looking code has a lesson behind it. Design system:
   docs/DESIGN.md. Plans: docs/ROADMAP.md. **BEFORE_GOING_PUBLIC.md: add a row whenever a new data source, scraper,
   copied content or single-user shortcut is added.**
@@ -49,7 +53,8 @@ AI via MCP server (later) -----------------/
   fetch), core/ (Home, Navigation, Goals, Journal, Calendar, Supplies tools...), modules/<hobby>/manifest.jsx (pages,
   panels, quick actions - loaded on demand with part() from modules/lazy.js) and HomeTiles.jsx (its Home tiles, loaded
   up front), components/ (shared), styles.css (one file, sections by comment).
-- **Database**: numbered idempotent files in db/init (01-96); migrate.ps1 applies pending ones (`-Container` for another
+- **Database**: numbered idempotent files in db/init (01-A00); after 99 the numbers go on A00, A01... (text order = run order);
+  migrate.ps1 applies pending ones (`-Container` for another
   copy's).
 
 ## Quality gates

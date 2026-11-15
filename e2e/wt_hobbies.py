@@ -1171,7 +1171,8 @@ def chess_review(page):
     page.get_by_placeholder("Sicilian Najdorf, London, Italian...").fill("Italian Game")
     page.locator(".ot-result").first.click()
     page.get_by_role("button", name="Build the lines").click()
-    expect(page.get_by_text(re.compile("Building the lines|learned"))).to_be_visible(timeout=15000)
+    expect(page.locator(".ot-rep", has_text="Italian Game").first).to_contain_text(re.compile("Building the lines|learned"),
+                                                                              timeout=15000)   # (your own openings may be listed too)
     shot(page, "d64_opening_train", full=False)
     page.request.delete(f"{BASE}/api/chess/games/{game['game_id']}")
 
@@ -1248,7 +1249,10 @@ def vinyl(page):
     shot(page, "d56_vinyl_stats", full=False)
     tabs.get_by_role("link", name="Dashboard").click()
     expect(page.locator(".vinyl-now")).to_contain_text("Scanned In")
-    expect(page.locator(".vinyl-pick")).to_contain_text("What should I play?")
+    pick = page.locator(".vinyl-pick")
+    expect(pick).to_contain_text("Play something")
+    pick.get_by_role("button", name="Surprise me").click()                       # a mode picks again
+    expect(pick.get_by_role("button", name="Another")).to_be_visible()
     shot(page, "d57_vinyl_dashboard", full=False)
 
     go(page, "Wishlist")

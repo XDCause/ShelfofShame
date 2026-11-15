@@ -111,3 +111,7 @@
 .bgt-table tbody th { font-weight: 600; white-space: normal; min-width: 120px; text-transform: none; letter-spacing: normal;
   font-size: inherit; color: var(--text); }
 .bgt-table thead th { font-size: 0.75rem; color: var(--muted); font-weight: 600; }
+
+/* Stats extras: the Unplayed nudge on Games, going first on Players */
+.bgs-unplayed, .bgs-first { margin: 0 0 12px; }
+.bgs-unplayed-head { margin: 8px 0 4px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }

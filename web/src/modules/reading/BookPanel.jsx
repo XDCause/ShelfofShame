@@ -74,6 +74,14 @@ export default function BookPanel({ id, onClose }) {
 
       {editing && <BookForm book={book} onSaved={(b) => { reload(b); setEditing(false); changed() }} onCancel={() => setEditing(false)} />}
 
+      {(book.status === 'finished' || book.status === 'dnf') && (
+        <section className="panel-section">
+          <button type="button" className="secondary" onClick={async () => {
+            try { reload(await api.readBookAgain(id)); changed(); showToast(`Reading ${book.title} again`) } catch (e) { setError(e.message) }
+          }}>↻ Read it again</button>
+        </section>
+      )}
+
       {book.status !== 'finished' && (
         <section className="panel-section">
           <h3 className="section-title">Where you're up to</h3>
@@ -90,6 +98,26 @@ export default function BookPanel({ id, onClose }) {
             <textarea rows={4} value={review} onChange={(e) => { setReview(e.target.value); setSaved('') }} onBlur={saveReview}
               placeholder="What stayed with you?" /></label>
           {saved && <span className="muted small">{saved}</span>}
+        </section>
+      )}
+
+      {book.reads.length > 0 && (
+        <section className="panel-section">
+          <h3 className="section-title">Earlier reads</h3>
+          <ul className="list plain-list">
+            {book.reads.map((r) => (
+              <li key={r.read_id}>
+                <span className="grow">
+                  <strong>{r.started_on ? shortDate(r.started_on) : '?'} to {r.finished_on ? shortDate(r.finished_on) : '?'}</strong>
+                  {r.outcome === 'dnf' && ' · stopped'}
+                  {r.rating && <> · <Stars value={r.rating} size="small" /></>}
+                  {r.review && <span className="muted small reading-read-review">{r.review}</span>}
+                </span>
+                <button type="button" className="icon-btn" aria-label="Forget this read"
+                  onClick={async () => { await api.deleteBookRead(r.read_id); reload(await api.book(id)); changed() }}>✕</button>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 

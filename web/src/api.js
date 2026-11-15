@@ -336,13 +336,18 @@ export const api = {
   syncSteam: (full = false) => request(`/videogames/sync${full ? '?full=true' : ''}`, send('POST')),
   // platforms: a list like ['steam', 'epic'] to count only those; leave it out for all of them.
   videoGameSummary: (platforms) => request(`/videogames/summary${platforms ? `?platforms=${platforms.join(',')}` : ''}`),
-  listVideoGames: (show = 'all') => request(`/videogames?show=${show}`),
+  listVideoGames: (show = 'all', status = '') => request(`/videogames?show=${show}${status ? `&status=${status}` : ''}`),
   getVideoGame: (id) => request(`/videogames/${id}`),
   // What a game's hidden achievements say, by Steam app id (a Ubisoft game: its Steam version's): { texts: {api name: text} }
   hiddenAchievementTexts: (appId) => request(`/videogames/hidden/${appId}`),
   // Just this game, now: answers with the game (and sync_note if SteamHunters / Exophase didn't answer)
   syncVideoGame: (id) => request(`/videogames/${id}/sync`, send('POST')),
   hideVideoGame: (id, hidden) => request(`/videogames/${id}`, send('PATCH', { hidden })),
+  // A game's status (backlog / playing / finished / dropped; null = back to the guess), Steam's or an Epic / Ubisoft one's
+  setVideoGameStatus: (id, status) => request(`/videogames/${id}`, send('PATCH', { status })),
+  setOtherGameStatus: (id, status) => request(`/videogames/other/${id}`, send('PATCH', { status })),
+  // What next? by = shortest / achievements / random
+  videoGameBacklog: (by = 'shortest', platforms) => request(`/videogames/backlog?${query({ by, platforms: platforms?.join(',') })}`),
   setVideoGameGoal: (percent) => request('/videogames/goal', send('PUT', { percent })),
   // What you played each day lately (totals saved each sync; api/app/vgplaytime.py)
   videoGamePlaytime: (days, platforms) => request(`/videogames/playtime?${query({ days, platforms: platforms?.join(',') })}`),
@@ -372,6 +377,8 @@ export const api = {
   deleteReadingLog: (logId) => request(`/reading/log/${logId}`, send('DELETE')),
   addQuote: (id, quote) => request(`/reading/books/${id}/quotes`, send('POST', quote)),
   deleteQuote: (quoteId) => request(`/reading/quotes/${quoteId}`, send('DELETE')),
+  readBookAgain: (id) => request(`/reading/books/${id}/reread`, send('POST')),
+  deleteBookRead: (readId) => request(`/reading/reads/${readId}`, send('DELETE')),
   quotes: (q = '') => request(`/reading/quotes?q=${encodeURIComponent(q)}`),
   readingSummary: () => request('/reading/summary'),
   readingStats: (months = 24) => request(`/reading/stats?months=${months}`),
@@ -449,6 +456,7 @@ export const api = {
   updateAmmo: (id, data) => request(`/shooting/ammo/${id}`, send('PATCH', data)),
   deleteAmmo: (id) => request(`/shooting/ammo/${id}`, send('DELETE')),
   ammoBox: (id, data) => request(`/shooting/ammo/${id}/box`, send('POST', data)),
+  ammoCompare: () => request('/shooting/ammo-compare'),
   shootingSessions: (params = {}) => request(`/shooting/sessions?${query(params)}`),
   shootingSession: (id) => request(`/shooting/sessions/${id}`),
   addShootingSession: (data) => request('/shooting/sessions', send('POST', data)),
@@ -494,6 +502,9 @@ export const api = {
   importHike: (file) => request(`/hiking/import?filename=${enc(file.name)}`,
     { method: 'POST', headers: { 'Content-Type': 'application/gpx+xml' }, body: file }),
   hikingSummary: () => request('/hiking/summary'),
+  hikingPace: () => request('/hiking/pace'),
+  estimateRoute: (file) => request('/hiking/estimate',
+    { method: 'POST', headers: { 'Content-Type': 'application/gpx+xml' }, body: file }),
   addHikePhoto: (id, blob, { lat, lon, taken } = {}) => request(`/hiking/hikes/${id}/photos?${new URLSearchParams(
     Object.entries({ lat, lon, taken }).filter(([, v]) => v != null))}`, image('POST', blob)),
   updateHikePhoto: (photoId, caption) => request(`/hiking/photos/${photoId}`, send('PATCH', { caption })),
@@ -535,6 +546,8 @@ export const api = {
   gardenTaskDone: (id) => request(`/garden/tasks/${id}/done`, send('POST')),
   deleteGardenTask: (id) => request(`/garden/tasks/${id}`, send('DELETE')),
   gardenHarvests: (year) => request(`/garden/harvests${year ? `?year=${year}` : ''}`),
+  gardenWorth: (year) => request(`/garden/harvests/worth${year ? `?year=${year}` : ''}`),
+  setCropValue: (data) => request('/garden/harvests/values', send('PUT', data)),
   gardenGuides: (params = {}) => request(`/garden/guides?${query(params)}`),
   gardenGuide: (id) => request(`/garden/guides/${id}`),
   addGardenGuide: (data) => request('/garden/guides', send('POST', data)),
@@ -574,6 +587,7 @@ export const api = {
   deleteVinylPlay: (playId) => request(`/vinyl/plays/${playId}`, send('DELETE')),
   scrobbleVinylPlay: (playId) => request(`/vinyl/plays/${playId}/scrobble`, send('POST')),
   vinylPick: (skip = []) => request(`/vinyl/pick?${skip.map((s) => `skip=${s}`).join('&')}`),
+  vinylPlaySomething: ({ mode = 'least', genre, decade, skip = [] } = {}) => request(`/vinyl/play-something?${new URLSearchParams([['mode', mode], ...(genre ? [['genre', genre]] : []), ...(decade ? [['decade', decade]] : []), ...skip.map((s) => ['skip', s])])}`),
   vinylSummary: () => request('/vinyl/summary'),
   vinylStats: (months = 24) => request(`/vinyl/stats?months=${months}`),
   vinylSettings: () => request('/vinyl/settings'),

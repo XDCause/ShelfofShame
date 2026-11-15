@@ -13,6 +13,8 @@ logged by hand.
               it was taken (both read from the photo's EXIF in the browser, before it's shrunk)
     landmarks POST /hiking/hikes/{id}/landmarks   look them up again
     gear      PUT /hiking/hikes/{id}/gear   which of your hiking gear went (gear.py: each piece's hikes and km)
+    pace      GET /hiking/pace   your pace fitted from past hikes; POST /hiking/estimate   a GPX in, the time out
+              (nothing saved); hikepace.py has the maths
     summary   this year and all time, km per month (last 12), personal bests, the latest hikes
 """
 import logging
@@ -25,7 +27,7 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Request, R
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel, Field
 
-from . import gpx, overpass, wikimedia
+from . import gpx, hikepace, overpass, wikimedia
 from .gear import GEAR_SELECT
 from .db import db, found, insert_row, tidy_text, update_row
 from .images import photo_response, read_photo
@@ -221,6 +223,36 @@ def summary():
         }
         recent = conn.execute(COLUMNS + " FROM hikes ORDER BY hiked_on DESC, started_at DESC NULLS LAST, hike_id DESC LIMIT 5").fetchall()
     return {"year": year, "this_year": this_year, "all_time": all_time, "months": months, "bests": bests, "recent": recent}
+
+
+def my_pace(conn) -> dict:
+    """Your flat speed and climb rate, fitted from hikes with a timed track (hikepace.fit_pace)."""
+    rows = conn.execute("SELECT distance_m::float8 AS distance_m, ascent_m::float8 AS ascent_m, moving_s, track "
+                        "FROM hikes WHERE track IS NOT NULL AND moving_s > 0 AND distance_m >= 2000").fetchall()
+    for r in rows:
+        r["descent_h"] = hikepace.descent_adjustment_h(r.pop("track"))
+    return hikepace.fit_pace(rows)
+
+
+@router.get("/hiking/pace")
+def get_pace():
+    """Your own pace (or Naismith's rule if there isn't enough to go on)."""
+    with db() as conn:
+        return my_pace(conn)
+
+
+@router.post("/hiking/estimate")
+async def estimate_route(request: Request):
+    """A planned route (a GPX file as the body): its distance, climb and descent, and the time it should take
+    at your pace and by Naismith's rule. Nothing is saved."""
+    try:
+        g = gpx.parse(await request.body())
+    except gpx.GpxError as e:
+        raise HTTPException(422, str(e))
+    with db() as conn:
+        pace = my_pace(conn)
+    return {"name": g["name"], "distance_m": g["distance_m"], "ascent_m": g["ascent_m"], "descent_m": g["descent_m"],
+            "is_loop": g["is_loop"], "pace": pace, **hikepace.estimate(g["distance_m"], g["ascent_m"], g["track"], pace)}
 
 
 # ---------------------------------------------------------------------------------------------

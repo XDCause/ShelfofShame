@@ -994,3 +994,40 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
      back to the search icon and the API's own label; the journal's @mention list shows "Record" too.
    Tests: test_chess_review.py (the real engine at depth 8), test_chess_trainer.py, openingHelpers.test.js,
    walk-through step chess_review.
+
+5y. **A market review, quick wins, updates, a database check and staging** (2026-11-16, the user, heading off for a while:
+   "go through the app top to bottom... a full review of all hobbies against the market... check the layout on desktop
+   and mobile... check all the versions... make sure the database structure is holding up... a staging docker so we go
+   from dev to staging to prod"; dev only - nothing to prod).
+   - Market review: docs/MARKET-REVIEW.md - for every hobby, what the leading apps do that this one doesn't (ranked, with
+     sources and effort), and what this app already does better. Researched by three subagents (read-only), checked
+     here. Built straight away (DONE in the file), each by a subagent from a brief (two were cut off by a usage limit
+     part-way; finished and checked here):
+     - Vinyl: Play something (least played, never played, surprise me; by genre and decade) and a Never played card.
+     - Reading: pace (pages a day lately, the finish date), the year's goal at your pace (behind by N, to the nearest
+       book), re-reads (book_reads, 98_reading_rereads.sql: earlier read-throughs; Read it again).
+     - Board games: H-index, win streaks, first player's win rate, and an Unplayed nudge on the Games page.
+     - Video games: a status per game (backlog / playing / finished / dropped, 99_vg_backlog.sql - only what you set is
+       stored, the rest is a guess from playtime) and "What next?" on the dashboard.
+     - Hiking: your own pace from past hikes and a route estimate (hikepace.py; Naismith / Tobler to compare).
+     - Shooting: ammo compared (groups, sizes, SD / ES per ammo and rifle).
+     - Gardening: harvests' worth against what they'd cost at the shop (garden_crop_values, A00_garden_crop_values.sql).
+   - Migration numbers: after 99 they go on A00, A01... - "100_" sorted between "10_" and "11_" (PowerShell, Python and
+     the database image's start-up all run them in text order); files already applied keep their names. test_docs checks.
+   - Database check (prod, read-only): 48 MB, autovacuum keeping up, no dead-row build-up, no unused indexes; 26 foreign
+     key columns had no index (deletes and joins read the whole table): 97_fk_indexes.sql.
+   - Updates (check-updates.ps1): FastAPI 0.163.1, psycopg 3.3.9, PyOTP 2.11.2, pytest 9.2.0; BlockNote 0.57, Mantine
+     9.8.1, React Router 8.5.1, Vite 8.3.8, Vitest 5.1.0, ESLint 10.15 and the rest of the minor / patch updates; images
+     python 3.13.18, node 22.23.5, postgres 17.12; Playwright 1.65.2. jsdom 26 -> 31 (a major, test-only) left for
+     now. npm audit's 18 warnings were all in ESLint's own file matcher (build-time only, 0 in the app): minimatch
+     11.0.8 pinned for it - 0 left.
+   - Staging (stage.ps1): a third copy - C:\Users\xdhar\hobby-inventory-staging, branch staging, https://<pc>.local:8445
+     with a STAGING badge, ports 5435 / 8002 / 8082. Its own database, not dev's (dev's can be ahead with a change still
+     being built; staging's job is the code on what prod really has), refreshed from a fresh prod backup on every stage,
+     then staging's database changes applied - a rehearsal of promote's. No daily syncs or site checks (DAILY_SYNCS=off:
+     prod already looks once a week). stage.ps1 tests dev first unless every part passed on that exact code, and stamps
+     what it staged; promote.ps1 now moves main to staging when the staging copy exists (and refuses if staging's code
+     has no passing tests on record), to dev otherwise. Staging hides unfinished hobbies like prod. Phones need port
+     8445 opened in the firewall (an admin step - the user's).
+   - Fixed on the way: Vinyl's "Never played" message read backwards; the Play something modes use the segmented
+     control (the chosen one looked disabled).

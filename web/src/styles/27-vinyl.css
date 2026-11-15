@@ -30,6 +30,9 @@
 .vinyl-now { display: flex; gap: 14px; align-items: center; margin-bottom: 12px; }
 .vinyl-now .grow { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .vinyl-now-label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tint); }
+.vinyl-pick-modes { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.vinyl-pick-narrow { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.vinyl-pick-narrow select { flex: 1 1 120px; min-width: 0; }
 .vinyl-pick-row { display: flex; gap: 12px; align-items: flex-start; }
 .vinyl-pick-row .grow { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .vinyl-pick-row .vinyl-cover { width: 96px; }

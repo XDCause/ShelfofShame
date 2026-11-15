@@ -32,7 +32,7 @@ import vinyl from './vinyl/manifest.jsx'
 import volleyball from './volleyball/manifest.jsx'
 
 const ALL = [models, boardgames, volleyball, videogames, chess, reading, vinyl, sudoku, car, travel, shooting, hiking, gardening]
-export const SHOW_UNFINISHED = import.meta.env.VITE_APP_ENV !== 'prod'
+export const SHOW_UNFINISHED = !['prod', 'staging'].includes(import.meta.env.VITE_APP_ENV)   // (staging shows what prod will)
 export const MODULES = ALL.filter((m) => SHOW_UNFINISHED || !m.underConstruction)
 
 // Every module's panels in one map, for App to open by type.

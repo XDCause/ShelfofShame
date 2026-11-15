@@ -5,7 +5,7 @@
     lookup    find a pressing on Discogs by words or the barcode on the back; adding one fills in its facts and fetches
               its cover in the background (and, if you chose that, adds it to your Discogs collection too)
     plays     vinyl_plays: you played it - when, which sides, a note; scrobbled to Last.fm if you've connected it
-    pick      "What should I play?": something you haven't played for longest
+    pick      "What should I play?": something you haven't played for longest; play-something: by mode, genre, decade
     summary   for Home and the dashboard; stats: genres, decades, formats, artists, labels, plays per month, value
     export    every record you own as CSV (for insurance): pressing, grades, paid, today's value
 
@@ -436,6 +436,56 @@ def pick(skip: list[int] = Query([])):
     never = [r for r in rows if r["last_played"] is None]
     return random.choice(never or rows) if rows else None
 
+PLAY_MODES = ("least", "never", "surprise")
+
+
+def play_weight(plays: int, days_since: int | None) -> float:
+    """How likely "Least played" is to pick a record: fewer plays and a longer wait both raise it.
+    Never played = the longest wait (two years' worth)."""
+    wait = 730 if days_since is None else min(max(days_since, 0), 730)
+    return (1 / (1 + plays)) * (1 + wait / 180)
+
+
+def choose_record(rows: list[dict], mode: str, today: date, rng=random) -> dict | None:
+    """One of `rows` (records with plays and last_played): at random, among never played, or weighted."""
+    if mode == "never":
+        rows = [r for r in rows if not r["plays"]]
+    if not rows:
+        return None
+    if mode == "least":
+        weights = [play_weight(r["plays"], (today - r["last_played"].date()).days if r["last_played"] else None) for r in rows]
+        return rng.choices(rows, weights=weights)[0]
+    return rng.choice(rows)
+
+
+@router.get("/vinyl/play-something")
+def play_something(mode: Literal[PLAY_MODES] = "least", genre: str | None = Query(None, max_length=100),
+                   decade: int | None = Query(None, ge=1880, le=2200), skip: list[int] = Query([])):
+    """"Play something": a record you own, to put on. Modes: least (leaning to the least played and longest waiting),
+    never (never played), surprise (any). Narrow it by genre / decade; `skip` = ones already shown.
+    Reply: the record (or null), `pool` (how many fit) and the genres / decades you can narrow by."""
+    where = ["r.status = 'Owned'", "r.medium = 'Vinyl'"]
+    params = {}
+    with db() as conn:
+        mine = conn.execute("SELECT genres, COALESCE(original_year, year) / 10 * 10 AS d FROM vinyl_records "
+                            "WHERE status = 'Owned' AND medium = 'Vinyl'").fetchall()
+    genres = sorted({g for r in mine for g in r["genres"]})
+    decades = sorted({r["d"] for r in mine if r["d"]})
+    if genre:
+        where.append("(%(genre)s = ANY(r.genres) OR %(genre)s = ANY(r.styles))")
+        params["genre"] = genre
+    if decade:
+        where.append("COALESCE(r.original_year, r.year) / 10 * 10 = %(decade)s")
+        params["decade"] = decade // 10 * 10
+    with db() as conn:
+        rows = conn.execute(LIST + " WHERE " + " AND ".join(where), params).fetchall()
+        today = conn.execute("SELECT current_date AS d").fetchone()["d"]
+    fresh = [r for r in rows if r["record_id"] not in skip] or rows      # all shown already: start again
+    if mode == "never":
+        fresh = [r for r in fresh if not r["plays"]]
+        rows = [r for r in rows if not r["plays"]]
+    return {"record": choose_record(fresh, mode, today), "pool": len(rows), "genres": genres, "decades": decades}
+
 
 # ---------------------------------------------------------------- numbers
 @router.get("/vinyl/summary")
@@ -468,6 +518,10 @@ def summary():
         s["dusty"] = conn.execute(LIST + " WHERE r.status = 'Owned' AND r.medium = 'Vinyl' "
                                   "AND (p.last_played IS NULL OR p.last_played < now() - interval '1 year') "
                                   "ORDER BY p.last_played NULLS FIRST, r.added_on LIMIT 6").fetchall()
+        s["never_played"] = conn.execute(LIST + " WHERE r.status = 'Owned' AND r.medium = 'Vinyl' AND COALESCE(p.plays, 0) = 0 "
+                                         "ORDER BY r.added_on DESC, r.record_id DESC LIMIT 8").fetchall()
+        s["never_count"] = conn.execute("""SELECT count(*)::int AS n FROM vinyl_records r WHERE r.status = 'Owned' AND r.medium = 'Vinyl'
+            AND NOT EXISTS (SELECT 1 FROM vinyl_plays p WHERE p.record_id = r.record_id)""").fetchone()["n"]
         s["dusty_count"] = conn.execute("""SELECT count(*)::int AS n FROM vinyl_records r WHERE r.status = 'Owned' AND r.medium = 'Vinyl'
             AND NOT EXISTS (SELECT 1 FROM vinyl_plays p WHERE p.record_id = r.record_id AND p.played_at >= now() - interval '1 year')""").fetchone()["n"]
     return s

@@ -5,6 +5,8 @@
     progress  "I'm on page 120": a reading_log entry (pages read since the last one, on a day);
               starting a book you wanted to read moves it to Reading
     quotes    lines you saved, with the page
+    pace      pages a day lately, and the day you'd finish a book you're reading at that pace
+    rereads   "Read it again": the finished read goes into book_reads (98_reading_rereads.sql), the book starts afresh
     goal      books to finish this year (settings reading_goal_<year>), and whether you're on pace
     stats     pages per month, books per year, genres, ratings
     goodreads import (readimport.py) Goodreads' "Export library" CSV, then covers from Open Library
@@ -12,7 +14,8 @@
 import logging
 import re
 import threading
-from datetime import date, datetime, timezone
+import math
+from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
@@ -148,9 +151,43 @@ def fetch_book(conn, book_id: int) -> dict:
     book = found(conn.execute(LIST + " WHERE b.book_id = %s", (book_id,)).fetchone(), "Book")
     book["log"] = conn.execute("SELECT * FROM reading_log WHERE book_id = %s ORDER BY logged_on DESC, log_id DESC",
                                (book_id,)).fetchall()
+    book["reads"] = conn.execute("SELECT * FROM book_reads WHERE book_id = %s ORDER BY finished_on DESC NULLS LAST, read_id DESC",
+                                 (book_id,)).fetchall()
+    book["forecast"] = forecast_for(conn, book)
     book["quotes_list"] = conn.execute("SELECT * FROM book_quotes WHERE book_id = %s ORDER BY page NULLS LAST, quote_id",
                                        (book_id,)).fetchall()
     return book
+
+
+PACE_DAYS = 14          # "lately" = the last two weeks
+
+
+def pace_forecast(pages_lately: int, days: int, left: int, today: date) -> dict | None:
+    """Pages a day over `days` days, and the day you'd finish `left` pages at that pace (None: no pages lately)."""
+    if pages_lately <= 0 or days <= 0:
+        return None
+    per_day = pages_lately / days
+    out = {"pages_per_day": round(per_day, 1), "days": days}
+    if left > 0:
+        wait = math.ceil(left / per_day)
+        out.update(days_left=wait, finish_on=today + timedelta(days=wait))
+    return out
+
+
+def forecast_for(conn, book: dict) -> dict | None:
+    """The pace forecast for a book you're reading now (None for the others)."""
+    if book["status"] != "reading":
+        return None
+    today = _today(conn)
+    since = today - timedelta(days=PACE_DAYS - 1)
+    start = max(since, book["started_on"] or since)
+    got = conn.execute("SELECT COALESCE(sum(pages), 0)::int AS n FROM reading_log WHERE book_id = %s AND logged_on >= %s",
+                       (book["book_id"], start)).fetchone()["n"]
+    left = (book["pages"] or 0) - (book["current_page"] or 0) if book["pages"] else 0
+    f = pace_forecast(got, (today - start).days + 1, left, today)
+    if f and not book["pages"]:
+        f.pop("finish_on", None)
+    return f
 
 
 def _status_dates(conn, data: dict, book: dict | None = None) -> dict:
@@ -257,6 +294,29 @@ def update_book(book_id: int, body: BookPatch):
         return fetch_book(conn, book_id)
 
 
+@router.post("/reading/books/{book_id}/reread", status_code=201)
+def read_again(book_id: int):
+    """"Read it again": a finished (or given-up) book's read goes into its earlier reads, and the book starts afresh -
+    Reading, from page 0, started today, with no stars or review yet. Its log and quotes stay."""
+    with db() as conn:
+        book = found(conn.execute("SELECT * FROM books WHERE book_id = %s", (book_id,)).fetchone(), "Book")
+        if book["status"] not in ("finished", "dnf"):
+            raise HTTPException(409, "Only a book you've finished (or stopped) can be read again.")
+        insert_row(conn, "book_reads", {"book_id": book_id, "started_on": book["started_on"], "finished_on": book["finished_on"],
+                                        "outcome": book["status"], "rating": book["rating"], "review": book["review"]}, "read_id")
+        update_row(conn, "books", "book_id", book_id, {"status": "reading", "started_on": _today(conn), "finished_on": None,
+                                                       "current_page": 0, "rating": None, "review": None})
+        return fetch_book(conn, book_id)
+
+
+@router.delete("/reading/reads/{read_id}", status_code=204)
+def delete_read(read_id: int):
+    """Forget one of a book's earlier reads."""
+    with db() as conn:
+        if not conn.execute("DELETE FROM book_reads WHERE read_id = %s", (read_id,)).rowcount:
+            raise HTTPException(404, "Read not found.")
+
+
 @router.delete("/reading/books/{book_id}", status_code=204)
 def delete_book(book_id: int):
     with db() as conn:
@@ -345,7 +405,9 @@ def goal_progress(goal: int | None, finished: int, today: date) -> dict:
     if not goal:
         return {"year": today.year, "goal": None, "finished": finished}
     on_pace = goal * gone
-    return {"year": today.year, "goal": goal, "finished": finished, "percent": round(100 * finished / goal, 1),
+    projected = finished / gone                 # the year's total if you carry on at this rate
+    return {"projected": round(projected, 1), "behind_by": max(0, math.floor(goal - projected + 0.5)),   # (the nearest whole book)
+            "year": today.year, "goal": goal, "finished": finished, "percent": round(100 * finished / goal, 1),
             "on_pace": round(on_pace, 1), "ahead_by": round(finished - on_pace, 1), "reached": finished >= goal,
             "left": max(0, goal - finished), "days_left": (end - today).days - 1}
 
@@ -366,9 +428,13 @@ def summary():
     with db() as conn:
         today = _today(conn)
         reading = conn.execute(LIST + " WHERE b.status = 'reading' ORDER BY COALESCE(l.last_read, b.started_on) DESC NULLS LAST").fetchall()
+        for b in reading:
+            b["forecast"] = forecast_for(conn, b)
         year = conn.execute("""
             SELECT count(*)::int AS books, COALESCE(sum(pages), 0)::int AS pages, round(avg(rating), 1) AS rating
             FROM books WHERE status = 'finished' AND finished_on >= date_trunc('year', current_date)""").fetchone()
+        year["books"] += conn.execute("SELECT count(*)::int AS n FROM book_reads WHERE outcome = 'finished' "
+                                      "AND finished_on >= date_trunc('year', current_date)").fetchone()["n"]
         year["pages_read"] = pages_read(conn, "date_trunc('year', current_date)")
         week = {"pages": conn.execute("SELECT COALESCE(sum(pages), 0)::int AS n FROM reading_log "
                                       "WHERE logged_on > current_date - 7").fetchone()["n"],
@@ -418,7 +484,9 @@ def stats(months: int = Query(24, ge=1, le=120)):
             GROUP BY m ORDER BY m""", {"months": months}).fetchall()
         by_year = conn.execute("""
             SELECT extract(year FROM finished_on)::int AS year, count(*)::int AS books, COALESCE(sum(pages), 0)::int AS pages
-            FROM books WHERE status = 'finished' AND finished_on IS NOT NULL GROUP BY 1 ORDER BY 1""").fetchall()
+            FROM (SELECT finished_on, pages FROM books WHERE status = 'finished'
+                  UNION ALL SELECT r.finished_on, b.pages FROM book_reads r JOIN books b USING (book_id) WHERE r.outcome = 'finished') x
+            WHERE finished_on IS NOT NULL GROUP BY 1 ORDER BY 1""").fetchall()
         genres = conn.execute("""
             SELECT g AS genre, count(*)::int AS books FROM books, unnest(genres) g
             WHERE status = 'finished' GROUP BY g ORDER BY 2 DESC, 1 LIMIT 10""").fetchall()

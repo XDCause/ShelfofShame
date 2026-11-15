@@ -1,4 +1,4 @@
-FROM postgres:17.11-alpine
+FROM postgres:17.12-alpine
 
 # Container clock + Postgres default timezone (initdb picks this up).
 ENV TZ=Australia/Brisbane

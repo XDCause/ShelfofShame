@@ -49,3 +49,9 @@
 .goal-detail { margin: 0; }
 .goal-edit { display: flex; align-items: center; gap: 6px; }
 .goal-edit input { width: 64px; min-height: 30px; padding: 2px 6px; }
+
+/* Backlog: status picker in the game panel, "What next?" on the dashboard */
+.vgb-status { margin: 8px 0; }
+.vgb-next .chip-row { margin-bottom: 8px; flex-wrap: wrap; }
+.vgb-pick { width: 100%; text-align: left; }
+.vgb-status-pill { font-size: 0.72rem; }

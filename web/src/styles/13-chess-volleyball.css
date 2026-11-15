@@ -264,3 +264,6 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .pill.platform-ubisoft { color: #1d4ed8; background: rgb(37 99 235 / 0.14); }
 :root[data-theme='dark'] .pill.platform-steam { color: #c7d5e0; }
 :root[data-theme='dark'] .pill.platform-ubisoft { color: #93c5fd; }
+.reading-pace-line { display: block; }
+.reading-goal-pace { margin: 6px 0 0; }
+.reading-read-review { display: block; white-space: pre-wrap; }

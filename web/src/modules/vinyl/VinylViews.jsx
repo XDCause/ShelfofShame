@@ -66,6 +66,13 @@ export function Dashboard() {
             <div className="vinyl-shelf">{s.recently_added.map((r) => <CoverButton key={r.record_id} record={r} />)}</div>
             <Link className="button plain small" to="/vinyl/crate?sort=added">The whole crate →</Link>
           </section>
+          {s.never_count > 0 && (
+            <section className="card home-card">
+              <h2 className="home-card-title">Never played</h2>
+              <p className="muted small chart-sub">{plural(s.never_count, 'record')} you haven't played here yet.</p>
+              <div className="vinyl-shelf">{s.never_played.map((r) => <CoverButton key={r.record_id} record={r} />)}</div>
+            </section>
+          )}
           <section className="card home-card">
             <h2 className="home-card-title">Gathering dust</h2>
             <p className="muted small chart-sub">{s.dusty_count === 0 ? 'Every record has had a spin in the last year.'
@@ -94,17 +101,46 @@ function NowSpinning({ play: p }) {
   )
 }
 
-// "What should I play?": one you've never played, else one you've gone longest without. "Another" skips it.
+// "Play something": a record to put on. Least played leans to the ones played least or longest ago; never played;
+// or a surprise. Narrow it by genre or decade; "Another" asks again (skipping what it already showed).
+const PLAY_MODES = [['least', 'Least played'], ['never', 'Never played'], ['surprise', 'Surprise me']]
+
 function PickCard() {
   const { refreshKey, openPanel } = useApp()
-  const [pick, setPick] = useState(undefined)
+  const [mode, setMode] = useState('least')
+  const [genre, setGenre] = useState('')
+  const [decade, setDecade] = useState('')
   const [skip, setSkip] = useState([])
-  useEffect(() => { api.vinylPick(skip).then(setPick).catch(() => setPick(null)) }, [skip, refreshKey])
-  if (pick === null) return null
+  const [res, setRes] = useState(undefined)
+  useEffect(() => {
+    api.vinylPlaySomething({ mode, genre, decade, skip }).then(setRes).catch(() => setRes(null))
+  }, [mode, genre, decade, skip, refreshKey])
+  if (res === null) return null
+  const pick = res && res.record
+  const choose = (setter) => (e) => { setter(e.target.value); setSkip([]) }
   return (
     <section className="card home-card vinyl-pick">
-      <h2 className="home-card-title">What should I play?</h2>
-      {!pick ? <p className="muted small loading">Picking...</p> : (
+      <h2 className="home-card-title">Play something</h2>
+      <div className="segmented vinyl-pick-modes" role="group" aria-label="How to pick">
+        {PLAY_MODES.map(([id, label]) => (
+          <button key={id} type="button" aria-pressed={mode === id} onClick={() => { setMode(id); setSkip([]) }}>{label}</button>
+        ))}
+      </div>
+      {res && (res.genres.length > 0 || res.decades.length > 0) && (
+        <div className="vinyl-pick-narrow">
+          <select value={genre} onChange={choose(setGenre)} aria-label="Genre">
+            <option value="">Any genre</option>
+            {res.genres.map((g) => <option key={g} value={g}>{g}</option>)}
+          </select>
+          <select value={decade} onChange={choose(setDecade)} aria-label="Decade">
+            <option value="">Any decade</option>
+            {res.decades.map((d) => <option key={d} value={d}>{d}s</option>)}
+          </select>
+        </div>
+      )}
+      {res === undefined ? <p className="muted small loading">Picking...</p> : !pick ? (
+        <p className="muted small">{mode === 'never' ? "You've played every record at least once." : 'No record fits that.'}</p>
+      ) : (
         <div className="vinyl-pick-row">
           <button type="button" className="cover-button" onClick={() => openPanel('record', { id: pick.record_id })} aria-label={`Open ${pick.title}`}>
             <RecordCover record={pick} className="vinyl-cover" />
@@ -112,10 +148,10 @@ function PickCard() {
           <span className="grow">
             <span className="item-title">{pick.title}</span>
             <span className="item-meta">{pick.artist}</span>
-            <span className="item-meta">{pick.last_played ? `Last played ${timeAgo(pick.last_played)}` : 'Never played here'}</span>
+            <span className="item-meta">{pick.last_played ? `Played ${plural(pick.plays, 'time')} · last ${timeAgo(pick.last_played)}` : 'Never played here'}</span>
             <span className="button-row">
-              <PlayedButton record={pick} className="primary small" />
-              <button type="button" className="plain small" onClick={() => setSkip([...skip, pick.record_id].slice(-50))}>Another</button>
+              <PlayedButton record={pick} label="Play it" className="primary small" />
+              {res.pool > 1 && <button type="button" className="plain small" onClick={() => setSkip([...skip, pick.record_id].slice(-50))}>Another</button>}
             </span>
           </span>
         </div>

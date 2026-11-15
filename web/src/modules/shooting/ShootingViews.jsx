@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { api, money, shortDate } from '../../api.js'
-import { ColumnChart } from '../../components/charts.jsx'
+import { BarList, ColumnChart } from '../../components/charts.jsx'
 import { CrosshairIcon, TargetIcon, TrophyIcon } from '../../components/icons.jsx'
 import { useApp } from '../../core/app-context.js'
 import EmptyState from '../../core/EmptyState.jsx'
@@ -244,7 +244,52 @@ export function AmmoView() {
             </li>))}</ul>
         </section>
       )}
+      <AmmoCompare />
     </section>
+  )
+}
+
+// Ammo against ammo (each ammo row is one product / lot), then each rifle with each ammo: groups fired, average
+// and best size in MOA, chronograph SD / ES where you recorded them, and a star on the best average so far.
+function AmmoCompare() {
+  const { refreshKey } = useApp()
+  const [data, setData] = useState(null)
+  useEffect(() => { api.ammoCompare().then(setData).catch(() => setData(null)) }, [refreshKey])
+  if (!data?.ammo.length) return null
+  const chart = data.ammo.filter((a) => a.avg_moa != null).map((a) => ({
+    label: a.lot ? `${a.name} (${a.lot})` : a.name, value: a.avg_moa, tip: `${plural(a.groups, 'group')} · best ${a.best_moa} MOA` }))
+  return (
+    <section className="card ammo-compare">
+      <h2 className="home-card-title">How your ammo groups</h2>
+      <p className="muted small">Groups of 3+ shots only, in MOA (so rifles with MIL scopes compare too). Smaller is better.</p>
+      {chart.length > 1 && <BarList title="Average group size" rows={chart} valueLabel="MOA" />}
+      <CompareTable rows={data.ammo} />
+      {data.pairs.length > 0 && (
+        <>
+          <h3 className="ammo-compare-sub">Each rifle with each ammo</h3>
+          <CompareTable rows={data.pairs} pair />
+        </>
+      )}
+    </section>
+  )
+}
+
+function CompareTable({ rows, pair = false }) {
+  return (
+    <div className="shoot-shot-table-wrap">
+      <table className="shoot-table ammo-compare-table">
+        <thead><tr><th scope="col">{pair ? 'Rifle and ammo' : 'Ammo'}</th><th scope="col">Groups</th><th scope="col">Avg MOA</th>
+          <th scope="col">Best MOA</th><th scope="col">SD</th><th scope="col">ES</th></tr></thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={`${r.rifle_id ?? ''}-${r.ammo_id}`} className={r.best ? 'ammo-compare-best' : ''}>
+              <td>{pair && `${r.rifle_name} + `}{r.name}{r.lot && ` (lot ${r.lot})`}{r.best && <span className="pill ok"> Best so far</span>}</td>
+              <td>{r.groups}</td><td>{r.avg_moa ?? '—'}</td><td>{r.best_moa ?? '—'}</td>
+              <td>{r.sd != null ? `${r.sd} m/s` : '—'}</td><td>{r.es != null ? `${r.es} m/s` : '—'}</td>
+            </tr>))}
+        </tbody>
+      </table>
+    </div>
   )
 }
 

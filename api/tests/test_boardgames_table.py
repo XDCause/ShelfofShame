@@ -216,3 +216,34 @@ def test_play_photos(client):
     assert client.post(f"/api/board-game-plays/{p['play_id']}/photos", content=b"x", headers={"Content-Type": "text/plain"}).status_code == 415
     assert client.delete(f"/api/board-games/play-photos/{r.json()['photo_id']}").status_code == 204
     assert client.get("/api/board-games/plays").json()[0]["photos"] == []
+
+
+def test_h_index_streaks_and_going_first():
+    from app.boardgames_people import first_player_stats, h_index, plays_to_next, win_streaks
+    assert h_index([]) == 0 and h_index([1]) == 1 and h_index([5, 4, 3, 1]) == 3 and h_index([2, 2, 2, 2]) == 2
+    assert plays_to_next([5, 4, 3, 1]) == 4        # the top 4 games each need 4 plays: 0 + 0 + 1 + 3
+    assert win_streaks([]) == {"current": 0, "longest": 0}
+    assert win_streaks([True, True, False, True]) == {"current": 1, "longest": 2}
+    assert win_streaks([False, True, True, True]) == {"current": 3, "longest": 3}
+    rows = [{"game_id": 1, "name": "A", "won": w, "seats": 4} for w in (True, False, False)]
+    rows.append({"game_id": 2, "name": "B", "won": True, "seats": 2})
+    f = first_player_stats(rows)
+    assert (f["plays"], f["wins"], f["rate"]) == (4, 2, 50)
+    assert [(g["name"], g["rate"], g["chance"]) for g in f["games"]] == [("A", 33, 25)]   # B has fewer than 3
+
+
+def test_stats_h_index_streaks_and_first_player(client):
+    me = client.post("/api/board-games/players", json={"name": "Me", "is_me": True}).json()
+    sam = client.post("/api/board-games/players", json={"name": "Sam"}).json()
+    catan = add_game(client)
+    for day, mine, sams in (("2026-10-01", 5, 9), ("2026-10-02", 9, 5), ("2026-10-03", 9, 5), ("2026-10-04", 9, 5)):
+        play(client, catan["game_id"], played_on=day, first_player_id=me["player_id"],
+             seats=[{"player_id": me["player_id"], "score": mine}, {"player_id": sam["player_id"], "score": sams}])
+    s = client.get("/api/board-games/stats").json()
+    assert (s["h_index"]["n"], s["h_index"]["plays_to_next"], [g["name"] for g in s["h_index"]["games"]]) == (1, 2, ["Catan"])
+    mine = next(p for p in s["players"] if p["is_me"])
+    theirs = next(p for p in s["players"] if p["name"] == "Sam")
+    assert mine["streak"] == {"current": 3, "longest": 3} and theirs["streak"] == {"current": 0, "longest": 1}
+    f = s["first_player"]
+    assert (f["plays"], f["wins"], f["rate"], f["chance"]) == (4, 3, 75, 50)
+    assert f["games"][0]["name"] == "Catan"

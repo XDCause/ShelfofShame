@@ -69,3 +69,30 @@ def group_stats(points) -> dict | None:
             "mean_radius_mm": round(sum(math.dist(p, (cx, cy)) for p in pts) / len(pts), 1),
             "width_mm": round(max(x for x, _ in pts) - min(x for x, _ in pts), 1),
             "height_mm": round(max(y for _, y in pts) - min(y for _, y in pts), 1)}
+
+
+MIN_GROUP_SHOTS = 3          # a 1- or 2-shot "group" says nothing about the ammo
+MIN_GROUPS_FOR_BEST = 2      # the "best so far" marker needs at least this many groups to go on
+
+
+def compare(rows: list[dict]) -> list[dict]:
+    """Ammo (or rifle + ammo) compared. rows = [{key..., groups: [decorated groups]}]: each answers
+    {groups, avg_moa, best_moa, sd, es, velocity, rounds, best} using only groups of 3+ shots with a size. Chronograph
+    SD / ES are averaged over the groups that have them. `best` marks the smallest average (needs MIN_GROUPS_FOR_BEST).
+    Sorted best average first; no sizes last."""
+    out = []
+    for r in rows:
+        gs = r["groups"]
+        sized = [g["moa"] for g in gs if g["moa"] is not None and (g["shots"] or MIN_GROUP_SHOTS) >= MIN_GROUP_SHOTS]
+        vel = [g["velocity"] for g in gs if g["velocity"]]
+        out.append({**{k: v for k, v in r.items() if k != "groups"},
+                    "groups": len(sized), "avg_moa": round(sum(sized) / len(sized), 2) if sized else None,
+                    "best_moa": round(min(sized), 2) if sized else None,
+                    "sd": round(sum(v["sd"] for v in vel) / len(vel), 1) if vel else None,
+                    "es": round(sum(v["es"] for v in vel) / len(vel), 1) if vel else None,
+                    "velocity": round(sum(v["avg"] for v in vel) / len(vel), 1) if vel else None,
+                    "shots": sum(g["shots"] or 0 for g in gs), "best": False})
+    ranked = [o for o in out if o["avg_moa"] is not None and o["groups"] >= MIN_GROUPS_FOR_BEST]
+    if ranked:
+        min(ranked, key=lambda o: o["avg_moa"])["best"] = True
+    return sorted(out, key=lambda o: (o["avg_moa"] is None, o["avg_moa"] or 0))

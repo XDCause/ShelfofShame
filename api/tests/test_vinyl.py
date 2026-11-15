@@ -285,3 +285,29 @@ def test_wishlist_journal_goals_value_report_export(client, dg):
     csv = client.get("/api/vinyl/export.csv")
     assert csv.status_code == 200 and "Second Side" in csv.text and "https://www.discogs.com/release/9004" in csv.text
     assert client.post("/api/calendar/parse", json={"text": "Record Store Day Sat 10am"}).json()["hobby"] == "vinyl"
+
+
+# ---------------------------------------------------------------- play something
+def test_play_something_modes_and_filters(client):
+    a = add(client, title="Spun", artist="A", genres=["Rock"], year=1975)
+    b = add(client, title="Fresh", artist="B", genres=["Jazz"], year=1962)
+    add(client, title="Wanted one", artist="C", status="Wanted", genres=["Jazz"], year=1962)
+    client.post(f"/api/vinyl/records/{a['record_id']}/plays", json={})
+    never = client.get("/api/vinyl/play-something?mode=never").json()
+    assert never["record"]["record_id"] == b["record_id"] and never["pool"] == 1
+    assert client.get("/api/vinyl/play-something?mode=surprise&genre=Rock").json()["record"]["record_id"] == a["record_id"]
+    assert client.get("/api/vinyl/play-something?mode=least&decade=1960").json()["record"]["record_id"] == b["record_id"]
+    none = client.get("/api/vinyl/play-something?mode=never&genre=Rock").json()
+    assert none["record"] is None and none["pool"] == 0 and none["genres"] == ["Jazz", "Rock"] and none["decades"] == [1960, 1970]
+    # every one skipped: it starts again rather than showing nothing
+    both = client.get(f"/api/vinyl/play-something?mode=surprise&skip={a['record_id']}&skip={b['record_id']}").json()
+    assert both["record"] is not None and both["pool"] == 2
+    assert client.get("/api/vinyl/play-something?mode=nonsense").status_code == 422
+    s = client.get("/api/vinyl/summary").json()
+    assert s["never_count"] == 1 and [r["title"] for r in s["never_played"]] == ["Fresh"]
+
+
+def test_play_weight_prefers_the_neglected():
+    from app.vinyl import play_weight
+    assert play_weight(0, None) > play_weight(0, 30) > play_weight(5, 30)
+    assert play_weight(2, 5000) == play_weight(2, 730)

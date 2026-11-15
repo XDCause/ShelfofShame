@@ -12,6 +12,8 @@
               won (a tie-break). Each seat knows whether it was that person's first play of the game.
     stats     wins and head-to-heads (you against each player), per game: plays, average teach and play time, your
               best and average score, the record and who holds it, how much fun it was
+    extras    stats also has your H-index (games played at least that many times), win streaks (yours and each
+              player's) and the first player's win rate - overall and per game (the helpers just above stats)
     photos    board_game_play_photos: the final board or the table, on a play or a live one (moved on finishing)
 """
 import re
@@ -416,6 +418,46 @@ def game_stats(conn, game_id: int | None = None) -> dict[int, dict]:
     return out
 
 
+def h_index(plays: list[int]) -> int:
+    """The biggest n such that n games have each been played at least n times."""
+    ranked = sorted(plays, reverse=True)
+    return sum(1 for i, p in enumerate(ranked, 1) if p >= i)
+
+
+def plays_to_next(plays: list[int]) -> int:
+    """Plays still needed for the H-index to go up by one: the top n+1 games each need n+1 plays."""
+    n = h_index(plays)
+    top = sorted(plays, reverse=True)[:n + 1]
+    top += [0] * (n + 1 - len(top))
+    return sum(max(0, n + 1 - p) for p in top)
+
+
+def win_streaks(results: list[bool]) -> dict:
+    """Wins in a row, from results in date order: the run going now (a loss ends it) and the longest ever."""
+    current = longest = 0
+    for won in results:
+        current = current + 1 if won else 0
+        longest = max(longest, current)
+    return {"current": current, "longest": longest}
+
+
+def first_player_stats(rows: list[dict]) -> dict:
+    """Does going first help? From finished competitive plays with a winner and a known first player
+    (rows: game_id, name, won, seats): the first player's win rate overall, what chance alone would give
+    (1 over the seats, averaged) and, for games with at least 3 such plays, the same per game."""
+    def sums(group):
+        n = len(group)
+        wins = sum(1 for r in group if r["won"])
+        return {"plays": n, "wins": wins, "rate": round(100 * wins / n) if n else None,
+                "chance": round(100 * sum(1 / r["seats"] for r in group) / n) if n else None}
+    per_game = {}
+    for r in rows:
+        per_game.setdefault(r["game_id"], []).append(r)
+    games = [{"game_id": g, "name": rs[0]["name"], **sums(rs)} for g, rs in per_game.items() if len(rs) >= 3]
+    games.sort(key=lambda g: (-g["plays"], g["name"].lower()))
+    return {**sums(rows), "games": games}
+
+
 @router.get("/board-games/stats")
 def stats():
     """The Players page: each player's plays and wins, you against each of them (who beat whom, co-op plays won
@@ -441,16 +483,38 @@ def stats():
             "SELECT game_id, name, scoring FROM board_games WHERE game_id = ANY(%s)", (list(games),)).fetchall()}
         places = conn.execute("SELECT location, count(*)::int AS plays, max(played_on) AS last_played FROM board_game_plays "
                               "WHERE location IS NOT NULL GROUP BY location ORDER BY 2 DESC, 3 DESC LIMIT 12").fetchall()
+        results = conn.execute("""
+            SELECT s.player_id, s.won FROM board_game_play_players s JOIN board_game_plays p USING (play_id)
+            JOIN board_games g USING (game_id)
+            WHERE p.finished AND g.scoring <> 'coop'
+              AND EXISTS (SELECT 1 FROM board_game_play_players w WHERE w.play_id = p.play_id AND w.won)
+            ORDER BY p.played_on, p.play_id""").fetchall()
+        first = conn.execute("""
+            SELECT p.game_id, g.name, s.won, (SELECT count(*)::int FROM board_game_play_players o WHERE o.play_id = p.play_id) AS seats
+            FROM board_game_plays p JOIN board_games g USING (game_id)
+            JOIN board_game_play_players s ON s.play_id = p.play_id AND s.player_id = p.first_player_id
+            WHERE p.finished AND g.scoring <> 'coop'
+              AND EXISTS (SELECT 1 FROM board_game_play_players w WHERE w.play_id = p.play_id AND w.won)""").fetchall()
         times = conn.execute("""
             SELECT count(*) FILTER (WHERE teach_minutes IS NOT NULL)::int AS timed, coalesce(sum(teach_minutes), 0)::int AS teach,
                    coalesce(sum(setup_minutes), 0)::int AS setup, coalesce(sum(minutes), 0)::int AS playing
             FROM board_game_plays""").fetchone()
     by_id = {r["player_id"]: r for r in rivals}
+    by_player: dict[int, list[bool]] = {}
+    for r in results:
+        by_player.setdefault(r["player_id"], []).append(r["won"])
     for p in players:
         p["vs_me"] = by_id.get(p["player_id"])
+        p["streak"] = win_streaks(by_player.get(p["player_id"], []))
+    counts = sorted((s["plays"] for s in games.values()), reverse=True)
+    n = h_index(counts)
+    by_name = {r["game_id"]: r["name"] for r in names.values()}
+    h = {"n": n, "next_n": n + 1, "plays_to_next": plays_to_next(counts),
+         "games": [{"game_id": g, "name": by_name[g], "plays": s["plays"]}
+                   for g, s in sorted(games.items(), key=lambda kv: -kv[1]["plays"])[:n] if g in by_name]}
     game_rows = sorted(({**names[g], **s} for g, s in games.items() if g in names), key=lambda r: (-r["plays"], r["name"].lower()))
     return {"players": players, "games": game_rows, "places": places, "times": times,
-            "has_me": any(p["is_me"] for p in players)}
+            "has_me": any(p["is_me"] for p in players), "h_index": h, "first_player": first_player_stats(first)}
 
 
 # ---------------------------------------------------------------------------

@@ -144,7 +144,10 @@ def watch(page, label):
     page.route(OUTSIDE, offline)                       # (no outside site, ever)
     # (a wrong password's 401 from /api/auth/login is expected in the sign-in step: the browser logs it as an error too;
     # "Failed to load resource: net::ERR_FAILED" says no more than requestfailed below, which names the address)
+    # (Excalidraw - the drawing canvas - adds a window "unload" listener, which newer Chrome blocks and reports: harmless,
+    # not ours; 2026-11-16, Playwright 1.65)
     page.on("console", lambda m: m.type == "error" and "status of 401" not in m.text
+            and "Permissions policy violation: unload is not allowed" not in m.text
             and "Failed to load resource: net::ERR_FAILED" not in m.text and errors.append(f"[{label}] console: {m.text}"))
     page.on("pageerror", lambda e: errors.append(f"[{label}] page error: {e}"))
     # Every failed request names its address (the browser's own "Failed to load resource" line doesn't).

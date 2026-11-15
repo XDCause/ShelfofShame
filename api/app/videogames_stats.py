@@ -1,5 +1,7 @@
 """Video games: time played, the stats page, the year's recap and the yearly goal. Split out of videogames.py
 (2026-10-22)."""
+import random
+import statistics
 from datetime import date, timedelta
 
 from fastapi import APIRouter, Query
@@ -107,3 +109,32 @@ def set_goal(body: GoalIn):
         conn.execute("INSERT INTO settings (key, value) VALUES (%s, %s) "
                      "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", (GOAL_KEY, str(body.percent)))
     return summary(None)
+
+
+@router.get("/videogames/backlog")
+def backlog(by: str = Query("shortest", pattern="^(shortest|achievements|random)$"), platforms: str | None = PLATFORMS_QUERY):
+    """What next? From the games in your Backlog (status backlog, hidden ones left out):
+        shortest      the least time to play: SteamHunters' median time to 100% if it has one, else your own median
+                      playtime of the games you've finished (median_finished_minutes)
+        achievements  the fewest achievements left (games without any come last)
+        random        any one
+    pick is the one to play, others the next few. (Declared before /videogames/{app_id}.)"""
+    chosen = platforms_from(platforms)
+    with db() as conn:
+        games = games_where(conn, chosen, "NOT hidden AND status = 'backlog'", lambda g: g["name"].lower(), counted_only=False)
+        done = [g["playtime_minutes"] for g in games_where(conn, chosen, "NOT hidden AND status = 'finished' AND playtime_minutes > 0",
+                                                            lambda g: 0, counted_only=False)]
+    median = round(statistics.median(done)) if done else None
+    for g in games:
+        g["estimate_minutes"] = g["sh_median_minutes"] if (g["sh_median_minutes"] or 0) > 0 else median
+    if by == "random":
+        random.shuffle(games)
+    elif by == "achievements":
+        games.sort(key=lambda g: (not g["achievements_total"], g["left_to_get"] or 0))
+    else:
+        games.sort(key=lambda g: (g["estimate_minutes"] is None, g["estimate_minutes"] or 0))
+    keep = ("platform", "app_id", "name", "header_url", "playtime_minutes", "achievements_total", "left_to_get",
+            "sh_median_minutes", "estimate_minutes", "status")
+    slim = [{k: g.get(k) for k in keep} for g in games[:5]]
+    return {"by": by, "count": len(games), "median_finished_minutes": median,
+            "pick": slim[0] if slim else None, "others": slim[1:]}

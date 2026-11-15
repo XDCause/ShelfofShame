@@ -98,7 +98,10 @@ and committed there, tested there, then moved to prod:
 | Give dev a fresh copy of prod's data | `.\dev.ps1 -Refresh` (prod is only read) |
 | Stop dev | `.\dev.ps1 -Stop` |
 | See which database changes a copy has | `.\migrate.ps1 -List` |
-| **Move tested changes to prod** | `.\promote.ps1` in the prod folder (`-Quick` skips the browser walk-through, `-Push` pushes to GitHub) |
+| Set up the staging copy (first time) | `.\stage.ps1 -Setup` (https://&lt;pc&gt;.local:8445, a fresh copy of prod's data) |
+| **Move tested changes to staging** | `.\stage.ps1` (tests dev unless they passed on this code, fresh prod data, rebuild) |
+| Give staging a fresh copy of prod's data / stop it | `.\stage.ps1 -Refresh` / `.\stage.ps1 -Stop` |
+| **Move tested changes to prod** | `.\promote.ps1` in the prod folder: from staging when it exists, else from dev (`-Quick` skips the browser walk-through, `-Push` pushes to GitHub) |
 
 `promote.ps1` refuses to run if either copy has uncommitted changes. Then it:
 1. runs the API tests and the browser walk-through against dev;
@@ -126,7 +129,7 @@ one module per part of the app:
 |---|---|
 | Core | `activity`, `goals` (+ `goal_sources`), `todos`, `journal` (+ `journal_text`, `journal_actions`, `journal_drawings`, `journal_more`), `calendar` (+ `calendar_more`, `holidays`), `banners`, `images`, `webphoto`, `settings`, `system` (Settings > System; + `drivecheck`: has Google Drive finished uploading the backup), `spending`, `sitecheck`, `auth` (+ `auth_passkeys`); `main` wires them up, `db` is the shared database helpers |
 | Supplies and wishlist | `supplies` (+ `supplies_more`, `owned`), `wishlist`, `wanted` (+ `wanted_more`, `linkpeek`), `products`, `catalog` (+ `tamiya_catalog`, `catalog_import`), `paints`, `colours`, `lookups` |
-| Hobbies | `models`, `minis`, `build`, `warhammer`, `gundam`; `boardgames` (+ `boardgames_people`, `boardgames_live`); `volleyball`, `gear`, `vbclips`, `vbcoach`; `videogames` (+ `videogames_stats`), `vgsync`, `vgplaytime`, `othergames`, `vgfind`, `vgfriends`; `chess` (+ `chess_review`, `chess_openings`, `chess_trainer`); `reading`, `readimport`, `reading_recs`, `bookseries`; `travel`, `travel_trip`, `travel_places`; `shooting`, `shooting_sessions`, `shooting_shots`, `shotmath`; `hiking`, `gpx`; `garden` (+ `garden_logs`, `garden_today`), `garden_guide`, `garden_doctor`, `garden_items`; `vinyl` (+ `vinyl_sync`); `sudoku` |
+| Hobbies | `models`, `minis`, `build`, `warhammer`, `gundam`; `boardgames` (+ `boardgames_people`, `boardgames_live`); `volleyball`, `gear`, `vbclips`, `vbcoach`; `videogames` (+ `videogames_stats`), `vgsync`, `vgplaytime`, `othergames`, `vgfind`, `vgfriends`; `chess` (+ `chess_review`, `chess_openings`, `chess_trainer`); `reading`, `readimport`, `reading_recs`, `bookseries`; `travel`, `travel_trip`, `travel_places`; `shooting`, `shooting_sessions`, `shooting_shots`, `shotmath`; `hiking`, `gpx`, `hikepace`; `garden` (+ `garden_logs`, `garden_today`), `garden_guide`, `garden_doctor`, `garden_items`; `vinyl` (+ `vinyl_sync`); `sudoku` |
 | Outside sites (one each, polite, faked in tests) | `tamiya`, `hasegawa`, `hlj`, `trumpeter`, `stedi`, `ucp` (+ `goodgames`, `bluesky`), `gameology`, `steam`, `steamhunters`, `exophase`, `chesscom`, `lichess` (opening explorer), `openlibrary`, `overpass`, `wikimedia`, `bunnings`, `openmeteo`, `frankfurter` (exchange rates), `discogs`, `lastfm`; `stand_ins` answers for all of them in the walk-through |
 
 The web app's side is `web/src/api.js` (every call it makes, grouped the same way); a test checks

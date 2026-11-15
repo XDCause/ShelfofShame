@@ -277,6 +277,26 @@ def rifles_for_ammo(conn, ammo_id: int) -> list[dict]:
     return sorted(out, key=lambda a: (a["avg"] is None, a["avg"] or 0))
 
 
+@router.get("/shooting/ammo-compare")
+def ammo_compare():
+    """Every ammo (each row is one product / lot) and every rifle + ammo pair compared: groups fired, average and
+    best size (MOA, so rifles with MIL scopes compare too), chronograph SD / ES, and which is best so far."""
+    with db() as conn:
+        groups = [decorate(g) for g in conn.execute(GROUP_SELECT + " WHERE s.ammo_id IS NOT NULL").fetchall()]
+        ammo = {a["ammo_id"]: a for a in conn.execute("SELECT ammo_id, name, lot, calibre FROM ammo").fetchall()}
+        rifles = {r["rifle_id"]: r["name"] for r in conn.execute("SELECT rifle_id, name FROM rifles").fetchall()}
+    by_ammo = [{"ammo_id": i, "name": a["name"], "lot": a["lot"], "calibre": a["calibre"],
+                "groups": [g for g in groups if g["ammo_id"] == i]} for i, a in ammo.items()]
+    pairs = {}
+    for g in groups:
+        if g["rifle_id"] is not None:
+            pairs.setdefault((g["rifle_id"], g["ammo_id"]), []).append(g)
+    by_pair = [{"rifle_id": r, "ammo_id": a, "rifle_name": rifles[r], "name": ammo[a]["name"], "lot": ammo[a]["lot"], "groups": gs}
+               for (r, a), gs in pairs.items()]
+    keep = lambda rows: [r for r in shotmath.compare(rows) if r["shots"] or r["groups"]]  # noqa: E731
+    return {"ammo": keep(by_ammo), "pairs": keep(by_pair)}
+
+
 # ---------------------------------------------------------------------------------------------
 # DOPE
 # ---------------------------------------------------------------------------------------------

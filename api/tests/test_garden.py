@@ -355,3 +355,35 @@ def test_bought_plants_waiting(client):
     assert item["planted"] == 0
     client.post(f"/api/garden/items/{item['item_id']}/sow", json={})
     assert client.get(f"/api/garden/items/{item['item_id']}").json()["planted"] == 1
+
+
+def test_harvest_worth_it_cost_against_harvest(client):
+    from app.garden_today import worth_it
+    assert worth_it(10, [{"unit": "g", "amount": 500, "key": ("x", "g")}], {("x", "g"): 0.04}) == {
+        "value": 20.0, "cost_per_unit": 0.02, "main_unit": "g", "verdict": "worth"}
+    assert worth_it(10, [{"unit": "g", "amount": 100, "key": ("x", "g")}], {})["verdict"] is None
+    assert worth_it(0, [], {})["cost_per_unit"] is None
+
+    s = balcony(client)
+    pot = client.post("/api/garden/containers", json={"name": "Worth pot", "space_id": s["space_id"]}).json()
+    seeds = client.post("/api/garden/items", json={"name": "Worth seeds", "kind": "Seeds", "price": 4}).json()
+    mix = client.post("/api/garden/items", json={"name": "Worth mix", "kind": "Potting mix", "price": 12.5}).json()
+    assert mix["item_id"]
+    a = client.post("/api/garden/plantings", json={"name": "Worth lettuce", "container_id": pot["container_id"],
+                                                  "item_id": seeds["item_id"], "price": 1}).json()
+    client.post("/api/garden/plantings", json={"name": "Worth lettuce", "container_id": pot["container_id"],
+                                              "item_id": seeds["item_id"]})
+    for grams in (150, 100):
+        client.post("/api/garden/logs", json={"planting_id": a["planting_id"], "kind": "Harvested", "amount": grams, "unit": "g"})
+    w = client.get("/api/garden/harvests/worth").json()
+    row = next(p for p in w["plantings"] if p["planting_id"] == a["planting_id"])
+    assert row["spend"] == 3.0 and row["harvested"] == [{"unit": "g", "amount": 250.0, "per_unit": None}]     # 1 + half of the 4 packet
+    assert row["cost_per_unit"] == 0.012 and row["verdict"] is None and w["supplies_spend"] >= 12.5
+    # price it at the shop: 250 g at 2 cents a gram = $5 against $3 spent
+    put = client.put("/api/garden/harvests/values", json={"crop": " Worth Lettuce ", "unit": "G", "per_unit": 0.02})
+    assert put.json()["crop"] == "worth lettuce"
+    row = next(p for p in client.get("/api/garden/harvests/worth").json()["plantings"] if p["planting_id"] == a["planting_id"])
+    assert (row["value"], row["verdict"]) == (5.0, "worth")
+    client.put("/api/garden/harvests/values", json={"crop": "worth lettuce", "unit": "g", "per_unit": None})
+    row = next(p for p in client.get("/api/garden/harvests/worth").json()["plantings"] if p["planting_id"] == a["planting_id"])
+    assert row["verdict"] is None

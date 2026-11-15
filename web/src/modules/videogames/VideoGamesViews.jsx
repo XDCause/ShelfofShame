@@ -4,6 +4,8 @@ import { ColumnChart } from '../../components/charts.jsx'
 import { BellCurveIcon, ClockIcon, GamepadIcon, PuzzleIcon, TrophyIcon } from '../../components/icons.jsx'
 import { useApp } from '../../core/app-context.js'
 import Stat, { Change } from '../../core/Stat.jsx'
+import { WhatNextCard } from './Backlog.jsx'
+import { STATUS_LABEL, STATUS_TONE, STATUSES } from './backlogHelpers.js'
 import { OtherPlatformsCard, PLATFORMS, PlatformToggles, useCounting, useOtherGames } from './OtherPlatforms.jsx'
 import {
   CompletionBar, GamePicture, HandTicked, playtime, rarity, SteamSetup, SyncBar, SyncButton, useSteamAccount, useSteamSummary,
@@ -62,6 +64,7 @@ export function Dashboard() {
                   </ul>
                 )}
               </section>
+              <WhatNextCard platforms={counting} />
               <OtherPlatformsCard />
             </div>
             <div className="home-stack">
@@ -321,6 +324,7 @@ function GamesView({ chosen, other, switcher }) {
     setFlipped((f) => (key === sort ? !f : false))
     setSortKey(key)
   }
+  const [status, setStatus] = useState('')
   const [q, setQ] = useState('')
   // Hide games already at 100% (remembered on this device): sorting by progress then starts with the ones to do.
   const [hideDone, setHideDone] = useState(() => { try { return localStorage.getItem('videogames.hideDone') === '1' } catch { return false } })
@@ -332,14 +336,14 @@ function GamesView({ chosen, other, switcher }) {
   const [error, setError] = useState('')
   const withSteam = chosen.includes('steam')
   useEffect(() => {
-    if (withSteam) api.listVideoGames(show).then(setSteamGames).catch((e) => setError(e.message))
-  }, [show, refreshKey, withSteam])
+    if (withSteam) api.listVideoGames(show, status).then(setSteamGames).catch((e) => setError(e.message))
+  }, [show, status, refreshKey, withSteam])
   const chosenKey = chosen.join(',')
   // Rebuilt only when the games or the choice change (not on every keystroke in the search box).
   const games = useMemo(() => ((withSteam && !steamGames) || !other ? null : [
     ...(withSteam ? steamGames.map((g) => ({ ...g, platform: 'steam' })) : []),
-    ...other.games.filter((g) => chosenKey.split(',').includes(g.platform) && OTHER_SHOWS[show](g)),
-  ]), [withSteam, steamGames, other, chosenKey, show])
+    ...other.games.filter((g) => chosenKey.split(',').includes(g.platform) && OTHER_SHOWS[show](g) && (!status || g.status === status)),
+  ]), [withSteam, steamGames, other, chosenKey, show, status])
   const several = chosen.length > 1
   const hiding = hideDone && show !== 'perfect'
   const visible = useMemo(() => (games ?? [])
@@ -371,6 +375,11 @@ function GamesView({ chosen, other, switcher }) {
         ))}
         <button type="button" className="chip-filter games-hide-done" aria-pressed={hideDone} onClick={toggleHideDone}
           disabled={show === 'perfect'} title="Leave out games you've already 100%'d">Hide 100%</button>
+      </div>
+      <div className="chip-row scroll" role="group" aria-label="Status">
+        {[['', 'Any status'], ...STATUSES].map(([id, label]) => (
+          <button key={id || 'any'} type="button" className="chip-filter" aria-pressed={status === id} onClick={() => setStatus(id)}>{label}</button>
+        ))}
       </div>
       <GameHead sort={sort} flipped={flipped} setSort={setSort} />
       </div>
@@ -439,6 +448,7 @@ function GameTable({ games, onOpen, showPlatform = false }) {
                 <span className="item-title">{g.name}</span>
                 <span className="game-tags">
                   {showPlatform && <span className={`pill platform-${g.platform}`}>{PLATFORM_NAME[g.platform]}</span>}
+                  {g.play_status && <span className={`pill vgb-status-pill ${STATUS_TONE[g.play_status]}`}>{STATUS_LABEL[g.play_status]}</span>}
                   {g.completed_at && <span className="pill ok"><TrophyIcon size={12} /> 100%</span>}
                   {g.dlc_count > 0 && <DlcBadge game={g} />}
                   {g.extra && <span className="pill" title="Added by hand">Added</span>}

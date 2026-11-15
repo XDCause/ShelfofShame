@@ -16,10 +16,14 @@ def read(name: str) -> str:
 
 
 def test_claude_md_knows_the_newest_migration():
-    newest = max(int(p.name[:2]) for p in INIT.glob("[0-9][0-9]_*.sql"))
-    said = re.search(r"db/init \(01-(\d+)\)", read("CLAUDE.md"))
+    # 01-99, then A00, A01... (2026-11-16: "100_" sorted between "10_" and "11_"; letters sort after digits everywhere -
+    # PowerShell, Python, the database image's start-up - and files already applied keep their names)
+    names = sorted(p.name.split("_")[0] for p in INIT.glob("*.sql"))
+    assert all(re.fullmatch(r"\d\d|[A-Z]\d\d", n) for n in names), f"db/init files must start NN_ or A00_: {names}"
+    newest = names[-1]
+    said = re.search(r"db/init \(01-(\w+)\)", read("CLAUDE.md"))
     assert said, "CLAUDE.md should say which db/init files there are: 'db/init (01-NN)'"
-    assert int(said.group(1)) == newest, f"CLAUDE.md says db/init 01-{said.group(1)}; the newest is {newest:02d}"
+    assert said.group(1) == newest, f"CLAUDE.md says db/init 01-{said.group(1)}; the newest is {newest}"
 
 
 def test_claude_md_knows_the_newest_history_entry():

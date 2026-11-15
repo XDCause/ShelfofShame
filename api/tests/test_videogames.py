@@ -962,3 +962,44 @@ def test_a_ubisoft_game_you_own_on_steam_is_counted_once(client, exo):
     assert next(g for g in other["games"] if g["game_id"] == siege["game_id"])["on_steam"] is True
     assert "ubisoft" not in {p["platform"] for p in other["platforms"]}
     assert client.get(f"/api/videogames/other/{siege['game_id']}").json()["achievements_done"] == 3   # your ticks are kept
+
+
+def test_status_guess_set_clear_and_filter(client, fake):
+    setup(client)
+    games = {g["name"]: g for g in client.get("/api/videogames").json()}
+    assert games["Celeste"]["status"] == "finished" and games["Celeste"]["play_status"] is None   # a guess: 100%
+    r = client.patch("/api/videogames/20", json={"status": "dropped"})
+    assert (r.json()["status"], r.json()["play_status"]) == ("dropped", "dropped")
+    assert client.patch("/api/videogames/20", json={"hidden": False}).json()["status"] == "dropped"   # kept
+    assert [g["name"] for g in client.get("/api/videogames?status=dropped").json()] == ["Hades"]
+    assert client.patch("/api/videogames/20", json={"status": None}).json()["play_status"] is None   # back to the guess
+    assert client.patch("/api/videogames/20", json={"status": "later"}).status_code == 422
+    assert client.patch("/api/videogames/20", json={}).status_code == 422
+    assert client.get("/api/videogames?status=later").status_code == 422
+
+
+def test_what_next_from_the_backlog(client, fake):
+    setup(client)
+    client.patch("/api/videogames/20", json={"status": "backlog"})
+    client.patch("/api/videogames/30", json={"status": "backlog"})
+    r = client.get("/api/videogames/backlog?by=achievements").json()
+    assert (r["count"], r["pick"]["name"], r["pick"]["left_to_get"], r["others"][0]["name"]) == (2, "Hades", 2, "Free Demo")
+    r = client.get("/api/videogames/backlog?by=shortest").json()
+    assert r["median_finished_minutes"] == 900 and r["pick"]["estimate_minutes"] == 900   # Celeste, the one you finished
+    r = client.get("/api/videogames/backlog?by=random").json()
+    assert r["pick"]["name"] in ("Hades", "Free Demo") and len(r["others"]) == 1
+    assert client.get("/api/videogames/backlog?by=best").status_code == 422
+    client.patch("/api/videogames/20", json={"hidden": True})                       # hidden games aren't offered
+    assert client.get("/api/videogames/backlog").json()["count"] == 1
+
+
+def test_status_of_a_game_you_added_by_hand(client, exo):
+    g = client.post("/api/videogames/other", json={"name": "Trackmania", "hours": 0}).json()
+    assert (g["status"], g["play_status"]) == ("backlog", None)                      # no playtime: backlog
+    url = f"/api/videogames/other/{g['game_id']}"
+    assert client.patch(url, json={"status": "playing"}).json()["status"] == "playing"
+    assert client.patch(url, json={"hours": 3}).json()["status"] == "playing"         # kept
+    assert client.patch(url, json={"status": None}).json()["play_status"] is None
+    assert client.patch(url, json={"status": "nope"}).status_code == 422
+    assert client.patch(url, json={"status": "backlog"}).json()["status"] == "backlog"
+    assert client.get("/api/videogames/backlog?platforms=ubisoft").json()["count"] == 1

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { api, shortDate } from '../../api.js'
+import { api, money, shortDate } from '../../api.js'
 import { BarList, ColumnChart } from '../../components/charts.jsx'
 import Fold from '../../components/Fold.jsx'
 import { SproutIcon } from '../../components/icons.jsx'
@@ -448,6 +448,64 @@ export function HarvestsView() {
           </div>
         </div>
       )}
+      <WorthIt year={h.year} />
+    </section>
+  )
+}
+
+// Spend against harvest per planting: what you paid (the plant, and its share of the seed packet) against what you
+// picked. Enter what a unit costs at the shop and it says "worth it" or "not yet". Supplies can't be tied to a plant,
+// so they're one total for the year.
+function WorthIt({ year }) {
+  const { refreshKey } = useApp()
+  const [w, setW] = useState(null)
+  const [error, setError] = useState('')
+  const load = useCallback(() => api.gardenWorth(year).then(setW).catch((e) => setError(e.message)), [year])
+  useEffect(() => { load() }, [load, refreshKey])
+  if (error) return <p className="alert error">{error}</p>
+  if (!w || !w.plantings.length) return null
+  const save = async (p, per) => {
+    const unit = p.main_unit
+    if (!unit) return
+    try {
+      await api.setCropValue({ crop: p.crop, unit, per_unit: per === '' ? null : Number(per) })
+      load()
+    } catch (e) { setError(e.message) }
+  }
+  return (
+    <section className="card home-card garden-worth">
+      <h2 className="home-card-title">Worth it? Spend against harvest</h2>
+      <p className="muted small">
+        Plants and seed packets you started or picked from in {year}, all time. {w.supplies_note}{' '}
+        Supplies added in {year}: <strong>{money(w.supplies_spend)}</strong> ({w.supplies_items} item{w.supplies_items === 1 ? '' : 's'}).
+      </p>
+      <div className="shoot-shot-table-wrap">
+        <table className="garden-worth-table">
+          <thead><tr><th scope="col">Plant</th><th scope="col">Spent</th><th scope="col">Picked</th><th scope="col">Cost per unit</th>
+            <th scope="col">Shop price per unit</th><th scope="col">Worth</th></tr></thead>
+          <tbody>
+            {w.plantings.map((p) => {
+              const main = p.harvested.find((x) => x.unit === p.main_unit)
+              return (
+                <tr key={p.planting_id}>
+                  <td>{p.name}{p.variety && ` (${p.variety})`}</td>
+                  <td>{p.spend ? money(p.spend) : '—'}</td>
+                  <td>{p.harvested.length ? p.harvested.map((x) => `${x.amount.toLocaleString()} ${x.unit}`).join(', ') : '—'}</td>
+                  <td>{p.cost_per_unit != null ? `${money(p.cost_per_unit)} / ${p.main_unit}` : '—'}</td>
+                  <td>{p.main_unit ? (
+                    <input type="number" min="0" step="0.001" className="garden-worth-input" defaultValue={main?.per_unit ?? ''}
+                      key={`${p.planting_id}-${main?.per_unit ?? ''}`} aria-label={`Shop price per ${p.main_unit} of ${p.name}`}
+                      onBlur={(e) => { if (e.target.value !== String(main?.per_unit ?? '')) save(p, e.target.value) }} />
+                  ) : '—'}</td>
+                  <td>{p.verdict === 'worth' ? <span className="pill ok">Worth it · {money(p.value)}</span>
+                    : p.verdict === 'not yet' ? <span className="pill low">Not yet · {money(p.value)}</span> : '—'}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+      {w.valued > 0 && <p className="small">Priced harvests: worth <strong>{money(w.value)}</strong> at the shop against {money(w.planting_spend)} spent on plants and seeds.</p>}
     </section>
   )
 }

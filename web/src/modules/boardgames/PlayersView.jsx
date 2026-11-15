@@ -3,6 +3,7 @@ import { api, shortDate } from '../../api.js'
 import { UsersIcon } from '../../components/icons.jsx'
 import { useApp } from '../../core/app-context.js'
 import EmptyState from '../../core/EmptyState.jsx'
+import { firstPlayerText, streakText } from './statsHelpers.js'
 import { minutesText, scoreText } from './tableParts.jsx'
 
 const pct = (a, b) => (b ? `${Math.round((100 * a) / b)}%` : '–')
@@ -79,6 +80,28 @@ export function PlayersView() {
         </div>
       )}
 
+      <div className="bgt-rivals">
+        <div className="card bgt-rival"><span className="bgt-rival-label">Your H-index</span><strong>{stats.h_index.n}</strong>
+          {stats.h_index.n > 0 && <span className="muted small">{stats.h_index.n} game{stats.h_index.n === 1 ? ' has' : 's have'} each been played at least {stats.h_index.n} time{stats.h_index.n === 1 ? '' : 's'}
+            {stats.h_index.games.length > 0 && `: ${stats.h_index.games.map((g) => `${g.name} (${g.plays})`).join(', ')}`}</span>}
+          <span className="muted small">{stats.h_index.plays_to_next} more play{stats.h_index.plays_to_next === 1 ? '' : 's'} to reach {stats.h_index.next_n}</span></div>
+        {me && <div className="card bgt-rival"><span className="bgt-rival-label">Your win streak</span><strong>{streakText(me.streak.current)}</strong>
+          <span className="muted small">longest {me.streak.longest} (finished games with a winner, co-op left out)</span></div>}
+        {stats.first_player.plays > 0 && <div className="card bgt-rival"><span className="bgt-rival-label">Going first</span>
+          <strong>{stats.first_player.rate}% win</strong><span className="muted small">{firstPlayerText(stats.first_player)}</span></div>}
+      </div>
+      {stats.first_player.games.length > 0 && (
+        <details className="fold bgs-first">
+          <summary><span className="fold-title">Does going first help?</span><span className="fold-detail">per game, 3 or more plays</span></summary>
+          <div className="fold-body"><ul className="list compact">
+            {stats.first_player.games.map((g) => (
+              <li key={g.game_id} className="bgt-place"><span className="grow">{g.name}</span>
+                <span className="muted small">first player won {g.wins} of {g.plays} ({g.rate}%) · chance {g.chance}%</span></li>
+            ))}
+          </ul></div>
+        </details>
+      )}
+
       <h3 className="section-title">Everyone</h3>
       <ul className="list">
         {players.map((p) => (
@@ -88,7 +111,8 @@ export function PlayersView() {
               <span className="grow">
                 <span className="item-title">{p.name}{p.is_me && <span className="pill">You</span>}</span>
                 <span className="item-meta">{[`${p.plays} play${p.plays === 1 ? '' : 's'}`, p.contests ? `${p.wins} win${p.wins === 1 ? '' : 's'} (${pct(p.wins, p.contests)})` : null,
-                  `${p.games} game${p.games === 1 ? '' : 's'}`, p.last_played && `last ${shortDate(p.last_played)}`].filter(Boolean).join(' · ')}</span>
+                  `${p.games} game${p.games === 1 ? '' : 's'}`, p.streak?.longest > 1 && `best streak ${p.streak.longest}${p.streak.current > 1 ? `, now ${p.streak.current}` : ''}`,
+                  p.last_played && `last ${shortDate(p.last_played)}`].filter(Boolean).join(' · ')}</span>
               </span>
               {p.vs_me?.together > 0 && <span className="pill" title="You against them (games one of you placed higher)">
                 You {p.vs_me.i_beat}–{p.vs_me.they_beat}</span>}

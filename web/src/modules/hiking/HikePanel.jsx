@@ -9,6 +9,7 @@ import { useApp } from '../../core/app-context.js'
 import { Stars } from '../reading/readingParts.jsx'
 import { readExif } from './exif.js'
 import HikeMap from './HikeMap.jsx'
+import { steepestStretch } from './hikingMath.js'
 import { ElevationProfile, HikeForm, PhotoViewer, Splits, hikeTime, km, metres, pace } from './hikingParts.jsx'
 
 // One hike: the numbers; the route on a topographic or satellite map with its elevation profile (hover
@@ -215,7 +216,10 @@ export default function HikePanel({ id: startId, onClose }) {
 
       {h.splits?.length > 0 && (
         <section className="panel-section">
-          <Fold title="Splits" detail={`${h.splits.length} km`}><Splits splits={h.splits} /></Fold>
+          <Fold title="Splits" detail={`${h.splits.length} km`}>
+            <Splits splits={h.splits} />
+            <Steepest track={h.track} />
+          </Fold>
         </section>
       )}
 
@@ -308,5 +312,17 @@ function HikeGear({ hike: h, onSaved, onLeave }) {
       )}
       {error && <p className="alert error small">{error}</p>}
     </section>
+  )
+}
+
+// The steepest 500 m of the track (the climb with the biggest grade) and how long it took.
+function Steepest({ track }) {
+  const s = steepestStretch(track, 500)
+  if (!s) return null
+  return (
+    <p className="hike-steepest muted small">
+      Steepest 500 m: {Math.round(s.grade * 100)}% ({metres(s.gain)} up), from {km(s.fromM)} to {km(s.toM)} along the track
+      {s.seconds != null && `, ${hikeTime(s.seconds)}`}.
+    </p>
   )
 }

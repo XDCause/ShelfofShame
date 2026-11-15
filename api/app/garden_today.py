@@ -1,7 +1,8 @@
 """Gardening: today (what needs water or feed, what's ready to pick, tasks due, weather tips for the balcony), the
 summary for Home, the photo timeline and every harvest. Split out of garden.py (health check, 2026-10-21)."""
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel, Field
 
 from . import openmeteo
 from .db import db
@@ -116,3 +117,90 @@ def harvests(year: int | None = Query(None, ge=1900, le=2200)):
             "by_plant": sorted([{"name": n, "unit": u, "amount": round(a, 2)} for (n, u), a in by_plant.items()],
                                key=lambda x: (-x["amount"], x["name"])),
             "by_month": [{"month": m, "unit": u, "amount": round(a, 2)} for (m, u), a in sorted(by_month.items())]}
+
+
+# ---------------------------------------------------------------------------------------------
+# Cost against harvest ("worth it")
+# ---------------------------------------------------------------------------------------------
+def worth_it(spend: float, harvested: list[dict], values: dict) -> dict:
+    """One planting's balance. harvested = [{unit, amount}], values = {(crop, unit): shop price of one unit}.
+    Answers the harvest's shop value (only units you've priced), cost per unit of the main unit, and a verdict:
+    'worth' / 'not yet' when there's a price to compare with, else None."""
+    value, priced = 0.0, False
+    for h in harvested:
+        per = values.get(h["key"])
+        if per is not None:
+            value += h["amount"] * per
+            priced = True
+    main = max(harvested, key=lambda h: h["amount"], default=None)
+    cost_per = round(spend / main["amount"], 4) if main and main["amount"] and spend else None
+    verdict = None
+    if priced and spend:
+        verdict = "worth" if value >= spend else "not yet"
+    return {"value": round(value, 2) if priced else None, "cost_per_unit": cost_per, "main_unit": main["unit"] if main else None,
+            "verdict": verdict}
+
+
+@router.get("/garden/harvests/worth")
+def harvests_worth(year: int | None = Query(None, ge=1900, le=2200)):
+    """Spend against harvest. Per planting (started or harvested in the year; all-time figures): what you paid for the
+    plant plus its share of the seed packet it came from, against what you picked. Supplies (soil, fertiliser, pots)
+    aren't tied to plantings and have no purchase date, so they come as a total for the year you added them."""
+    with db() as conn:
+        y = year or today(conn).year
+        rows = conn.execute("""
+            SELECT p.planting_id, p.name, p.variety, p.started_on, p.stage,
+                   COALESCE(p.price, 0)::float8 AS plant_price,
+                   COALESCE(i.price / NULLIF((SELECT count(*) FROM garden_plantings q WHERE q.item_id = i.item_id), 0), 0)::float8
+                       AS seed_share
+            FROM garden_plantings p LEFT JOIN garden_items i ON i.item_id = p.item_id
+            WHERE extract(year FROM p.started_on) = %(y)s
+               OR EXISTS (SELECT 1 FROM garden_logs l WHERE l.planting_id = p.planting_id AND l.kind = 'Harvested'
+                          AND extract(year FROM l.happened_on) = %(y)s)
+            ORDER BY p.started_on DESC, p.planting_id DESC""", {"y": y}).fetchall()
+        picked = conn.execute("""SELECT planting_id, COALESCE(lower(btrim(unit)), 'times') AS unit,
+                                        sum(COALESCE(amount, 1))::float8 AS amount
+                                 FROM garden_logs WHERE kind = 'Harvested' AND planting_id = ANY(%s)
+                                 GROUP BY 1, 2""", ([r["planting_id"] for r in rows],)).fetchall()
+        values = {(v["crop"], v["unit"]): float(v["per_unit"]) for v in
+                  conn.execute("SELECT crop, unit, per_unit FROM garden_crop_values").fetchall()}
+        supplies = conn.execute("""SELECT COALESCE(sum(price), 0)::float8 AS total, count(*)::int AS items FROM garden_items
+                                   WHERE price IS NOT NULL AND status <> 'Wanted' AND kind NOT IN ('Seeds', 'Seedling')
+                                     AND extract(year FROM created_at) = %s""", (y,)).fetchone()
+    plantings = []
+    for r in rows:
+        crop = r["name"].strip().lower()
+        harvested = [{"unit": h["unit"], "amount": round(h["amount"], 2), "key": (crop, h["unit"]),
+                      "per_unit": values.get((crop, h["unit"]))} for h in picked if h["planting_id"] == r["planting_id"]]
+        spend = round(r["plant_price"] + r["seed_share"], 2)
+        plantings.append({**r, "crop": crop, "spend": spend, **worth_it(spend, harvested, values),
+                          "harvested": [{k: v for k, v in h.items() if k != "key"} for h in harvested]})
+    spent = round(sum(p["spend"] for p in plantings), 2)
+    valued = [p for p in plantings if p["value"] is not None]
+    return {"year": y, "plantings": plantings, "planting_spend": spent,
+            "supplies_spend": round(supplies["total"], 2), "supplies_items": supplies["items"],
+            "value": round(sum(p["value"] for p in valued), 2), "valued": len(valued),
+            "supplies_note": "Soil, fertiliser, pots and tools aren't linked to plantings, so they're a total for the "
+                             "year you added them, not part of each crop's cost."}
+
+
+class CropValue(BaseModel):
+    crop: str = Field(min_length=1, max_length=120)
+    unit: str = Field(min_length=1, max_length=20)
+    per_unit: float | None = Field(None, ge=0, le=100000)      # blank removes the price
+
+
+@router.put("/garden/harvests/values")
+def set_crop_value(body: CropValue):
+    """What one unit of a crop would cost at the shop (blank = forget it). Crop and unit are kept in lower case."""
+    crop, unit = body.crop.strip().lower(), body.unit.strip().lower()
+    if not crop or not unit:
+        raise HTTPException(422, "Say which crop and unit.")
+    with db() as conn:
+        if body.per_unit is None:
+            conn.execute("DELETE FROM garden_crop_values WHERE crop = %s AND unit = %s", (crop, unit))
+        else:
+            conn.execute("""INSERT INTO garden_crop_values (crop, unit, per_unit) VALUES (%s, %s, %s)
+                            ON CONFLICT (crop, unit) DO UPDATE SET per_unit = EXCLUDED.per_unit, updated_at = now()""",
+                         (crop, unit, body.per_unit))
+    return {"crop": crop, "unit": unit, "per_unit": body.per_unit}

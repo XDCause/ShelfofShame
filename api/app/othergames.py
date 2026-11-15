@@ -35,6 +35,13 @@ log = logging.getLogger("othergames")
 NAMES = {"epic": "Epic", "ubisoft": "Ubisoft"}
 WEEKLY = timedelta(days=7)
 
+def status_sql(done: str, playtime: str, last_played: str, stored: str) -> str:
+    """SQL for a game's status: the one you set, else a guess - 100% is Finished, no playtime is Backlog,
+    played in the last 30 days is Playing, anything else sits in the Backlog."""
+    return (f"COALESCE({stored}, CASE WHEN {done} THEN 'finished' WHEN {playtime} = 0 THEN 'backlog' "
+            f"WHEN {last_played} >= now() - interval '30 days' THEN 'playing' ELSE 'backlog' END)")
+
+
 # One game, shaped like a Steam game. done / total: the achievement list when there is one (Epic:
 # what you've earned; Ubisoft: what you've ticked), else Epic's Exophase counts / Ubisoft's typed-in
 # numbers. Playtime: yours if you gave it, else Exophase's.
@@ -59,7 +66,9 @@ SELECT o.game_id, o.platform, o.platform || '-' || o.game_id AS app_id, o.source
        (o.platform = 'ubisoft' OR o.source_id IS NULL) AND d.total > 0 AS by_hand, (o.platform = 'ubisoft' OR o.source_id IS NULL) AND a.listed > 0 AS tickable, o.counted,
        -- a Ubisoft game you also own on Steam (Far Cry 5 bought on Steam opens Ubisoft Connect too): counted once, as
        -- the Steam game - left out of every total, the dashboard and the list (it shows under Hidden)
-       o.platform = 'ubisoft' AND EXISTS (SELECT 1 FROM vg_games s WHERE s.app_id = o.steam_app_id) AS on_steam
+       o.platform = 'ubisoft' AND EXISTS (SELECT 1 FROM vg_games s WHERE s.app_id = o.steam_app_id) AS on_steam,
+       o.play_status, """ + status_sql("d.total > 0 AND d.done >= d.total", "COALESCE(o.my_minutes, o.exo_minutes, 0)",
+                                       "o.last_played", "o.play_status") + """ AS status
 FROM vg_other_games o
 LEFT JOIN LATERAL (SELECT count(*)::int AS listed, count(*) FILTER (WHERE achieved)::int AS have,
                           min(global_percent) AS rarest_percent, max(unlocked_at) AS last_unlock
@@ -92,6 +101,7 @@ class GamePatch(BaseModel):
     minutes: int | None = Field(None, ge=0, le=6_000_000)
     hidden: bool | None = None
     counted: bool | None = None          # in your completion, goal and totals (achievements you ticked yourself)
+    status: Literal["backlog", "playing", "finished", "dropped"] | None = None   # null clears it
 
 
 class SteamLinkIn(BaseModel):
@@ -540,6 +550,10 @@ def update_game(game_id: int, body: GamePatch):
             vgplaytime.snapshot(conn, game["platform"], game["app_id"],
                                 changes["my_minutes"] if changes["my_minutes"] is not None else game["exo_minutes"])
         sets = {k: v for k, v in changes.items() if k in ("my_done", "my_total", "my_minutes") or v is not None}
+        if "status" in sent:
+            sets["play_status"] = sent["status"]
+        if not sets:
+            return _one(conn, game_id)
         conn.execute("UPDATE vg_other_games SET " + ", ".join(f"{k} = %({k})s" for k in sets) +
                      ", updated_at = now() WHERE game_id = %(id)s", {**sets, "id": game_id})
         return _one(conn, game_id)

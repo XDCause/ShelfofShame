@@ -166,3 +166,42 @@ def test_lists_shelves_and_search(client):
     book_id = r["books"][0]["book_id"]
     assert client.delete(f"/api/reading/books/{book_id}").status_code == 204
     assert client.get(f"/api/reading/books/{book_id}").status_code == 404
+
+
+def test_pace_forecast_and_goal_projection(client):
+    from app.reading import goal_progress, pace_forecast
+    today = date(2026, 6, 1)
+    f = pace_forecast(140, 14, 100, today)                       # 10 a day, 100 pages left
+    assert f["pages_per_day"] == 10 and f["days_left"] == 10 and f["finish_on"] == date(2026, 6, 11)
+    assert pace_forecast(0, 14, 100, today) is None and "finish_on" not in pace_forecast(10, 5, 0, today)
+    g = goal_progress(12, 2, date(2026, 7, 2))                   # 2 books in half a year: 4 at this rate
+    assert g["behind_by"] == 8 and 3.9 < g["projected"] < 4.1
+    assert goal_progress(12, 12, date(2026, 7, 2))["behind_by"] == 0
+
+    b = add(client, title="Paced", pages=300, status="reading")
+    assert client.get(f"/api/reading/books/{b['book_id']}").json()["forecast"] is None      # nothing logged yet
+    client.post(f"/api/reading/books/{b['book_id']}/progress", json={"page": 60})
+    fc = client.get(f"/api/reading/books/{b['book_id']}").json()["forecast"]
+    assert fc["pages_per_day"] == 60 and fc["days_left"] == 4                                # 60 pages, started today
+
+
+def test_read_it_again_keeps_the_first_read(client):
+    b = add(client, title="Again", pages=200, status="finished", rating=4.5, review="Loved it")
+    bid = b["book_id"]
+    assert client.post(f"/api/reading/books/{add(client, title='Not yet')['book_id']}/reread").status_code == 409
+    assert client.post("/api/reading/books/999999/reread").status_code == 404
+    r = client.post(f"/api/reading/books/{bid}/reread")
+    assert r.status_code == 201
+    again = r.json()
+    assert (again["status"], again["current_page"], again["rating"], again["finished_on"]) == ("reading", 0, None, None)
+    assert len(again["reads"]) == 1 and again["reads"][0]["rating"] == 4.5 and again["reads"][0]["review"] == "Loved it"
+    # the first read still counts in its year; finishing the second adds one
+    st = client.get("/api/reading/stats").json()
+    assert sum(y["books"] for y in st["by_year"]) == 1
+    client.patch(f"/api/reading/books/{bid}", json={"status": "finished", "rating": 5})
+    st = client.get("/api/reading/stats").json()
+    assert sum(y["books"] for y in st["by_year"]) == 2
+    assert client.get("/api/reading/summary").json()["year"]["books"] == 2
+    read_id = client.get(f"/api/reading/books/{bid}").json()["reads"][0]["read_id"]
+    assert client.delete(f"/api/reading/reads/{read_id}").status_code == 204
+    assert client.delete(f"/api/reading/reads/{read_id}").status_code == 404

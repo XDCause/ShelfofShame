@@ -23,6 +23,7 @@ Steam's pictures are linked from Steam's own servers (header and icon addresses 
 import logging
 import math
 from datetime import date, timedelta
+from typing import Literal
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Response
 from pydantic import BaseModel, Field
@@ -42,8 +43,13 @@ class ProfileIn(BaseModel):
     profile: str = Field(min_length=2, max_length=200)   # a name, id or profile address
 
 
+# A game's status (99_vg_backlog.sql). Only what you set is stored; othergames.status_sql() works out the rest.
+STATUSES = ("backlog", "playing", "finished", "dropped")
+
+
 class GamePatch(BaseModel):
-    hidden: bool
+    hidden: bool | None = None
+    status: Literal["backlog", "playing", "finished", "dropped"] | None = None   # null clears it (back to the guess)
 
 
 class ExtraIn(BaseModel):
@@ -62,7 +68,8 @@ GOAL_KEY, GOAL_DEFAULT = "vg_goal_percent", 50
 # dlc_count / dlc_achievements: DLCs with achievements (from Exophase) and how many those add.
 # dlc_done: how many of those you have. unobtainable_count: ones that can't be earned any more.
 GAME_SELECT = """
-SELECT g.*, CASE WHEN g.achievements_total > 0
+SELECT g.*, """ + othergames.status_sql("g.completed_at IS NOT NULL", "g.playtime_minutes", "g.last_played", "g.play_status") + """ AS status,
+       CASE WHEN g.achievements_total > 0
                  THEN round(100.0 * g.achievements_done / g.achievements_total, 1) END AS percent,
        g.achievements_total - g.achievements_done AS left_to_get,
        round(100.0 * g.sh_players_perfected / NULLIF(g.sh_players_started, 0), 1) AS perfect_rate,
@@ -384,8 +391,10 @@ LIST_LEAVES_OUT = ("synced_at", "rarity_synced_at", "sh_synced_at", "exo_synced_
 
 
 @router.get("/videogames")
-def list_games(show: str = Query("all", pattern="^(all|perfect|started|untouched|no_achievements|hidden)$")):
-    """Every game, most recently played first. show = perfect / started / untouched / no_achievements / hidden."""
+def list_games(show: str = Query("all", pattern="^(all|perfect|started|untouched|no_achievements|hidden)$"),
+               status: str | None = Query(None, pattern="^(backlog|playing|finished|dropped)$")):
+    """Every game, most recently played first. show = perfect / started / untouched / no_achievements / hidden;
+    status = only games with that status (the one you set, else the guess)."""
     where = {
         "all": "NOT g.hidden",
         "perfect": "NOT g.hidden AND g.completed_at IS NOT NULL",
@@ -396,7 +405,8 @@ def list_games(show: str = Query("all", pattern="^(all|perfect|started|untouched
     }[show]
     with db() as conn:
         rows = conn.execute(GAME_SELECT + f" WHERE {where} ORDER BY g.last_played DESC NULLS LAST, lower(g.name)").fetchall()
-    return [{k: v for k, v in with_pictures(g).items() if k not in LIST_LEAVES_OUT} for g in rows]
+    return [{k: v for k, v in with_pictures(g).items() if k not in LIST_LEAVES_OUT}
+            for g in rows if not status or g["status"] == status]
 
 
 @router.post("/videogames/extra", status_code=201)
@@ -505,8 +515,13 @@ def sync_one_game(app_id: int):
 
 @router.patch("/videogames/{app_id}")
 def update_game(app_id: int, body: GamePatch):
-    """Hide a game from the dashboard (a demo, a game you'll never 100%), or show it again."""
+    """Hide a game from the dashboard (a demo, a game you'll never 100%) or show it again, and/or set its
+    status (null puts it back to the guess)."""
+    sent = body.model_dump(exclude_unset=True)
+    if "hidden" in sent and sent["hidden"] is None or not sent:
+        raise HTTPException(422, "Say hidden or a status.")
+    sets = {("play_status" if k == "status" else k): v for k, v in sent.items()}
     with db() as conn:
-        found(conn.execute("UPDATE vg_games SET hidden = %s WHERE app_id = %s RETURNING app_id",
-                           (body.hidden, app_id)).fetchone(), "Game")
+        found(conn.execute("UPDATE vg_games SET " + ", ".join(f"{k} = %({k})s" for k in sets) +
+                           " WHERE app_id = %(id)s RETURNING app_id", {**sets, "id": app_id}).fetchone(), "Game")
     return get_game(app_id)

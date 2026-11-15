@@ -100,3 +100,6 @@
   .shoot-noprint, nav, header, .section-tabs { display: none !important; }
   .shoot-dope { box-shadow: none; border: 1px solid #999; }
 }
+.ammo-compare { display: flex; flex-direction: column; gap: 10px; }
+.ammo-compare-sub { margin: 8px 0 0; font-size: 1rem; }
+.ammo-compare-table tr.ammo-compare-best td { background: var(--ok-bg); }
