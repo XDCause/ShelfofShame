@@ -7,43 +7,154 @@ import { readTheme, setTheme, THEMES } from '../core/theme.js'
 import OfflineCopy from '../offline/OfflineCopy.jsx'
 import Drawer from './Drawer.jsx'
 import Fold from './Fold.jsx'
-import ListsManager from './ListsManager.jsx'
+import { LookupList } from './ListsManager.jsx'
+import { BookIcon, CalendarIcon, CartIcon, CoinsIcon, DatabaseIcon, DownloadIcon, GlobeIcon, KeyIcon, ListIcon,
+  PaletteIcon, PersonIcon, PhoneIcon, PulseIcon, SearchIcon, TagIcon } from './icons.jsx'
 import PriceGuide from './PriceGuide.jsx'
 import SiteChecks from './SiteChecks.jsx'
 import SystemStatus from './SystemStatus.jsx'
 import Spending from './Spending.jsx'
 
-// Settings, opened from the gear: every section is closed until you tap it.
-export default function SettingsPanel({ lookups, settings, onClose, onSettings, onListsChanged }) {
+// Settings, opened from the gear (regrouped 2026-11-16): six groups, each a card of rows with an icon, and a box to
+// find a setting by name or by what it's for. Every row is closed until you tap it (and loads nothing until then);
+// section opens one row (Home's "Open the System panel" -> 'system').
+export default function SettingsPanel({ lookups, settings, onClose, onSettings, onListsChanged, section }) {
+  const [query, setQuery] = useState('')
+  const status = useStatus()
+  const groups = settingsGroups({ lookups, settings, onSettings, onListsChanged, status })
+  const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean)
+  const matches = (text) => words.every((w) => text.toLowerCase().includes(w))
+  const shown = groups.map((g) => ({
+    ...g, rows: words.length && !matches(g.title) ? g.rows.filter((r) => matches(`${r.title} ${r.words}`)) : g.rows,
+  })).filter((g) => g.rows.length)
+  const only = words.length > 0 && shown.length === 1 && shown[0].rows.length === 1
   return (
     <Drawer title="Settings" onClose={onClose}>
       <div className="settings">
-        <Fold title="Appearance" detail={`${LOOKS.find(([k]) => k === readLook())?.[1]}, ${THEMES.find(([k]) => k === readTheme())?.[1].toLowerCase()}`}>
-          <Appearance settings={settings} onSettings={onSettings} />
-        </Fold>
-        <Fold title="Security" detail="sign-in, devices"><Security /></Fold>
-        <Fold title="Offline copy" detail="this device"><OfflineCopy /></Fold>
-        <Fold title="Calendar feed" detail="for your phone's calendar"><CalendarFeed /></Fold>
-        <Fold title="Spending"><Spending /></Fold>
-        <Fold title="Price guide" detail="your usual prices"><PriceGuide lookups={lookups} /></Fold>
-        <Fold title="Default shop" detail={settings.default_shop}>
-          <DefaultShop settings={settings} onSettings={onSettings} />
-        </Fold>
-        <Fold title="System" detail="syncs, disk, updates"><SystemStatus /></Fold>
-        <Fold title="Backups"><Backups /></Fold>
-        <Fold title="Export to CSV" detail="for Excel"><Exports /></Fold>
-        <Fold title="Tamiya catalogue" detail="for Shop Tamiya"><Catalogue /></Fold>
-        <Fold title="Lookup sites" detail="checked weekly"><SiteChecks /></Fold>
-        <ListsManager lookups={lookups} onChanged={onListsChanged} />
+        <label className="set-find">
+          <SearchIcon size={18} />
+          <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Find a setting"
+            aria-label="Find a setting" />
+        </label>
+        {shown.map((g) => (
+          <section key={g.key} className="set-group" style={{ '--set-hue': g.hue }} aria-labelledby={`set-${g.key}`}>
+            <h3 className="set-group-title" id={`set-${g.key}`}>{g.title}</h3>
+            <p className="set-group-note">{g.note}</p>
+            <div className="set-rows">
+              {g.rows.map((r) => (
+                <Fold key={`${r.key}${only ? '-only' : ''}`} title={r.title} detail={r.detail}
+                  className={`set-row ${r.className ?? ''}`} lead={<span className="set-icon">{r.icon}</span>}
+                  open={section === r.key || only}>
+                  {r.body}
+                </Fold>
+              ))}
+            </div>
+          </section>
+        ))}
+        {!shown.length && <p className="muted set-none">No setting matches "{query.trim()}".</p>}
       </div>
     </Drawer>
   )
 }
 
-// Light, dark, or whatever the device is set to (remembered on this device), and the name Home greets.
-export function Appearance({ settings, onSettings }) {      // (exported for its tests)
+const LISTS = [
+  { kind: 'brands', title: 'Brands', placeholder: 'New brand' },
+  { kind: 'categories', title: 'Categories', placeholder: 'New category' },
+  { kind: 'locations', title: 'Storage locations', placeholder: 'New location' },
+]
+
+// The six groups. words: what else you might search for to find a row.
+function settingsGroups({ lookups, settings, onSettings, onListsChanged, status }) {
+  const look = LOOKS.find(([k]) => k === readLook())?.[1]
+  const theme = THEMES.find(([k]) => k === readTheme())?.[1].toLowerCase()
+  return [
+    { key: 'device', title: 'This device', hue: '#3f7f5a', note: 'Remembered on this phone or computer only.', rows: [
+      { key: 'look', title: 'Look and theme', detail: `${look}, ${theme}`, icon: <PaletteIcon />,
+        words: 'appearance light dark system botanical journal colour color', body: <LookAndTheme /> },
+      { key: 'offline', title: 'Offline copy', detail: 'for when the PC is off', icon: <PhoneIcon />,
+        words: 'travel away read-only save phone', body: <OfflineCopy /> },
+    ] },
+    { key: 'you', title: 'You', hue: '#7a52b3', note: 'Your name, how you sign in, your calendar.', rows: [
+      { key: 'name', title: 'Name and banners', detail: settings.your_name || 'not set', icon: <PersonIcon />,
+        words: 'greeting home picture photo banner appearance',
+        body: <NameAndBanners settings={settings} onSettings={onSettings} /> },
+      { key: 'security', title: 'Security', detail: 'sign-in, devices', icon: <KeyIcon />,
+        words: 'password passkey authenticator totp sign out devices sessions', body: <Security /> },
+      { key: 'feed', title: 'Calendar feed', detail: "for your phone's calendar", icon: <CalendarIcon />,
+        words: 'ics subscribe google apple outlook', body: <CalendarFeed /> },
+    ] },
+    { key: 'shopping', title: 'Shopping', hue: '#b0611f', note: 'Where you buy, what things cost, what you spent.', rows: [
+      { key: 'shop', title: 'Default shop', detail: settings.default_shop || 'none', icon: <CartIcon />,
+        words: 'store wishlist buy', body: <DefaultShop settings={settings} onSettings={onSettings} /> },
+      { key: 'prices', title: 'Price guide', detail: 'your usual prices', icon: <TagIcon />,
+        words: 'cost price', body: <PriceGuide lookups={lookups} /> },
+      { key: 'spending', title: 'Spending', detail: 'what went where', icon: <CoinsIcon />,
+        words: 'money spent cost total', body: <Spending /> },
+      { key: 'catalogue', title: 'Tamiya catalogue', detail: 'for Shop Tamiya', icon: <BookIcon />,
+        words: 'catalog products new releases refresh', body: <Catalogue /> },
+    ] },
+    { key: 'lists', title: 'Lists', hue: '#24806a', note: 'The choices offered when you add or edit a supply.', rows:
+      LISTS.map((l) => ({ key: l.kind, title: l.title, detail: lookups[l.kind].length, icon: <ListIcon />,
+        className: 'lookup', words: 'choices manage add remove',
+        body: <LookupList {...l} items={lookups[l.kind]} onChanged={onListsChanged} /> })) },
+    { key: 'data', title: 'Your data', hue: '#2d68ad', note: 'Kept safe every night; yours to take away any time.', rows: [
+      { key: 'backups', title: 'Backups', detail: status.backup, icon: <DatabaseIcon />,
+        words: 'restore google drive download', body: <Backups /> },
+      { key: 'exports', title: 'Export to CSV', detail: 'for Excel', icon: <DownloadIcon />,
+        words: 'excel spreadsheet download csv', body: <Exports /> },
+    ] },
+    { key: 'app', title: 'Behind the scenes', hue: '#5f6874', note: 'How the app and its outside sources are doing.', rows: [
+      { key: 'system', title: 'System', detail: status.system, icon: <PulseIcon />,
+        words: 'health syncs disk updates steam drive status', body: <SystemStatus /> },
+      { key: 'sites', title: 'Lookup sites', detail: 'checked weekly', icon: <GlobeIcon />,
+        words: 'websites check shops', body: <SiteChecks /> },
+    ] },
+  ]
+}
+
+// What the System and Backups rows say while closed: how things are, at a glance.
+function useStatus() {
+  const [system, setSystem] = useState(null)
+  const [backup, setBackup] = useState(null)
+  useEffect(() => {
+    api.system().then((d) => setSystem(d.attention?.length
+      ? <span className={`pill ${d.worst === 'bad' ? 'out' : 'low'}`}>{d.attention.length} to look at</span>
+      : 'all OK')).catch(() => {})
+    api.backups().then((d) => setBackup(!d.available ? null : d.backups?.[0] ? `last ${shortDate(d.backups[0].created_at)}`
+      : 'none yet')).catch(() => {})
+  }, [])
+  return { system: system ?? 'syncs, disk, updates', backup: backup ?? 'every night' }
+}
+
+// Light, dark, or whatever the device is set to, and the look (both remembered on this device).
+export function LookAndTheme() {      // (exported for its tests)
   const [choice, setChoice] = useState(readTheme)
   const [look, setLookChoice] = useState(readLook)
+  return (
+    <>
+      <p className="set-label" id="set-look-label">Look</p>
+      <div className="segmented settings-look" role="group" aria-labelledby="set-look-label">
+        {LOOKS.map(([key, label]) => (
+          <button key={key} type="button" aria-pressed={look === key}
+            onClick={() => { setLookChoice(key); setLook(key) }}>{label}</button>
+        ))}
+      </div>
+      <p className="hint">Botanical: the pine sidebar and landscape banners. Journal: a hobby notebook, paper and ink, with
+        its tabs along the top.</p>
+      <p className="set-label" id="set-theme-label">Theme</p>
+      <div className="segmented" role="group" aria-labelledby="set-theme-label">
+        {THEMES.map(([key, label]) => (
+          <button key={key} type="button" aria-pressed={choice === key}
+            onClick={() => { setChoice(key); setTheme(key) }}>{label}</button>
+        ))}
+      </div>
+      <p className="hint">System follows your device's light or dark setting.</p>
+    </>
+  )
+}
+
+// The name Home greets, and the Picture button on banners.
+export function NameAndBanners({ settings, onSettings }) {      // (exported for its tests)
   const [name, setName] = useState(settings.your_name ?? '')
   const [saved, setSaved] = useState('')
   const save = async () => {
@@ -57,21 +168,6 @@ export function Appearance({ settings, onSettings }) {      // (exported for its
   }
   return (
     <>
-      <div className="segmented" role="group" aria-label="Appearance">
-        {THEMES.map(([key, label]) => (
-          <button key={key} type="button" aria-pressed={choice === key}
-            onClick={() => { setChoice(key); setTheme(key) }}>{label}</button>
-        ))}
-      </div>
-      <p className="hint">System follows your device's light or dark setting.</p>
-      <div className="segmented settings-look" role="group" aria-label="Look">
-        {LOOKS.map(([key, label]) => (
-          <button key={key} type="button" aria-pressed={look === key}
-            onClick={() => { setLookChoice(key); setLook(key) }}>{label}</button>
-        ))}
-      </div>
-      <p className="hint">Botanical: the pine sidebar and landscape banners. Journal: a hobby notebook, paper and ink, with
-        its tabs along the top. Both remembered on this device.</p>
       <label className="field settings-name">
         <span className="field-label">Your name</span>
         <input value={name} maxLength={40} onChange={(e) => setName(e.target.value)} onBlur={save}
@@ -169,7 +265,7 @@ export function Backups() {      // (exported for its tests)
         {latest && <a className="button secondary" href={backupUrl(latest.name)} download>Download latest</a>}
       </div>
       {message && <p className={`alert ${message.type} small`}>{message.text}</p>}
-      <p className="hint">Each backup is checked, and also goes to Google Drive, encrypted - System above shows how that's going.</p>
+      <p className="hint">Each backup is checked, and also goes to Google Drive, encrypted - Behind the scenes › System shows how that's going.</p>
       {data.backups.length > 1 && (
         <Fold title="All backups" detail={data.backups.length} className="inner">
           <ul className="list compact">

@@ -1,24 +1,9 @@
 import { useState } from 'react'
 import { api } from '../api.js'
-import Fold from './Fold.jsx'
 
-const LISTS = [
-  { kind: 'brands', title: 'Brands', placeholder: 'New brand' },
-  { kind: 'categories', title: 'Categories', placeholder: 'New category' },
-  { kind: 'locations', title: 'Storage locations', placeholder: 'New location' },
-]
-
-// The choices offered when adding or editing. Anything still in use can't be removed: the
-// database's foreign keys refuse it, and the button is disabled to match.
-export default function ListsManager({ lookups, onChanged }) {
-  return LISTS.map((l) => (
-    <Fold key={l.kind} title={l.title} detail={lookups[l.kind].length} className="lookup">
-      <LookupList {...l} items={lookups[l.kind]} onChanged={onChanged} />
-    </Fold>
-  ))
-}
-
-function LookupList({ kind, placeholder, items, onChanged }) {
+// One of Settings > Lists (brands, categories, storage locations): the choices offered when adding or editing.
+// Anything still in use can't be removed: the database's foreign keys refuse it, and the button is disabled to match.
+export function LookupList({ kind, placeholder, items, onChanged }) {
   const [name, setName] = useState('')
   const [error, setError] = useState('')
 

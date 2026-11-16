@@ -1112,3 +1112,19 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
      calendar's "Sowing calendar" link at 4.4:1 on its green band (now underlined ink). And two audit false alarms: a chart's own "table"
      fold inside a closed box counted as visible (only the nearest closed <details> was checked - now all of them), and
      the Sudoku trail's stops under its floating title and Play button (ACCEPTED_LIKE: it's a map that scrolls under them).
+
+5zb. **Settings, regrouped** (2026-11-16, the user: "go through the settings menu and give that a refresh as it needs a
+   better structure"). Sixteen drop-downs in one long list (Appearance first, the lists last, System between Default shop
+   and Backups) become six groups, each a heading, a line saying what it's for and a card of rows with a coloured icon:
+   This device (Look and theme, Offline copy), You (Name and banners, Security, Calendar feed), Shopping (Default shop,
+   Price guide, Spending, Tamiya catalogue), Lists (Brands, Categories, Storage locations), Your data (Backups, Export to
+   CSV) and Behind the scenes (System, Lookup sites). Appearance was three things in one: it's split into Look and theme
+   (this device) and Name and banners (you).
+   - A "Find a setting" box at the top (it stays put while the rows scroll) narrows the rows by name or by what they're
+     for (each row has a few search words: "password" finds Security, "excel" Export to CSV); a single match opens.
+   - Closed rows say how things are: System "all OK" or "2 to look at" (a pill), Backups "last 15 Nov", Default shop the
+     shop, your name, the look and theme. Rows still load nothing until opened.
+   - Home's "Open the System panel" and Lookup sites' "See Settings" open Settings at that row (openPanel('settings',
+     { section })). Fold takes a `lead` (the icon). ListsManager is just LookupList now (Settings lays out the lists).
+   - styles/33-settings.css; the journal look's groups are index cards with serif headings and round icons. The UI audit
+     opens Settings too (every size, theme and look).

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-// Light or dark: your choice (Settings > Appearance), remembered on this device, or "system" to
+// Light or dark: your choice (Settings > Look and theme), remembered on this device, or "system" to
 // follow the device's own setting. The CSS reads <html data-theme="light|dark">.
 const KEY = 'offtheclock.theme'
 const media = window.matchMedia('(prefers-color-scheme: dark)')

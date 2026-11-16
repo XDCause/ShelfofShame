@@ -61,7 +61,7 @@ export function SiteCheckWarning({ failing, onOpen }) {
   return (
     <p className="alert low site-check-warning">
       {failing.map((s) => s.site).join(', ')} {failing.length === 1 ? 'has' : 'have'} changed: look-ups there may not
-      work. <button type="button" className="plain small" onClick={() => { onOpen?.(); openPanel('settings') }}>See Settings › Lookup sites</button>
+      work. <button type="button" className="plain small" onClick={() => { onOpen?.(); openPanel('settings', { section: 'sites' }) }}>See Settings › Lookup sites</button>
     </p>
   )
 }

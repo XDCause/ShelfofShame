@@ -1,9 +1,9 @@
-// Settings (components/SettingsPanel.jsx): Appearance (light / dark / system, the look, your name), Backups (the last one, Back
-// up now), and System (components/SystemStatus.jsx: each check's state and what to do). The API is faked.
+// Settings (components/SettingsPanel.jsx): its groups and the find box, Look and theme (light / dark / system, the
+// look), Name and banners, Backups (the last one, Back up now), and System (components/SystemStatus.jsx: each check's state and what to do). The API is faked.
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { api } from '../api.js'
-import { Appearance, Backups } from '../components/SettingsPanel.jsx'
+import SettingsPanel, { Backups, LookAndTheme, NameAndBanners } from '../components/SettingsPanel.jsx'
 import SystemStatus, { SystemWarning, useSystemAttention } from '../components/SystemStatus.jsx'
 import { AppContext } from '../core/app-context.js'
 
@@ -17,9 +17,9 @@ vi.mock('../api.js', async (importOriginal) => {
 beforeEach(() => { try { localStorage.clear() } catch { /* fine */ } })
 afterEach(() => { cleanup(); vi.clearAllMocks() })
 
-describe('Appearance', () => {
+describe('Look and theme, name', () => {
   it('switches light and dark, and remembers it on this device', () => {
-    render(<Appearance settings={{ your_name: 'Sam' }} onSettings={vi.fn()} />)
+    render(<LookAndTheme />)
     expect(screen.getByRole('button', { name: 'System' }).getAttribute('aria-pressed')).toBe('true')
     fireEvent.click(screen.getByRole('button', { name: 'Dark' }))
     expect(document.documentElement.dataset.theme).toBe('dark')
@@ -30,7 +30,7 @@ describe('Appearance', () => {
   })
 
   it('switches the look between botanical and journal, and remembers it on this device', () => {
-    render(<Appearance settings={{}} onSettings={vi.fn()} />)
+    render(<LookAndTheme />)
     expect(screen.getByRole('button', { name: 'Botanical' }).getAttribute('aria-pressed')).toBe('true')
     fireEvent.click(screen.getByRole('button', { name: 'Journal' }))
     expect(document.documentElement.dataset.look).toBe('journal')
@@ -43,7 +43,7 @@ describe('Appearance', () => {
   it("saves the name Home greets, only when it changed", async () => {
     api.updateSettings.mockResolvedValue({ your_name: 'Alex' })
     const onSettings = vi.fn()
-    render(<Appearance settings={{ your_name: 'Sam' }} onSettings={onSettings} />)
+    render(<NameAndBanners settings={{ your_name: 'Sam' }} onSettings={onSettings} />)
     const name = screen.getByLabelText('Your name')
     fireEvent.blur(name)
     expect(api.updateSettings).not.toHaveBeenCalled()
@@ -51,6 +51,37 @@ describe('Appearance', () => {
     fireEvent.blur(name)
     await waitFor(() => expect(api.updateSettings).toHaveBeenCalledWith({ your_name: 'Alex' }))
     expect(onSettings).toHaveBeenCalledWith({ your_name: 'Alex' })
+  })
+})
+
+describe('The panel', () => {
+  const LOOKUPS = { brands: [{ id: 1, name: 'Tamiya', uses: 3 }], categories: [], locations: [] }
+  const panel = (props = {}) => render(<SettingsPanel lookups={LOOKUPS} settings={{ default_shop: 'Hobbyrama' }}
+    onClose={vi.fn()} onSettings={vi.fn()} onListsChanged={vi.fn()} {...props} />)
+
+  it('groups the rows, says how things are while closed, and finds a setting by what it is for', async () => {
+    api.system.mockResolvedValue({ worst: 'warn', checks: [], attention: [{ key: 'disk' }, { key: 'steam' }] })
+    api.backups.mockResolvedValue({ available: true, backups: [{ name: 'b.dump', created_at: '2026-11-15T20:00:00' }] })
+    panel()
+    for (const group of ['This device', 'You', 'Shopping', 'Lists', 'Your data', 'Behind the scenes']) {
+      expect(screen.getByRole('heading', { name: group })).toBeTruthy()
+    }
+    expect(screen.getByText('Hobbyrama')).toBeTruthy()                        // Default shop's row says which
+    expect(await screen.findByText('2 to look at')).toBeTruthy()             // System: what needs a look
+    expect(await screen.findByText('last 15 Nov 2026')).toBeTruthy()         // Backups: the last one
+    fireEvent.change(screen.getByLabelText('Find a setting'), { target: { value: 'excel' } })
+    expect(screen.queryByRole('heading', { name: 'Shopping' })).toBeNull()
+    expect(screen.getByText('Export to CSV')).toBeTruthy()
+    expect(screen.getAllByRole('link', { name: 'Download CSV', hidden: true })).toHaveLength(7)   // the only match: opened
+    fireEvent.change(screen.getByLabelText('Find a setting'), { target: { value: 'zebra' } })
+    expect(screen.getByText('No setting matches "zebra".')).toBeTruthy()
+  })
+
+  it('opens at the row it was asked for', () => {
+    api.system.mockResolvedValue({ worst: 'ok', checks: [], attention: [] })
+    api.backups.mockResolvedValue({ available: false, backups: [] })
+    const { container } = panel({ section: 'brands' })
+    expect(container.ownerDocument.querySelector('details.lookup[open]').textContent).toContain('Tamiya')
   })
 })
 
@@ -108,7 +139,7 @@ describe('System', () => {
     render(<AppContext.Provider value={{ refreshKey: 0, openPanel }}><HomeWarning /></AppContext.Provider>)
     expect(await screen.findByText(/Drive upload: 2 not uploaded yet/)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Open the System panel ›' }))
-    expect(openPanel).toHaveBeenCalledWith('settings')
+    expect(openPanel).toHaveBeenCalledWith('settings', { section: 'system' })     // opened at System
     cleanup()
     api.system.mockResolvedValue({ worst: 'ok', checks: [], attention: [] })
     const { container } = render(<AppContext.Provider value={{ refreshKey: 0, openPanel }}><HomeWarning /></AppContext.Provider>)

@@ -28,7 +28,7 @@ def home(page):
     expect(page.get_by_role("link", name="Go home")).to_be_visible()
 
 
-@step("Settings opens from the gear; every section is closed until tapped")
+@step("Settings opens from the gear: grouped rows, each closed until tapped; the find box narrows them")
 def settings(page):
     page.get_by_role("button", name="Settings").click()
     expect(drawer(page)).to_contain_text("Brands")
@@ -45,6 +45,12 @@ def settings(page):
     expect(spend.locator(".stat-grid")).to_contain_text("All time")
     expect(spend).to_contain_text("starting stock")
     shot(page, "d05b_spending", full=False)
+    find = drawer(page).get_by_label("Find a setting")
+    find.fill("password")
+    expect(drawer(page).locator("details.fold")).to_have_count(1)
+    expect(drawer(page).locator("details.fold summary")).to_contain_text("Security")
+    find.fill("")
+    expect(drawer(page).locator(".set-group")).to_have_count(6)
     page.keyboard.press("Escape")
 
 
@@ -101,7 +107,7 @@ def banners(page):
     expect(page.locator(".home-banner .landscape")).to_have_count(1)            # no picture yet: a drawn landscape
     page.get_by_role("button", name="Settings").click()
     d = drawer(page)
-    d.locator("summary", has_text="Appearance").click()
+    d.locator("summary", has_text="Name and banners").click()
     d.get_by_label("Your name").fill("Sam")
     d.get_by_label("Your name").press("Enter")
     expect(d).to_contain_text("Saved")
@@ -113,7 +119,7 @@ def banners(page):
     expect(banner.locator(".banner-tagline")).to_be_visible()
     expect(page.locator(".banner-picture")).to_have_count(0)                    # the Picture button: off until Settings turns it on
     page.get_by_role("button", name="Settings").click()
-    d.locator("summary", has_text="Appearance").click()
+    d.locator("summary", has_text="Name and banners").click()
     d.get_by_label("Picture button on banners").check()
     page.keyboard.press("Escape")
     banner.get_by_label("Change the Board games picture").click()
@@ -130,7 +136,7 @@ def banners(page):
     page.mouse.wheel(0, 600)                                                     # scrolled: the bar shows the page's name
     expect(page.locator(".navbar.scrolled h1")).to_contain_text("Board games")
     page.get_by_role("button", name="Settings").click()                          # tidy up: no name, no Picture button
-    d.locator("summary", has_text="Appearance").click()
+    d.locator("summary", has_text="Name and banners").click()
     d.get_by_label("Your name").fill("")
     d.get_by_label("Your name").press("Enter")
     d.get_by_label("Picture button on banners").uncheck()
@@ -156,11 +162,11 @@ def panel_focus(page):
     expect(settings).to_be_focused()
 
 
-@step("Settings: Appearance switches light and dark; Home's Wishlist action opens + Add")
+@step("Settings: Look and theme switches light and dark; Home's Wishlist action opens + Add")
 def appearance(page):
     page.get_by_role("button", name="Settings").click()
     d = drawer(page)
-    d.locator("summary", has_text="Appearance").click()
+    d.locator("summary", has_text="Look and theme").click()
     d.get_by_role("button", name="Dark").click()
     assert page.evaluate("document.documentElement.dataset.theme") == "dark"
     d.get_by_role("button", name="Light").click()
@@ -382,19 +388,19 @@ def settings_more(page):
     page.get_by_role("button", name="Settings").click()
     d = drawer(page)
     d.locator("summary", has_text="Price guide").click()
-    expect(d.locator(".settings > .fold", has_text="Price guide")).to_contain_text("$10.95")
+    expect(d.locator(".settings .fold", has_text="Price guide")).to_contain_text("$10.95")
     d.locator("summary", has_text="Default shop").click()
-    expect(d.get_by_label("Shop")).to_have_value("Hobbyrama")
+    expect(d.get_by_label("Shop", exact=True)).to_have_value("Hobbyrama")     # (exact: the Shopping group is labelled too)
     d.locator("summary", has_text="Backups").click()
-    expect(d.locator(".settings > .fold", has_text="Backups")).to_contain_text("Last backup")
+    expect(d.locator(".settings .fold", has_text="Backups")).to_contain_text("Last backup")
     expect(d.get_by_role("link", name="Download latest")).to_have_attribute(
         "href", re.compile(r"/api/backups/hobby_inventory_\d{8}_\d{6}\.dump"))
     d.locator("summary", has_text="Export to CSV").click()
-    link = d.locator(".settings > .fold", has_text="Export to CSV").get_by_role("link").first
+    link = d.locator(".settings .fold", has_text="Export to CSV").get_by_role("link").first
     csv = page.request.get(BASE + link.get_attribute("href"))
     assert csv.ok and csv.headers["content-type"].startswith("text/csv"), csv.status
     d.locator("summary", has_text="Tamiya catalogue").click()
-    expect(d.locator(".settings > .fold", has_text="Tamiya catalogue")).to_contain_text("Tamiya products")
+    expect(d.locator(".settings .fold", has_text="Tamiya catalogue")).to_contain_text("Tamiya products")
     d.locator("summary", has_text="Lookup sites").click()             # the weekly site check (no live run here)
     expect(d.locator(".site-check")).to_have_count(17)          # (+ the Lichess explorer)
     expect(d.get_by_role("button", name="Check now")).to_be_visible()

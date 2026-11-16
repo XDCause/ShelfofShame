@@ -180,3 +180,41 @@ export const EyeOffIcon = (p) => (
 export const CheckIcon = (p) => (
   <Icon {...p}><rect x="3.5" y="3.5" width="17" height="17" rx="4" /><path d="m8 12.5 2.8 2.8L16.5 9" /></Icon>
 )
+// Settings' rows (2026-11-16).
+export const PaletteIcon = (p) => (
+  <Icon {...p}><path d="M12 3.5a8.5 8.5 0 0 0 0 17c1.2 0 1.8-.8 1.8-1.7 0-1.3-1-1.6-1-2.6 0-.9.7-1.5 1.6-1.5h2.1a4 4 0 0 0 4-4c0-4-3.8-7.2-8.5-7.2z" />
+    <path d="M7.5 11.5h.01M10 7.5h.01M14.5 7.5h.01" /></Icon>
+)
+export const PhoneIcon = (p) => (
+  <Icon {...p}><rect x="6.5" y="2.5" width="11" height="19" rx="2.5" /><path d="M11 18.5h2" /></Icon>
+)
+export const PersonIcon = (p) => (
+  <Icon {...p}><circle cx="12" cy="8" r="4" /><path d="M4.5 20.5c.8-3.6 3.8-6 7.5-6s6.7 2.4 7.5 6" /></Icon>
+)
+export const KeyIcon = (p) => (
+  <Icon {...p}><circle cx="8" cy="15" r="4.5" /><path d="m11.2 11.8 8.3-8.3M16.5 6.5l2.5 2.5M14 9l2 2" /></Icon>
+)
+export const TagIcon = (p) => (
+  <Icon {...p}><path d="M3.5 12.2V4.5a1 1 0 0 1 1-1h7.7l8.3 8.3a1.5 1.5 0 0 1 0 2.1l-6.6 6.6a1.5 1.5 0 0 1-2.1 0z" />
+    <path d="M8 8h.01" /></Icon>
+)
+export const CoinsIcon = (p) => (
+  <Icon {...p}><ellipse cx="9" cy="7" rx="5.5" ry="2.5" /><path d="M3.5 7v4c0 1.4 2.5 2.5 5.5 2.5M3.5 11v4c0 1.4 2.5 2.5 5.5 2.5" />
+    <ellipse cx="15" cy="14" rx="5.5" ry="2.5" /><path d="M9.5 14v4c0 1.4 2.5 2.5 5.5 2.5s5.5-1.1 5.5-2.5v-4" /></Icon>
+)
+export const ListIcon = (p) => (
+  <Icon {...p}><path d="M9 6.5h11M9 12h11M9 17.5h11M4.5 6.5h.01M4.5 12h.01M4.5 17.5h.01" /></Icon>
+)
+export const DatabaseIcon = (p) => (
+  <Icon {...p}><ellipse cx="12" cy="5.5" rx="7.5" ry="2.5" /><path d="M4.5 5.5v13c0 1.4 3.4 2.5 7.5 2.5s7.5-1.1 7.5-2.5v-13" />
+    <path d="M4.5 12c0 1.4 3.4 2.5 7.5 2.5s7.5-1.1 7.5-2.5" /></Icon>
+)
+export const DownloadIcon = (p) => (
+  <Icon {...p}><path d="M12 3.5v11.5M7.5 10.5 12 15l4.5-4.5M4.5 16.5v2a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-2" /></Icon>
+)
+export const PulseIcon = (p) => (
+  <Icon {...p}><path d="M3 12h4l2.5-6 5 12 2.5-6H21" /></Icon>
+)
+export const GlobeIcon = (p) => (
+  <Icon {...p}><circle cx="12" cy="12" r="8.5" /><path d="M3.5 12h17M12 3.5c2.3 2.4 3.5 5.2 3.5 8.5s-1.2 6.1-3.5 8.5c-2.3-2.4-3.5-5.2-3.5-8.5s1.2-6.1 3.5-8.5z" /></Icon>
+)

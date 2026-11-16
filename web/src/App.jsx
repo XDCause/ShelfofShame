@@ -228,7 +228,7 @@ export default function App() {
                     showToast("Couldn't find a barcode in that photo. Try again, or use \"Type a barcode\".")
                   }} />}
                 <button type="button" className="icon-btn navbar-settings" onClick={() => setPanel({ type: 'settings' })}
-                  aria-label="Settings" title="Settings: spending, prices, backups, export, lists">
+                  aria-label="Settings" title="Settings: look, sign-in, shopping, lists, backups, system">
                   <GearIcon />
                 </button>
               </div>
@@ -327,7 +327,7 @@ export default function App() {
             onClose={close} onChanged={changed} onCreated={openModel} onOpenSupply={openItem} />
         )}
         {lookups && panel?.type === 'settings' && (
-          <SettingsPanel lookups={lookups} settings={settings} onClose={close}
+          <SettingsPanel lookups={lookups} settings={settings} onClose={close} section={panel.section}
             onSettings={setSettings} onListsChanged={loadLookups} />
         )}
         {lookups && PANELS[panel?.type] && <ModulePanel panel={panel} onClose={close} />}

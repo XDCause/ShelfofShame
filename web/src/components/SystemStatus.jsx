@@ -45,7 +45,7 @@ export function SystemWarning({ data, onOpen }) {
   return (
     <p className={`alert ${data.worst === 'bad' ? 'error' : 'low'} sys-warning`} role="status">
       {data.attention.map((c) => `${c.label}: ${c.detail}`).join(' · ')}.{' '}
-      <button type="button" className="plain small" onClick={() => { onOpen?.(); openPanel('settings') }}>Open the System panel ›</button>
+      <button type="button" className="plain small" onClick={() => { onOpen?.(); openPanel('settings', { section: 'system' }) }}>Open the System panel ›</button>
     </p>
   )
 }

@@ -83,7 +83,7 @@ export function Sidebar({ env = 'prod' }) {
         <span><strong>{nudge()[0]}</strong>{nudge()[1]}</span>
       </div>
       <button type="button" className="side-link side-settings" onClick={() => openPanel('settings')}
-        title="Settings: appearance, spending, prices, backups, export, lists">
+        title="Settings: look, sign-in, shopping, lists, backups, system">
         <GearIcon size={20} /><span>Settings</span>
       </button>
     </aside>

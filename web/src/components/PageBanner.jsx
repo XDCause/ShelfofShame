@@ -16,7 +16,7 @@ export function BannerArt({ area, photo, strip = false }) {
 }
 
 // "Picture": choose a photo of your own for this banner, move it up or down, or go back to the drawing. Shown only
-// when Settings > Appearance turns it on (off by default: clutter once the pictures are chosen).
+// when Settings > You > Name and banners turns it on (off by default: clutter once the pictures are chosen).
 export function BannerPicture({ area, photo }) {
   const { showToast, settings } = useApp()
   const input = useRef(null)

@@ -74,7 +74,7 @@ panels (items, kits, games, books, trips, sessions...) open over any page. Every
 
 ## The journal look (2026-11-16, HISTORY 5za)
 
-A second look, chosen per device in Settings > Appearance (Botanical | Journal, beside light / dark): a hobby notebook.
+A second look, chosen per device in Settings > This device > Look and theme (Botanical | Journal, beside light / dark): a hobby notebook.
 `web/src/core/look.js` puts `data-look="journal"` on `<html>`; everything it changes is in `styles/32-look-journal.css`,
 under `:root[data-look='journal']`, so the botanical look above is untouched and stays the default.
 

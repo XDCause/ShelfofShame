@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 
 // The look: "botanical" (the pine sidebar, parchment and landscape banners; docs/DESIGN.md) or "journal" (a hobby
 // notebook: paper and ink, a dot grid, notebook tabs along the top, your banner as a pinned photo; DESIGN.md >
-// The journal look). Chosen in Settings > Appearance and remembered on this device, like light / dark.
+// The journal look). Chosen in Settings > Look and theme and remembered on this device, like light / dark.
 // The CSS reads <html data-look="journal"> (styles/32-look-journal.css); the shell swaps the sidebar for the
 // top bar (App.jsx, core/Navigation.jsx JournalNav).
 const KEY = 'offtheclock.look'

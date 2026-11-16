@@ -41,7 +41,7 @@ ONLY = sys.argv[1] if len(sys.argv) > 1 and not sys.argv[1].startswith("--") els
 SIZES = [("pc", 1440, 900, False), ("laptop", 1024, 768, False), ("tablet", 768, 1024, True),
          ("phone", 390, 844, True), ("narrow", 320, 640, True)]
 THEMES = ["light", "dark"]
-LOOKS = ["botanical", "journal"]          # Settings > Appearance (web/src/core/look.js)
+LOOKS = ["botanical", "journal"]          # Settings > This device > Look and theme (web/src/core/look.js)
 if os.environ.get("AUDIT_LOOK") in LOOKS:
     LOOKS = [os.environ["AUDIT_LOOK"]]
 AXE_SIZES = ("pc", "phone")      # colour and names don't change with width: axe at two sizes is enough (and it's slow)
@@ -49,7 +49,8 @@ AXE_SIZES = ("pc", "phone")      # colour and names don't change with width: axe
 PANELS = [("/supplies", "tr.row"), ("/models/kits", ".model-card"), ("/reading/books", ".book-card"),
           ("/boardgames/games", ".bg-card, .board-game-card, .game-card"), ("/boardgames/games", ".bgt-now-card"),
           ("/videogames/games", ".game-row"),
-          ("/travel/trips", ".trip-card, .row-button"), ("/calendar", ".cal-day, .calendar-day")]
+          ("/travel/trips", ".trip-card, .row-button"), ("/calendar", ".cal-day, .calendar-day"),
+          ("/", "button[aria-label='Settings']:visible")]                                  # Settings, its groups
 # Problems looked at and accepted (a key: "kind|selector"), with why.
 ACCEPTED = {
     # axe can't see the banner picture behind the clear nav bar, so it measures the search box's light text against

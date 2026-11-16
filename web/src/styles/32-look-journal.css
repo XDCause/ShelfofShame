@@ -296,7 +296,6 @@
 }
 :root[data-look='journal'] hr { height: 8px; border: 0; background: var(--faint);
   -webkit-mask: var(--squiggle) left center / 74px 8px repeat-x; mask: var(--squiggle) left center / 74px 8px repeat-x; }
-:root[data-look='journal'] .settings-look { margin-top: 14px; }
 
 /* ---------- Phones ---------- */
 @media (max-width: 700px) {

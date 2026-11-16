@@ -1,0 +1,50 @@
+/* ---------- Settings (components/SettingsPanel.jsx, regrouped 2026-11-16) ----------
+ * Six groups, each a heading, a line saying what it's for and a card of rows; each row is a fold with a small
+ * coloured icon tile (the group's --set-hue). A find box at the top stays put while the rows scroll. */
+.settings { gap: 22px; padding-top: 8px; }
+.set-find {
+  position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px;
+  margin: 0 -16px; padding: 8px 16px 10px; background: var(--bg); color: var(--muted);
+}
+.set-find input { flex: 1; min-width: 0; min-height: 40px; border-radius: 999px; padding-left: 14px; }
+.set-group { display: flex; flex-direction: column; }
+.set-group-title {
+  margin: 0 4px; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--set-hue) 55%, var(--text));
+}
+.set-group-note { margin: 2px 4px 8px; font-size: 0.85rem; color: var(--muted); }
+.set-rows {
+  display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.drawer .set-rows > .fold { background: transparent; border: 0; border-radius: 0; }
+.set-rows > .fold + .fold { border-top: 1px solid var(--separator); }
+.set-rows > .fold[open] { background: var(--fill-2); }
+.set-rows > .fold > summary { padding: 10px 14px; min-height: 52px; gap: 12px; }
+.set-rows > .fold > summary:hover { background: var(--fill-2); }
+.set-rows > .fold > .fold-body { padding: 4px 16px 18px 58px; }
+.set-icon {
+  flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px;
+  background: var(--set-hue); color: #fff;
+}
+.set-icon svg { width: 19px; height: 19px; }
+.set-rows .fold-detail { max-width: 46%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
+.set-label { margin: 0 0 6px; font-size: 0.85rem; font-weight: 600; color: var(--muted); }
+.set-label:not(:first-child) { margin-top: 18px; }
+.settings-look { margin-top: 0; }
+.set-none { text-align: center; padding: 24px 0; }
+
+/* On a phone the open row's body uses the full width (no room for the icon's indent). */
+@media (max-width: 520px) {
+  .set-rows > .fold > .fold-body { padding: 4px 14px 16px; }
+  .set-rows .fold-detail { max-width: 38%; }
+}
+
+/* The journal look: the groups as index cards, the headings in its serif. */
+:root[data-look='journal'] .set-rows { background: var(--elevated); box-shadow: var(--card-shadow); border-radius: 10px; }
+:root[data-look='journal'] .set-group-title {
+  font-family: var(--font-display); font-size: 1.05rem; font-weight: 600; letter-spacing: 0; text-transform: none;
+  color: var(--text);
+}
+:root[data-look='journal'] .set-icon { border-radius: 50%; }
+:root[data-look='journal'] .settings-look { margin-top: 0; }
