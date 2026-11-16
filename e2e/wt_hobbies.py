@@ -1114,7 +1114,7 @@ def board_game_table(page):
     shot(page, "d61_players", full=False)
     # What should we play? (2 players, half an hour: the game fits)
     page.locator(".section-tabs").get_by_role("link", name="Games").click()
-    page.get_by_role("button", name="🎲 What should we play?").click()
+    page.get_by_role("button", name="🎲 What to play?").click()
     page.locator(".bgt-what").get_by_label("Players").fill("2")
     page.locator(".bgt-what").get_by_label("Time").select_option("30")
     more = page.locator(".bgt-what").get_by_role("button", name=re.compile("^Show them all"))

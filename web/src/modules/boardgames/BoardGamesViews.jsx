@@ -16,6 +16,7 @@ function useGames() {
     .then(([games, summary]) => ({ games, summary })))
 }
 
+const UNPLAYED = 'unplayed'          // the status filter's extra chip
 const KIND_GROUPS = { game: 'Base games', expansion: 'Expansions', other: 'Other' }
 
 // The collection: a few numbers, status and type chips, then the games in drop-down groups (base
@@ -25,12 +26,18 @@ export function GamesView() {
   const { data, error } = useGames()
   const [status, setStatus] = useState('')
   const [kind, setKind] = useState('')
+  const [whatOpen, setWhatOpen] = useState(false)
   if (error) return <p className="alert error">{error}</p>
   if (!data) return <p className="muted loading">Loading...</p>
   const { games, summary } = data
   const statuses = [...new Set(games.map((g) => g.status))]
   const kinds = KINDS.map(([k]) => k).filter((k) => games.some((g) => g.kind === k))
-  const visible = games.filter((g) => (!status || g.status === status) && (!kind || g.kind === kind))
+  // "Unplayed": owned games never played, or not played for a year - a filter like the statuses (2026-11-16: it was a
+  // fold of its own between the buttons and the filters, and the page looked like loose parts)
+  const { never, stale } = unplayedGames(games, today())
+  const unplayed = new Set([...never, ...stale].map((g) => g.game_id))
+  const visible = games.filter((g) => (!status || (status === UNPLAYED ? unplayed.has(g.game_id) : g.status === status))
+    && (!kind || g.kind === kind))
   const groups = kinds.map((k) => [k, visible.filter((g) => g.kind === k)]).filter(([, list]) => list.length)
 
   return (
@@ -44,13 +51,14 @@ export function GamesView() {
           {summary.most_played && <small className="muted">{summary.most_played.plays} play{summary.most_played.plays === 1 ? '' : 's'}</small>}</div>
       </div>
       <NowPlaying live={summary.live} />
-      <div className="toolbar game-toolbar">
+      {/* one row of actions, then the filters, then the games */}
+      <div className="toolbar bgt-actions">
         <button type="button" className="primary" onClick={() => openPanel('liveplay')}>▶ Start a play</button>
         <button type="button" className="secondary" onClick={() => openPanel('play')}>Log a play</button>
         <button type="button" className="secondary" onClick={() => openPanel('boardgame', { id: null })}>+ Add game</button>
+        <button type="button" className="secondary" aria-expanded={whatOpen} onClick={() => setWhatOpen(!whatOpen)}>🎲 What to play?</button>
       </div>
-      <WhatToPlay games={games} />
-      <Unplayed games={games} />
+      {whatOpen && <WhatToPlay games={games} onClose={() => setWhatOpen(false)} />}
       <div className="chip-rows">
           {kinds.length > 1 && (
             <div className="chip-row scroll" role="group" aria-label="Type">
@@ -61,13 +69,19 @@ export function GamesView() {
               ))}
             </div>
           )}
-          {statuses.length > 1 && (
+          {(statuses.length > 1 || unplayed.size > 0) && (
             <div className="chip-row scroll" role="group" aria-label="Show">
               {['', ...statuses].map((s) => (
                 <button key={s || 'all'} type="button" className="chip-filter" aria-pressed={status === s} onClick={() => setStatus(s)}>
                   {s || 'All'} <span className="chip-count">{s ? games.filter((g) => g.status === s).length : games.length}</span>
                 </button>
               ))}
+              {unplayed.size > 0 && (
+                <button type="button" className="chip-filter" aria-pressed={status === UNPLAYED} onClick={() => setStatus(UNPLAYED)}
+                  title={`${never.length} never played, ${stale.length} not played in a year`}>
+                  Unplayed <span className="chip-count">{unplayed.size}</span>
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -195,30 +209,8 @@ const weightFits = (w, want) => !want || w == null || (want === 'light' ? w < 2.
 
 // "What should we play?": your games that take this many players in the time you have (and the weight you're in the
 // mood for), the ones you haven't played for longest first - or let the app pick.
-// Games on your shelf that never reach the table: never played, and not played for a year.
-function Unplayed({ games }) {
+function WhatToPlay({ games, onClose }) {
   const { openPanel } = useApp()
-  const { never, stale } = unplayedGames(games, today())
-  if (!never.length && !stale.length) return null
-  const rows = (list, detail) => list.map((g) => (
-    <li key={g.game_id}><button type="button" className="row-button" onClick={() => openPanel('boardgame', { id: g.game_id })}>
-      <span className="grow item-title">{g.name}</span><span className="muted small">{detail(g)}</span></button></li>))
-  return (
-    <details className="fold bgs-unplayed">
-      <summary><span className="fold-title">Unplayed</span>
-        <span className="fold-detail">{never.length} never played · {stale.length} not in a year</span></summary>
-      <div className="fold-body">
-        {never.length > 0 && <><h4 className="bgs-unplayed-head">Never played</h4><ul className="list compact">{rows(never, () => 'on the shelf')}</ul></>}
-        {stale.length > 0 && <><h4 className="bgs-unplayed-head">Not played in 12 months</h4>
-          <ul className="list compact">{rows(stale, (g) => `last ${shortDate(g.last_played)}`)}</ul></>}
-      </div>
-    </details>
-  )
-}
-
-function WhatToPlay({ games }) {
-  const { openPanel } = useApp()
-  const [open, setOpen] = useState(false)
   const [players, setPlayers] = useState('4')
   const [time, setTime] = useState('')
   const [weight, setWeight] = useState('')
@@ -230,15 +222,12 @@ function WhatToPlay({ games }) {
     && (!time || !g.play_minutes || g.play_minutes <= Number(time))
     && weightFits(g.weight == null ? null : Number(g.weight), weight))
     .sort((a, b) => (a.last_played ?? '').localeCompare(b.last_played ?? '') || (b.rating ?? 0) - (a.rating ?? 0))
-  if (!open) {
-    return <button type="button" className="plain small bgt-what-open" onClick={() => setOpen(true)}>🎲 What should we play?</button>
-  }
   const shown = picked ? [picked] : all ? fits : fits.slice(0, 6)
   return (
     <section className="card bgt-what" aria-label="What should we play?">
       <div className="section-head">
         <h3 className="section-title">What should we play?</h3>
-        <button type="button" className="icon-btn small" aria-label="Close" onClick={() => setOpen(false)}>✕</button>
+        <button type="button" className="icon-btn small" aria-label="Close" onClick={() => onClose()}>✕</button>
       </div>
       <div className="bgt-what-filters">
         <label className="field"><span className="field-label">Players</span>
