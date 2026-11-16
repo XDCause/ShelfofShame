@@ -126,3 +126,23 @@ def test_the_weekly_price_refresh_never_stops_the_check(monkeypatch):
     from app import wanted_more
     monkeypatch.setattr(wanted_more, "refresh_weekly", lambda: (_ for _ in ()).throw(RuntimeError("shop down")))
     sitecheck._wanted_prices()                                                   # (logged, not raised)
+
+
+def test_due_counts_only_the_sites_still_checked_and_retries_a_failure_a_day_later(client, monkeypatch):
+    from app.db import db
+    monkeypatch.setattr(sitecheck, "CHECKS", fake({"Tamiya": "ok", "Open-Meteo": TimeoutError("timed out")}))
+    assert sitecheck.due() == "all"                                               # never checked
+    sitecheck.run_all()
+    with db() as conn:                                                            # a paused site's month-old row
+        conn.execute("INSERT INTO site_checks (site, ok, detail, checked_at) VALUES ('Good Games', true, 'x', now() - interval '31 days')")
+    assert sitecheck.due() is None                                                # checked just now: nothing to do
+    with db() as conn:
+        conn.execute("UPDATE site_checks SET checked_at = now() - interval '2 days'")
+    assert sitecheck.due() == ["Open-Meteo"]                                      # only the failure, asked again
+    asked = []
+    monkeypatch.setattr(sitecheck, "CHECKS", [(s, w, (lambda s=s: asked.append(s) or "ok")) for s, w, _ in sitecheck.CHECKS])
+    sitecheck.run_all(only=["Open-Meteo"])
+    assert asked == ["Open-Meteo"]
+    with db() as conn:
+        conn.execute("UPDATE site_checks SET checked_at = now() - interval '8 days' WHERE site = 'Tamiya'")
+    assert sitecheck.due() == "all"                                               # a week on: everything

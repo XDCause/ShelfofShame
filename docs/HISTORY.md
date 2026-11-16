@@ -1128,3 +1128,12 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
      { section })). Fold takes a `lead` (the icon). ListsManager is just LookupList now (Settings lays out the lists).
    - styles/33-settings.css; the journal look's groups are index cards with serif headings and round icons. The UI audit
      opens Settings too (every size, theme and look).
+
+5zc. **The weekly site check ran every 6 hours** (found 2026-11-16, looking into an amber Website check in prod). The
+   loop decides from the OLDEST result in site_checks - and Good Games, paused on 18 Oct, kept its 16 Oct row, so every
+   result looked a week old and the whole check (small shops included) ran at every 6-hourly look for a month, against
+   the one-look-a-week rule. sitecheck.due() now counts only the sites still in CHECKS (system.py's Website check too,
+   so a paused site's old failure can't stay amber). And a site that failed is asked again on its own a day later
+   (RETRY; run_all(only=...)), so a one-off timeout clears itself instead of waiting a week - tonight's was Open-Meteo
+   (a TLS handshake timeout from this PC, every other site fine). The amber Updates line was only stale: updates.json
+   was from before that day's updates; check-updates.ps1 run again (3 newer, 0 security problems).

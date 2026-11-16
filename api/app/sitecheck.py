@@ -23,6 +23,7 @@ from .db import db
 log = logging.getLogger("sitecheck")
 router = APIRouter(prefix="/api", tags=["settings"])
 WEEKLY = timedelta(days=7)
+RETRY = timedelta(days=1)       # a site that failed is asked again (on its own) a day later
 
 
 class Unexpected(Exception):
@@ -192,14 +193,16 @@ ON CONFLICT (site) DO UPDATE SET ok = EXCLUDED.ok, detail = EXCLUDED.detail, che
     failing_since = CASE WHEN EXCLUDED.ok THEN NULL ELSE COALESCE(site_checks.failing_since, now()) END"""
 
 
-def run_all():
-    """Check every site, one after another; each result is saved as soon as it's known."""
+def run_all(only=None):
+    """Check every site (or just the sites named in only), one after another; each result is saved as soon as it's known."""
     with _lock:
         if STATE["running"]:
             return
         STATE["running"] = True
     try:
         for site, _, check in CHECKS:
+            if only is not None and site not in only:
+                continue
             try:
                 ok, detail = True, check()
             except Exception as e:  # noqa: BLE001 - any failure is the result we're after
@@ -220,16 +223,32 @@ def _wanted_prices():
         log.exception("Weekly wanted-price refresh failed")
 
 
+def due():
+    """What the 6-hourly look should do: 'all' (a site never checked, or the oldest result a week old), the list of
+    sites that failed more than a day ago (asked again on their own: a one-off timeout clears itself), or None.
+    Only the sites still in CHECKS count: a paused site's old row (Good Games, 16 Oct) made every result look a week
+    old, and the whole check ran every 6 hours (found 2026-11-16)."""
+    names = [site for site, _, _ in CHECKS]
+    with db() as conn:
+        rows = conn.execute("SELECT site, ok, checked_at FROM site_checks WHERE site = ANY(%s)", (names,)).fetchall()
+    now = datetime.now(timezone.utc)
+    if len(rows) < len(names) or now - min(r["checked_at"] for r in rows) > WEEKLY:
+        return "all"
+    retry = [r["site"] for r in rows if not r["ok"] and now - r["checked_at"] > RETRY]
+    return retry or None
+
+
 def start_weekly():
-    """While the app runs: a check whenever the oldest result is a week old (looked at every 6 hours)."""
+    """While the app runs: looked at every 6 hours - the whole check once a week, a failed site again a day later."""
     def loop():
         while True:
             try:
-                with db() as conn:
-                    last = conn.execute("SELECT min(checked_at) AS t, count(*) AS n FROM site_checks").fetchone()
-                if last["n"] < len(CHECKS) or datetime.now(timezone.utc) - last["t"] > WEEKLY:
+                todo = due()
+                if todo == "all":
                     run_all()
                     _wanted_prices()
+                elif todo:
+                    run_all(only=todo)
             except Exception:  # database restarting...: say so, try again later
                 log.exception("Weekly site check failed")
             threading.Event().wait(6 * 3600)

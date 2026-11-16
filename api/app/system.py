@@ -21,7 +21,7 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter
 
 from .db import db
-from . import settings
+from . import settings, sitecheck
 from .settings import BACKUP_NAME
 
 router = APIRouter(prefix="/api", tags=["settings"])
@@ -164,7 +164,8 @@ def other_checks(now: datetime) -> list[dict]:
     out = []
     with db() as conn:
         steam = conn.execute("SELECT steam_id, last_sync_at, last_error FROM vg_sync WHERE id = 1").fetchone()
-        sites = conn.execute("SELECT max(checked_at) AS last, count(*) FILTER (WHERE NOT ok) AS failing FROM site_checks").fetchone()
+        sites = conn.execute("SELECT max(checked_at) AS last, count(*) FILTER (WHERE NOT ok) AS failing FROM site_checks "
+                             "WHERE site = ANY(%s)", ([site for site, _, _ in sitecheck.CHECKS],)).fetchone()
     if os.environ.get("STEAM_API_KEY") and steam and steam["steam_id"]:
         when = steam["last_sync_at"].astimezone().replace(tzinfo=None) if steam["last_sync_at"] else None
         if steam["last_error"]:

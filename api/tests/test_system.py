@@ -43,7 +43,7 @@ def test_a_fresh_checked_backup_and_restore_test_are_green(client, folder):
     }))
     (folder / "updates.json").write_text(json.dumps({"at": now.isoformat(timespec="seconds"), "outdated": 2, "audit_problems": 0}))
     with db() as conn:
-        conn.execute("INSERT INTO site_checks (site, ok, checked_at) VALUES ('tamiya', true, now())")
+        conn.execute("INSERT INTO site_checks (site, ok, checked_at) VALUES ('Tamiya', true, now())")
     c = by_key(client)
     assert c["backup"]["state"] == "ok" and "read back and checked" in c["backup"]["detail"]
     assert c["restore"]["state"] == "ok" and "105 tables" in c["restore"]["detail"]
