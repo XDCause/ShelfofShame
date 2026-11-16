@@ -1,0 +1,326 @@
+/* ---------- The journal look (core/look.js; docs/DESIGN.md > The journal look) ----------
+   A hobby notebook: warm paper with a faint dot grid, ink-brown text, fountain-pen blue for what you can tap,
+   Fraunces (a soft serif) for titles, Caveat for the hand-written lines. The sidebar becomes notebook tabs along the
+   top (Navigation.jsx JournalNav); a page's banner becomes a header with its picture as a photo taped to the page;
+   cards are index cards; a hobby's own pages are tabs on the page's edge. Everything here is under
+   :root[data-look='journal'], so the botanical look (the default) is untouched. Contrast: every text token >= 4.5:1
+   on --bg, --surface and --elevated in both themes (checked when written, 2026-11-16). */
+:root[data-look='journal'] {
+  --bg: #f4eddf;
+  --surface: #fffaf0;
+  --elevated: #fffdf8;
+  --field: #fffdf8;
+  --border: rgb(74 54 32 / 0.16);
+  --separator: rgb(74 54 32 / 0.12);
+  --fill: rgb(96 72 44 / 0.09);
+  --fill-2: rgb(96 72 44 / 0.05);
+  --text: #2a2119;                          /* ink brown: 13.5:1 on the paper */
+  --muted: #5f5243;                         /* 6.5:1 */
+  --faint: #a39684;
+  --tint: #2e4c84;                          /* fountain-pen blue: 7.3:1 */
+  --tint-2: #2d6a5c;
+  --tint-soft: rgb(46 76 132 / 0.1);
+  --on-tint: #ffffff;
+  --primary-bg: #2a2119;                    /* an ink-brown label */
+  --primary-text: #fbf5e8;
+  --ember: #a84a24;                         /* terracotta, readable as text here (4.9:1) */
+  --ember-soft: rgb(168 74 36 / 0.11);
+  --bar: rgb(244 237 223 / 0.93);
+  --shadow: 0 18px 44px rgb(60 40 20 / 0.2), 0 2px 6px rgb(60 40 20 / 0.08);
+  --card-shadow: 0 1px 0 rgb(74 54 32 / 0.05), 0 10px 20px -16px rgb(74 54 32 / 0.45);
+  --lift-shadow: 0 14px 30px -10px rgb(74 54 32 / 0.32);
+  --polaroid: #fffdf7;
+  --tape: rgb(240 226 186 / 0.82);
+  --note: #f6e7a8;   --note-text: #3a2d14;  /* a sticky note (10.8:1), the same in both themes */
+  --dot: rgb(74 54 32 / 0.13);
+  --atmosphere: radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 1.4px) 0 0 / 22px 22px;
+  --grain-opacity: 0.05;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --font-display: 'Fraunces Variable', 'Iowan Old Style', Georgia, serif;
+  --squiggle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 74 10'%3E%3Cpath d='M2 6c5-4 9-4 14 0s9 4 14 0 9-4 14 0 9 4 14 0 9-4 14 0' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+:root[data-look='journal'][data-theme='dark'] {
+  /* the notebook by lamplight */
+  --bg: #1b1713;
+  --surface: #241f19;
+  --elevated: #2c261f;
+  --field: #1f1a15;
+  --border: rgb(239 226 204 / 0.13);
+  --separator: rgb(239 226 204 / 0.09);
+  --fill: rgb(239 226 204 / 0.08);
+  --fill-2: rgb(239 226 204 / 0.04);
+  --thumb-bg: #2c261f;
+  --text: #efe5d3;
+  --muted: #b8aa94;
+  --faint: rgb(220 205 180 / 0.4);
+  --tint: #a8c0ee;
+  --tint-soft: rgb(168 192 238 / 0.13);
+  --on-tint: #17140f;
+  --primary-bg: #efe5d3;
+  --primary-text: #1f1a15;
+  --on-solid: #1b1713;
+  --ember: #e0936b;
+  --ember-soft: rgb(224 147 107 / 0.14);
+  --bar: rgb(27 23 19 / 0.92);
+  --shadow: 0 24px 60px rgb(0 0 0 / 0.55), 0 2px 8px rgb(0 0 0 / 0.3);
+  --card-shadow: 0 1px 0 rgb(0 0 0 / 0.25);
+  --lift-shadow: 0 14px 34px rgb(0 0 0 / 0.4);
+  --polaroid: #ebe2d0;
+  --tape: rgb(214 196 150 / 0.55);
+  --dot: rgb(239 226 204 / 0.07);
+}
+
+/* ---------- The frame: no sidebar; the nav bar is the notebook's top edge ---------- */
+:root[data-look='journal'] .app { display: block; }
+:root[data-look='journal'] .env-tag { display: none; }        /* (the brand carries it: .jl-env) */
+:root[data-look='journal'] .navbar,
+:root[data-look='journal'] .navbar.over-banner:not(.scrolled) {
+  margin: 0; color: var(--text); background: var(--bar);
+  backdrop-filter: saturate(140%) blur(14px); -webkit-backdrop-filter: saturate(140%) blur(14px);
+  border-bottom: 3px double var(--border);                   /* a ledger's double rule */
+}
+:root[data-look='journal'] .navbar.over-banner:not(.scrolled) .icon-btn { color: var(--text); }
+:root[data-look='journal'] .navbar.over-banner:not(.scrolled) .icon-btn:hover:not(:disabled) { background: var(--fill); }
+:root[data-look='journal'] .navbar.over-banner:not(.scrolled) .search-box {
+  background: var(--fill); color: inherit; border-color: transparent; backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+:root[data-look='journal'] .navbar.over-banner:not(.scrolled) .search-box input::placeholder { color: var(--muted); }
+:root[data-look='journal'] .navbar.over-banner:not(.scrolled) .search-box kbd { background: var(--surface); border-color: var(--border); color: var(--muted); }
+:root[data-look='journal'] .navbar-row { gap: 14px; min-height: 64px; }
+:root[data-look='journal'] .global-search { flex: 0 1 300px; margin: 0; }
+:root[data-look='journal'] .search-box { border-radius: 10px; }
+:root[data-look='journal'] .navbar .navbar-settings { display: inline-grid; }    /* (no sidebar to hold Settings) */
+@media (min-width: 701px) {
+  /* one row: the brand and tabs, the search box, Settings (not the botanical look's three-column grid, 21-fixes) */
+  :root[data-look='journal'] .navbar-row { display: flex; }
+  :root[data-look='journal'] .navbar-row > .global-search { width: auto; flex: 1 1 200px; max-width: 340px; margin-left: auto; }
+  :root[data-look='journal'] .jl-nav { flex: 0 0 auto; }     /* the tabs keep their words; the search box takes what's left */
+  /* the page's heading is the header under the bar (its h1 stays here for screen readers) */
+  :root[data-look='journal'] .navbar h1 {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; margin: 0;
+  }
+}
+
+/* The brand, the core pages and the Hobbies menu (JournalNav) */
+.jl-nav { display: flex; align-items: center; gap: 18px; flex: 1 1 auto; min-width: 0; }
+.jl-brand {
+  display: inline-flex; align-items: center; gap: 9px; min-height: 44px; flex: none; color: var(--text);
+  font-family: var(--font-display); font-size: 1.22rem; font-weight: 650; white-space: nowrap;
+}
+.jl-brand:hover { text-decoration: none; }
+.jl-brand svg { color: var(--ember); }
+.jl-env {
+  padding: 2px 7px; border-radius: 5px; background: var(--low); color: var(--on-solid); font-family: var(--font-ui);
+  font-size: 0.66rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+}
+.jl-links { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.jl-link {
+  position: relative; display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 6px 11px;
+  border-radius: 8px; color: var(--muted); font-size: 0.92rem; font-weight: 550; white-space: nowrap; cursor: pointer;
+  list-style: none; transition: background var(--fast), color var(--fast);
+}
+.jl-link::-webkit-details-marker { display: none; }
+.jl-link:hover { color: var(--text); background: var(--fill-2); text-decoration: none; }
+.jl-link.active { color: var(--text); font-weight: 650; }
+/* the page you're on: underlined by hand, in the page's colour */
+.jl-link.active::after {
+  content: ''; position: absolute; left: 10px; right: 10px; bottom: 1px; height: 7px;
+  background: color-mix(in srgb, var(--hue) 70%, var(--text));
+  -webkit-mask: var(--squiggle) center / 100% 100% no-repeat; mask: var(--squiggle) center / 100% 100% no-repeat;
+}
+.jl-hobbies { position: relative; }
+.jl-hobbies > summary.active svg:first-child { color: color-mix(in srgb, var(--hue) 70%, var(--text)); }
+.jl-caret { transform: rotate(90deg); transition: transform var(--fast); }
+.jl-hobbies[open] .jl-caret { transform: rotate(-90deg); }
+.jl-menu {
+  position: absolute; top: calc(100% + 10px); left: 0; z-index: 45; width: min(470px, calc(100vw - 32px));
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px; padding: 10px;
+  background: var(--elevated); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
+  animation: pop-in 0.16s var(--ease-out);
+}
+.jl-menu-link {
+  display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 6px 10px; border-radius: 6px;
+  color: var(--text); font-size: 0.92rem;
+}
+.jl-menu-link svg { flex: none; color: color-mix(in srgb, var(--hue) 75%, var(--text)); }
+.jl-menu-link:hover { background: var(--fill); text-decoration: none; }
+.jl-menu-link.active { background: color-mix(in srgb, var(--hue) 16%, transparent); font-weight: 650; }
+.jl-menu-all {
+  grid-column: 1 / -1; display: flex; align-items: center; min-height: 40px; margin-top: 6px; padding: 8px 10px 2px;
+  border-top: 1px dashed var(--border); font-weight: 600;
+}
+@media (min-width: 1241px) {
+  .jl-links .jl-link:not(summary) svg { display: none; }   /* words alone, like a notebook's tabs (room for the search box) */
+}
+@media (min-width: 701px) and (max-width: 1240px) {
+  /* the search box is a magnifier that opens over the bar (as on a phone; Ctrl K still opens it): the tabs need the row */
+  :root[data-look='journal'] .navbar-row > .global-search { flex: none; max-width: none; margin-left: auto; }
+  :root[data-look='journal'] .navbar-row > .global-search .search-toggle { display: inline-grid; }
+  :root[data-look='journal'] .navbar-row > .global-search .search-box { display: none; }
+  :root[data-look='journal'] .navbar-row > .global-search.open { position: absolute; inset: 10px var(--gutter) auto var(--gutter); z-index: 40; }
+  :root[data-look='journal'] .navbar-row > .global-search.open .search-toggle { display: none; }
+  :root[data-look='journal'] .navbar-row > .global-search.open .search-box { display: flex; height: 44px; background: var(--field); border-color: var(--tint); }
+}
+/* a long hobby name ("Precision shooting") is cut with "..." rather than pushing the row off the screen */
+.jl-hobbies > summary > span { max-width: 15ch; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 1240px) {
+  .jl-links .jl-link:not(summary) span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .jl-link.active::after { left: 8px; right: 8px; }
+}
+@media (max-width: 960px) {
+  .jl-brand-name, .jl-hobbies > summary > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .jl-nav { gap: 8px; }
+  .jl-link { padding: 6px 9px; }
+}
+@media (max-width: 700px) {
+  .jl-links { display: none; }                               /* (the tab bar at the bottom has them) */
+  .jl-nav { flex: none; }
+  .jl-brand-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  :root[data-look='journal'] .navbar-row { min-height: 56px; }
+  :root[data-look='journal'] .navbar h1 { font-size: 1.35rem; }
+  :root[data-look='journal'] .global-search { flex: none; margin-left: auto; }
+}
+
+/* ---------- Page headers: the title in ink, the line in hand, the picture taped on ---------- */
+:root[data-look='journal'] .page-banner,
+:root[data-look='journal'] .page-banner:not(.home-banner) {
+  max-width: var(--column); min-height: 0; margin: 0 auto; padding: 26px var(--gutter) 18px; overflow: visible; isolation: auto;
+  flex-direction: row; align-items: center; gap: 32px; color: var(--text);
+}
+:root[data-look='journal'] .page-banner::after { content: none; }
+:root[data-look='journal'] .banner-text,
+:root[data-look='journal'] .home-banner .hero-text { order: 1; flex: 1 1 auto; min-width: 0; max-width: none; margin: 0; padding: 0; }
+:root[data-look='journal'] .banner-art {
+  order: 2; position: relative; inset: auto; z-index: 0; flex: none; width: 196px; aspect-ratio: 4 / 3;
+  padding: 9px 9px 30px; background: var(--polaroid); border-radius: 2px; transform: rotate(2.4deg);
+  box-shadow: 0 1px 2px rgb(40 26 12 / 0.18), 0 12px 24px -12px rgb(40 26 12 / 0.45);
+}
+/* a strip of tape holding it on */
+:root[data-look='journal'] .banner-art::before {
+  content: ''; position: absolute; z-index: 1; top: -11px; left: 50%; width: 88px; height: 24px; margin-left: -44px;
+  background: var(--tape); transform: rotate(-5deg); box-shadow: 0 1px 2px rgb(40 26 12 / 0.1);
+}
+:root[data-look='journal'] .banner-art svg,
+:root[data-look='journal'] .banner-photo { border-radius: 1px; }
+:root[data-look='journal'] .banner-eyebrow,
+:root[data-look='journal'] .hero-date { color: var(--ember); }
+:root[data-look='journal'] .banner-title {
+  color: var(--text); text-shadow: none; font-size: clamp(2.2rem, 3.8vw, 3.1rem); font-weight: 600; letter-spacing: -0.015em;
+}
+:root[data-look='journal'] .banner-tagline {
+  margin: 6px 0 0; font-family: var(--font-script); font-size: 1.5rem; line-height: 1.15;
+  color: color-mix(in srgb, var(--hue) 45%, var(--text)); max-width: 46ch;
+}
+:root[data-look='journal'] .banner-picture { position: static; order: 3; align-self: flex-end; }
+:root[data-look='journal'] .banner-picture summary {
+  color: var(--muted); background: var(--surface); border-color: var(--border); backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+:root[data-look='journal'] .banner-picture summary:hover,
+:root[data-look='journal'] .banner-picture[open] summary { background: var(--fill); color: var(--text); }
+
+/* Home: today's page - the date, the greeting, Write today's entry; a bigger photo with a sticky note on it */
+:root[data-look='journal'] .home-banner { min-height: 0; padding-top: 38px; padding-bottom: 30px; }
+:root[data-look='journal'] .home-banner .hero-text { padding-bottom: 0; }
+:root[data-look='journal'] .home-banner h2 {
+  color: var(--text); text-shadow: none; font-size: clamp(2.4rem, 4.6vw, 3.6rem); letter-spacing: -0.02em;
+}
+:root[data-look='journal'] .hero-tagline { color: var(--muted); }
+:root[data-look='journal'] .hero-write { background: var(--primary-bg); color: var(--primary-text); }
+:root[data-look='journal'] .home-banner .banner-art { width: 300px; transform: rotate(-2deg); }
+:root[data-look='journal'] .hero-script {
+  top: auto; bottom: 26px; right: calc(var(--gutter) + 236px); z-index: 2; padding: 10px 14px 12px;
+  font-size: 1.35rem; text-align: left; color: var(--note-text); background: var(--note); text-shadow: none;
+  transform: rotate(-5deg); box-shadow: 0 10px 18px -10px rgb(40 26 12 / 0.5);
+}
+:root[data-look='journal'] .home-banner .banner-picture { bottom: auto; }
+:root[data-look='journal'] .home .home-now,
+:root[data-look='journal'] .content:has(> .offline-banner) .home .home-now { margin-top: 0; }
+@media (max-width: 1000px) { :root[data-look='journal'] .hero-script { display: none; } }
+
+/* ---------- A hobby's pages: tabs on the edge of the page ---------- */
+:root[data-look='journal'] .section-tabs,
+:root[data-look='journal'] .section-tabs.segmented {
+  width: auto; margin: 0 0 22px; padding: 0 2px; gap: 2px; border: 0; border-bottom: 1px solid var(--border);
+  border-radius: 0; background: none; backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+:root[data-look='journal'] .section-tabs a {
+  margin-bottom: -1px; padding: 8px 16px; min-height: 42px; border: 1px solid transparent; border-bottom: 0;
+  border-radius: 8px 8px 0 0; background: none; color: var(--muted);
+}
+:root[data-look='journal'] .section-tabs a:not([aria-current='page']) { color: var(--muted); }
+:root[data-look='journal'] .section-tabs a:not([aria-current='page']):hover { color: var(--text); background: var(--fill-2); }
+:root[data-look='journal'] .section-tabs a[aria-current='page'] {
+  color: var(--text); background: var(--surface); border-color: var(--border); font-weight: 650;
+  box-shadow: inset 0 3px 0 color-mix(in srgb, var(--hue) 75%, var(--text));
+}
+
+/* The search rows and the Wishlist's hobbies sat on the banner's foot in the botanical look: here they're on the page */
+:root[data-look='journal'] .main-col:not(:has(.section-tabs:not(.phone-only))) main > * > .toolbar:first-child:has(> input[type='search']) { margin-top: 0; }
+:root[data-look='journal'] .main-col:not(:has(.section-tabs:not(.phone-only))) main > * > .toolbar:first-child > input[type='search'] {
+  border-color: transparent; background: var(--fill); color: inherit; backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+:root[data-look='journal'] .main-col:not(:has(.section-tabs:not(.phone-only))) main > * > .toolbar:first-child > input[type='search']::placeholder { color: var(--muted); }
+:root[data-look='journal'] .main-col:not(:has(.section-tabs:not(.phone-only))) main > * > .toolbar:first-child:has(> input[type='search']) > .secondary {
+  border: 0; background: var(--tint-soft); color: var(--tint); backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+:root[data-look='journal'] .main-col:not(:has(.section-tabs:not(.phone-only))) .wishlist-page > .inv-bar:first-child { margin-top: 0; }
+:root[data-look='journal'] .main-col:not(:has(.section-tabs:not(.phone-only))) .wishlist-page > .inv-bar:first-child .inv-menu > summary {
+  border: 1px solid var(--border); background: var(--surface); color: var(--text); backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+:root[data-look='journal'] .wishlist-page > .inv-bar .inv-hobbies {
+  padding: 0 2px; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; background: none;
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+:root[data-look='journal'] .wishlist-page > .inv-bar .inv-hobbies .chip-filter { color: var(--muted); }
+:root[data-look='journal'] .wishlist-page > .inv-bar .inv-hobbies .chip-filter:hover { background: var(--fill); color: var(--text); }
+:root[data-look='journal'] .wishlist-page > .inv-bar .inv-hobbies .chip-filter[aria-pressed='true'] { background: var(--primary-bg); color: var(--primary-text); }
+
+/* ---------- Paper things: index cards, labels, fields ---------- */
+:root[data-look='journal'] h1, :root[data-look='journal'] h2, :root[data-look='journal'] h3 { letter-spacing: -0.01em; }
+:root[data-look='journal'] .card { border-radius: var(--radius); box-shadow: var(--card-shadow); }
+:root[data-look='journal'] .primary,
+:root[data-look='journal'] .secondary,
+:root[data-look='journal'] .danger,
+:root[data-look='journal'] a.button { border-radius: 9px; }
+:root[data-look='journal'] input,
+:root[data-look='journal'] select,
+:root[data-look='journal'] textarea { border-radius: 8px; }
+:root[data-look='journal'] .drawer { background: var(--bg); }
+:root[data-look='journal'] .drawer-head h2 { font-weight: 600; }
+/* section headings on Home get a hand-drawn line under them */
+:root[data-look='journal'] .home-section-title::after {
+  content: ''; display: block; width: 74px; height: 8px; margin-top: 6px;
+  background: color-mix(in srgb, var(--ember) 80%, var(--text));
+  -webkit-mask: var(--squiggle) left center / 100% 100% no-repeat; mask: var(--squiggle) left center / 100% 100% no-repeat;
+}
+:root[data-look='journal'] hr { height: 8px; border: 0; background: var(--faint);
+  -webkit-mask: var(--squiggle) left center / 74px 8px repeat-x; mask: var(--squiggle) left center / 74px 8px repeat-x; }
+:root[data-look='journal'] .settings-look { margin-top: 14px; }
+
+/* ---------- Phones ---------- */
+@media (max-width: 700px) {
+  :root[data-look='journal'] .page-banner,
+  :root[data-look='journal'] .page-banner:not(.home-banner) { min-height: 0; padding: 18px var(--gutter) 14px; gap: 16px; }
+  :root[data-look='journal'] .banner-art { width: 104px; padding: 5px 5px 15px; }
+  :root[data-look='journal'] .banner-art::before { width: 44px; height: 14px; top: -7px; margin-left: -22px; }
+  :root[data-look='journal'] .banner-title { font-size: 1.9rem; }
+  :root[data-look='journal'] .banner-tagline { font-size: 1.2rem; }
+  :root[data-look='journal'] .banner-picture summary span { display: none; }
+  :root[data-look='journal'] .home-banner { padding-top: 22px; padding-bottom: 18px; }
+  :root[data-look='journal'] .home-banner .banner-art { width: 112px; }
+  :root[data-look='journal'] .home-banner h2 { font-size: 2.15rem; }
+  :root[data-look='journal'] .section-tabs,
+  :root[data-look='journal'] .section-tabs.phone-only { margin: 0 0 14px; }
+  :root[data-look='journal'] .section-tabs a { padding: 8px 12px; min-height: 44px; }
+  :root[data-look='journal'] .tabbar { border-top: 3px double var(--border); }
+  :root[data-look='journal'] .tabbar a[aria-current='page'] { color: var(--text); }
+  :root[data-look='journal'] .tabbar a[aria-current='page'] svg { color: var(--ember); }
+}
+@media (max-width: 520px) {
+  :root[data-look='journal'] .home-banner .banner-art { display: none; }   /* the greeting and its button get the width */
+}
+@media (max-width: 380px) {
+  :root[data-look='journal'] .page-banner:not(.home-banner) .banner-art { display: none; }   /* the words get the width */
+}
+@media (prefers-reduced-motion: reduce) { .jl-caret { transition: none; } }

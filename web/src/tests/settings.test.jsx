@@ -1,4 +1,4 @@
-// Settings (components/SettingsPanel.jsx): Appearance (light / dark / system, your name), Backups (the last one, Back
+// Settings (components/SettingsPanel.jsx): Appearance (light / dark / system, the look, your name), Backups (the last one, Back
 // up now), and System (components/SystemStatus.jsx: each check's state and what to do). The API is faked.
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -27,6 +27,17 @@ describe('Appearance', () => {
     expect(screen.getByRole('button', { name: 'Dark' }).getAttribute('aria-pressed')).toBe('true')
     fireEvent.click(screen.getByRole('button', { name: 'Light' }))
     expect(document.documentElement.dataset.theme).toBe('light')
+  })
+
+  it('switches the look between botanical and journal, and remembers it on this device', () => {
+    render(<Appearance settings={{}} onSettings={vi.fn()} />)
+    expect(screen.getByRole('button', { name: 'Botanical' }).getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(screen.getByRole('button', { name: 'Journal' }))
+    expect(document.documentElement.dataset.look).toBe('journal')
+    expect(localStorage.getItem('offtheclock.look')).toBe('journal')
+    expect(screen.getByRole('button', { name: 'Journal' }).getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(screen.getByRole('button', { name: 'Botanical' }))
+    expect(document.documentElement.dataset.look).toBe('botanical')
   })
 
   it("saves the name Home greets, only when it changed", async () => {

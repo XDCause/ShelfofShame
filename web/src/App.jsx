@@ -33,7 +33,8 @@ import JournalPrint from './core/journal/JournalPrint.jsx'
 import { LabelsPage, PlacePage, PlacesPage, ShopMode, Stocktake, ValueReport } from './core/supplies/SuppliesTools.jsx'
 import { PaintRack, StockReport } from './core/supplies/toolsMore.jsx'
 import { GiftList, LinkPanel, WantedPanel } from './components/wishExtras.jsx'
-import { corePageFor, SectionTabs, Sidebar, TabBar } from './core/Navigation.jsx'
+import { corePageFor, JournalNav, SectionTabs, Sidebar, TabBar } from './core/Navigation.jsx'
+import { useLook } from './core/look.js'
 import { MODULE_PANELS, MODULES, moduleFor, pageFor } from './modules/index.js'
 import OfflineBanner from './offline/OfflineBanner.jsx'
 import { SAVING } from './offline/state.js'
@@ -193,6 +194,7 @@ export default function App() {
     else delete document.documentElement.dataset.hobby
   }, [area?.hue, module])
   // The bar over the banner is clear at the top of the page and solid (with the page's name) once you scroll.
+  const look = useLook()
   const [scrolled, setScrolled] = useState(false)
   useEffect(() => {
     const check = () => setScrolled(window.scrollY > (areaId ? 150 : 4))
@@ -205,13 +207,15 @@ export default function App() {
   return (
     <AppContext.Provider value={app}>
       <div className="app">
-        <Sidebar env={appEnv} />
+        {/* the journal look has its notebook tabs along the top instead (in the nav bar below) */}
+        {look !== 'journal' && <Sidebar env={appEnv} />}
         {/* (on a phone or tablet the sidebar has no name to sit beside: a tag in the corner instead) */}
         {appEnv !== 'prod' && <span className="env-tag" aria-hidden="true">{appEnv}</span>}
         <div className="main-col">
           {/* (over-banner only once the banner is there: while loading, a clear bar would sit over nothing) */}
           <header className={`navbar${area && lookups ? ' over-banner' : ''}${scrolled ? ' scrolled' : ''}`}>
             <div className="navbar-row">
+              {look === 'journal' && <JournalNav env={appEnv} />}
               <h1>
                 {title}{envBadge}
               </h1>

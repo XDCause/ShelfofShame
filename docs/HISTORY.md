@@ -1081,3 +1081,34 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
    - Fixed while checking: the hiking year's "top" helper had a default argument that referenced a name that didn't exist
      yet (the Year page would have crashed); a ballistics test asked for a step bigger than the route allows; a garden test
      didn't fake the forecast that Today's tips ask for.
+
+5za. **A second look: the journal** (2026-11-16, the user: "redesign the full app ... with an alternate look and feel that
+   enhances the layout"; asked, they chose "Warm journal" over a clean dashboard or a dark studio, as a choice in Settings
+   beside the botanical look rather than a replacement).
+   - Settings > Appearance > Look: Botanical | Journal, per device like light / dark (core/look.js, `data-look` on <html>).
+     Everything it changes is in styles/32-look-journal.css under `:root[data-look='journal']`, so the botanical look is
+     untouched and stays the default. DESIGN.md > The journal look has the palette, type and shapes.
+   - Paper and ink: a dot-grid page, index cards, ink-brown text, fountain-pen blue for what you can tap, Fraunces (a new
+     bundled font, @fontsource-variable/fraunces 5.3.0) for titles, Caveat for the hand-written lines. Dark is the
+     notebook by lamplight. Every text token checked >= 4.5:1 on the page, cards and sheets in both themes.
+   - Layout: no sidebar - JournalNav (core/Navigation.jsx) puts the brand, the core pages as tabs (words on a wide screen,
+     icons below 1240 px) and a Hobbies menu named after the hobby you're in along the top of the nav bar, in one row with
+     search and Settings (not the botanical three-column grid: the search box landed on the tabs). Banners become page
+     headers in the column - the title in ink, the tagline in hand, the picture as a photo taped on (Home's with a sticky
+     note); everything the botanical look pulled up onto a banner's foot (tabs, search rows, the Wishlist's hobbies, Home's
+     first row) sits on the page instead. A hobby's pages are tabs on the edge of the page. Phones keep the bottom tab bar;
+     on narrow phones Home's photo goes so "Write today's entry" stays on one line.
+   - The UI audit now checks both looks (every page, 5 sizes x 2 themes x 2 looks, ~15 min) and saves a gallery of the
+     journal look (e2e/out/journal_*.png). run_e2e.ps1 -AuditOnly [-Look journal] runs just the audit (not a pass for
+     promote).
+   - **The audit had been passing without looking** (found here): settling a page called finish() on every animation, and
+     an infinite one (a spinner, the Sudoku trail's pulse) throws - the worker died, and the report then read the
+     previous run's ui_audit_<size>.json as if it were this run's. Now only animations that end are finished, the old
+     results are deleted before the workers start, and a worker that exits badly fails the audit. With it really looking,
+     it found (in both looks) problems from the 5z batch, fixed: Sudoku's past-day buttons pointed aria-controls at a
+     detail that wasn't open; scroll areas a keyboard couldn't reach (Sudoku's tables and trail, a board-game group's
+     table: tabIndex + role=region, as the video-games heatmap); the Hardest 100's 26 px cells on a 320 px phone; a
+     technique's link in a table too small to tap; chess skill and endgame rows overlapping on a narrow phone; the
+     calendar's "Sowing calendar" link at 4.4:1 on its green band (now underlined ink). And two audit false alarms: a chart's own "table"
+     fold inside a closed box counted as visible (only the nearest closed <details> was checked - now all of them), and
+     the Sudoku trail's stops under its floating title and Play button (ACCEPTED_LIKE: it's a map that scrolls under them).

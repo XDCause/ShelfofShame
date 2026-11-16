@@ -38,7 +38,7 @@ AI via MCP server (later) -----------------/
 **Only the API talks to PostgreSQL.** Exceptions are admin/dev tools: DBeaver, psql, the scripts (backup, migrate).
 
 ## Where to look
-- **Why things are the way they are: docs/HISTORY.md** (entries 3zzt - 5z; 1 - 3zzs are in docs/HISTORY-early.md).
+- **Why things are the way they are: docs/HISTORY.md** (entries 3zzt - 5za; 1 - 3zzs are in docs/HISTORY-early.md).
   Search both before changing something old - most odd-looking code has a lesson behind it. Design system:
   docs/DESIGN.md. Plans: docs/ROADMAP.md. **BEFORE_GOING_PUBLIC.md: add a row whenever a new data source, scraper,
   copied content or single-user shortcut is added.**
@@ -71,7 +71,7 @@ AI via MCP server (later) -----------------/
   by side. The walk-through runs on its OWN throwaway copy (hobby-e2e-*) with a
   copy of dev's data, which is never touched. That copy has OUTSIDE_SITES=stand-ins: no outside site is ever asked by
   the tests (user, 2026-10-18: small shops get one look a week - the weekly site check).
-- The walk-through ends with **e2e/ui_audit.py**: every page + some panels at 5 widths x 2 themes (overflow, clipped /
+- The walk-through ends with **e2e/ui_audit.py**: every page + some panels at 5 widths x 2 themes x 2 looks (overflow, clipped /
   overlapping text, touch targets, broken images, axe-core WCAG 2.2 AA, console errors). A finding fails the run; a
   deliberate exception goes in its ACCEPTED list with the reason.
 - API tests that guard the whole app: **test_robustness.py** (every route with missing ids and junk: never a 500),

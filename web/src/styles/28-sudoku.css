@@ -274,3 +274,7 @@
 .sdk-ink.sdk-mk2 { background: var(--low); }
 .sdk-ink.sdk-mk3 { background: var(--ok); }
 .sdk-ink.sdk-mk4 { background: var(--purple); }
+/* (UI audit, 2026-11-16: ten across left 26 px cells on a 320 px phone - as many 30 px cells as fit instead; a technique's
+   name in the table is a full-size target) */
+.sdk-hardest { grid-template-columns: repeat(auto-fill, minmax(32px, 1fr)); }
+.sdk-tech-table th > a { display: inline-flex; align-items: center; min-height: 28px; }

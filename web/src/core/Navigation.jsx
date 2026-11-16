@@ -1,7 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Link, NavLink, useLocation } from 'react-router'
 import { useApp } from './app-context.js'
-import { BoltIcon, BoxIcon, CalendarIcon, CartIcon, GearIcon, GridIcon, HomeIcon, JournalIcon, LogoMark, TargetIcon, WrenchIcon } from '../components/icons.jsx'
+import { BoltIcon, BoxIcon, CalendarIcon, CartIcon, ChevronIcon, GearIcon, GridIcon, HomeIcon, JournalIcon, LogoMark, TargetIcon, WrenchIcon } from '../components/icons.jsx'
 import { moduleFor } from '../modules/index.js'
 import { useHobbies } from './useHobbies.js'
 
@@ -87,6 +87,58 @@ export function Sidebar({ env = 'prod' }) {
         <GearIcon size={20} /><span>Settings</span>
       </button>
     </aside>
+  )
+}
+
+// The journal look (core/look.js): the sidebar's job done by a row along the top of the nav bar - the brand, the core
+// pages as notebook tabs and a Hobbies menu (named after the hobby you're in) that drops down a list of every hobby in
+// its colour. On a phone only the brand shows: the tab bar at the bottom has the rest, as in the botanical look.
+export function JournalNav({ env = 'prod' }) {
+  const { pathname } = useLocation()
+  const hobbies = useHobbies()
+  const menu = useRef(null)
+  const current = moduleFor(pathname)
+  const onHobbies = under(pathname, HOBBIES_PAGE.path) || Boolean(current)
+  // closed again after you pick a hobby, tap anywhere else or press Escape (focus back on its button)
+  useEffect(() => { if (menu.current) menu.current.open = false }, [pathname])
+  useEffect(() => {
+    const away = (e) => { const d = menu.current; if (d?.open && !d.contains(e.target)) d.open = false }
+    const esc = (e) => {
+      const d = menu.current
+      if (e.key === 'Escape' && d?.open) { d.open = false; d.querySelector('summary')?.focus() }
+    }
+    document.addEventListener('pointerdown', away)
+    document.addEventListener('keydown', esc)
+    return () => { document.removeEventListener('pointerdown', away); document.removeEventListener('keydown', esc) }
+  }, [])
+  return (
+    <div className="jl-nav">
+      <Link to="/" className="jl-brand" aria-label="Off the Clock: Home"><LogoMark size={26} />
+        <span className="jl-brand-name">Off the Clock</span>
+        {env !== 'prod' && <span className="jl-env" title="A test copy - not your real data">{env}</span>}</Link>
+      <nav className="jl-links" aria-label="Sections">
+        {CORE_PAGES.map((p) => (
+          <NavLink key={p.path} to={p.path} end={p.path === '/'} className="jl-link" title={p.label}>
+            <p.Icon size={18} /><span>{p.label}</span>
+          </NavLink>
+        ))}
+        <details className="jl-hobbies" ref={menu}>
+          <summary className={`jl-link${onHobbies ? ' active' : ''}`} title="Your hobbies"
+            style={current ? { '--hue': current.hue } : undefined}>
+            {current ? <current.Icon size={18} /> : <GridIcon size={18} />}
+            <span>{current ? current.name : 'Hobbies'}</span><ChevronIcon size={14} className="jl-caret" />
+          </summary>
+          <div className="jl-menu">
+            {hobbies.map((m) => (
+              <NavLink key={m.id} to={`/${m.id}`} className="jl-menu-link" title={m.what} style={{ '--hue': m.hue }}>
+                <m.Icon size={18} /><span>{m.name}{m.underConstruction && <UnderConstruction />}</span>
+              </NavLink>
+            ))}
+            <Link to={HOBBIES_PAGE.path} className="jl-menu-all">All hobbies</Link>
+          </div>
+        </details>
+      </nav>
+    </div>
   )
 }
 

@@ -71,3 +71,25 @@ panels (items, kits, games, books, trips, sessions...) open over any page. Every
 - A new hobby: give its manifest a `hue` (a mid-tone, related to the palette) and a `banner` ({scene, seed, tagline}).
 - A new class: a name nobody else uses (the build fails on a clash); colours from tokens only.
 - A new picture: give it a fixed aspect ratio (no layout shift) and `loading="lazy"` below the fold.
+
+## The journal look (2026-11-16, HISTORY 5za)
+
+A second look, chosen per device in Settings > Appearance (Botanical | Journal, beside light / dark): a hobby notebook.
+`web/src/core/look.js` puts `data-look="journal"` on `<html>`; everything it changes is in `styles/32-look-journal.css`,
+under `:root[data-look='journal']`, so the botanical look above is untouched and stays the default.
+
+- **Colour**: warm paper `#f4eddf` with a faint dot grid (a bullet journal), index cards `#fffaf0`, ink brown `#2a2119`
+  for text and the one strong button, fountain-pen blue `#2e4c84` for what you can tap, terracotta `#a84a24` for dates and
+  hand-drawn lines. Dark is the notebook by lamplight (`#1b1713`, cream ink, a pale blue tint). Every text token >= 4.5:1
+  on the page, cards and sheets in both themes.
+- **Type**: Fraunces (a soft serif, bundled) for titles and big numbers; Inter for everything you read and operate;
+  Caveat for the hand-written lines (a page's tagline, Home's sticky note).
+- **Shell**: no sidebar. The nav bar is the notebook's top edge (a ledger's double rule): the brand, the core pages as
+  tabs (the one you're on underlined by hand in its colour; icons only below 1240 px) and a Hobbies menu named after the
+  hobby you're in (`JournalNav` in core/Navigation.jsx), then search (a magnifier below 1240 px) and Settings.
+  Phones keep the bottom tab bar.
+- **Page headers**: the banner becomes a header in the page column: the title in ink, the tagline in hand, and the
+  banner's picture (your photo or the drawn landscape) as a photo taped to the page. Home's has a sticky note on it.
+  A hobby's pages are tabs on the edge of the page (a filled tab with a band of the hobby's colour).
+- **Shape**: cards 10 px with a paper shadow; buttons are labels (9 px corners) rather than pills; chips stay round.
+- The UI audit checks both looks (every page, 5 sizes x 2 themes) and saves a gallery of this one (e2e/out/journal_*.png).

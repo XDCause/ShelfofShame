@@ -161,3 +161,4 @@
 
 /* The "sow now" note above the calendar (SowNote) */
 .cal-sow-note { margin: 0; padding: 8px 12px; border-radius: 10px; background: var(--ok-bg); }
+.cal-sow-note a { color: var(--text); font-weight: 600; }   /* (underlined ink: the moss tint was 4.4:1 on the green band - UI audit, 2026-11-16) */

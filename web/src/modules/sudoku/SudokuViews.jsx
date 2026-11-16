@@ -135,7 +135,7 @@ function PastDailies({ today }) {
           const state = stateOf(day)
           const text = new Date(`${day}T12:00:00`).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
           return (
-            <button key={day} type="button" className={`sdk-past-day ${state}`} aria-pressed={open === day} aria-controls="sdk-past-detail"
+            <button key={day} type="button" className={`sdk-past-day ${state}`} aria-pressed={open === day} aria-controls={open === day ? 'sdk-past-detail' : undefined}
               onClick={() => setOpen(open === day ? null : day)}
               aria-label={`${text}: ${(g?.difficulty ?? dailyDifficulty(day))}, ${state === 'done' ? `solved in ${clockText(g.seconds)}` : state === 'started' ? 'started' : state === 'today' ? "today's" : 'not played'}`}>
               {Number(day.slice(8))}</button>
@@ -296,7 +296,7 @@ export function StatsView() {
       <div className="home-grid">
         <section className="card home-card wide-card">
           <h2 className="home-card-title">By difficulty (9 × 9)</h2>
-          <div className="sdk-table-wrap">
+          <div className="sdk-table-wrap" tabIndex={0} role="region" aria-label="By difficulty, 9 by 9 (scrolls sideways)">
             <table className="sdk-table">
               <thead><tr><th scope="col">Difficulty</th><th scope="col">Solved</th><th scope="col">Best</th><th scope="col">Average</th><th scope="col">Last 10</th><th scope="col">Clean</th></tr></thead>
               <tbody>
@@ -315,7 +315,7 @@ export function StatsView() {
         {t.giants > 0 && (
           <section className="card home-card wide-card">
             <h2 className="home-card-title">16 × 16</h2>
-            <div className="sdk-table-wrap">
+            <div className="sdk-table-wrap" tabIndex={0} role="region" aria-label="16 by 16 (scrolls sideways)">
               <table className="sdk-table">
                 <thead><tr><th scope="col">Difficulty</th><th scope="col">Solved</th><th scope="col">Best</th><th scope="col">Average</th><th scope="col">Clean</th></tr></thead>
                 <tbody>

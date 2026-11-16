@@ -77,7 +77,7 @@ function Path({ event, games, open }) {
       <div className="sdk-trail-bg" aria-hidden="true">
         {photo ? <img src={photo.url} alt="" /> : <Landscape scene={art.scene} seed={art.seed} time={art.time} extras={art.extras} hue={art.hue} />}
       </div>
-      <div className="sdk-trail-scroll" ref={scroller}>
+      <div className="sdk-trail-scroll" ref={scroller} tabIndex={0} role="region" aria-label={`${event.name}: the trail (scrolls)`}>
         <div className="sdk-trail-map" style={{ height }}>
           <svg className="sdk-trail-road" viewBox={`0 0 100 ${height}`} preserveAspectRatio="none" aria-hidden="true">
             <path className="edge" d={road} vectorEffect="non-scaling-stroke" />

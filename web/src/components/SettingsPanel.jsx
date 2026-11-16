@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { api, backupUrl, exportUrl, shortDate } from '../api.js'
 import Security from '../core/auth/Security.jsx'
 import CalendarFeed from './CalendarFeed.jsx'
+import { LOOKS, readLook, setLook } from '../core/look.js'
 import { readTheme, setTheme, THEMES } from '../core/theme.js'
 import OfflineCopy from '../offline/OfflineCopy.jsx'
 import Drawer from './Drawer.jsx'
@@ -17,7 +18,7 @@ export default function SettingsPanel({ lookups, settings, onClose, onSettings, 
   return (
     <Drawer title="Settings" onClose={onClose}>
       <div className="settings">
-        <Fold title="Appearance" detail={THEMES.find(([k]) => k === readTheme())?.[1]}>
+        <Fold title="Appearance" detail={`${LOOKS.find(([k]) => k === readLook())?.[1]}, ${THEMES.find(([k]) => k === readTheme())?.[1].toLowerCase()}`}>
           <Appearance settings={settings} onSettings={onSettings} />
         </Fold>
         <Fold title="Security" detail="sign-in, devices"><Security /></Fold>
@@ -42,6 +43,7 @@ export default function SettingsPanel({ lookups, settings, onClose, onSettings, 
 // Light, dark, or whatever the device is set to (remembered on this device), and the name Home greets.
 export function Appearance({ settings, onSettings }) {      // (exported for its tests)
   const [choice, setChoice] = useState(readTheme)
+  const [look, setLookChoice] = useState(readLook)
   const [name, setName] = useState(settings.your_name ?? '')
   const [saved, setSaved] = useState('')
   const save = async () => {
@@ -62,6 +64,14 @@ export function Appearance({ settings, onSettings }) {      // (exported for its
         ))}
       </div>
       <p className="hint">System follows your device's light or dark setting.</p>
+      <div className="segmented settings-look" role="group" aria-label="Look">
+        {LOOKS.map(([key, label]) => (
+          <button key={key} type="button" aria-pressed={look === key}
+            onClick={() => { setLookChoice(key); setLook(key) }}>{label}</button>
+        ))}
+      </div>
+      <p className="hint">Botanical: the pine sidebar and landscape banners. Journal: a hobby notebook, paper and ink, with
+        its tabs along the top. Both remembered on this device.</p>
       <label className="field settings-name">
         <span className="field-label">Your name</span>
         <input value={name} maxLength={40} onChange={(e) => setName(e.target.value)} onBlur={save}

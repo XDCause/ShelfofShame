@@ -1,4 +1,4 @@
-"""UI audit: every page (and a sample of panels) at five screen widths in both themes, checked for the problems a
+"""UI audit: every page (and a sample of panels) at five screen widths in both themes and both looks, checked for the problems a
 person notices - and the walk-through doesn't look for:
 
   overflow     the page scrolls sideways, or something pokes out past the screen's edge
@@ -12,7 +12,9 @@ person notices - and the walk-through doesn't look for:
 
 Run by run_e2e.ps1 after the walk-through, on the same throwaway copy (http://web, stand-ins for outside sites).
 Read only: it opens pages and panels and presses Escape, nothing else. One process per screen size, side by side. Writes /out/ui_audit.json and a screenshot per
-problem page (outlined in red: /out/audit_*.png). Exits 1 if it finds anything not in ACCEPTED.
+problem page (outlined in red: /out/audit_*.png), and a gallery of the journal look (/out/journal_*.png: every page on a PC
+and a phone, to look over). Exits 1 if it finds anything not in ACCEPTED. AUDIT_LOOK=journal (run_e2e.ps1 -Look) checks
+one look only.
 
     python /e2e/ui_audit.py              # everything
     python /e2e/ui_audit.py /models      # only pages whose address starts with this
@@ -39,6 +41,9 @@ ONLY = sys.argv[1] if len(sys.argv) > 1 and not sys.argv[1].startswith("--") els
 SIZES = [("pc", 1440, 900, False), ("laptop", 1024, 768, False), ("tablet", 768, 1024, True),
          ("phone", 390, 844, True), ("narrow", 320, 640, True)]
 THEMES = ["light", "dark"]
+LOOKS = ["botanical", "journal"]          # Settings > Appearance (web/src/core/look.js)
+if os.environ.get("AUDIT_LOOK") in LOOKS:
+    LOOKS = [os.environ["AUDIT_LOOK"]]
 AXE_SIZES = ("pc", "phone")      # colour and names don't change with width: axe at two sizes is enough (and it's slow)
 # Panels worth a look: (page, what to click to open one). Clicked only if it's there.
 PANELS = [("/supplies", "tr.row"), ("/models/kits", ".model-card"), ("/reading/books", ".book-card"),
@@ -51,6 +56,12 @@ ACCEPTED = {
     # the page colour; over the (always dark) banner it's ~9:1, and once scrolled the bar is solid with dark text.
     "a11y|color-contrast: nav bar over the banner": "over the banner",
 }
+# The same, as patterns over the key (for a family of selectors that changes with the data).
+ACCEPTED_LIKE = [
+    # Sudoku's event trail is a game map that scrolls under its title bar and its Play button (both float over it on
+    # purpose, like a map app's); which stops are under them depends on how far along you are and how far you scrolled.
+    (r"^overlap\|.*sdk-trail-(stop|scroll|map).*  ~  .*sdk-trail-(head|play)", "the trail scrolls under its bars"),
+]
 
 # The checks, run in the page. Returns [{kind, selector, detail, rect}].
 CHECKS = r"""
@@ -61,8 +72,10 @@ CHECKS = r"""
     if (r.width < 1 || r.height < 1) return false;
     const s = getComputedStyle(el);
     if (s.visibility === 'hidden' || s.display === 'none' || Number(s.opacity) === 0) return false;
-    const closed = el.closest('details:not([open])');
-    if (closed && !el.closest('summary')?.parentElement?.isSameNode(closed)) return false;   // inside a closed <details>
+    // inside a closed <details> (any of them: a chart's own "table" fold in a closed box is hidden too)
+    for (let d = el.closest('details:not([open])'); d; d = d.parentElement?.closest('details:not([open])')) {
+      if (!el.closest('summary')?.parentElement?.isSameNode(d)) return false;
+    }
     for (let p = el; p; p = p.parentElement) {
       const ps = getComputedStyle(p);
       if (ps.display === 'none' || ps.visibility === 'hidden' || ps.contentVisibility === 'hidden') return false;
@@ -307,7 +320,8 @@ def routes(page):
 
 def settle(page):
     page.wait_for_load_state("networkidle")
-    page.evaluate("document.getAnimations().forEach(a => a.finish())")
+    # (only animations that end: a spinner's runs forever and finish() throws on it)
+    page.evaluate("document.getAnimations().forEach(a => { if (a.effect?.getComputedTiming().endTime !== Infinity) a.finish() })")
     page.wait_for_timeout(250)
 
 
@@ -320,7 +334,7 @@ def audit(page, where, problems, label, with_axe):
     fresh = []
     for p in found:
         key = f"{p['kind']}|{re.sub(r'[0-9]+', '#', p['selector'])}"
-        if key in ACCEPTED:
+        if key in ACCEPTED or any(re.search(rx, key) for rx, _ in ACCEPTED_LIKE):
             continue
         p.update(where=where, key=key)
         problems.append(p)
@@ -341,13 +355,15 @@ def worker(size_name):
     problems, console = [], []
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        for theme in THEMES:
+        for look, theme in [(lk, th) for lk in LOOKS for th in THEMES]:
+            prefs = f"localStorage.setItem('offtheclock.theme', '{theme}'); localStorage.setItem('offtheclock.look', '{look}')"
             ctx = signed_in_context(browser, viewport={"width": w, "height": h}, is_mobile=touch and w < 700, has_touch=touch,
                                     device_scale_factor=1, bypass_csp=True, timezone_id="Australia/Brisbane")
-            ctx.add_init_script(f"localStorage.setItem('offtheclock.theme', '{theme}')")
+            ctx.add_init_script(prefs)
             page = ctx.new_page()
             where = {"path": ""}
-            tag = f"{size}/{theme}"
+            tag = f"{size}/{theme}" + ("/journal" if look == "journal" else "")
+            mark = f"{size}_{theme}" + ("_journal" if look == "journal" else "")
             page.on("console", lambda m, wh=where, tg=tag: m.type == "error" and console.append(f"{tg} {wh['path']}: {m.text[:200]}"))
             page.on("pageerror", lambda e, wh=where, tg=tag: console.append(f"{tg} {wh['path']}: page error {e}"))
             page.on("response", lambda r, wh=where, tg=tag: r.status >= 400 and console.append(f"{tg} {wh['path']}: HTTP {r.status} {r.url}"))
@@ -356,21 +372,24 @@ def worker(size_name):
             stranger = browser.new_context(viewport={"width": w, "height": h}, is_mobile=touch and w < 700, has_touch=touch,
                                            device_scale_factor=1, bypass_csp=True, ignore_https_errors=True)
             stranger.route(OUTSIDE, offline)
-            stranger.add_init_script(f"localStorage.setItem('offtheclock.theme', '{theme}')")
+            stranger.add_init_script(prefs)
             door = stranger.new_page()
             door.goto(BASE)
             door.get_by_role("heading", name="Welcome back").wait_for(timeout=15000)
             settle(door)
-            audit(door, f"{tag} (sign-in)", problems, f"{size}_{theme}_signin", with_axe)
+            audit(door, f"{tag} (sign-in)", problems, f"{mark}_signin", with_axe)
             stranger.close()
             for path in pages:
                 where["path"] = path
                 page.goto(BASE + path)
                 settle(page)
-                audit(page, f"{tag} {path}", problems, f"{size}_{theme}_{path}", with_axe)
+                audit(page, f"{tag} {path}", problems, f"{mark}_{path}", with_axe)
                 banner = page.locator(".page-banner").first
-                if theme == "dark" and size in ("pc", "phone") and banner.count():      # the banner gallery, to look over
-                    banner.screenshot(path=f"{OUT}/banner_{size}_{re.sub(r'[^a-z]+', '_', path.strip('/')) or 'home'}.png")
+                name = re.sub(r'[^a-z]+', '_', path.strip('/')) or 'home'
+                if look == "journal" and size in ("pc", "phone"):          # the journal look's gallery, to look over
+                    page.screenshot(path=f"{OUT}/journal_{size}_{theme}_{name}.png", full_page=False)
+                if look == "botanical" and theme == "dark" and size in ("pc", "phone") and banner.count():      # the banner gallery, to look over
+                    banner.screenshot(path=f"{OUT}/banner_{size}_{name}.png")
             for path, opener in PANELS:
                 if not path.startswith(ONLY):
                     continue
@@ -386,7 +405,7 @@ def worker(size_name):
                 except Exception:
                     continue
                 settle(page)
-                audit(page, f"{tag} {path} (panel)", problems, f"{size}_{theme}_{path}_panel", with_axe)
+                audit(page, f"{tag} {path} (panel)", problems, f"{mark}_{path}_panel", with_axe)
                 page.keyboard.press("Escape")
             ctx.close()
         browser.close()
@@ -424,7 +443,12 @@ def main():
         browser.close()
     with open(f"{OUT}/ui_routes.json", "w") as f:
         json.dump(pages, f)
-    print(f"{len(pages)} pages + {len(PANELS)} panels, at {len(SIZES)} sizes x {len(THEMES)} themes (axe at {', '.join(AXE_SIZES)})", flush=True)
+    print(f"{len(pages)} pages + {len(PANELS)} panels, at {len(SIZES)} sizes x {len(THEMES)} themes x {len(LOOKS)} looks (axe at {', '.join(AXE_SIZES)})", flush=True)
+    for size, *_ in SIZES:          # (a worker that dies must not leave an older run's results to be read as its own)
+        try:
+            os.remove(f"{OUT}/ui_audit_{size}.json")
+        except FileNotFoundError:
+            pass
     procs = [subprocess.Popen([sys.executable, __file__, "--worker", s[0]] + ([ONLY] if ONLY else [])) for s in SIZES]
     codes = [proc.wait() for proc in procs]
     problems, console = [], []
@@ -436,6 +460,8 @@ def main():
             continue
         problems += part["problems"]
         console += part["console"]
+        if code != 0:
+            console.append(f"{size}: the audit itself failed (exit {code})")
 
     # The report: each distinct problem once, with where it shows.
     by_key = {}

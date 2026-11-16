@@ -6,6 +6,8 @@
 #                                                  # ~1-2 minutes, to check a fix. A step that needs an earlier one's
 #                                                  # data fails alone too - name both. No audit; not a pass for promote.
 #   .\run_e2e.ps1 -Failed      # only the steps that failed last time (e2e\out\failed.txt); the same rules
+#   .\run_e2e.ps1 -AuditOnly [-Look journal]   # only the UI audit (one look, or both): to check a fix to the look.
+#                                                  # Not a pass for promote.
 #
 # Neither runs against this copy's own app. Each gets a THROWAWAY copy next to it, started from:
 #   - the images this copy is running (so it tests exactly what .\dev.ps1 built), and
@@ -16,11 +18,11 @@
 # is reset - yours is never used or seen). Two copies because the walk-through changes data while the audit is
 # looking at pages: separate copies keep both steady, and lets them run at the same time.
 #   hobby-e2e-*    the walk-through (e2e\walkthrough.py)
-#   hobby-e2ea-*   the UI audit (e2e\ui_audit.py: every page at 5 sizes x 2 themes - overflow, clipped or overlapping
+#   hobby-e2ea-*   the UI audit (e2e\ui_audit.py: every page at 5 sizes x 2 themes x 2 looks - overflow, clipped or overlapping
 #                  text, touch targets, broken pictures, axe-core accessibility, browser errors)
 # When it ends - pass, fail or Ctrl+C - both copies and their volumes are deleted. You can keep using the app while
 # it runs. Screenshots go to e2e\out\ (git-ignored).
-param([switch]$NoAudit, [string]$Steps = '', [switch]$Failed)
+param([switch]$NoAudit, [string]$Steps = '', [switch]$Failed, [switch]$AuditOnly, [string]$Look = '')
 
 . "$PSScriptRoot\scripts\common.ps1"
 Set-Location -Path $Root
@@ -43,6 +45,7 @@ if ($LASTEXITCODE -ne 0) { Write-Host 'Building the walk-through image failed.' 
 $copies = @(
     @{ Name = 'hobby-e2e'; Volume = 'hobby_e2e_pgdata'; Db = '5436'; Api = '8003'; Web = '8083'; Https = '8446'; Run = 'walkthrough.py' }
 )
+if ($AuditOnly) { $copies = @(); $NoAudit = $false; $partial = $true }
 if (-not $NoAudit) {
     $copies += @{ Name = 'hobby-e2ea'; Volume = 'hobby_e2ea_pgdata'; Db = '5437'; Api = '8004'; Web = '8084'; Https = '8447'; Run = 'ui_audit.py' }
 }
@@ -121,9 +124,9 @@ try {
     }
 
     # 3. The walk-through and the audit, side by side, each on its copy's network (https://web is its nginx).
-    if ($copies.Count -gt 1) { Write-Host 'Walk-through and UI audit (every page, 5 sizes x 2 themes), side by side...' -ForegroundColor Cyan }
+    if ($copies.Count -gt 1) { Write-Host 'Walk-through and UI audit (every page, 5 sizes x 2 themes x 2 looks), side by side...' -ForegroundColor Cyan }
     foreach ($c in $copies) {
-        docker run -d --name "$($c.Name)-run" --network "$($c.Name)_default" --ipc=host -e "E2E_PASSWORD=$password" -e "E2E_STEPS=$Steps" `
+        docker run -d --name "$($c.Name)-run" --network "$($c.Name)_default" --ipc=host -e "E2E_PASSWORD=$password" -e "E2E_STEPS=$Steps" -e "AUDIT_LOOK=$Look" `
             -v "${PSScriptRoot}\e2e:/e2e" -v "${PSScriptRoot}\e2e\out:/out" $image python "/e2e/$($c.Run)" | Out-Null
     }
     $result = 0
@@ -145,7 +148,8 @@ try {
 }
 # A pass counts for promote.ps1 only if the running app was built from the code on disk, and the audit ran too.
 if ($result -eq 0) {
-    if ($partial) { Write-Host 'Note: only some steps ran, so this pass is not recorded for promote.ps1 (it runs them all).' -ForegroundColor Yellow }
+    if ($AuditOnly) { Write-Host 'Note: -AuditOnly, so this pass is not recorded for promote.ps1 (it runs the walk-through too).' -ForegroundColor Yellow }
+    elseif ($partial) { Write-Host 'Note: only some steps ran, so this pass is not recorded for promote.ps1 (it runs them all).' -ForegroundColor Yellow }
     elseif ($NoAudit) { Write-Host 'Note: -NoAudit, so this pass is not recorded for promote.ps1 (it runs the audit too).' -ForegroundColor Yellow }
     elseif ($built -eq $code) { Set-Stamp 'e2e' $code }
     else { Write-Host 'Note: the running app was built from older code than is on disk (rebuild with .\dev.ps1), so this pass is not recorded for promote.ps1.' -ForegroundColor Yellow }

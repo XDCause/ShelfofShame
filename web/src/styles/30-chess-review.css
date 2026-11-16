@@ -113,3 +113,6 @@
 .ci-clock-read { margin: 0; }
 .ci-puzzles .ci-puzzle { display: flex; flex-direction: column; gap: 10px; }
 .ci-puzzle p { margin: 0; }
+/* (narrow phones: a row's numbers go under its name rather than over it - UI audit, 2026-11-16) */
+.ci-skills > li, .cr-summary-row { flex-wrap: wrap; row-gap: 2px; }
+.ci-skills > li > .grow, .cr-summary-row > .grow { flex-basis: 12ch; }

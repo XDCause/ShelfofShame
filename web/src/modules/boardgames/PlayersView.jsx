@@ -127,7 +127,7 @@ export function PlayersView() {
       {stats.games.length > 0 && (
         <>
           <h3 className="section-title">Games</h3>
-          <div className="table-wrap card">
+          <div className="table-wrap card" tabIndex={0} role="region" aria-label="Games with this group (scrolls sideways)">
             <table className="bgt-table">
               <thead><tr><th>Game</th><th>Plays</th><th>Teach</th><th>Play</th>{me && <th>Your wins</th>}{me && <th>Your best</th>}<th>Record</th><th>Fun</th></tr></thead>
               <tbody>

@@ -66,6 +66,8 @@
  *                                    (most used: .cr, .pb)
  *   31-chess-openings.css            chess openings: the explorer (moves, results, theory), the trainer and its drill
  *                                    (most used: .ot)
+ *   32-look-journal.css              the journal look (Settings > Appearance; core/look.js): paper, notebook tabs, taped photos
+ *                                    (most used: .jl)
  */
 @import './styles/01-base.css';
 @import './styles/02-inventory-panels.css';
@@ -98,3 +100,4 @@
 @import './styles/29-boardgames-table.css';
 @import './styles/30-chess-review.css';
 @import './styles/31-chess-openings.css';
+@import './styles/32-look-journal.css';
