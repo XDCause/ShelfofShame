@@ -22,7 +22,9 @@ Steam's pictures are linked from Steam's own servers (header and icon addresses 
 """
 import logging
 import math
+import statistics
 from datetime import date, timedelta
+from decimal import Decimal
 from typing import Literal
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Response
@@ -50,6 +52,8 @@ STATUSES = ("backlog", "playing", "finished", "dropped")
 class GamePatch(BaseModel):
     hidden: bool | None = None
     status: Literal["backlog", "playing", "finished", "dropped"] | None = None   # null clears it (back to the guess)
+    beat_hours: Decimal | None = Field(None, ge=0, le=9999)    # your own time-to-beat guess (null clears it)
+    price_paid: Decimal | None = Field(None, ge=0, le=99999)   # what you paid (null clears it)
 
 
 class ExtraIn(BaseModel):
@@ -200,6 +204,28 @@ def games_where(conn, platforms: list[str], where: str, sort, limit: int | None 
                              f"AND {where}" + (" AND x.counted" if counted_only else ""), params).fetchall()
     rows.sort(key=sort)
     return rows[:limit] if limit else rows
+
+
+def finished_median(conn, platforms: list[str] | None = None) -> int | None:
+    """The median minutes you played the games you finished (any platform): the time-to-beat guess for a game
+    with no estimate of its own. (No genres are kept, so it's one median for the whole library.)"""
+    done = [g["playtime_minutes"] for g in games_where(
+        conn, platforms or list(PLATFORMS), "NOT hidden AND status = 'finished' AND playtime_minutes > 0", lambda g: 0,
+        counted_only=False)]
+    return round(statistics.median(done)) if done else None
+
+
+def with_estimate(game: dict, median: int | None) -> dict:
+    """The time to beat for one game: your own estimate, else SteamHunters' median time to 100%, else the median of
+    the games you finished. estimate_source says which."""
+    mine, sh = game.get("beat_hours"), game.get("sh_median_minutes") or 0
+    if mine:
+        game["estimate_minutes"], game["estimate_source"] = round(float(mine) * 60), "yours"
+    elif sh > 0:
+        game["estimate_minutes"], game["estimate_source"] = sh, "steamhunters"
+    else:
+        game["estimate_minutes"], game["estimate_source"] = median, "median" if median else None
+    return game
 
 
 def _ratio(g):
@@ -460,6 +486,8 @@ def get_game(app_id: int):
             ORDER BY achieved DESC, unlocked_at DESC NULLS LAST, global_percent DESC NULLS LAST, name""",
             (app_id,)).fetchall()
         game["played"] = vgplaytime.history(conn, "steam", app_id)
+        game["median_finished_minutes"] = finished_median(conn)
+        with_estimate(game, game["median_finished_minutes"])
     return game
 
 
@@ -519,7 +547,7 @@ def update_game(app_id: int, body: GamePatch):
     status (null puts it back to the guess)."""
     sent = body.model_dump(exclude_unset=True)
     if "hidden" in sent and sent["hidden"] is None or not sent:
-        raise HTTPException(422, "Say hidden or a status.")
+        raise HTTPException(422, "Say hidden, a status, a time to beat or a price.")
     sets = {("play_status" if k == "status" else k): v for k, v in sent.items()}
     with db() as conn:
         found(conn.execute("UPDATE vg_games SET " + ", ".join(f"{k} = %({k})s" for k in sets) +

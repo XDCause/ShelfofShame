@@ -104,6 +104,8 @@ Fine on a home network with one user; not fine for a hosted app.
 | **Brands list kept deliberately small** (Tamiya, Milliput, Microscale, Other + ones added as used) | `db/init/02_seed.sql` | The owner's choice. A public app would need a proper shared brand list. |
 | **One running timer for the whole app** | `build.py` (`GET /api/timer`) | Per user. |
 | **Off-site backup to the owner's own Google Drive** (database and videos, encrypted with gpg, the owner's password; 2026-10-21/22) | `backup.ps1`, `setup-offsite.ps1`, `scripts/offsite.ps1` | The owner's data in the owner's cloud. A hosted app would back up its own servers (and must never put users' data in one person's Drive). |
+| **Voice notes in the journal use the browser's own speech recognition** (2026-11-16) | `core/journal/JournalTools.jsx` | Chrome and Edge send the audio to Google's / Microsoft's servers to turn it into text (the button's tooltip says so). Fine for the owner choosing to press it; a public app must say so clearly and let people turn it off. |
+| **Hand-written reference data**: a Brisbane sowing calendar, the G1 / G7 drag tables (from general knowledge, not copied pages; 2026-11-16) | `garden_guide.py`, `ballistics.py` | Check them against an authoritative source before anyone else relies on them (the drag tables especially: a wrong value means a wrong hold). |
 | **No rate limiting** on the API | `api/app/` | Lookups trigger requests to other sites (section 1), so they must be limited per user. |
 
 ## 4. Names, brands and design

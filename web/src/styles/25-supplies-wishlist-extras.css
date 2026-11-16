@@ -120,3 +120,18 @@ tr.row.picked td { background: var(--tint-soft); }
 .wanted-extra { padding: 0 12px; }
 .wanted-links { display: flex; align-items: center; gap: 10px; padding: 4px 12px 10px; }
 .wanted-links > a, .wanted-links > button { display: inline-flex; align-items: center; min-height: 32px; }
+
+/* ---------- Paint rack (core/supplies/toolsMore.jsx): swatches by brand and code ---------- */
+.rack-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.rack-filters input[type='search'] { flex: 1 1 200px; }
+.rack-check { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
+.rack-grid { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; }
+.rack-tile { width: 100%; display: flex; flex-direction: column; align-items: stretch; gap: 4px; padding: 6px; text-align: left;
+  border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text); }
+.rack-tile.rack-attention { border-color: var(--low); }
+.rack-chip { position: relative; display: block; height: 52px; border-radius: 8px; background: var(--fill); overflow: hidden; }
+.rack-chip img { width: 100%; height: 100%; object-fit: contain; background: var(--thumb-bg); }
+.rack-flag { position: absolute; right: 4px; bottom: 4px; padding: 1px 6px; border-radius: 999px; font-size: 0.7rem; font-weight: 700;
+  color: var(--low); background: var(--surface); }
+.rack-code { font-weight: 600; font-size: 0.85rem; overflow-wrap: anywhere; }
+.rack-name { font-size: 0.75rem; color: var(--muted); overflow-wrap: anywhere; }

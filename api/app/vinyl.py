@@ -104,6 +104,8 @@ class RecordPatch(BaseModel):
     notes: str | None = Field(None, max_length=5000)
     location_id: int | None = None
     value: Decimal | None = Field(None, ge=0, max_digits=10, decimal_places=2)    # your own idea of its value
+    loaned_to: str | None = Field(None, max_length=120)       # who has it now (vinyl_care.py); empty = it's back
+    loaned_on: date | None = None
 
 
 class PlayIn(BaseModel):
@@ -120,7 +122,7 @@ LIST = f"""
 SELECT r.record_id, r.title, r.artist, r.status, r.medium, r.format, r.size, r.discs, r.year, r.original_year, r.country,
        r.label, r.catno, r.variant, r.genres, r.styles, r.media_condition, r.sleeve_condition, r.price_paid::float8 AS price_paid,
        r.purchase_date, r.added_on, r.rating, r.value::float8 AS value, r.lowest_price::float8 AS lowest_price,
-       r.discogs_release_id, r.location_id, {PHOTO} AS photo_url,
+       r.discogs_release_id, r.location_id, r.loaned_to, r.loaned_on, {PHOTO} AS photo_url,
        COALESCE(p.plays, 0) AS plays, p.last_played
 FROM vinyl_records r
 LEFT JOIN LATERAL (SELECT count(*)::int AS plays, max(played_at) AS last_played FROM vinyl_plays WHERE record_id = r.record_id) p ON true"""
@@ -156,6 +158,8 @@ def fetch_record(conn, record_id: int) -> dict:
                               "WHERE record_id = %s ORDER BY played_at DESC, play_id DESC", (record_id,)).fetchall()
     r["values"] = conn.execute("SELECT seen_on, value::float8 AS value, note FROM vinyl_values WHERE record_id = %s "
                                "ORDER BY seen_on", (record_id,)).fetchall()
+    r["care"] = conn.execute("SELECT care_id, kind, done_on, note FROM vinyl_care WHERE record_id = %s "
+                             "ORDER BY done_on DESC, care_id DESC", (record_id,)).fetchall()
     r["discogs_url"] = r["discogs_release_id"] and f"https://www.discogs.com/release/{r['discogs_release_id']}"
     return r
 
@@ -342,6 +346,8 @@ def update_record(record_id: int, body: RecordPatch):
     with db() as conn:
         fetch_record(conn, record_id)
         _check_location(conn, data.get("location_id"))
+        if "loaned_to" in data:                  # lending needs a day (today); getting it back clears both
+            data["loaned_on"] = (data.get("loaned_on") or conn.execute("SELECT current_date AS d").fetchone()["d"]) if data["loaned_to"] else None
         if "value" in data:                      # your own value: kept in the history too
             data.update(value_note="Your value" if data["value"] is not None else None, value_checked_at=None)
             if data["value"] is not None:
@@ -511,6 +517,9 @@ def summary():
             FROM vinyl_plays""").fetchone()
         s.update(p)
         s["year"] = conn.execute("SELECT extract(year FROM current_date)::int AS y").fetchone()["y"]
+        from . import vinyl_care
+        s["stylus"] = vinyl_care.stylus_status(conn)
+        s["loaned"] = conn.execute("SELECT count(*)::int AS n FROM vinyl_records WHERE loaned_to IS NOT NULL").fetchone()["n"]
         s["recent_plays"] = conn.execute(PLAY_SELECT + " ORDER BY p.played_at DESC, p.play_id DESC LIMIT 6").fetchall()
         s["now_spinning"] = s["recent_plays"][0] if s["recent_plays"] and \
             (datetime.now().astimezone() - s["recent_plays"][0]["played_at"]).total_seconds() < 3 * 3600 else None

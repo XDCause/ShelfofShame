@@ -17,6 +17,7 @@ import { createContext, useContext, useState } from 'react'
 import { api } from '../../api.js'
 import { PenIcon } from '../../components/icons.jsx'
 import { shrink } from '../../components/PhotoUpload.jsx'
+import JournalTools from './JournalTools.jsx'
 
 // A mention is stored in the page as {type: "mention", props: {kind, ref, label}}; the API reads
 // them on save to link the page to what it mentions (api/app/journal.py).
@@ -66,7 +67,7 @@ const WHAT = { model: 'Model', supply: 'Supply', page: 'Journal page', game: 'Bo
 
 // previews: {drawingId: preview URL}; onDraw(id) opens the canvas for a drawing.
 // The page is warm paper in both themes (styles.css: .journal-page), so the editor is always light.
-export default function Editor({ pageId, initialContent, onChange, onOpenMention, previews = {}, onDraw }) {
+export default function Editor({ pageId, initialContent, onChange, onOpenMention, previews = {}, onDraw, day }) {
   const editor = useCreateBlockNote({
     schema,
     domAttributes: { editor: { 'aria-label': 'Page text' } },   // its name for screen readers
@@ -107,6 +108,7 @@ export default function Editor({ pageId, initialContent, onChange, onOpenMention
           const pill = e.target.closest?.('.mention')
           if (pill) onOpenMention(pill.dataset.kind, Number(pill.dataset.ref))
         }}>
+        <JournalTools editor={editor} day={day} />
         <BlockNoteView editor={editor} theme="light" onChange={() => onChange(editor.document)} slashMenu={false}>
           <SuggestionMenuController triggerCharacter="/" getItems={slashItems} />
           <SuggestionMenuController triggerCharacter="@" getItems={mentionItems} />

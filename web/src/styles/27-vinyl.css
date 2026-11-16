@@ -77,3 +77,24 @@
   .vinyl-head { flex-direction: column; }
   .vinyl-cover.large { width: min(220px, 100%); }
 }
+
+/* ---------- Vinyl: care, loans, stylus, value history, listening year, insurance list (VinylMore.jsx, 2026-11-16) ---------- */
+.vnm-care .button-row { align-items: end; margin-bottom: 8px; }
+.vnm-care-list { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.vnm-care-list li { display: flex; align-items: center; gap: 6px; }
+.vnm-soon { color: var(--low); }
+.vnm-reminder { display: block; text-decoration: none; color: inherit; border-left: 4px solid var(--low); }
+.vnm-reminder.due { border-left-color: var(--out, var(--low)); }
+.vnm-changes { list-style: none; margin: 4px 0 8px; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.vnm-arrivals { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); }
+.vnm-arrival { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; text-align: left; background: none; border: 0; padding: 0; cursor: pointer; color: inherit; min-height: 44px; }
+.vnm-insure-table { border-collapse: collapse; width: 100%; }
+.vnm-insure-table th, .vnm-insure-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line, var(--fill)); vertical-align: middle; }
+.vnm-insure-table .num { text-align: right; white-space: nowrap; }
+.vnm-insure-cover { width: 56px; height: 56px; object-fit: cover; border-radius: 4px; display: block; }
+@media print {
+  .vnm-noprint { display: none !important; }
+  .vnm-insure { color: #000; }
+  .vnm-insure-table tr { break-inside: avoid; }
+  .vnm-insure .muted { color: #333; }
+}

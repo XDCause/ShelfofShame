@@ -241,3 +241,36 @@
 /* the Hardest 100: what's next, what's locked */
 .sdk-hardest-cell.next { background: color-mix(in srgb, var(--tint) 25%, var(--surface)); font-weight: 700; outline: 2px solid var(--tint); }
 .sdk-hardest-cell.locked { opacity: 0.55; font-size: 0.7rem; }
+
+/* Colour marks (for chains): four colours on a cell (sdk-mk1-4) or on a note (sdk-nm1-4), saved with the game. Drawn
+   after the highlights so a marked cell stays marked. */
+.sdk-cell.sdk-mk1 { background: color-mix(in srgb, var(--teal) 34%, var(--surface)); }
+.sdk-cell.sdk-mk2 { background: color-mix(in srgb, var(--low) 38%, var(--surface)); }
+.sdk-cell.sdk-mk3 { background: color-mix(in srgb, var(--ok) 34%, var(--surface)); }
+.sdk-cell.sdk-mk4 { background: color-mix(in srgb, var(--purple) 34%, var(--surface)); }
+.sdk-notes span.sdk-nm1 { background: color-mix(in srgb, var(--teal) 55%, transparent); color: var(--text); font-weight: 700; border-radius: 2px; }
+.sdk-notes span.sdk-nm2 { background: color-mix(in srgb, var(--low) 60%, transparent); color: var(--text); font-weight: 700; border-radius: 2px; }
+.sdk-notes span.sdk-nm3 { background: color-mix(in srgb, var(--ok) 55%, transparent); color: var(--text); font-weight: 700; border-radius: 2px; }
+.sdk-notes span.sdk-nm4 { background: color-mix(in srgb, var(--purple) 55%, transparent); color: var(--text); font-weight: 700; border-radius: 2px; }
+.sdk-inks { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.sdk-ink { width: 44px; height: 44px; padding: 0; border-radius: 50%; border: 2px solid var(--border); }
+.sdk-ink[aria-pressed="true"] { border-color: var(--text); box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--text); }
+
+/* The solving path: the step list and its controls. */
+.sdk-path-now { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.sdk-path-now p { margin: 0; }
+.sdk-path-controls { display: flex; gap: 8px; align-items: center; }
+.sdk-path-controls input[type="range"] { flex: 1 1 auto; min-width: 0; }
+.sdk-path-list { margin: 0; padding: 0; list-style: none; max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+.sdk-path-list button { text-align: left; width: 100%; }
+.sdk-path-list button.on { font-weight: 700; background: color-mix(in srgb, var(--tint) 16%, transparent); }
+
+/* Stats > By technique. */
+.sdk-tech-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.sdk-tech-table th, .sdk-tech-table td { padding: 6px 8px; text-align: right; border-bottom: 1px solid var(--border); }
+.sdk-tech-table th:first-child, .sdk-tech-table td:first-child { text-align: left; }
+.sdk-tech-wrap { overflow-x: auto; }
+.sdk-ink.sdk-mk1 { background: var(--teal); }
+.sdk-ink.sdk-mk2 { background: var(--low); }
+.sdk-ink.sdk-mk3 { background: var(--ok); }
+.sdk-ink.sdk-mk4 { background: var(--purple); }

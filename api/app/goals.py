@@ -43,6 +43,7 @@ Every = Literal["week", "month"]
 YEARS = {"year": 1, "three_years": 3}
 STATUSES = ["active", "paused", "done", "dropped"]
 STALE_DAYS = 21              # a goal that hasn't moved this long gets a nudge on Home (user, 2026-10-21: 3 weeks)
+FREEZES_PER_MONTH = 3        # habit freezes a month (user's habit streak freezes, 2026-11-16; goals_review.py)
 ON_TRACK = 0.05              # within 5% of where an even pace would be = on track
 
 
@@ -156,20 +157,28 @@ def habit(conn, g: dict, now: date) -> dict:
     counts: dict[date, float] = {}
     for d, a in events:
         counts[period_of(d, every)] = counts.get(period_of(d, every), 0) + a
+    frozen_rows = conn.execute("SELECT freeze_id, day FROM habit_freezes WHERE goal_id = %s ORDER BY day", (g["goal_id"],)).fetchall()
+    freezes = [r["day"] for r in frozen_rows]
+    frozen = {period_of(d, every) for d in freezes}      # a frozen week / month never breaks the streak (goals_review.py)
     periods, p, current = [], first, period_of(now, every)
     while p <= current:
-        periods.append({"start": p, "count": round(counts.get(p, 0), 2), "met": counts.get(p, 0) >= times})
+        periods.append({"start": p, "count": round(counts.get(p, 0), 2), "met": counts.get(p, 0) >= times,
+                        "frozen": p in frozen and counts.get(p, 0) < times})
         p = next_period(p, every)
     this = periods[-1] if periods else {"start": current, "count": 0, "met": False}
     streak = 0
     for i, per in enumerate(reversed(periods)):
         if per["met"]:
             streak += 1
+        elif per["frozen"]:
+            continue                       # frozen: it neither adds to the streak nor breaks it
         elif i > 0:                        # this week not there yet doesn't break the streak
             break
-    done_periods = periods[:-1]
+    done_periods = [p for p in periods[:-1] if not p["frozen"]]
     return {"every": every, "times": times, "this": this["count"], "left": max(0, round(times - this["count"], 2)),
-            "met": this["met"], "streak": streak, "periods": periods[-12:],
+            "met": this["met"], "streak": streak, "periods": periods[-12:], "this_frozen": this["frozen"],
+            "freezes": {"allowed": FREEZES_PER_MONTH, "used": sum(1 for d in freezes if (d.year, d.month) == (now.year, now.month)),
+                        "days": frozen_rows[-12:]},
             "rate": round(sum(p["met"] for p in done_periods) / len(done_periods), 3) if done_periods else None,
             "last_day": max((d for d, _ in events), default=None)}
 

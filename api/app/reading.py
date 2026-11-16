@@ -80,6 +80,7 @@ class BookPatch(BaseModel):
     pages: int | None = Field(None, gt=0, le=50000)
     year: int | None = Field(None, ge=-3000, le=3000)
     genres: list[str] | None = Field(None, max_length=10)
+    tags: list[str] | None = Field(None, max_length=20)      # your own private tags (A06_reading_vinyl_volleyball.sql)
     format: str | None = Field(None, pattern="^(paper|ebook|audio)$")
     status: str | None = Field(None, pattern=STATUS)
     series: str | None = Field(None, max_length=200)
@@ -236,8 +237,8 @@ def lookup(q: str = Query(min_length=2, max_length=200)):
 @router.get("/reading/books")
 def list_books(status: str | None = Query(None, pattern=STATUS),
                q: str | None = Query(None, max_length=200), sort: str = Query("recent", pattern="^(" + "|".join(SORTS) + ")$"),
-               year: int | None = Query(None, ge=1900, le=2100)):
-    """Your books (all, or one shelf), searched by title / author / genre, finished in `year`."""
+               year: int | None = Query(None, ge=1900, le=2100), tag: str | None = Query(None, max_length=40)):
+    """Your books (all, or one shelf), searched by title / author / genre, finished in `year`, with your tag."""
     where, params = ["true"], {}
     if status:
         where.append("b.status = %(status)s")
@@ -245,6 +246,9 @@ def list_books(status: str | None = Query(None, pattern=STATUS),
     if q and q.strip():
         where.append("(b.title ILIKE %(q)s OR b.author ILIKE %(q)s OR array_to_string(b.genres, ' ') ILIKE %(q)s)")
         params["q"] = f"%{q.strip()}%"
+    if tag and tag.strip():
+        where.append("lower(%(tag)s) = ANY (SELECT lower(t) FROM unnest(b.tags) t)")
+        params["tag"] = tag.strip()
     if year:
         where.append("extract(year FROM b.finished_on) = %(year)s AND b.status = 'finished'")
         params["year"] = year
@@ -278,6 +282,8 @@ def update_book(book_id: int, body: BookPatch):
         data["isbn"] = _isbn(data["isbn"])
     if "genres" in data:
         data["genres"] = _genres(data["genres"])
+    if "tags" in data:
+        data["tags"] = _genres(data["tags"] or [])       # same tidy-up: trimmed, no repeats
     with db() as conn:
         book = found(conn.execute("SELECT * FROM books WHERE book_id = %s", (book_id,)).fetchone(), "Book")
         if "status" in data:

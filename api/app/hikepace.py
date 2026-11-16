@@ -12,6 +12,8 @@ silly answers, we fall back to Naismith's numbers.
 """
 import math
 
+from .gpx import metres as _apart
+
 NAISMITH_KMH = 5.0
 NAISMITH_UP_MPH = 600.0
 MIN_HIKES = 3                        # fewer timed hikes than this: use Naismith's numbers
@@ -87,3 +89,66 @@ def estimate(distance_m: float, ascent_m: float, track: list, pace: dict) -> dic
     flat, climb = pace["flat_kmh"], pace["climb_mph"]
     yours = distance_m / 1000 / flat + ascent / climb + descent_adjustment_h(track, flat)
     return {"naismith_s": round(max(naismith, 0) * 3600), "personal_s": round(max(yours, 0) * 3600)}
+
+
+# ---------------------------------------------------------------------------------------------
+# The same trail again, and the year's tracks
+# ---------------------------------------------------------------------------------------------
+SAME_TRAIL_M = 200          # two hikes whose starts and finishes are this close (and about as long) are the same trail
+LENGTH_SLACK = 0.35         # ...and their distances may differ by this much (a loop isn't its short cut)
+
+
+def _clock(h: dict):
+    """The time to compare: moving time, else the whole time."""
+    return h.get("moving_s") or h.get("elapsed_s") or None
+
+
+def same_trail(a: dict, b: dict) -> bool:
+    """Are two hikes on the same trail? The same trail name, or starts and finishes within 200 m. Either way the
+    distances must be alike (when both are known). Hikes: {trail_name, start_lat, start_lon, end_lat, end_lon, distance_m}."""
+    da, db = a.get("distance_m"), b.get("distance_m")
+    if da and db and abs(da - db) > LENGTH_SLACK * max(da, db):
+        return False
+    na, nb = (a.get("trail_name") or "").strip().casefold(), (b.get("trail_name") or "").strip().casefold()
+    if na and na == nb:
+        return True
+    keys = ("start_lat", "start_lon", "end_lat", "end_lon")
+    if any(h.get(k) is None for h in (a, b) for k in keys):
+        return False
+    return (_apart((a["start_lat"], a["start_lon"]), (b["start_lat"], b["start_lon"])) <= SAME_TRAIL_M
+            and _apart((a["end_lat"], a["end_lon"]), (b["end_lat"], b["end_lon"])) <= SAME_TRAIL_M)
+
+
+def compare_runs(this: dict, others: list[dict]) -> dict | None:
+    """This hike against your other hikes on the trail: every run (oldest first) with its time, the best, this one's
+    rank, and how far off the best and the average it was. Needs a timed hike and one other timed run; else None."""
+    runs = [h for h in [this, *others] if _clock(h)]
+    if _clock(this) is None or len(runs) < 2:
+        return None
+    best = min(runs, key=lambda h: (_clock(h), h["hiked_on"]))
+    times = sorted(_clock(h) for h in runs)
+    rows = [{"hike_id": h["hike_id"], "name": h["name"], "hiked_on": h["hiked_on"], "seconds": _clock(h),
+             "distance_m": h.get("distance_m"), "ascent_m": h.get("ascent_m"), "is_this": h["hike_id"] == this["hike_id"],
+             "is_best": h["hike_id"] == best["hike_id"]} for h in sorted(runs, key=lambda h: (h["hiked_on"], h["hike_id"]))]
+    return {"runs": rows, "best_id": best["hike_id"], "rank": times.index(_clock(this)) + 1, "of": len(runs),
+            "behind_best_s": _clock(this) - _clock(best), "average_s": round(sum(times) / len(times))}
+
+
+def split_gaps(this: list | None, best: list | None) -> list[dict]:
+    """Kilometre by kilometre: your split against the best run's (seconds; negative = you were quicker). Whole
+    kilometres only, as far as both have them."""
+    out = []
+    for a, b in zip(this or [], best or []):
+        if a.get("metres", 0) >= 900 and b.get("metres", 0) >= 900 and a.get("seconds") and b.get("seconds"):
+            out.append({"km": a["km"], "seconds": a["seconds"], "best_seconds": b["seconds"], "gap_s": a["seconds"] - b["seconds"]})
+    return out
+
+
+def thin_track(track: list | None, n: int = 120) -> list[list[float]]:
+    """At most about n [lat, lon] points of a stored track (every k-th, always keeping the last), for drawing."""
+    pts = [p for p in track or [] if p and p[0] is not None and p[1] is not None]
+    if len(pts) <= n:
+        return [[round(p[0], 5), round(p[1], 5)] for p in pts]
+    step = len(pts) / (n - 1)
+    keep = [pts[int(i * step)] for i in range(n - 1)] + [pts[-1]]
+    return [[round(p[0], 5), round(p[1], 5)] for p in keep]

@@ -6,6 +6,7 @@ import { useApp } from '../../core/app-context.js'
 import EmptyState from '../../core/EmptyState.jsx'
 import { SproutIcon } from '../../components/icons.jsx'
 import { SowMonths, plantEmoji, useGardenLists } from './gardenParts.jsx'
+import SowingCalendar from './SowingCalendar.jsx'
 
 // The plant guide: what grows well in pots, filtered to what you can sow now / next month in your
 // climate, by kind, or searched. Each card: light, water, pot size, days to harvest, the sowing months,
@@ -26,6 +27,7 @@ export function GuideView() {
   const climate = data?.climate?.toLowerCase()
   return (
     <section className="page">
+      <SowingCalendar />
       <div className="toolbar">
         <input type="search" className="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search the guide..." aria-label="Search the guide" />
         <select value={kind} onChange={(e) => setKind(e.target.value)} aria-label="Kind">

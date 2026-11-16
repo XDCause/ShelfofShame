@@ -86,3 +86,16 @@
 .route-estimate-result dt { color: var(--muted); }
 .route-estimate-result dd { margin: 0; }
 .hike-steepest { margin: 8px 0 0; }
+
+/* The same trail again (HikeCompare) and the year in review (YearView) */
+.hike-same-sum { margin: 0 0 8px; }
+.hike-same-table tr.hike-same-this td { font-weight: 650; }
+.hike-same-gaps { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+.hike-same-gaps li.quicker strong { color: var(--ok); }
+.hike-same-gaps li.slower strong { color: var(--out); }
+.hike-year-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.hike-year-map { height: 420px; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); background: var(--fill-2); z-index: 0; }
+.hike-year-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin: 0; }
+.hike-year-facts div { display: grid; gap: 2px; }
+.hike-year-facts dt { font-size: 0.78rem; color: var(--muted); }
+.hike-year-facts dd { margin: 0; font-weight: 650; }

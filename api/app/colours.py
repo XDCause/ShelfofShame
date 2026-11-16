@@ -132,6 +132,33 @@ def owned_alternatives(conn, wanted: list[dict]) -> dict:
     return found_alt
 
 
+@router.get("/colours/owned-alternatives")
+def owned_instead(brand_id: int, product_code: str, name: str | None = None):
+    """Every paint you own (any brand) that matches this one, best first: your own matches, the same colour code
+    (a Tamiya colour in another range), then the same colour name. For a supply that has run out."""
+    with db() as conn:
+        colour = colour_for(conn, brand_id, product_code, name)
+        partners = {(g["brand_id"], g["product_code"]) for g in conn.execute(
+            "SELECT m.brand_id, m.product_code FROM colour_group_members m WHERE m.group_id IN "
+            "(SELECT group_id FROM colour_group_members WHERE brand_id = %s AND product_code = %s)",
+            (brand_id, product_code)).fetchall()}
+        out = []
+        for o in _owned(conn):
+            if (o["brand_id"], o["product_code"]) == (brand_id, product_code):
+                continue
+            if (o["brand_id"], o["product_code"]) in partners:
+                how, rank = "your match", 0
+            elif colour and o["colour"] and o["colour"][0] == colour[0]:
+                how, rank = f"same colour ({colour[0]})", 1
+            elif colour and o["colour"] and o["colour"][1] == colour[1]:
+                how, rank = f"same name ({tamiya.nice_name(colour[1])})", 2
+            else:
+                continue
+            out.append({"supply_id": o["supply_id"], "name": o["name"], "product_code": o["product_code"],
+                        "qty": o["qty_on_hand"], "how": how, "rank": rank})
+        return sorted(out, key=lambda r: (r["rank"], r["name"].lower()))
+
+
 # ---------------------------------------------------------------------------
 # Your colour groups ("these are the same colour")
 # ---------------------------------------------------------------------------

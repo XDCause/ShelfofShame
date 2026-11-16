@@ -96,3 +96,20 @@
 @container (max-width: 420px) {
   .cr-accuracy { font-size: 1.6rem; }
 }
+
+/* Insights on the Dashboard (skills, won positions let go, endgames, the clock) and the time-spent chart. */
+.ci-card { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.ci-card p { margin: 0; }
+.ci-skills li { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.ci-up { color: var(--ok); }
+.ci-down { color: var(--out); }
+.ci-clock { display: flex; flex-direction: column; gap: 4px; }
+.ci-bars { display: flex; align-items: flex-end; gap: 1px; height: 56px; border-bottom: 1px solid var(--border); }
+.ci-bar { flex: 1 1 0; min-width: 1px; background: var(--muted); opacity: 0.45; border-radius: 1px 1px 0 0; }
+.ci-bar.mine { background: var(--tint); opacity: 0.85; }
+.ci-bar.low { box-shadow: inset 0 2px 0 var(--low); }
+.ci-bar.rushed { background: var(--out); opacity: 1; }
+.ci-bar.now { outline: 2px solid var(--text); outline-offset: 1px; }
+.ci-clock-read { margin: 0; }
+.ci-puzzles .ci-puzzle { display: flex; flex-direction: column; gap: 10px; }
+.ci-puzzle p { margin: 0; }

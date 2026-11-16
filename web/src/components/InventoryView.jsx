@@ -333,6 +333,8 @@ export default function InventoryView({ refreshKey, onOpen, onAdd, onAdjusted })
               <nav className="inv-tools" aria-label="Supplies tools">
                 <Link to="/supplies/shop">🛒 Shopping mode</Link>
                 <Link to="/supplies/stocktake">✅ Stocktake</Link>
+                <Link to="/supplies/stock">⚠️ Low, out and getting old</Link>
+                <Link to="/supplies/rack">🎨 Paint rack</Link>
                 <Link to="/supplies/places">🗄️ Places and labels</Link>
                 <Link to="/supplies/report">🧾 Value report</Link>
               </nav>

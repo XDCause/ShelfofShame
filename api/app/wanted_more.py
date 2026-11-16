@@ -78,15 +78,19 @@ def extras():
                        (SELECT name FROM models m WHERE m.model_id = e.for_model_id) AS for_model,
                        (SELECT title FROM goals g WHERE g.goal_id = e.for_goal_id) AS for_goal,
                        lp.price::float8 AS last_price, lp.source AS last_source, lp.seen_at AS last_seen,
+                       pp.price::float8 AS prev_price,
                        (SELECT min(price)::float8 FROM wanted_prices p WHERE p.kind = %(k)s AND p.ref = t.{key}) AS lowest_price,
                        (SELECT count(*) FROM wanted_prices p WHERE p.kind = %(k)s AND p.ref = t.{key})::int AS prices
                 FROM {table} t
                 LEFT JOIN wanted_extras e ON e.kind = %(k)s AND e.ref = t.{key}
                 LEFT JOIN LATERAL (SELECT price, source, seen_at FROM wanted_prices p WHERE p.kind = %(k)s AND p.ref = t.{key}
                                    ORDER BY seen_at DESC, price_id DESC LIMIT 1) lp ON true
+                LEFT JOIN LATERAL (SELECT price FROM wanted_prices p WHERE p.kind = %(k)s AND p.ref = t.{key}
+                                   ORDER BY seen_at DESC, price_id DESC OFFSET 1 LIMIT 1) pp ON true
                 WHERE {wanted}""", {"k": kind}).fetchall()   # (its own columns: got_it, status, condition)
             for r in rows:
                 now = r["last_price"] if r["last_price"] is not None else r["price"]
+                r["price_dropped"] = r["prev_price"] is not None and r["last_price"] is not None                     and r["last_price"] < r["prev_price"]          # the latest price seen is under the one before
                 r["below_target"] = r["target_price"] is not None and now is not None and now <= r["target_price"]
                 cost = r["target_price"] or now
                 r["save_for"] = cost

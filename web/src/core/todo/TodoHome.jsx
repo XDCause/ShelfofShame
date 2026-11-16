@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { api } from '../../api.js'
 import { CheckIcon } from '../../components/icons.jsx'
 import { useApp } from '../app-context.js'
+import { FocusBar } from '../focus/FocusTimer.jsx'
 import TodoList from '../journal/TodoList.jsx'
 import { QuickAdd, TaskRow, useTick } from './todoParts.jsx'
 
@@ -24,6 +25,7 @@ export default function TodoHome() {
       <h2 id="home-todo" className="home-card-title"><CheckIcon size={20} /> To do
         {counts && <span className={s.overdue ? 'pill out' : 'pill low'}>{counts}</span>}
         <Link to="/goals/todo" className="small">{s.open > s.next.length ? `All ${s.open} →` : 'All to-dos →'}</Link></h2>
+      <FocusBar />
       <QuickAdd onAdded={(t) => { if (t) setAdded((a) => [t, ...a]); load() }} withDay={false} />
       {shown.length > 0
         ? <ul className="list plain-list task-list">{shown.map((t) => <TaskRow key={t.todo_id} t={t} done={ticked.has(t.todo_id)} onTick={tick} compact />)}</ul>

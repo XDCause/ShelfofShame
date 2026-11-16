@@ -11,6 +11,7 @@ import {
   isoWeek, repeatText, useDropOnDay, useEventWeather, useLayers, useLogIt, weatherLine,
 } from './calendarParts.jsx'
 import { AgendaView, ToPlan, WeekView, YearView } from './CalendarViews.jsx'
+import SowNote from './SowNote.jsx'
 
 const VIEWS = [['month', 'Month'], ['week', 'Week'], ['agenda', 'Agenda'], ['year', 'Year']]
 // what each activity kind belongs to (for hiding a hobby's "what happened")
@@ -108,6 +109,7 @@ export default function CalendarPage() {
         <EventSearch onPick={(e) => { set({ day: e.day, view: view === 'year' ? 'month' : view }); openPanel('event', { id: e.event_id, day: e.day }) }} />
       </div>
       <Countdowns />
+      {view !== 'year' && layers.on('sowing') && layers.hobbyOn('gardening') && <SowNote month={d0.getMonth() + 1} />}
       {error && <p className="alert error">{error}</p>}
 
       {view === 'year' ? <YearView year={d0.getFullYear()} onPick={(iso) => set({ day: iso, view: 'month' })} />

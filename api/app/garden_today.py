@@ -1,6 +1,8 @@
 """Gardening: today (what needs water or feed, what's ready to pick, tasks due, weather tips for the balcony), the
 summary for Home, the photo timeline and every harvest. Split out of garden.py (health check, 2026-10-21)."""
 
+from datetime import date, timedelta
+
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
@@ -45,6 +47,75 @@ def weather_tips(days: list[dict], spaces: list[dict]) -> list[dict]:
     return tips
 
 
+# ---------------------------------------------------------------------------------------------
+# Watering that follows the weather
+# ---------------------------------------------------------------------------------------------
+HOT_C, VERY_HOT_C = 32, 36      # a hot spell: 2 of yesterday / today / tomorrow at 32 or more, or any day at 36
+RAIN_MM, RAIN_CHANCE = 5, 60    # rain that counts as a watering (and a forecast worth waiting for)
+OUTDOOR_KINDS = ("Balcony", "Courtyard", "Rooftop", "Community plot")
+
+
+def water_plan(p: dict, days: list[dict], today_: date) -> dict | None:
+    """What the weather does to this plant's watering. p: a planting row (water_due_on, last_watered_on, water_every_days,
+    self_watering, covered, space_kind); days: openmeteo.care_days. Rain on an open balcony counts as a watering; a hot
+    spell shortens the gap (to 75% or 60%); rain forecast for tomorrow means waiting. None when the weather changes nothing.
+    Answers {status: skip | wait | sooner, due_on, note}."""
+    if not p.get("water_due_on") or not p.get("water_every_days") or p.get("space_kind") not in OUTDOOR_KINDS:
+        return None
+    by_day = {d["day"]: d for d in days}
+
+    def on(offset):
+        return by_day.get((today_ + timedelta(days=offset)).isoformat()) or {}
+    interval = p["water_every_days"] * (2 if p["self_watering"] else 1)
+    notes = []
+    peak = [on(o).get("max") for o in (-1, 0, 1) if on(o).get("max") is not None]
+    very, hot = [t for t in peak if t >= VERY_HOT_C], [t for t in peak if t >= HOT_C]
+    if very or len(hot) >= 2:
+        shorter = max(1, round(interval * (0.6 if very else 0.75)))
+        if shorter < interval:
+            notes.append(f"Hot spell ({max(peak):.0f}°): every {shorter} days instead of {interval}.")
+            interval = shorter
+    last = p["last_watered_on"]
+    if not p["covered"]:
+        for o in (0, -1, -2):                                     # the latest rain that counts
+            rain = on(o).get("rain_mm")
+            if rain is not None and rain >= RAIN_MM:
+                rained = today_ + timedelta(days=o)
+                if last is None or rained > last:
+                    last = rained
+                    notes.append(f"{rain:.0f} mm of rain {'today' if o == 0 else 'yesterday' if o == -1 else '2 days ago'} counts as a watering.")
+                break
+    due = last + timedelta(days=interval) if last else p["water_due_on"]
+    status = None
+    tomorrow = on(1)
+    if (not p["covered"] and due <= today_ and (tomorrow.get("rain_mm") or 0) >= RAIN_MM
+            and (tomorrow.get("rain_chance") or 0) >= RAIN_CHANCE):
+        due, status = today_ + timedelta(days=1), "wait"
+        notes.append(f"Rain forecast tomorrow ({tomorrow['rain_mm']:.0f} mm): worth waiting for it.")
+    if due == p["water_due_on"]:
+        return None
+    status = status or ("skip" if due > p["water_due_on"] else "sooner")
+    return {"status": status, "due_on": due, "note": " ".join(notes)}
+
+
+def care_weather(conn) -> list[dict]:
+    """The days for watering advice, or [] with no place set or Open-Meteo out of reach (then the plain schedule stands)."""
+    s = garden_settings(conn)
+    if s["lat"] is None:
+        return []
+    try:
+        return openmeteo.care_days(s["lat"], s["lon"])
+    except openmeteo.WeatherError:
+        return []
+
+
+def with_weather(plants: list[dict], days: list[dict], today_: date) -> None:
+    """Each plant gets water_plan (or None) and water_due_weather: the date to water by, weather included."""
+    for p in plants:
+        p["water_plan"] = water_plan(p, days, today_) if days else None
+        p["water_due_weather"] = p["water_plan"]["due_on"] if p["water_plan"] else p["water_due_on"]
+
+
 def weather(conn) -> dict | None:
     s = garden_settings(conn)
     if s["lat"] is None:
@@ -63,11 +134,13 @@ def garden_today():
     with db() as conn:
         current = conn.execute(PLANTING_SELECT + " WHERE p.stage NOT IN ('Planned', 'Done', 'Died') ORDER BY s.sort NULLS LAST, c.name, p.name").fetchall()
         d = today(conn)
+        with_weather(current, care_weather(conn), d)
         tasks = conn.execute(TASK_SELECT + " WHERE t.done_on IS NULL AND t.due_on <= current_date + 2 ORDER BY t.due_on").fetchall()
         planned = conn.execute(PLANTING_SELECT + " WHERE p.stage = 'Planned' ORDER BY p.started_on").fetchall()
         return {
             "today": d,
-            "water": sorted([p for p in current if p["water_due_on"] and p["water_due_on"] <= d], key=lambda p: p["water_due_on"]),
+            "water": sorted([p for p in current if p["water_due_weather"] and p["water_due_weather"] <= d], key=lambda p: p["water_due_weather"]),
+            "water_held": [p for p in current if p["water_due_on"] and p["water_due_on"] <= d < p["water_due_weather"]],
             "feed": sorted([p for p in current if p["feed_due_on"] and p["feed_due_on"] <= d], key=lambda p: p["feed_due_on"]),
             "harvest": [p for p in current if p["harvest_ready"]],
             "tasks": tasks, "planned": planned,
@@ -82,9 +155,10 @@ def garden_summary():
     with db() as conn:
         current = conn.execute(PLANTING_SELECT + " WHERE p.stage NOT IN ('Planned', 'Done', 'Died')").fetchall()
         d = today(conn)
+        with_weather(current, care_weather(conn), d)
         return {
             "growing": len(current),
-            "need_water": sum(1 for p in current if p["water_due_on"] and p["water_due_on"] <= d),
+            "need_water": sum(1 for p in current if p["water_due_weather"] and p["water_due_weather"] <= d),
             "need_feed": sum(1 for p in current if p["feed_due_on"] and p["feed_due_on"] <= d),
             "ready": sum(1 for p in current if p["harvest_ready"]),
             "tasks_due": conn.execute("SELECT count(*) AS n FROM garden_tasks WHERE done_on IS NULL AND due_on <= current_date").fetchone()["n"],

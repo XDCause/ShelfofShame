@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { api, money, photoFromUrl, shortDate } from '../api.js'
 import { useApp } from '../core/app-context.js'
 import { MODULES } from '../modules/index.js'
+import { LineChart } from './charts.jsx'
 import Drawer from './Drawer.jsx'
 import { shrink } from './PhotoUpload.jsx'
 
@@ -23,6 +24,7 @@ export function ExtraTags({ x }) {
         {x.days} day{x.days === 1 ? '' : 's'}{x.days >= 30 ? ' · still want it?' : ''}</span>}
       {x.for_model && <span className="tag">🔖 {x.for_model}</span>}
       {x.for_goal && <span className="tag">🎯 {x.for_goal}</span>}
+      {x.price_dropped && <span className="tag wx-good" title={`Was ${money(x.prev_price)}`}>Price dropped to {money(x.last_price)}</span>}
       {x.below_target && <span className="tag wx-good">Under your {money(x.target_price)} ✓</span>}
       {x.in_stock === false && <span className="tag wx-warn">Out of stock</span>}
       {x.in_stock === true && <span className="tag wx-good">In stock</span>}
@@ -101,6 +103,11 @@ export function WantedPanel({ kind, wantedRef: ref, name, onClose }) {
       </section>
       <section className="panel-section">
         <h4 className="section-title">Prices seen</h4>
+        {new Set(history.map((p) => p.seen_at.slice(0, 10))).size >= 2 && (
+          <LineChart title="Price over time" valueLabel="dollars" height={160}
+            rows={history.map((p) => ({ x: p.seen_at.slice(0, 10), y: p.price, tip: `${money(p.price)} · ${p.source}` }))} />
+        )}
+        {x.price_dropped && <p className="small wx-good-text">The price dropped: {money(x.prev_price)} to {money(x.last_price)}</p>}
         {history.length === 0 ? <p className="muted small">None yet.</p> : (
           <ul className="wx-prices">
             {history.map((p, i) => <li key={i}><strong>{money(p.price)}</strong> <span className="muted small">{p.source} · {shortDate(p.seen_at.slice(0, 10))}</span></li>)}

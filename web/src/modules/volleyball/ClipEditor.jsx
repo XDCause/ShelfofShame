@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from '../../api.js'
 import { useApp } from '../../core/app-context.js'
+import { OUTCOMES, SKILLS } from './vbHelpers.js'
 
 // A video with its clips (api/app/vbclips.py). While it plays: Mark start and Mark end, a name,
 // Save clip - a clip is just a bookmark (start and end), saved straight away. Each clip plays on its
@@ -25,6 +26,8 @@ export default function ClipEditor({ video }) {
   const [start, setStart] = useState(null)
   const [end, setEnd] = useState(null)
   const [title, setTitle] = useState('')
+  const [skill, setSkill] = useState('')           // the tags a new clip gets (kept for the next one)
+  const [outcome, setOutcome] = useState('')
   const [picked, setPicked] = useState(() => new Set())
   const [playing, setPlaying] = useState(null)       // clip_id playing now
   const [making, setMaking] = useState(null)         // the highlight title box, open
@@ -60,7 +63,7 @@ export default function ClipEditor({ video }) {
   const stopClip = () => { stopAt.current = null; setPlaying(null) }   // the video's own controls take over
 
   const save = () => run(async () => {
-    await api.addClip(video.video_id, { title: title.trim() || null, start, end })
+    await api.addClip(video.video_id, { title: title.trim() || null, start, end, skill: skill || null, outcome: outcome || null })
     setStart(null); setEnd(null); setTitle('')
     await load()
     showToast('Clip saved')
@@ -105,6 +108,10 @@ export default function ClipEditor({ video }) {
           <div className="clip-save">
             <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="What happens (e.g. Kill from the 4)"
               aria-label="Clip name" onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); save() } }} />
+            <select value={skill} onChange={(e) => setSkill(e.target.value)} aria-label="Skill">
+              <option value="">Skill...</option>{SKILLS.map((s) => <option key={s} value={s}>{s}</option>)}</select>
+            <select value={outcome} onChange={(e) => setOutcome(e.target.value)} aria-label="Outcome">
+              <option value="">Outcome...</option>{OUTCOMES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
             <button type="button" className="plain" onClick={() => play({ clip_id: 'new', start, end })}>Preview</button>
             <button type="button" className="primary" onClick={save}>Save clip</button>
           </div>
@@ -130,6 +137,14 @@ export default function ClipEditor({ video }) {
                 <span className="grow">
                   <span className="item-title">{c.title ?? `Clip ${i + 1}`}</span>
                   <span className="item-meta">{clock(c.start)} – {clock(c.end)} · {c.seconds.toFixed(1)} s</span>
+                  <span className="vbm-clip-tags">
+                    <select value={c.skill ?? ''} aria-label={`Skill of ${c.title ?? `clip ${i + 1}`}`}
+                      onChange={(e) => run(async () => { await api.updateClip(c.clip_id, { skill: e.target.value || null }); await load() })}>
+                      <option value="">No skill</option>{SKILLS.map((s) => <option key={s} value={s}>{s}</option>)}</select>
+                    <select value={c.outcome ?? ''} aria-label={`Outcome of ${c.title ?? `clip ${i + 1}`}`}
+                      onChange={(e) => run(async () => { await api.updateClip(c.clip_id, { outcome: e.target.value || null }); await load() })}>
+                      <option value="">No outcome</option>{OUTCOMES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
+                  </span>
                 </span>
                 <button type="button" className="plain small destructive" onClick={() => remove(c)} aria-label={`Delete ${c.title ?? `clip ${i + 1}`}`}>✕</button>
               </li>

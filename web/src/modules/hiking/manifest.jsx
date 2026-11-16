@@ -7,6 +7,7 @@ const GearView = part(() => import('../volleyball/VolleyballViews.jsx'), 'GearVi
 const HikePanel = part(() => import('./HikePanel.jsx'))
 const Dashboard = part(() => import('./HikingViews.jsx'), 'Dashboard')
 const HikesView = part(() => import('./HikingViews.jsx'), 'HikesView')
+const YearView = part(() => import('./YearView.jsx'))
 
 // Hiking: your hikes (api/app/hiking.py) - imported from AllTrails as GPX files (or any GPS app's),
 // with distance, climb, times, per-km splits and the route worked out from the track - or logged by
@@ -26,6 +27,7 @@ export default {
   pages: [
     { path: 'dashboard', label: 'Dashboard', Icon: TrophyIcon, render: () => <Dashboard /> },
     { path: 'hikes', label: 'Hikes', Icon: BootIcon, render: () => <HikesView /> },
+    { path: 'year', label: 'Year', Icon: TrophyIcon, render: () => <YearView /> },
     { path: 'gear', label: 'Gear', Icon: BootIcon, render: () => <GearView hobby="hiking" Icon={BootIcon} /> },
   ],
 }

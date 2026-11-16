@@ -84,6 +84,17 @@ EXPORTS = {
         FROM model_paints mp JOIN models m USING (model_id) LEFT JOIN brands b ON b.brand_id = mp.brand_id
         LEFT JOIN mixes x ON x.mix_id = mp.mix_id
         ORDER BY m.created_at, mp.sort_order, mp.model_paint_id""",
+    "builds": """
+        SELECT m.name AS "Model", m.hobby AS "Hobby", x.started_at AS "Started", x.ended_at AS "Ended",
+               round(extract(epoch FROM (COALESCE(x.ended_at, now()) - x.started_at)) / 60) AS "Minutes",
+               x.stage AS "Last step done", x.note AS "Note"
+        FROM model_sessions x JOIN models m USING (model_id) ORDER BY x.started_at, x.session_id""",
+    "paint-recipes": """
+        SELECT r.name AS "Recipe", m.name AS "Model", r.unit AS "Unit", st.sort_order + 1 AS "Step",
+               st.label AS "Kind of step", st.paint_text AS "Paint", b.name AS "Brand", st.product_code AS "Code",
+               st.note AS "Note"
+        FROM paint_recipe_steps st JOIN paint_recipes r USING (recipe_id) LEFT JOIN models m USING (model_id)
+        LEFT JOIN brands b ON b.brand_id = st.brand_id ORDER BY r.created_at, r.recipe_id, st.sort_order""",
     "history": """
         SELECT created_at AS "When", item_name AS "Item", change AS "Change", qty_after AS "Qty after",
                reason AS "Reason", unit_price AS "Price"

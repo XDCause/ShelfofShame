@@ -19,6 +19,7 @@ some; Steam alone matches SteamHunters' numbers) - videogames.ALL_GAMES / ALL_AC
 import logging
 import time
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Query
@@ -67,7 +68,7 @@ SELECT o.game_id, o.platform, o.platform || '-' || o.game_id AS app_id, o.source
        -- a Ubisoft game you also own on Steam (Far Cry 5 bought on Steam opens Ubisoft Connect too): counted once, as
        -- the Steam game - left out of every total, the dashboard and the list (it shows under Hidden)
        o.platform = 'ubisoft' AND EXISTS (SELECT 1 FROM vg_games s WHERE s.app_id = o.steam_app_id) AS on_steam,
-       o.play_status, """ + status_sql("d.total > 0 AND d.done >= d.total", "COALESCE(o.my_minutes, o.exo_minutes, 0)",
+       o.beat_hours, o.price_paid, o.play_status, """ + status_sql("d.total > 0 AND d.done >= d.total", "COALESCE(o.my_minutes, o.exo_minutes, 0)",
                                        "o.last_played", "o.play_status") + """ AS status
 FROM vg_other_games o
 LEFT JOIN LATERAL (SELECT count(*)::int AS listed, count(*) FILTER (WHERE achieved)::int AS have,
@@ -102,6 +103,8 @@ class GamePatch(BaseModel):
     hidden: bool | None = None
     counted: bool | None = None          # in your completion, goal and totals (achievements you ticked yourself)
     status: Literal["backlog", "playing", "finished", "dropped"] | None = None   # null clears it
+    beat_hours: Decimal | None = Field(None, ge=0, le=9999)    # your own time-to-beat guess (null clears it)
+    price_paid: Decimal | None = Field(None, ge=0, le=99999)   # what you paid (null clears it)
 
 
 class SteamLinkIn(BaseModel):
@@ -366,6 +369,9 @@ def _one(conn, game_id: int, with_list: bool = True) -> dict:
             ORDER BY achieved DESC, unlocked_at DESC NULLS LAST, global_percent DESC NULLS LAST, sort_order""",
             (game_id,)).fetchall()
         game["played"] = vgplaytime.history(conn, game["platform"], game["app_id"])
+        from .videogames import finished_median, with_estimate      # (videogames imports this module: import here)
+        game["median_finished_minutes"] = finished_median(conn)
+        with_estimate(game, game["median_finished_minutes"])
     return game
 
 
@@ -552,6 +558,9 @@ def update_game(game_id: int, body: GamePatch):
         sets = {k: v for k, v in changes.items() if k in ("my_done", "my_total", "my_minutes") or v is not None}
         if "status" in sent:
             sets["play_status"] = sent["status"]
+        for key in ("beat_hours", "price_paid"):          # null clears them
+            if key in sent:
+                sets[key] = sent[key]
         if not sets:
             return _one(conn, game_id)
         conn.execute("UPDATE vg_other_games SET " + ", ".join(f"{k} = %({k})s" for k in sets) +

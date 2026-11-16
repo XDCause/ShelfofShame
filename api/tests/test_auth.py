@@ -20,7 +20,8 @@ from tests.conftest import TEST_PASSWORD
 
 PUBLIC = {("GET", "/api/health"), ("GET", "/api/about"),   # (about: just "dev" or "prod", for the badge)
           ("GET", "/api/auth/status"), ("POST", "/api/auth/login"), ("POST", "/api/auth/logout"),
-          ("POST", "/api/auth/passkey/login/options"), ("POST", "/api/auth/passkey/login/verify")}
+          ("POST", "/api/auth/passkey/login/options"), ("POST", "/api/auth/passkey/login/verify"),
+          ("GET", "/api/calendar/feed.ics")}      # (its own secret key: test_calendar_feed.py checks a stranger gets 404)
 ROUTES = sorted((m.upper(), p) for p, ops in app.openapi()["paths"].items() for m in ops)
 
 

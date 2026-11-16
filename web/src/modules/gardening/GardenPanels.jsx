@@ -30,7 +30,10 @@ function spaceFields(lists) {
       options: [['top', 'Top of the plan'], ['bottom', 'Bottom of the plan'], ['left', 'Left of the plan'], ['right', 'Right of the plan']] },
     { name: 'facing', label: 'That side faces', type: 'select', options: Object.entries(FACING_NAMES),
       hint: 'In Australia, north gets the most sun; west gets the hot afternoon.' },
-    { name: 'sun_hours', label: 'Hours of direct sun', type: 'number', min: 0, step: 0.5, hint: 'Roughly, on a sunny day' },
+    { name: 'sun_hours', label: 'Hours of direct sun', type: 'number', min: 0, step: 0.5, hint: 'Roughly, on a sunny day. Filled in for you if you fill the three below' },
+    { name: 'sun_morning', label: 'Sun in the morning (h, 6-10)', type: 'number', min: 0, max: 4, step: 0.5, hint: 'What you have seen there (the three add up to the total)' },
+    { name: 'sun_midday', label: 'Sun at midday (h, 10-14)', type: 'number', min: 0, max: 4, step: 0.5 },
+    { name: 'sun_afternoon', label: 'Sun in the afternoon (h, 14-18)', type: 'number', min: 0, max: 4, step: 0.5 },
     { name: 'covered', label: 'Covered (rain doesn\'t reach it)?', type: 'select', required: true, options: YES_NO },
     { name: 'wind', label: 'Wind', type: 'select', required: true, options: lists?.winds ?? ['Some wind'] },
     { name: 'grow_light', label: 'Grow light?', type: 'select', required: true, options: YES_NO },
@@ -48,7 +51,7 @@ export function SpacePanel({ id = null, onClose }) {
   useEffect(() => { if (id != null) api.gardenSpace(id).then(setSpace).catch((e) => showToast(e.message)) }, [id, showToast])
   if ((id != null && !space) || !lists) return <Drawer title="Space" onClose={onClose}><p className="muted">Loading...</p></Drawer>
   const save = async (data) => {
-    const body = toBools(toNumbers(data, ['width_cm', 'depth_cm', 'sun_hours', 'light_hours', 'max_load_kg']), ['covered', 'grow_light'])
+    const body = toBools(toNumbers(data, ['width_cm', 'depth_cm', 'sun_hours', 'sun_morning', 'sun_midday', 'sun_afternoon', 'light_hours', 'max_load_kg']), ['covered', 'grow_light'])
     const s = space ? await api.updateGardenSpace(space.space_id, body) : await api.addGardenSpace(body)
     changed()
     showToast(space ? 'Saved' : `Added ${s.name} - now add its pots on the layout`)

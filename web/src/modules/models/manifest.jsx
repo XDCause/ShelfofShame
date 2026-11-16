@@ -4,6 +4,7 @@ import { part } from '../lazy.js'
 
 // its pages and panels: loaded when first shown (modules/lazy.js)
 const ColoursView = part(() => import('../../components/ColoursView.jsx'))
+const RecipesPage = part(() => import('../../components/RecipeParts.jsx'))
 const ModelsView = part(() => import('../../components/ModelsView.jsx'))
 const GundamRange = part(() => import('./GundamRange.jsx'))
 const WarhammerRange = part(() => import('./WarhammerRange.jsx'))
@@ -32,6 +33,10 @@ export default {
     {
       path: 'gundam', label: 'Gundam', Icon: RobotIcon,
       render: (app) => <GundamRange onOpenModel={app.openModel} />,
+    },
+    {
+      path: 'recipes', label: 'Recipes', Icon: DropsIcon,
+      render: (app) => <RecipesPage onOpenSupply={app.openItem} />,
     },
     {
       path: 'colours', label: 'Colours', Icon: DropsIcon,

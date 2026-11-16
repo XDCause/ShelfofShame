@@ -185,6 +185,8 @@ function SpaceSide({ space: s, onChanged }) {
       <h2 className="home-card-title">{s.name}</h2>
       <dl className="garden-facts">
         <dt>Size</dt><dd>{(s.width_cm / 100).toFixed(1)} × {(s.depth_cm / 100).toFixed(1)} m</dd>
+        {(s.sun_morning != null || s.sun_midday != null || s.sun_afternoon != null) && (
+          <><dt>Sun by time</dt><dd>morning {s.sun_morning ?? '?'} h · midday {s.sun_midday ?? '?'} h · afternoon {s.sun_afternoon ?? '?'} h</dd></>)}
         {s.facing && <><dt>Faces</dt><dd>{FACING_NAME[s.facing]}{s.sun_hours != null && ` · about ${s.sun_hours} h of sun`}</dd></>}
         {s.grow_light && <><dt>Grow light</dt><dd>{s.light_hours ?? '?'} h a day</dd></>}
         <dt>Rain</dt><dd>{s.covered ? 'Covered' : 'Open to the rain'} · {s.wind.toLowerCase()}</dd>

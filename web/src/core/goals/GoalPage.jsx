@@ -4,7 +4,9 @@ import { api, shortDate, timeAgo } from '../../api.js'
 import Fold from '../../components/Fold.jsx'
 import { useApp } from '../app-context.js'
 import { useNewPage } from '../journal/JournalList.jsx'
+import { FocusBar, FocusStart, FocusTime } from '../focus/FocusTimer.jsx'
 import { QuickAdd, TaskRow, useTick } from '../todo/todoParts.jsx'
+import HabitFreeze from './HabitFreeze.jsx'
 import { Family, Notes, SavedText, SetUp, num } from './goalPageParts.jsx'
 import { Celebrate, dueText, GoalChart, HabitStrip, hobbyName, PaceBadge, paceText, periodLabel,
   ProgressBar, progressText, STATUS, timeLeft } from './goalParts.jsx'
@@ -74,10 +76,18 @@ export default function GoalPage() {
         </details>
       </div>
       {error && <p className="alert error">{error}</p>}
+      <FocusBar />
       <Hero goal={goal} save={save} run={run} reach={reach} cheer={cheer} />
       <div className="goal-layout">
         <div className="goal-main">
           <NextUp goal={goal} reload={load} />
+          {goal.status === 'active' && (
+            <section className="card home-card" aria-labelledby="goal-focus">
+              <h2 id="goal-focus" className="home-card-title">Focus</h2>
+              <FocusStart target={{ goal_id: goal.goal_id }} label="Focus on this goal" />
+              <FocusTime kind="goal" id={goal.goal_id} />
+            </section>
+          )}
           <Notes goal={goal} run={run} />
           <section className="card home-card">
             <h2 className="home-card-title">Details</h2>
@@ -159,6 +169,7 @@ function Hero({ goal: g, save, run, reach, cheer }) {
           : `Nothing counted yet - the line moves when your ${g.source_label.toLowerCase()} does.`}</p>
       )}
       {g.habit ? <HabitStrip goal={g} /> : !milestone && <GoalChart goal={g} />}
+      {g.habit && g.status === 'active' && <HabitFreeze goal={g} run={run} />}
       {milestone && !done && g.status === 'active' && !g.upcoming && (
         <p className="goal-pace-text">A yes or no: done, or not yet - mark it reached when it happens.{g.todos_total ? '' : ' Steps towards it can go in Next up.'}</p>
       )}

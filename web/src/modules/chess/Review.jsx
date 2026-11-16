@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { api } from '../../api.js'
 import { useApp } from '../../core/app-context.js'
 import Board from './Board.jsx'
+import { ClockChart } from './ChessInsights.jsx'
+import { timeNote } from './insightHelpers.js'
 import PlayBoard, { useChessJs } from './PlayBoard.jsx'
 
 // Game review (api/app/chess_review.py), much like chess.com's: press "Review this game" and Stockfish looks at every
@@ -47,7 +49,7 @@ export function explain(m, prevWin, mine) {
   return `${k.label}. ${drop}`
 }
 
-export default function GameReview({ game }) {
+export default function GameReview({ game, startPly }) {
   const [review, setReview] = useState(null)
   const [error, setError] = useState('')
   const { changed } = useApp()
@@ -69,7 +71,7 @@ export default function GameReview({ game }) {
   }
   if (!game.pgn) return null
   if (!review) return <Board pgn={game.pgn} colour={game.colour} />
-  if (review.status === 'done') return <ReviewView game={game} review={review} onAgain={() => start(true)} />
+  if (review.status === 'done') return <ReviewView game={game} review={review} startPly={startPly} onAgain={() => start(true)} />
   return (
     <>
       <div className="card cr-start">
@@ -114,11 +116,11 @@ function useFens(moves) {
   }, [Chess, moves])
 }
 
-function ReviewView({ game, review, onAgain }) {
+function ReviewView({ game, review, startPly, onAgain }) {
   const { moves, summary } = review
   const fens = useFens(moves)
   const Chess = useChessJs()
-  const [ply, setPly] = useState(moves.length)
+  const [ply, setPly] = useState(startPly ? Math.min(startPly, moves.length) : moves.length)
   const [line, setLine] = useState(null)              // showing the engine's line: {from: ply, fens, sans, at}
   const [retry, setRetry] = useState(null)            // retrying your mistakes: {list, at, result}
   const mine = game.colour
@@ -207,6 +209,7 @@ function ReviewView({ game, review, onAgain }) {
             <button type="button" className="secondary" onClick={() => go(last)} disabled={ply === last} aria-label="End">⏭</button>
           </div>
           <EvalGraph wins={wins} moves={moves} ply={ply} onPick={go} />
+          <ClockChart moves={moves} ply={ply} mine={mine} />
         </div>
         <div className="cr-side-col">
           {m ? (
@@ -215,6 +218,7 @@ function ReviewView({ game, review, onAgain }) {
                 <strong>{moveNo(ply)} {m.san}</strong> is {['a', 'e', 'i', 'o', 'u'].includes(KINDS[m.kind].label[0].toLowerCase()) ? 'an' : 'a'} {KINDS[m.kind].label.toLowerCase()} move
                 <span className="cr-eval">{evalText(m.eval)}</span></p>
               <p className="small">{explain(m, wins[ply - 1], m.colour === mine)}</p>
+              {m.clock != null && <p className="muted small">{timeNote(m)}</p>}
               {m.best && m.best !== m.san && m.kind !== 'book' && (
                 <p className="small"><strong>Best was {moveNo(ply)} {m.best}</strong>{m.best_line.length > 1 && <span className="muted"> then {m.best_line.slice(1, 5).join(' ')}</span>}</p>
               )}

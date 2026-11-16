@@ -1,4 +1,4 @@
-import { ClockIcon, GearIcon, GridIcon, TrophyIcon, VinylIcon } from '../../components/icons.jsx'
+import { CalendarIcon, ClockIcon, GearIcon, GridIcon, TrophyIcon, VinylIcon } from '../../components/icons.jsx'
 import { VinylTiles } from './HomeTiles.jsx'
 import { part } from '../lazy.js'
 
@@ -9,6 +9,9 @@ const Dashboard = part(() => import('./VinylViews.jsx'), 'Dashboard')
 const CrateView = part(() => import('./VinylViews.jsx'), 'CrateView')
 const PlaysView = part(() => import('./VinylViews.jsx'), 'PlaysView')
 const StatsView = part(() => import('./VinylViews.jsx'), 'StatsView')
+const CareView = part(() => import('./VinylMore.jsx'), 'CareView')
+const ListeningYearView = part(() => import('./VinylMore.jsx'), 'ListeningYearView')
+const InsuranceView = part(() => import('./VinylMore.jsx'), 'InsuranceView')
 const ConnectView = part(() => import('./VinylViews.jsx'), 'ConnectView')
 
 // Vinyl (2026-11-11): your records (api/app/vinyl.py) - synced from your Discogs collection and wantlist, found on
@@ -33,6 +36,9 @@ export default {
     { path: 'crate', label: 'Crate', Icon: VinylIcon, render: () => <CrateView /> },
     { path: 'plays', label: 'Plays', Icon: ClockIcon, render: () => <PlaysView /> },
     { path: 'stats', label: 'Stats', Icon: GridIcon, render: () => <StatsView /> },
+    { path: 'year', label: 'Year', Icon: CalendarIcon, render: () => <ListeningYearView /> },
+    { path: 'care', label: 'Care', Icon: GearIcon, render: () => <CareView /> },
+    { path: 'insurance', label: 'Insurance', Icon: GridIcon, render: () => <InsuranceView /> },
     { path: 'connect', label: 'Connect', Icon: GearIcon, render: () => <ConnectView /> },
   ],
 }

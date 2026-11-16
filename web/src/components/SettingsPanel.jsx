@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { api, backupUrl, exportUrl, shortDate } from '../api.js'
 import Security from '../core/auth/Security.jsx'
+import CalendarFeed from './CalendarFeed.jsx'
 import { readTheme, setTheme, THEMES } from '../core/theme.js'
 import OfflineCopy from '../offline/OfflineCopy.jsx'
 import Drawer from './Drawer.jsx'
@@ -21,6 +22,7 @@ export default function SettingsPanel({ lookups, settings, onClose, onSettings, 
         </Fold>
         <Fold title="Security" detail="sign-in, devices"><Security /></Fold>
         <Fold title="Offline copy" detail="this device"><OfflineCopy /></Fold>
+        <Fold title="Calendar feed" detail="for your phone's calendar"><CalendarFeed /></Fold>
         <Fold title="Spending"><Spending /></Fold>
         <Fold title="Price guide" detail="your usual prices"><PriceGuide lookups={lookups} /></Fold>
         <Fold title="Default shop" detail={settings.default_shop}>
@@ -178,7 +180,7 @@ export function Backups() {      // (exported for its tests)
 
 const EXPORTS = [
   ['inventory', 'Inventory'], ['wishlist', 'Wishlist'], ['models', 'Models'],
-  ['model-paints', 'Model paint lists'], ['history', 'Stock history'],
+  ['model-paints', 'Model paint lists'], ['builds', 'Build sessions (time)'], ['paint-recipes', 'Paint recipes'], ['history', 'Stock history'],
 ]
 
 function Exports() {

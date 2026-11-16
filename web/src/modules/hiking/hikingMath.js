@@ -29,3 +29,17 @@ export function hoursMinutes(s) {
   const m = mins % 60
   return h ? `${h} h ${String(m).padStart(2, '0')} min` : `${m} min`
 }
+
+// "+1:20" / "-0:05" / "same": a time gap in seconds as minutes:seconds, signed (slower is +).
+export function gapLabel(s) {
+  if (s == null) return '—'
+  if (s === 0) return 'same'
+  const a = Math.abs(Math.round(s))
+  return `${s > 0 ? '+' : '-'}${Math.floor(a / 60)}:${String(a % 60).padStart(2, '0')}`
+}
+
+// How many km were quicker / slower than the best run, from the API's split gaps.
+export function splitTally(gaps) {
+  const g = gaps ?? []
+  return { quicker: g.filter((x) => x.gap_s < 0).length, slower: g.filter((x) => x.gap_s > 0).length, level: g.filter((x) => x.gap_s === 0).length }
+}

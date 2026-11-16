@@ -110,8 +110,11 @@ export function GamesView() {
 export function PlaysView() {
   const { refreshKey, openPanel } = useApp()
   const [plays, setPlays] = useState(null)
+  const [tag, setTag] = useState('')               // show only plays with this tag
+  const [tags, setTags] = useState([])
   const [error, setError] = useState('')
-  useEffect(() => { api.listPlays().then(setPlays).catch((e) => setError(e.message)) }, [refreshKey])
+  useEffect(() => { api.listPlays(200, tag).then(setPlays).catch((e) => setError(e.message)) }, [refreshKey, tag])
+  useEffect(() => { api.boardGameTags().then(setTags).catch(() => {}) }, [refreshKey])
   if (error) return <p className="alert error">{error}</p>
   if (!plays) return <p className="muted loading">Loading...</p>
   const months = []
@@ -126,7 +129,13 @@ export function PlaysView() {
         <button type="button" className="primary" onClick={() => openPanel('liveplay')}>▶ Start a play</button>
         <button type="button" className="secondary" onClick={() => openPanel('play')}>+ Log a play</button>
       </div>
-      {plays.length === 0 && (
+      {tags.length > 0 && (
+        <div className="chip-row bgx-tag-filter" role="group" aria-label="Filter by tag">
+          <button type="button" className="chip-filter" aria-pressed={!tag} onClick={() => setTag('')}>All plays</button>
+          {tags.map((t) => <button key={t.tag} type="button" className="chip-filter" aria-pressed={tag === t.tag} onClick={() => setTag(t.tag)}>{t.tag} · {t.plays}</button>)}
+        </div>
+      )}
+      {plays.length === 0 && !tag && (
         <EmptyState Icon={DiceIcon} title="No plays yet" action="+ Log a play" onAction={() => openPanel('play')}>
           Log one after your next games night: who played, who won, how long it took.</EmptyState>
       )}
@@ -142,7 +151,7 @@ export function PlaysView() {
                     <span className="item-title">{p.game_name}</span>
                     <span className="item-meta">{[shortDate(p.played_on), p.game_status === 'Played elsewhere' && 'played elsewhere',
                       p.seats.some((s) => s.score != null) ? p.seats.map((s) => `${s.name} ${s.score != null ? Number(s.score) : ''}`.trim()).join(', ') : p.players,
-                      p.location, p.minutes && `${p.minutes} min`, p.fun && '★'.repeat(p.fun)].filter(Boolean).join(' · ')}</span>
+                      p.location, p.minutes && `${p.minutes} min`, p.fun && '★'.repeat(p.fun), ...(p.tags ?? [])].filter(Boolean).join(' · ')}</span>
                   </span>
                   {p.photos.length > 0 && <span className="pill">📷 {p.photos.length}</span>}
                   {!p.finished ? <span className="pill low">Abandoned</span>

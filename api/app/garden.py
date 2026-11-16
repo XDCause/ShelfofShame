@@ -115,7 +115,7 @@ SELECT p.planting_id, p.container_id, p.guide_id, p.parent_id, p.item_id, p.name
        p.quantity, p.water_every_days, p.feed_every_days, p.last_watered_on, p.last_fed_on, p.harvest_from, p.harvest_to,
        p.bought_from, p.price, p.notes, p.ended_on, p.end_reason, p.created_at,
        c.name AS container_name, c.kind AS container_kind, c.self_watering, c.volume_l::float8 AS volume_l,
-       s.space_id, s.name AS space_name, s.sun_hours::float8 AS sun_hours, s.grow_light, s.light_hours::float8 AS light_hours,
+       s.space_id, s.name AS space_name, s.kind AS space_kind, s.sun_hours::float8 AS sun_hours, s.grow_light, s.light_hours::float8 AS light_hours,
        s.covered, g.name AS guide_name, g.kind AS plant_kind, g.sun AS guide_sun, g.sun_hours_min::float8 AS sun_hours_min,
        g.pot_min_l::float8 AS pot_min_l,
        CASE WHEN p.stage IN ('Planned', 'Done', 'Died') OR p.water_every_days IS NULL THEN NULL
@@ -177,6 +177,9 @@ class SpaceFields(BaseModel):
     open_side: str | None = Field(None, pattern=_lit(SIDES))
     facing: str | None = Field(None, pattern=_lit(FACINGS))
     sun_hours: float | None = Field(None, ge=0, le=16)
+    sun_morning: float | None = Field(None, ge=0, le=4)      # hours of direct sun, 6-10
+    sun_midday: float | None = Field(None, ge=0, le=4)       # 10-14
+    sun_afternoon: float | None = Field(None, ge=0, le=4)    # 14-18
     covered: bool | None = None
     wind: str | None = Field(None, pattern=_lit(WINDS))
     grow_light: bool | None = None
@@ -195,7 +198,8 @@ class SpacePatch(SpaceFields):
 
 
 SPACE_SELECT = """
-SELECT s.*, s.sun_hours::float8 AS sun_hours, s.light_hours::float8 AS light_hours,
+SELECT s.*, s.sun_hours::float8 AS sun_hours, s.sun_morning::float8 AS sun_morning, s.sun_midday::float8 AS sun_midday,
+       s.sun_afternoon::float8 AS sun_afternoon, s.light_hours::float8 AS light_hours,
        (SELECT count(*) FROM garden_containers c WHERE c.space_id = s.space_id) AS containers,
        (SELECT count(*) FROM garden_plantings p JOIN garden_containers c USING (container_id)
         WHERE c.space_id = s.space_id AND p.stage NOT IN ('Done', 'Died')) AS plants,
@@ -221,6 +225,17 @@ def containers_in(conn, space_id: int) -> list[dict]:
     return rows
 
 
+SUN_PARTS = ("sun_morning", "sun_midday", "sun_afternoon")
+
+
+def add_up_sun(data: dict, current: dict | None = None) -> dict:
+    """When the morning / midday / afternoon sun is given, sun_hours (what the guide's checks read) becomes their sum."""
+    if any(data.get(k) is not None for k in SUN_PARTS):
+        parts = [data[k] if k in data else (current or {}).get(k) for k in SUN_PARTS]
+        data["sun_hours"] = round(sum(p or 0 for p in parts), 1)
+    return data
+
+
 @router.get("/garden/spaces")
 def list_spaces():
     with db() as conn:
@@ -231,7 +246,7 @@ def list_spaces():
 def add_space(body: SpaceIn):
     data = tidy_text({k: v for k, v in body.model_dump().items() if v is not None}, required=("name",))
     with db() as conn:
-        return fetch_space(conn, insert_row(conn, "garden_spaces", data, "space_id"))
+        return fetch_space(conn, insert_row(conn, "garden_spaces", add_up_sun(data), "space_id"))
 
 
 @router.get("/garden/spaces/{space_id}")
@@ -247,7 +262,7 @@ def update_space(space_id: int, body: SpacePatch):
         if required in data and data[required] is None:
             raise HTTPException(422, f"{required.replace('_', ' ').capitalize()} can't be empty.")
     with db() as conn:
-        fetch_space(conn, space_id, layout=False)
+        add_up_sun(data, fetch_space(conn, space_id, layout=False))
         update_row(conn, "garden_spaces", "space_id", space_id, data)
         return fetch_space(conn, space_id)
 

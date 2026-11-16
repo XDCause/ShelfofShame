@@ -37,7 +37,7 @@ export function repeatText(e) {
 
 // ---------------------------------------------------------------- layers
 export const LAYERS = [['planned', 'Planned events'], ['happened', 'What happened'], ['moods', 'Moods'], ['todos', 'To-dos'],
-  ['goals', 'Goal deadlines'], ['holidays', 'Public holidays'], ['weather', 'Weather']]
+  ['goals', 'Goal deadlines'], ['holidays', 'Public holidays'], ['weather', 'Weather'], ['sowing', 'Sow now (Gardening)']]
 const LAYER_KEY = 'offtheclock.calendarLayers'
 const readLayers = () => { try { return JSON.parse(localStorage.getItem(LAYER_KEY)) ?? { off: [], hobbies: [] } } catch { return { off: [], hobbies: [] } } }
 

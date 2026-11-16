@@ -1,4 +1,4 @@
-import { BookIcon, GridIcon, QuoteIcon, SparkleIcon, TrophyIcon } from '../../components/icons.jsx'
+import { BookIcon, CalendarIcon, GridIcon, QuoteIcon, SparkleIcon, TrophyIcon } from '../../components/icons.jsx'
 import { ReadingTiles } from './HomeTiles.jsx'
 import { part } from '../lazy.js'
 
@@ -9,6 +9,8 @@ const BooksView = part(() => import('./ReadingViews.jsx'), 'BooksView')
 const Dashboard = part(() => import('./ReadingViews.jsx'), 'Dashboard')
 const QuotesView = part(() => import('./ReadingViews.jsx'), 'QuotesView')
 const StatsView = part(() => import('./ReadingViews.jsx'), 'StatsView')
+const YearView = part(() => import('./ReadingMore.jsx'), 'YearView')
+const ChallengesView = part(() => import('./ReadingMore.jsx'), 'ChallengesView')
 const RecsView = part(() => import('./RecsView.jsx'), 'RecsView')
 
 // Reading: your books (api/app/reading.py) - found on Open Library by title, author or a scanned
@@ -33,6 +35,8 @@ export default {
     { path: 'books', label: 'Books', Icon: BookIcon, render: () => <BooksView /> },
     { path: 'foryou', label: 'For you', Icon: SparkleIcon, render: () => <RecsView /> },
     { path: 'stats', label: 'Stats', Icon: GridIcon, render: () => <StatsView /> },
+    { path: 'year', label: 'Year', Icon: CalendarIcon, render: () => <YearView /> },
+    { path: 'challenges', label: 'Challenges', Icon: TrophyIcon, render: () => <ChallengesView /> },
     { path: 'quotes', label: 'Quotes', Icon: QuoteIcon, render: () => <QuotesView /> },
   ],
 }

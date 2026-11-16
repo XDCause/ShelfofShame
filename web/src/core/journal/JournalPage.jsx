@@ -227,7 +227,7 @@ export default function JournalPage() {
         ) : (
           <Editor key={`${page.page_id}-${editorKey}`} pageId={page.page_id} initialContent={page.content}
             onChange={(content) => { setPage((p) => ({ ...p, content })); save({ content }) }} onOpenMention={openMention}
-            previews={previews} onDraw={setDrawing} />
+            previews={previews} onDraw={setDrawing} day={page.entry_date} />
         )}
         {drawing && (
           <DrawingCanvas key={`full-${drawing}`} drawingId={drawing} overlay title={pageTitle}

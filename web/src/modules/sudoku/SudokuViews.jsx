@@ -8,6 +8,7 @@ import EmptyState from '../../core/EmptyState.jsx'
 import Stat from '../../core/Stat.jsx'
 import { UnlockCalendar } from '../videogames/StatsView.jsx'
 import { DIFFICULTIES, TECHNIQUE, TECHNIQUES } from './engine.js'
+import TechniqueStats from './TechniqueStats.jsx'
 import { DIFF_TONE, PAPER_LINKS, clockText, dailyDifficulty, readLocal, uploadLocal, useSudokuSummary } from './sudokuParts.js'
 
 // Sudoku's pages besides Play: Today (the daily puzzle, the game in progress, a new game, streaks), Learn (every
@@ -356,6 +357,7 @@ export function StatsView() {
           {techRows(st.hints_by_technique).length ? <BarList title="Technique" valueLabel="Hints" rows={techRows(st.hints_by_technique)} />
             : <p className="muted small">No hints yet - nice.</p>}
         </section>
+        <div className="wide-card"><TechniqueStats /></div>
         <section className="card home-card wide-card">
           <h2 className="home-card-title">Games</h2>
           {!games ? <p className="muted small loading">Loading...</p> : <ul className="list plain-list">{games.slice(0, 60).map((g) => <GameRow key={g.game_id} game={g} />)}</ul>}

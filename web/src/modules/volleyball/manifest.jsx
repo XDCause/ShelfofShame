@@ -1,4 +1,4 @@
-import { BallIcon, ShoeIcon, VideoIcon, WhistleIcon } from '../../components/icons.jsx'
+import { BallIcon, GridIcon, ShoeIcon, TrophyIcon, VideoIcon, WhistleIcon } from '../../components/icons.jsx'
 import { VolleyballTiles } from './HomeTiles.jsx'
 import { part } from '../lazy.js'
 
@@ -11,6 +11,9 @@ const VideoPanel = part(() => import('./VolleyballPanels.jsx'), 'VideoPanel')
 const VolleyballGamePanel = part(() => import('./VolleyballPanels.jsx'), 'VolleyballGamePanel')
 const GamesView = part(() => import('./VolleyballViews.jsx'), 'GamesView')
 const GearView = part(() => import('./VolleyballViews.jsx'), 'GearView')
+const VbStatsView = part(() => import('./VolleyballMore.jsx'), 'VbStatsView')
+const ClipsView = part(() => import('./VolleyballMore.jsx'), 'ClipsView')
+const DrillsView = part(() => import('./VolleyballMore.jsx'), 'DrillsView')
 const VideosView = part(() => import('./VolleyballViews.jsx'), 'VideosView')
 
 // Volleyball: games and training (with results), your gear, videos (clips, highlights) and Coach
@@ -31,6 +34,9 @@ export default {
   pages: [
     { path: 'games', label: 'Games', Icon: BallIcon, render: () => <GamesView /> },
     { path: 'videos', label: 'Videos', Icon: VideoIcon, render: () => <VideosView /> },
+    { path: 'clips', label: 'Clips', Icon: VideoIcon, render: () => <ClipsView /> },
+    { path: 'stats', label: 'Stats', Icon: GridIcon, render: () => <VbStatsView /> },
+    { path: 'drills', label: 'Drills', Icon: TrophyIcon, render: () => <DrillsView /> },
     { path: 'coach', label: 'Coach', Icon: WhistleIcon, render: () => <CoachView /> },
     { path: 'gear', label: 'Gear', Icon: ShoeIcon, render: () => <GearView /> },
   ],

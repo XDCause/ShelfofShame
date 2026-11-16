@@ -139,15 +139,18 @@ export function BooksView() {
   const [status, setStatus] = useState(params.get('status') ?? '')
   const [q, setQ] = useState('')
   const [sort, setSort] = useState(params.get('status') === 'finished' ? 'finished' : 'recent')
+  const [tag, setTag] = useState(params.get('tag') ?? '')
+  const [tags, setTags] = useState([])
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
   useEffect(() => {
     if (params.get('add') === '1') openPanel('addbook', {})
   }, [])   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
-    const t = setTimeout(() => api.books({ status, q, sort }).then(setData).catch((e) => setError(e.message)), q ? 250 : 0)
+    const t = setTimeout(() => api.books({ status, q, sort, tag }).then(setData).catch((e) => setError(e.message)), q ? 250 : 0)
     return () => clearTimeout(t)
-  }, [status, q, sort, refreshKey])
+  }, [status, q, sort, tag, refreshKey])
+  useEffect(() => { api.readingTags().then(setTags).catch(() => {}) }, [refreshKey])
   if (error) return <p className="alert error">{error}</p>
   const counts = data?.counts ?? {}
   const all = Object.values(counts).reduce((a, b) => a + b, 0)
@@ -169,8 +172,16 @@ export function BooksView() {
             {label} <span className="chip-count">{counts[id] ?? 0}</span></button>
         ))}
       </div>
+      {tags.length > 0 && (
+        <div className="chip-row scroll" role="group" aria-label="Your private tags">
+          {tags.map((t) => (
+            <button key={t.tag} type="button" className="chip-filter rdm-tag-filter" aria-pressed={tag === t.tag}
+              onClick={() => setTag(tag === t.tag ? '' : t.tag)}>{t.tag} <span className="chip-count">{t.books}</span></button>
+          ))}
+        </div>
+      )}
       {!data ? <p className="muted loading">Loading...</p> : data.books.length === 0 ? (
-        q || all ? <p className="empty card">{q ? 'No books match that.' : 'Nothing on this shelf yet.'}</p> : (
+        q || tag || all ? <p className="empty card">{q || tag ? 'No books match that.' : 'Nothing on this shelf yet.'}</p> : (
           <EmptyState Icon={BookIcon} title="No books yet" action="+ Add a book" onAction={() => openPanel('addbook', {})}>
             Search by title, scan the ISBN, or import everything from Goodreads below.</EmptyState>
         )

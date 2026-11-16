@@ -6,6 +6,7 @@ import Fold from '../../components/Fold.jsx'
 import { RowPhoto } from '../../components/RecordFields.jsx'
 import { useApp } from '../../core/app-context.js'
 import JournalMentions from '../../core/journal/JournalMentions.jsx'
+import { CareSection } from './VinylMore.jsx'
 import { FORMATS, GRADES, GradePill, MEDIUMS, RecordCover, SIZES, SLEEVE_GRADES, STATUSES, formatText, yearText } from './vinylParts.jsx'
 
 // One record: the pressing, your copy (grades, paid, shelf, stars, notes), what it's worth (and how that's moved), the
@@ -91,6 +92,8 @@ export default function RecordPanel({ id, onClose }) {
       {r.status !== 'Wanted' && <PlaySection record={r} lastfm={lastfm} onChanged={reload} />}
 
       <ValueSection record={r} onSet={(value) => update({ value })} />
+
+      {r.status === 'Owned' && <CareSection record={r} onUpdate={(data) => update(data)} onRecord={(x) => { setR(x); changed() }} />}
 
       {!editing && (
         <section className="panel-section">
@@ -223,6 +226,10 @@ function ValueSection({ record: r, onSet }) {
           {r.price_paid != null && <span className={`small ${r.value >= r.price_paid ? 'ok-text' : 'vinyl-warn'}`}> · {r.value >= r.price_paid ? '+' : '−'}{money(Math.abs(r.value - r.price_paid))} on what you paid</span>}
         </p>
       ) : <p className="muted small">{r.discogs_release_id ? 'Not checked yet - values are read from Discogs once a week (or Vinyl → Connect → Check values now).' : 'Link it to Discogs (add it from a Discogs search) or set your own value.'}</p>}
+      {r.values.length > 1 && (
+        <p className="muted small">First checked {shortDate(r.values[0].seen_on)} at {money(r.values[0].value)}
+          {r.value != null && `, ${r.value >= r.values[0].value ? 'up' : 'down'} ${money(Math.abs(r.value - r.values[0].value))} since`}.</p>
+      )}
       {(r.lowest_price != null || r.have_count != null) && (
         <p className="muted small">On Discogs: {[r.lowest_price != null && `from ${money(r.lowest_price)} (${r.for_sale ?? 0} for sale)`,
           r.have_count != null && `${r.have_count.toLocaleString()} have it`, r.want_count != null && `${r.want_count.toLocaleString()} want it`,

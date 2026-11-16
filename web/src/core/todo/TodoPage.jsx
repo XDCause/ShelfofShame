@@ -3,6 +3,7 @@ import { api, timeAgo } from '../../api.js'
 import Fold from '../../components/Fold.jsx'
 import { useApp } from '../app-context.js'
 import EmptyState from '../EmptyState.jsx'
+import { FocusBar } from '../focus/FocusTimer.jsx'
 import TodoList from '../journal/TodoList.jsx'
 import { BUCKETS, QuickAdd, TaskRow, useTick } from './todoParts.jsx'
 import { CheckIcon } from '../../components/icons.jsx'
@@ -26,6 +27,7 @@ export default function TodoPage() {
   const groups = BUCKETS.map(([key, label]) => [key, label, todos.filter((t) => t.bucket === key)]).filter(([, , list]) => list.length)
   return (
     <section className="page todo-page">
+      <FocusBar />
       <section className="card">
         <QuickAdd onAdded={load} placeholder="What needs doing?" />
         <p className="hint">Tap a to-do for more: notes, high priority, a hobby, the goal it helps, and repeats.</p>

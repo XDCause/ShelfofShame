@@ -24,6 +24,7 @@ import logging
 import math
 import os
 import queue
+import re
 import threading
 from io import StringIO
 
@@ -115,6 +116,48 @@ def phase_of(board: chess.Board, ply: int, book: bool) -> str:
 
 
 # ---------------------------------------------------------------------------
+# The clock (chess.com's PGN has [%clk h:mm:ss] after each move)
+# ---------------------------------------------------------------------------
+def time_trouble_at(base: float | None) -> float:
+    """Seconds left under which a player is 'in time trouble': a tenth of the start time, between 10 and 120 s."""
+    return 15.0 if not base else min(120.0, max(10.0, base * 0.1))
+
+
+def clocks(game: chess.pgn.Game) -> list[dict | None]:
+    """Per move: {clock: seconds left after it, spent: seconds it took, low: in time trouble}. None where the PGN has no clock."""
+    m = re.match(r"^(\d+)(?:\+(\d+))?$", game.headers.get("TimeControl", ""))
+    base, inc = (float(m.group(1)), float(m.group(2) or 0)) if m else (None, 0.0)
+    trouble = time_trouble_at(base)
+    left = {True: base, False: base}                     # each side's clock before its next move
+    out = []
+    for node in game.mainline():
+        white = node.parent.board().turn == chess.WHITE
+        c = node.clock()
+        if c is None:
+            out.append(None)
+            left[white] = None
+            continue
+        before = left[white]
+        spent = None if before is None else max(0.0, round(before - c + inc, 1))
+        out.append({"clock": round(c, 1), "spent": spent, "low": c <= trouble})
+        left[white] = c
+    return out
+
+
+def with_clocks(moves: list[dict], pgn: str | None) -> list[dict]:
+    """Reviews made before the clock was kept get it from the game's PGN now (nothing is saved)."""
+    if not moves or not pgn or "clock" in moves[0] or "[%clk" not in pgn:
+        return moves
+    game = chess.pgn.read_game(StringIO(pgn))
+    if game is None:
+        return moves
+    for mv, c in zip(moves, clocks(game)):
+        if c:
+            mv.update(c)
+    return moves
+
+
+# ---------------------------------------------------------------------------
 # Reviewing a game
 # ---------------------------------------------------------------------------
 def _eval(info) -> dict:
@@ -152,6 +195,7 @@ def analyse(pgn: str, progress=lambda done, total: None, depth: int | None = Non
     played = list(game.mainline_moves())
     if not played:
         raise ValueError("This game has no moves to review.")
+    clk = clocks(game)
     boards = [board.copy()]
     for m in played:
         board.push(m)
@@ -228,6 +272,8 @@ def analyse(pgn: str, progress=lambda done, total: None, depth: int | None = Non
             "best": best and before_b.san(best["move"]), "best_uci": best and best["move"].uci(),
             "best_line": best["line"] if best else [], "phase": phase_of(before_b, i, in_book),
         })
+        if clk[i]:
+            moves[-1].update(clk[i])
 
     opening = chess_openings.name_of(boards)
     deviation = None
@@ -271,6 +317,8 @@ def _review(game_id: int):
             conn.execute("UPDATE chess_reviews SET status = 'done', engine = %s, depth = %s, summary = %s, moves = %s, "
                          "error = NULL, finished_at = now() WHERE game_id = %s",
                          (out["engine"], DEPTH, Jsonb(out["summary"]), Jsonb(out["moves"]), game_id))
+            from . import chess_insights                      # (here, not at the top: it imports this file)
+            chess_insights.add_puzzles(conn)                 # your mistakes become puzzles (chess_insights.py)
     except Exception as e:  # noqa: BLE001 - whatever went wrong is the review's result
         log.exception("Chess review failed for game %s", game_id)
         with db() as conn:
@@ -304,8 +352,11 @@ def _status(conn, game_id: int) -> dict:
         return {"status": "none"}
     if row["status"] == "running" and game_id not in _active:          # the app restarted part-way: start it again
         return {"status": "failed", "error": "It stopped part-way (the app restarted). Start it again."}
-    return {k: row[k] for k in ("status", "done_plies", "total_plies", "engine", "depth", "summary", "moves", "error",
-                                "started_at", "finished_at")}
+    out = {k: row[k] for k in ("status", "done_plies", "total_plies", "engine", "depth", "summary", "moves", "error",
+                               "started_at", "finished_at")}
+    if out["moves"]:
+        out["moves"] = with_clocks(out["moves"], conn.execute("SELECT pgn FROM chess_games WHERE game_id = %s", (game_id,)).fetchone()["pgn"])
+    return out
 
 
 @router.get("/chess/games/{game_id}/review")
@@ -349,9 +400,10 @@ def reviews_overall():
     mistakes that keep coming back (the phase they happen in)."""
     with db() as conn:
         rows = conn.execute("""
-            SELECT g.game_id, g.played_at, g.colour, g.result, g.time_class, g.opp_name, g.my_rating, g.opp_rating,
-                   g.opening_family, r.summary
+            SELECT g.game_id, g.played_at, g.colour, g.result, g.how, g.time_class, g.opp_name, g.my_rating, g.opp_rating,
+                   g.opening_family, g.pgn, r.summary, r.moves
             FROM chess_reviews r JOIN chess_games g USING (game_id) WHERE r.status = 'done' ORDER BY g.played_at""").fetchall()
+    from . import chess_insights
     games, totals, by_opening, by_phase = [], {k: 0 for k in CLASSES}, {}, {"opening": [], "middlegame": [], "endgame": []}
     for r in rows:
         me = r["summary"]["sides"][r["colour"]]
@@ -375,4 +427,5 @@ def reviews_overall():
     openings = sorted(({**o, "accuracy": avg(o["accuracy"])} for o in by_opening.values()), key=lambda o: -o["games"])
     return {"reviewed": len(games), "games": games, "kinds": totals, "openings": openings,
             "phases": {ph: avg(v) for ph, v in by_phase.items()},
-            "accuracy": avg([g["accuracy"] for g in games if g["accuracy"] is not None])}
+            "accuracy": avg([g["accuracy"] for g in games if g["accuracy"] is not None]),
+            "time": chess_insights.time_stats(rows)}

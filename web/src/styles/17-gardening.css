@@ -164,3 +164,22 @@
 .garden-worth-table th, .garden-worth-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--separator); }
 .garden-worth-table th { color: var(--muted); font-weight: 600; }
 .garden-worth-input { width: 90px; padding: 4px 6px; }
+
+/* A plant photo timeline and before / after slider (PhotoTimeline) */
+.garden-phototl { display: grid; gap: 10px; }
+.garden-phototl-strip { list-style: none; margin: 0; padding: 0 0 4px; display: flex; gap: 8px; overflow-x: auto; }
+.garden-phototl-strip li { display: grid; gap: 2px; justify-items: center; flex: 0 0 auto; }
+.garden-phototl-thumb { display: block; padding: 0; width: 64px; height: 64px; border: 2px solid transparent; border-radius: 8px; overflow: hidden; background: var(--fill); cursor: pointer; }
+.garden-phototl-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.garden-phototl-thumb.is-before { border-color: var(--tint); }
+.garden-phototl-thumb.is-after { border-color: var(--ok); }
+.garden-phototl-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.garden-phototl-compare { margin: 0; display: grid; gap: 6px; }
+.garden-phototl-stage { position: relative; aspect-ratio: 4 / 3; border-radius: 10px; overflow: hidden; background: var(--fill-2); }
+.garden-phototl-stage img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.garden-phototl-handle { position: absolute; top: 0; bottom: 0; width: 3px; margin-left: -1px; background: #fff; box-shadow: 0 0 6px rgb(0 0 0 / 0.5); pointer-events: none; }
+.garden-phototl-range { width: 100%; }
+
+/* The Brisbane sowing calendar (SowingCalendar) */
+.garden-sowcal-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.garden-sowcal-list li.now { background: var(--ok-bg); border-radius: 8px; }

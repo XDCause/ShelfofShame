@@ -276,3 +276,24 @@ def test_event_photos(client, monkeypatch):
     monkeypatch.setattr(wikimedia, "images", lambda titles, width=480: {})
     assert client.get("/api/sudoku/events/grand-tour/photo-info").json() is None   # Commons has nothing: the drawn scene
     assert client.get("/api/sudoku/events/grand-tour/photo").status_code == 404
+
+
+def test_colour_marks_are_saved_with_the_game(client):
+    g = game(client)
+    marks = {"3": 1, "5:7": 4}                                   # cell 3 coloured; the 7 noted in cell 5
+    r = client.patch(f"/api/sudoku/games/{g['game_id']}", json={"state": {**state(PUZZLE), "c": marks}})
+    assert r.status_code == 200 and r.json()["state"]["c"] == marks
+    for bad in ({"x": 1}, {"3": 5}, {"3": 0}):
+        assert client.patch(f"/api/sudoku/games/{g['game_id']}", json={"state": {**state(PUZZLE), "c": bad}}).status_code == 422
+
+
+def test_technique_stats(client):
+    assert client.get("/api/sudoku/technique-stats").json() == {"techniques": [], "weakest": None, "difficulties": []}
+    g = game(client, techniques={"x_wing": 1, "hidden_single": 30})
+    client.patch(f"/api/sudoku/games/{g['game_id']}", json={"state": state(PUZZLE), "hint_kinds": {"x_wing": 3, "naked_single": 1}})
+    client.patch(f"/api/sudoku/games/{g['game_id']}", json={"state": state(SOLUTION), "seconds": 240, "status": "solved"})
+    out = client.get("/api/sudoku/technique-stats").json()
+    xw = next(t for t in out["techniques"] if t["key"] == "x_wing")
+    assert xw["hints"] == 3 and xw["needed"] == 1 and xw["avg_seconds"] == 240 and xw["vs_par"] == 0.8      # (par for Easy is 300 s)
+    assert out["weakest"] == "x_wing"                          # (naked_single has no practice puzzle)
+    assert out["difficulties"][0]["difficulty"] == "Easy" and out["difficulties"][0]["avg_seconds"] == 240

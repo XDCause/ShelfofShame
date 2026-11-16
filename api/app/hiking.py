@@ -255,6 +255,58 @@ async def estimate_route(request: Request):
             "is_loop": g["is_loop"], "pace": pace, **hikepace.estimate(g["distance_m"], g["ascent_m"], g["track"], pace)}
 
 
+LEAN = """SELECT hike_id, name, hiked_on, trail_name, distance_m::float8 AS distance_m, moving_s, elapsed_s, ascent_m::float8 AS ascent_m,
+       max_ele_m::float8 AS max_ele_m, start_lat, start_lon, (track -> -1 ->> 0)::float8 AS end_lat, (track -> -1 ->> 1)::float8 AS end_lon"""
+
+
+@router.get("/hiking/hikes/{hike_id}/same-trail")
+def same_trail(hike_id: int):
+    """Your other hikes on this trail (the same trail name, or the same start and finish within 200 m): the best time,
+    where this one ranks, and kilometre by kilometre against the best. `compare` is null with nothing to compare."""
+    with db() as conn:
+        this = found(conn.execute(LEAN + ", splits FROM hikes WHERE hike_id = %s", (hike_id,)).fetchone(), "Hike")
+        others = [h for h in conn.execute(LEAN + ", splits FROM hikes WHERE hike_id <> %s AND distance_m > 0", (hike_id,)).fetchall()
+                  if hikepace.same_trail(this, h)]
+    compare = hikepace.compare_runs(this, others)
+    gaps = []
+    if compare and compare["best_id"] != hike_id:
+        best = next(h for h in others if h["hike_id"] == compare["best_id"])
+        gaps = hikepace.split_gaps(this["splits"], best["splits"])
+    return {"hike_id": hike_id, "others": len(others), "compare": compare, "split_gaps": gaps}
+
+
+@router.get("/hiking/year")
+def year_in_review(year: int | None = Query(None, ge=1900, le=2200)):
+    """A hiking year: totals, the standouts, km per month, and every track thinned for one big map."""
+    with db() as conn:
+        years = [r["y"] for r in conn.execute("SELECT DISTINCT extract(year FROM hiked_on)::int AS y FROM hikes ORDER BY y DESC").fetchall()]
+        y = year or (years[0] if years else conn.execute("SELECT extract(year FROM current_date)::int AS y").fetchone()["y"])
+        rows = conn.execute(COLUMNS + ", track FROM hikes WHERE extract(year FROM hiked_on) = %s ORDER BY hiked_on, hike_id", (y,)).fetchall()
+    tracks = [{"hike_id": r["hike_id"], "name": r["name"], "hiked_on": r["hiked_on"], "points": hikepace.thin_track(r.pop("track"))}
+              for r in rows]
+    tracks = [t for t in tracks if len(t["points"]) >= 2]
+
+    def top(key, where=None):
+        pool = [r for r in rows if (where(r) if where else r[key] is not None)]
+        return max(pool, key=lambda r: r[key]) if pool else None
+    months = [{"month": m, "km": round(sum((r["distance_m"] or 0) for r in rows if r["hiked_on"].month == m) / 1000, 1),
+               "hikes": sum(1 for r in rows if r["hiked_on"].month == m)} for m in range(1, 13)]
+    trails: dict = {}
+    for r in rows:
+        if r["trail_name"]:
+            trails[r["trail_name"]] = trails.get(r["trail_name"], 0) + 1
+    again = max(trails.items(), key=lambda kv: (kv[1], kv[0])) if trails else None
+    return {"year": y, "years": years, "hikes": len(rows), "days": len({r["hiked_on"] for r in rows}),
+            "km": round(sum((r["distance_m"] or 0) for r in rows) / 1000, 1),
+            "ascent_m": round(sum((r["ascent_m"] or 0) for r in rows)),
+            "seconds": sum((r["moving_s"] or r["elapsed_s"] or 0) for r in rows),
+            "longest": top("distance_m", lambda r: (r["distance_m"] or 0) > 0), "highest": top("max_ele_m"),
+            "biggest_climb": top("ascent_m", lambda r: (r["ascent_m"] or 0) > 0),
+            "best_month": max((m for m in months if m["km"] > 0), key=lambda m: m["km"], default=None),
+            "most_hiked": again and {"name": again[0], "times": again[1]} if again and again[1] > 1 else None,
+            "photos": sum(r["photos_count"] for r in rows), "months": months, "tracks": tracks}
+
+
 # ---------------------------------------------------------------------------------------------
 # Where things are along the track
 # ---------------------------------------------------------------------------------------------

@@ -5,6 +5,7 @@ import Drawer from '../../components/Drawer.jsx'
 import Fold from '../../components/Fold.jsx'
 import RecordFields, { useRecordForm } from '../../components/RecordFields.jsx'
 import { useApp } from '../../core/app-context.js'
+import PhotoTimeline from './PhotoTimeline.jsx'
 import { CareButtons, LogForm, LogTimeline, StagePill, dueText, isDue, plantEmoji } from './gardenParts.jsx'
 
 // One plant (or a row of seedlings): where it is, its stage, harvest window, watering and feeding (due and
@@ -204,6 +205,11 @@ export default function PlantingPanel({ id: startId = null, containerId = null, 
           ))}
         </div>
       </section>
+      {p.logs.reduce((n, l) => n + l.photos.length, 0) >= 2 && (
+        <section className="panel-section">
+          <Fold title="Photo timeline" detail="before and after"><PhotoTimeline logs={p.logs} startedOn={p.started_on} /></Fold>
+        </section>
+      )}
       <section className="panel-section">
         <h3 className="section-title">Notes and photos</h3>
         <LogForm about={{ planting_id: p.planting_id }} onSaved={reload} />

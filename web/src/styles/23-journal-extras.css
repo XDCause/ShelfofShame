@@ -128,3 +128,7 @@
   .jx-printed:first-of-type { break-before: auto; }
   .jx-printed-img { break-inside: avoid; }
 }
+
+/* Speak and "Your day" above a page's text (core/journal/JournalTools.jsx) */
+.journal-tools { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 6px; }
+.journal-tools button.journal-tool-on { background: var(--out-bg); color: var(--out); }

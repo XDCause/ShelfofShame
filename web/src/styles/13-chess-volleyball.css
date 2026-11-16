@@ -267,3 +267,36 @@ blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--ti
 .reading-pace-line { display: block; }
 .reading-goal-pace { margin: 6px 0 0; }
 .reading-read-review { display: block; white-space: pre-wrap; }
+
+/* ---------- Reading: year in review, tags, challenges (ReadingMore.jsx, 2026-11-16) ---------- */
+.rdm-tag { background: var(--purple-bg, var(--fill)); color: var(--text); }
+.rdm-highlight .row-button { align-items: center; }
+.rdm-challenges { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
+.rdm-challenge { display: flex; flex-direction: column; gap: 6px; }
+.rdm-challenge .fill-bar { max-width: none; height: 8px; }
+.rdm-challenge-books { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.rdm-challenge-books li { display: flex; align-items: center; gap: 6px; }
+.rdm-challenge-books .row-button { flex: 1; min-width: 0; }
+.rdm-form { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); align-items: end; max-width: 760px; }
+.rdm-form label { display: flex; flex-direction: column; gap: 4px; }
+.rdm-form .button-row { grid-column: 1 / -1; }
+
+/* ---------- Volleyball: ratings, rotations, tagged clips, drills (VolleyballMore.jsx, 2026-11-16) ---------- */
+.vbm-tracker .hint { margin: 0 0 8px; }
+.vbm-rate-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.vbm-rate-name { min-width: 3.2rem; font-weight: 600; }
+.vbm-rate-buttons { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.vbm-score { min-width: 44px; min-height: 44px; font-size: 1.1rem; font-weight: 700; }
+.vbm-rally { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; margin-bottom: 10px; }
+.vbm-table { border-collapse: collapse; width: 100%; max-width: 420px; margin: 8px 0; }
+.vbm-table caption { text-align: left; padding-bottom: 6px; }
+.vbm-table th, .vbm-table td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line, var(--fill)); }
+.vbm-avg { font-size: 1.8rem; }
+.vbm-skill-links { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.vbm-clips, .vbm-drills { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); }
+.vbm-clips .card { display: flex; flex-direction: column; gap: 8px; }
+.vbm-clip-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.vbm-drill-body { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.vbm-best { text-align: right; white-space: nowrap; }
+.vbm-log-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.vbm-log-list li { display: flex; align-items: center; gap: 6px; }

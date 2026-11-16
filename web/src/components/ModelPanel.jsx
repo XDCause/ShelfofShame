@@ -9,6 +9,7 @@ import ModelForm from './ModelForm.jsx'
 import { modelMeta, statusClass } from './ModelsView.jsx'
 import PaintChecklist from './PaintChecklist.jsx'
 import PhotoUpload from './PhotoUpload.jsx'
+import { ModelRecipes } from './RecipeParts.jsx'
 import TimeTracker from './TimeTracker.jsx'
 
 // Where each maker's kit details and box photos come from.
@@ -146,6 +147,7 @@ export default function ModelPanel({ modelId, wanted, lookups, settings, onClose
       )}
       <TimeTracker model={model} onModel={onModel} run={run} />
       <PaintChecklist model={model} onModel={onModel} run={run} flash={flash} onOpenSupply={onOpenSupply} />
+      <ModelRecipes model={model} onOpenSupply={onOpenSupply} />
       <BuildLog modelId={model.model_id} entries={model.log} reload={reload} run={run} />
       <JournalMentions kind="model" id={model.model_id} name={model.name} onLeave={onClose} />
 

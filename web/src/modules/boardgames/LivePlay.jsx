@@ -3,6 +3,8 @@ import { api } from '../../api.js'
 import Drawer from '../../components/Drawer.jsx'
 import { useApp } from '../../core/app-context.js'
 import { FunPicker, PlayPhotos, PlayerPicker, SeatScores, clock, places, placeText, scoreText, seatKey, seatTotal, seatsOut } from './tableParts.jsx'
+import { RoundGrid, TagEditor, TurnTimer } from './turnParts.jsx'
+import { gridOut, withGrid } from './turnHelpers.js'
 
 // Play a board game as it happens (user, 2026-11-15: "let me click a button and it starts the timer for the teach and
 // the gameplay"). Start: the game, who's playing (your usual people first, groups in a tap), where, expansions. Then
@@ -178,6 +180,8 @@ function LiveView({ id, onClose, onNext }) {
   const [notes, setNotes] = useState('')
   const [teachNotes, setTeachNotes] = useState(null)
   const save = useRef(null)
+  const roundsTimer = useRef(null)          // the round grid is sent a moment after the last key
+  const roundsDirty = useRef(false)
   useScreenOn()
 
   const show = useCallback((l, keepSeats = false) => {
@@ -201,13 +205,31 @@ function LiveView({ id, onClose, onNext }) {
     if (now) send()
     else save.current = setTimeout(send, 700)
   }
-  useEffect(() => () => clearTimeout(save.current), [])
+  useEffect(() => () => { clearTimeout(save.current); clearTimeout(roundsTimer.current) }, [])
+  const sendRounds = (rows, roundCount) => run(async () => {
+    roundsDirty.current = false
+    const r = await api.updateLivePlay(id, { round_scores: gridOut(rows), rounds: Math.max(roundCount, rows.length) })
+    setLive((l) => ({ ...r, round_scores: l.round_scores }))      // keep what's typed
+    setAnchor(Date.now())
+  })
+  const changeRounds = (rows) => {
+    setLive((l) => ({ ...l, round_scores: rows }))
+    roundsDirty.current = true
+    clearTimeout(roundsTimer.current)
+    roundsTimer.current = setTimeout(() => sendRounds(rows, live?.rounds ?? 0), 700)
+  }
+  const goFinish = async () => {
+    clearTimeout(save.current)
+    clearTimeout(roundsTimer.current)
+    if (roundsDirty.current) await sendRounds(live.round_scores, live.rounds)
+    setFinishing(true)
+  }
 
   if (!live) {
     return <Drawer title="Playing" onClose={onClose}>{error ? <p className="alert error">{error}</p> : <p className="muted">Loading...</p>}</Drawer>
   }
   if (finishing) {
-    return <FinishPlay live={live} seats={seats} notes={notes} onBack={() => setFinishing(false)} onClose={onClose}
+    return <FinishPlay live={live} seats={withGrid(seats, live.round_scores)} notes={notes} onBack={() => setFinishing(false)} onClose={onClose}
       onSaved={(r) => { changed(); showToast(`Logged a play of ${live.game_name}`); return r }}
       onNext={() => onNext(seats.map((s) => ({ player_id: s.player_id, name: s.name, is_me: s.is_me, adds: [] })), live.location ?? '')} />
   }
@@ -218,9 +240,10 @@ function LiveView({ id, onClose, onNext }) {
   const shownStage = live.stage ?? live.last_stage
   const stage = (to) => run(async () => show(await api.liveStage(id, to), true))
   const scoring = live.scoring
-  const ranks = places(seats, scoring)
+  const view = withGrid(seats, live.round_scores)       // a seat with no score of its own shows its round-grid total
+  const ranks = places(view, scoring)
   const firstIdx = seats.findIndex((s) => s.player_id === live.first_player_id)
-  const order = firstIdx > 0 ? [...seats.slice(firstIdx), ...seats.slice(0, firstIdx)] : seats
+  const order = firstIdx > 0 ? [...view.slice(firstIdx), ...view.slice(0, firstIdx)] : view
   const bump = (s, by) => changeSeats(seats.map((x) => (seatKey(x) === seatKey(s) ? { ...x, score: null, adds: [...(x.adds ?? []), by] } : x)))
   const undo = (s) => changeSeats(seats.map((x) => (seatKey(x) === seatKey(s) ? { ...x, adds: (x.adds ?? []).slice(0, -1) } : x)))
   const setPart = (s, part, v) => changeSeats(seats.map((x) => (seatKey(x) === seatKey(s) ? { ...x, score: null, parts: { ...x.parts, [part]: v } } : x)))
@@ -245,7 +268,7 @@ function LiveView({ id, onClose, onNext }) {
     </span>
   ) : (
     <>
-      <button type="button" className="primary" onClick={() => { clearTimeout(save.current); setFinishing(true) }}>Finish</button>
+      <button type="button" className="primary" onClick={goFinish}>Finish</button>
       <span className="spacer" />
       <button type="button" className="plain destructive" onClick={() => setConfirmThrow(true)}>Throw away</button>
     </>
@@ -276,6 +299,8 @@ function LiveView({ id, onClose, onNext }) {
           </span>
         </div>
       </section>
+
+      <TurnTimer live={live} since={since} onChange={(l) => show(l, true)} onError={setError} />
 
       {(shownStage === 'teach' || live.teach_notes) && (
         <details className="fold bgt-teach" open={shownStage === 'teach'}>
@@ -322,7 +347,7 @@ function LiveView({ id, onClose, onNext }) {
         {seats.length === 0 && !editingPlayers && <p className="muted small">No players yet: tap Players to add who's playing.</p>}
         <ul className="bgt-board">
           {order.map((s) => {
-            const i = seats.indexOf(s)
+            const i = view.indexOf(s)
             const total = seatTotal(s)
             return (
               <li key={seatKey(s)} className={`bgt-seat${ranks[i] === 1 && total != null ? ' leading' : ''}`}>
@@ -362,6 +387,15 @@ function LiveView({ id, onClose, onNext }) {
             )
           })}
         </ul>
+        {seats.length > 0 && scoring !== 'coop' && scoring !== 'none' && (
+          <details className="fold bgx-rounds" open={live.round_scores.length > 0}>
+            <summary><span className="fold-title">Score by round</span></summary>
+            <div className="fold-body">
+              <RoundGrid rows={live.round_scores} seats={seats} onChange={changeRounds} />
+              <p className="muted small">Players with no other score use their column's total.</p>
+            </div>
+          </details>
+        )}
       </section>
 
       <section className="panel-section">
@@ -378,6 +412,7 @@ function LiveView({ id, onClose, onNext }) {
             onChange={(e) => setNotes(e.target.value)}
             onBlur={() => notes !== (live.notes ?? '') && run(async () => show(await api.updateLivePlay(id, { notes }), true))} />
         </label>
+        <TagEditor tags={live.tags} onChange={(tags) => run(async () => show(await api.updateLivePlay(id, { tags }), true))} />
       </section>
     </Drawer>
   )
@@ -389,6 +424,7 @@ function FinishPlay({ live, seats: liveSeats, notes, onBack, onClose, onSaved, o
   const [unfinished, setUnfinished] = useState(false)
   const [coopWon, setCoopWon] = useState(null)
   const [fun, setFun] = useState(null)
+  const [tags, setTags] = useState(live.tags ?? [])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState(null)        // {play, highlights}
@@ -397,7 +433,7 @@ function FinishPlay({ live, seats: liveSeats, notes, onBack, onClose, onSaved, o
     setBusy(true)
     setError('')
     try {
-      await api.updateLivePlay(live.live_id, { notes })
+      await api.updateLivePlay(live.live_id, { notes, tags })
       setDone(onSaved(await api.finishLivePlay(live.live_id, {
         finished: !unfinished, coop_won: coopWon, fun, seats: seatsOut(seats),
       })))
@@ -419,6 +455,7 @@ function FinishPlay({ live, seats: liveSeats, notes, onBack, onClose, onSaved, o
           <p className="bgt-done-title">{p.finished ? (p.winner ? `🏆 ${p.winner}` : live.scoring === 'coop' ? 'The game won this time' : 'Played') : 'Abandoned'}</p>
           <p className="muted">{live.game_name} · {[p.setup_minutes != null && `setup ${p.setup_minutes} min`, p.teach_minutes != null && `teach ${p.teach_minutes} min`,
             p.minutes != null && `played ${p.minutes} min`].filter(Boolean).join(' · ')}</p>
+          {p.tags?.length > 0 && <p className="muted small">{p.tags.join(' · ')}</p>}
           {done.highlights.map((h) => <p key={h} className="alert ok small">⭐ {h}</p>)}
           {p.seats.some((s) => s.first_time) && (
             <p className="muted small">First play for {p.seats.filter((s) => s.first_time).map((s) => s.name).join(', ')}.</p>
@@ -448,6 +485,7 @@ function FinishPlay({ live, seats: liveSeats, notes, onBack, onClose, onSaved, o
         </section>
       )}
       <section className="panel-section"><FunPicker value={fun} onChange={setFun} /></section>
+      <section className="panel-section"><TagEditor tags={tags} onChange={setTags} /></section>
     </Drawer>
   )
 }

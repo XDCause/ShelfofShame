@@ -7,6 +7,8 @@ app times it - setup, the teach, playing - while you keep score. Finishing it ma
     PATCH  /board-games/live/{id}             who's playing and their scores, where, expansions, who goes first,
                                               the round, notes - the screen sends these as you tap
     POST   /board-games/live/{id}/stage       to setup / teach / play, or pause / resume
+    POST   /board-games/live/{id}/turns       the turn timer (chess clock): start (optional limit per turn), next (pass the
+                                              turn on), to (pass it to a player), stop. Time counts only while playing
     POST   /board-games/live/{id}/photos      a photo (moved to the play when it's finished)
     POST   /board-games/live/{id}/finish      save it as a play (minutes = playing time; setup and teach minutes kept
                                               apart) with how it ended; answers with the play and any new bests
@@ -49,6 +51,14 @@ class LivePatch(BaseModel):
     first_player_id: int | None = None
     rounds: int | None = Field(None, ge=0, le=999)
     notes: str | None = None
+    tags: list[str] | None = Field(None, max_length=12)
+    round_scores: list[dict[str, float | None]] | None = Field(None, max_length=999)   # the grid: a dict per round
+
+
+class TurnsIn(BaseModel):
+    action: Literal["start", "next", "to", "stop"]
+    limit: int | None = Field(None, ge=5, le=3600)      # start: seconds a turn may take before the warning
+    player_id: int | None = None                        # to: whose turn it is now
 
 
 class StageIn(BaseModel):
@@ -61,6 +71,7 @@ class FinishIn(BaseModel):
     fun: int | None = Field(None, ge=1, le=5)
     notes: str | None = None
     seats: list[SeatIn] | None = Field(None, max_length=30)   # the final scores (else the live ones)
+    tags: list[str] = Field(default_factory=list, max_length=12)
 
 
 def now() -> datetime:
@@ -87,6 +98,57 @@ def close(stages: list[dict], at: datetime) -> list[dict]:
     return [{**s, "to": s.get("to") or _iso(at)} for s in stages]
 
 
+# --- the turn timer ----------------------------------------------------------------------------------------------
+# live.turns: {"on", "limit", "order", "current", "since", "cur_s", "totals", "counts", "over"} (player ids as text in the
+# dicts). `since` is when the current turn's clock last started - None while it isn't running (not the play stage, or
+# paused), so a locked phone loses nothing; `cur_s` is the current turn's time before that.
+def clock_runs(stages: list[dict], paused: bool) -> bool:
+    last = stages[-1] if stages else None
+    return bool(last and last["stage"] == "play" and not last.get("to") and not paused)
+
+
+def new_turns(order: list[int], limit: int | None) -> dict:
+    return {"on": True, "limit": limit, "order": order, "current": order[0] if order else None, "since": None, "cur_s": 0,
+            "totals": {}, "counts": {}, "over": {}}
+
+
+def fold(turns: dict, at: datetime) -> None:
+    """Stop the running turn's clock, adding what it ran to the player's total and to this turn."""
+    if turns.get("since") and turns.get("current") is not None:
+        secs = max(0, int((at - datetime.fromisoformat(turns["since"])).total_seconds()))
+        key = str(turns["current"])
+        turns["totals"][key] = turns["totals"].get(key, 0) + secs
+        turns["cur_s"] = turns.get("cur_s", 0) + secs
+    turns["since"] = None
+
+
+def end_turn(turns: dict, at: datetime) -> None:
+    """The current turn is over: count it (and whether it went past the limit)."""
+    fold(turns, at)
+    key = str(turns["current"])
+    if turns.get("current") is not None and turns["cur_s"] > 0:
+        turns["counts"][key] = turns["counts"].get(key, 0) + 1
+        if turns.get("limit") and turns["cur_s"] > turns["limit"]:
+            turns["over"][key] = turns["over"].get(key, 0) + 1
+    turns["cur_s"] = 0
+
+
+def order_of(turns: dict, seat_ids: list[int]) -> list[int]:
+    """The turn order, kept in line with who's sitting there now (new players go last, leavers go)."""
+    kept = [i for i in turns.get("order", []) if i in seat_ids]
+    return kept + [i for i in seat_ids if i not in kept]
+
+
+def set_clock(turns: dict | None, was_running: bool, now_running: bool, at: datetime) -> None:
+    """The stage changed: stop the turn clock when playing stops, start it again when playing carries on."""
+    if not turns or not turns.get("on") or was_running == now_running:
+        return
+    if now_running:
+        turns["since"] = _iso(at) if turns.get("current") is not None else None
+    else:
+        fold(turns, at)
+
+
 LIVE = f"""
 SELECT l.*, g.name AS game_name, g.status AS game_status, g.scoring, g.score_parts, g.teach_notes, g.min_players,
        g.max_players, g.play_minutes,
@@ -107,7 +169,10 @@ def shape(conn, row: dict) -> dict:
         "JOIN board_game_plays p USING (play_id) WHERE s.player_id = pl.player_id AND p.game_id = %s) AS first_time "
         "FROM board_game_players pl WHERE pl.player_id = ANY(%s)", (row["game_id"], ids)).fetchall()}
     seats = [{**s, **named[s["player_id"]], "total": people.total(s)} for s in row["seats"] if s["player_id"] in named]
-    return {**row, "seats": seats, "now": _iso(at), **timings(row["stages"], row["paused"], at)}
+    turns = row.get("turns")
+    if turns:
+        turns = {**turns, "order": order_of(turns, ids), "running": clock_runs(row["stages"], row["paused"])}
+    return {**row, "seats": seats, "turns": turns, "now": _iso(at), **timings(row["stages"], row["paused"], at)}
 
 
 def fetch_live(conn, live_id: int) -> dict:
@@ -187,6 +252,10 @@ def update_live(live_id: int, body: LivePatch):
             changes["rounds"] = data["rounds"]
         if "notes" in data:
             changes["notes"] = (data["notes"] or "").strip() or None
+        if data.get("tags") is not None:
+            changes["tags"] = people.tidy_tags(data["tags"])
+        if data.get("round_scores") is not None:
+            changes["round_scores"] = Jsonb(people.tidy_rounds(data["round_scores"]))
         if changes:
             sets = ", ".join(f"{k} = %({k})s" for k in changes)
             conn.execute(f"UPDATE board_game_live SET {sets}, updated_at = now() WHERE live_id = %(id)s", {**changes, "id": live_id})
@@ -197,9 +266,10 @@ def update_live(live_id: int, body: LivePatch):
 def change_stage(live_id: int, body: StageIn):
     """Move the clock on: to another stage, pause it, or carry on with the stage it was paused in."""
     with db() as conn:
-        row = found(conn.execute("SELECT stages, paused FROM board_game_live WHERE live_id = %s FOR UPDATE", (live_id,)).fetchone(),
+        row = found(conn.execute("SELECT stages, paused, turns FROM board_game_live WHERE live_id = %s FOR UPDATE", (live_id,)).fetchone(),
                     "Live play")
         at, stages, paused = now(), row["stages"], row["paused"]
+        was_running = clock_runs(stages, paused)
         if body.to == "pause":
             stages, paused = close(stages, at), True
         elif body.to == "resume":
@@ -210,8 +280,53 @@ def change_stage(live_id: int, body: StageIn):
             running = stages and not stages[-1].get("to") and not paused
             if not (running and stages[-1]["stage"] == body.to):
                 stages, paused = [*close(stages, at), {"stage": body.to, "from": _iso(at)}], False
-        conn.execute("UPDATE board_game_live SET stages = %s, paused = %s, updated_at = now() WHERE live_id = %s",
-                     (Jsonb(stages), paused, live_id))
+        turns = row["turns"]
+        set_clock(turns, was_running, clock_runs(stages, paused), at)
+        conn.execute("UPDATE board_game_live SET stages = %s, paused = %s, turns = %s, updated_at = now() WHERE live_id = %s",
+                     (Jsonb(stages), paused, turns and Jsonb(turns), live_id))
+        return fetch_live(conn, live_id)
+
+
+@router.post("/board-games/live/{live_id}/turns")
+def change_turns(live_id: int, body: TurnsIn):
+    """The turn timer: start it (the order is the seats, from who goes first), pass the turn on, hand it to a player,
+    or stop it. A turn's clock runs only while the play stage runs; the totals are saved with the play."""
+    with db() as conn:
+        row = found(conn.execute("SELECT stages, paused, turns, seats, first_player_id FROM board_game_live "
+                                 "WHERE live_id = %s FOR UPDATE", (live_id,)).fetchone(), "Live play")
+        at, ids = now(), [s["player_id"] for s in row["seats"]]
+        running, turns = clock_runs(row["stages"], row["paused"]), row["turns"]
+        if body.action == "start":
+            if not ids:
+                raise HTTPException(422, "Add the players first.")
+            first = ids.index(row["first_player_id"]) if row["first_player_id"] in ids else 0
+            if turns is None:
+                turns = new_turns(ids[first:] + ids[:first], body.limit)
+            else:
+                turns["on"], turns["limit"] = True, body.limit
+                turns["order"] = order_of(turns, ids)
+                if turns.get("current") not in ids:
+                    turns["current"] = turns["order"][0]
+            turns["since"] = _iso(at) if running else None
+        elif turns is None or not turns.get("on"):
+            raise HTTPException(409, "The turn timer isn't on.")
+        elif body.action == "stop":
+            fold(turns, at)
+            turns["on"] = False
+        else:
+            order = order_of(turns, ids)
+            if turns.get("current") not in order:
+                raise HTTPException(409, "Nobody's turn yet.")
+            if body.action == "next":
+                nxt = order[(order.index(turns["current"]) + 1) % len(order)]
+            elif body.player_id in order:
+                nxt = body.player_id
+            else:
+                raise HTTPException(422, "That player isn't in this play.")
+            end_turn(turns, at)
+            turns["order"], turns["current"] = order, nxt
+            turns["since"] = _iso(at) if running else None
+        conn.execute("UPDATE board_game_live SET turns = %s, updated_at = now() WHERE live_id = %s", (Jsonb(turns), live_id))
         return fetch_live(conn, live_id)
 
 
@@ -238,6 +353,9 @@ def finish(live_id: int, body: FinishIn):
         t = timings(close(row["stages"], at), True, at)["seconds"]
         used = {s["stage"] for s in row["stages"]}
         play_min = minutes(t["play"], "play" in used)
+        turns = row["turns"]
+        if turns and turns.get("current") is not None:
+            end_turn(turns, at)                 # the turn in progress counts
         seats = (stored_seats(conn, body.seats) if body.seats is not None else row["seats"])
         started: date = row["started_at"].astimezone().date()
         play_id = insert_row(conn, "board_game_plays", {
@@ -247,8 +365,15 @@ def finish(live_id: int, body: FinishIn):
             "first_player_id": row["first_player_id"], "rounds": row["rounds"] or None, "finished": body.finished,
             "coop_won": body.coop_won if body.finished else None, "fun": body.fun,
             "notes": "\n".join(x for x in ((row["notes"] or "").strip(), (body.notes or "").strip()) if x) or None,
+            "tags": people.tidy_tags([*row["tags"], *body.tags]), "round_scores": Jsonb(row["round_scores"]),
+            "turn_limit_s": turns["limit"] if turns and any(turns["totals"].values()) else None,
         }, "play_id")
         people.save_seats(conn, play_id, [{**s, "adds": s.get("adds") or []} for s in seats], resolved=True)
+        if turns:
+            for pid, secs in turns["totals"].items():
+                conn.execute("UPDATE board_game_play_players SET turn_seconds = %s, turn_count = %s, turn_over = %s "
+                             "WHERE play_id = %s AND player_id = %s",
+                             (secs, turns["counts"].get(pid, 0), turns["over"].get(pid, 0), play_id, int(pid)))
         conn.execute("UPDATE board_game_play_photos SET play_id = %s, live_id = NULL WHERE live_id = %s", (play_id, live_id))
         conn.execute("DELETE FROM board_game_live WHERE live_id = %s", (live_id,))
         play = conn.execute(PLAY_SELECT + " WHERE p.play_id = %s", (play_id,)).fetchone()

@@ -3,6 +3,7 @@ import { api } from '../../api.js'
 import { BarList, ColumnChart } from '../../components/charts.jsx'
 import { useApp } from '../../core/app-context.js'
 import { Change } from '../../core/Stat.jsx'
+import { moneyText, perHourText } from './backlogHelpers.js'
 import { playtime, useSteamSummary } from './steam.jsx'
 import { PlatformToggles, useCounting } from './OtherPlatforms.jsx'
 import { AchievementList, PerfectCard } from './VideoGamesViews.jsx'
@@ -48,6 +49,7 @@ export default function StatsView() {
           <ColumnChart title="Completion" valueLabel="games" labelValues
             rows={stats.completion.map((b) => ({ label: b.label, value: b.count }))} />
         </section>
+        <CostCard platforms={counting} />
         <section className="card home-card wide-card">
           <h2 className="home-card-title">Most played</h2>
           <BarList title="Game" valueLabel="Played"
@@ -195,6 +197,31 @@ export function UnlockCalendar({ days, today, streak, title = 'Unlock calendar',
           <tbody>{[...inYear].reverse().map((d) => <tr key={d.day}><td>{longDay(d.day)}</td><td>{d.count}</td></tr>)}</tbody>
         </table>
       </details>
+    </section>
+  )
+}
+
+// What the games cost per hour played (price_paid on each game; api/app/videogames_stats.py costs).
+function CostCard({ platforms }) {
+  const { openPanel, refreshKey } = useApp()
+  const [c, setC] = useState(null)
+  const key = platforms?.join(',') ?? ''
+  useEffect(() => { api.videoGameCosts(key ? key.split(',') : null).then(setC).catch(() => setC(null)) }, [key, refreshKey])
+  if (!c) return null
+  return (
+    <section className="card home-card wide-card">
+      <h2 className="home-card-title">Cost per hour</h2>
+      {c.priced === 0 ? <p className="muted small">Give a game a price on its page to see what it costs per hour.</p> : (
+        <>
+          <p className="chart-sub small">
+            {moneyText(c.spent)} spent on {c.priced} game{c.priced === 1 ? '' : 's'}, {c.hours} h played: <strong>{perHourText(c.per_hour)}</strong>
+            <span className="muted"> · whole library {c.library_games} games, {c.library_hours} h</span>
+          </p>
+          <BarList title="Game" valueLabel="Per hour"
+            rows={c.games.slice(0, 10).map((g) => ({ label: g.name, value: g.per_hour ?? 0, text: `${perHourText(g.per_hour)} · ${moneyText(g.price_paid)}`, id: g.app_id }))}
+            onPick={(r) => openPanel('videogame', { id: r.id })} />
+        </>
+      )}
     </section>
   )
 }

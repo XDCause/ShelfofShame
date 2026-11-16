@@ -9,13 +9,15 @@ import { Stars } from '../reading/readingParts.jsx'
 import { FormPanel } from '../volleyball/VolleyballPanels.jsx'
 import { JournalTab, PlacesTab } from './TripMemories.jsx'
 import { BookingsTab, MoneyTab, PackingTab, PlanTab } from './TripSections.jsx'
+import DayMapTab from './TripDayMap.jsx'
+import SplitTab from './TripSplit.jsx'
 import { codeFor, COUNTRIES, countryName, dates, flag, PHASE_NAME, PHASE_TONE, useTravelLists, when } from './travelParts.jsx'
 
 // A trip: when and where, what needs doing, the weather there (while it's on), then its parts as tabs - the day
 // plan, bookings, money, packing, places (its stops and route) and the journal with photos. New trips start here
 // too; "Edit details" changes the dates, budget, countries, rating and what you'll remember.
 
-const TABS = [['plan', 'Plan'], ['bookings', 'Bookings'], ['money', 'Money'], ['packing', 'Packing'], ['places', 'Places'], ['journal', 'Journal']]
+const TABS = [['plan', 'Plan'], ['bookings', 'Bookings'], ['money', 'Money'], ['split', 'Split'], ['packing', 'Packing'], ['places', 'Places'], ['daymap', 'Day map'], ['journal', 'Journal']]
 const firstTab = (t) => (t.phase === 'past' ? 'journal' : t.phase === 'idea' ? 'places' : 'plan')
 
 const tripFields = (lists, past) => [
@@ -132,6 +134,8 @@ export default function TripPanel({ id = null, tab: askedTab = null, onClose }) 
         {shown === 'plan' && <PlanTab t={t} onTrip={update} />}
         {shown === 'bookings' && <BookingsTab t={t} onClose={onClose} />}
         {shown === 'money' && <MoneyTab t={t} onTrip={update} />}
+        {shown === 'split' && <SplitTab t={t} />}
+        {shown === 'daymap' && <DayMapTab t={t} />}
         {shown === 'packing' && <PackingTab t={t} onTrip={update} />}
         {shown === 'places' && <PlacesTab t={t} onClose={onClose} onTrip={update} />}
         {shown === 'journal' && <JournalTab t={t} onTrip={update} />}

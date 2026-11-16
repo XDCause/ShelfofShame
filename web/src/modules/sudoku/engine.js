@@ -12,6 +12,8 @@
 //                             cells and areas it's about, and a sentence saying why (the hints and the grading use it)
 //   grade(puzzle)             solve it step by step like a person: which techniques it needs -> its difficulty
 //   hintFor(...)              the next hint for a game in progress (mistakes first)
+//   solvePath(puzzle)         the whole logical solution as a list of steps (the grader's walk, kept), each with the board and
+//                             candidates it starts from
 //
 // Techniques, easiest first (TECHNIQUES): singles; locked candidates; naked / hidden pairs, triples, quads; X-Wing,
 // Swordfish, XY-Wing, XYZ-Wing. A puzzle none of them can finish is Extreme (it needs chains or trial and error).
@@ -552,11 +554,27 @@ function makeEngine(N, variant) {
     return null
   }
 
+  // The whole logical solution: every step findStep takes from the clues, in order. Each step is findStep's own answer plus
+  // `values` and `cands` (copies of the board and the candidates as they were BEFORE it). `solved` says whether the walk
+  // reached the end - if not, the puzzle needs more than these techniques (`stuck` is where it stopped).
+  function solvePath(puzzle) {
+    const values = [...puzzle]
+    const cands = candidates(values)
+    const steps = []
+    while (values.some((v) => !v)) {
+      const s = findStep(values, cands)
+      if (!s || steps.length > CELLS * 20) return { steps, solved: false, stuck: { values: [...values], cands: [...cands] } }
+      steps.push({ ...s, values: [...values], cands: [...cands] })
+      apply(values, cands, s)
+    }
+    return { steps, solved: true, stuck: null }
+  }
+
   return { N, B, CELLS, ALL, ROWS, COLS, BOXES, DIAGS, UNITS, PEERS, variant, onDiag, rowOf, colOf, boxOf, sees, digitsOf, cellName, unitName, parse, toText,
-    candidates, conflicts, solveCount, solve, fullGrid, findStep, apply, grade, difficultyOf, makePuzzle, generate, hintFor, isSolved, practiceStart }
+    candidates, conflicts, solveCount, solve, fullGrid, findStep, apply, grade, difficultyOf, makePuzzle, generate, hintFor, isSolved, practiceStart, solvePath }
 }
 
 // The classic 9 x 9, as plain functions.
 const E9 = engineFor(9)
 export const { ALL, ROWS, COLS, BOXES, UNITS, PEERS, rowOf, colOf, boxOf, sees, digitsOf, cellName, unitName, parse, toText, candidates,
-  conflicts, solveCount, solve, fullGrid, findStep, apply, grade, difficultyOf, makePuzzle, generate, hintFor, isSolved, practiceStart } = E9
+  conflicts, solveCount, solve, fullGrid, findStep, apply, grade, difficultyOf, makePuzzle, generate, hintFor, isSolved, practiceStart, solvePath } = E9

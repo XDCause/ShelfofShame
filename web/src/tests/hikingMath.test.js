@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { hoursMinutes, steepestStretch } from '../modules/hiking/hikingMath.js'
+import { gapLabel, hoursMinutes, splitTally, steepestStretch } from '../modules/hiking/hikingMath.js'
 
 // A track going north: a point every 100 m, [lat, lon, ele, seconds, metres along].
 const track = (heights) => heights.map((e, i) => [0, 0, e, i * 60, i * 100])
@@ -31,5 +31,18 @@ describe('hoursMinutes', () => {
     expect(hoursMinutes(3900)).toBe('1 h 05 min')
     expect(hoursMinutes(1500)).toBe('25 min')
     expect(hoursMinutes(null)).toBe('—')
+  })
+})
+
+describe('gapLabel and splitTally', () => {
+  it('writes a signed minutes:seconds gap', () => {
+    expect(gapLabel(80)).toBe('+1:20')
+    expect(gapLabel(-5)).toBe('-0:05')
+    expect(gapLabel(0)).toBe('same')
+    expect(gapLabel(null)).toBe('—')
+  })
+  it('counts the kilometres against the best run', () => {
+    expect(splitTally([{ gap_s: -10 }, { gap_s: 20 }, { gap_s: 0 }, { gap_s: 5 }])).toEqual({ quicker: 1, slower: 2, level: 1 })
+    expect(splitTally(undefined)).toEqual({ quicker: 0, slower: 0, level: 0 })
   })
 })

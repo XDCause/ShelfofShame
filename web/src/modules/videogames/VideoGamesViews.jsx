@@ -64,6 +64,7 @@ export function Dashboard() {
                   </ul>
                 )}
               </section>
+              <EasyWinsCard platforms={counting} />
               <WhatNextCard platforms={counting} />
               <OtherPlatformsCard />
             </div>
@@ -491,4 +492,19 @@ function StreakPill({ streak }) {
   const what = `${streak.current} day${streak.current === 1 ? '' : 's'} in a row with an unlock${
     streak.unlocked_today ? '' : ' - unlock one today to keep it going'}. Longest: ${streak.longest} days.`
   return <span className="pill low streak-pill" title={what} aria-label={what}>🔥 {streak.current}-day streak</span>
+}
+
+// The next easiest achievement in each game: the one you don't have that the most players do (api/app/videogames_stats.py).
+function EasyWinsCard({ platforms }) {
+  const { refreshKey } = useApp()
+  const [items, setItems] = useState(null)
+  const key = platforms?.join(',') ?? ''
+  useEffect(() => { api.videoGameEasy(key ? key.split(',') : null, 8).then(setItems).catch(() => setItems([])) }, [key, refreshKey])
+  return (
+    <section className="card home-card">
+      <h2 className="home-card-title">Easiest achievements</h2>
+      <p className="muted small chart-sub">In each game, the one you don't have that most players do</p>
+      {items ? <AchievementList items={items} /> : <p className="muted small">Loading...</p>}
+    </section>
+  )
 }

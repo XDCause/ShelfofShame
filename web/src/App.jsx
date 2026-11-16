@@ -31,6 +31,7 @@ import JournalInsights from './core/journal/JournalInsights.jsx'
 import JournalMap from './core/journal/JournalMap.jsx'
 import JournalPrint from './core/journal/JournalPrint.jsx'
 import { LabelsPage, PlacePage, PlacesPage, ShopMode, Stocktake, ValueReport } from './core/supplies/SuppliesTools.jsx'
+import { PaintRack, StockReport } from './core/supplies/toolsMore.jsx'
 import { GiftList, LinkPanel, WantedPanel } from './components/wishExtras.jsx'
 import { corePageFor, SectionTabs, Sidebar, TabBar } from './core/Navigation.jsx'
 import { MODULE_PANELS, MODULES, moduleFor, pageFor } from './modules/index.js'
@@ -270,6 +271,8 @@ export default function App() {
                   <Route path="/supplies/shop" element={<ShopMode />} />
                   <Route path="/supplies/stocktake" element={<Stocktake />} />
                   <Route path="/supplies/report" element={<ValueReport />} />
+                  <Route path="/supplies/stock" element={<StockReport />} />
+                  <Route path="/supplies/rack" element={<PaintRack />} />
                   <Route path="/supplies" element={<InventoryView refreshKey={refreshKey}
                     onAdjusted={adjusted} onOpen={openItem} onAdd={openAdd} />} />
                   <Route path="/wishlist" element={<WishlistPage lookups={lookups} settings={settings}

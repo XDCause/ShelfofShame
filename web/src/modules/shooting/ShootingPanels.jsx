@@ -21,6 +21,8 @@ const sessionFields = (lists, things) => [
   { name: 'match_name', label: 'Match / event', placeholder: 'e.g. Club 50 m prone' },
   { name: 'finish', label: 'Where you placed', placeholder: 'e.g. 3rd of 24' },
   { name: 'temp_c', label: 'Temperature (°C)', type: 'number', step: 0.1, min: -40 },
+  { name: 'pressure_hpa', label: 'Air pressure (hPa)', type: 'number', step: 0.1, min: 300, hint: 'At the range (station pressure), for the ballistic solver' },
+  { name: 'humidity_pct', label: 'Humidity (%)', type: 'number', min: 0 },
   { name: 'wind_kmh', label: 'Wind (km/h)', type: 'number', step: 0.1 },
   { name: 'wind_from', label: 'Wind from', placeholder: "e.g. 3 o'clock, NW" },
   { name: 'light', label: 'Light', placeholder: 'e.g. Bright, overcast' },
@@ -94,7 +96,7 @@ export function SessionPanel({ id = null, live = false, day = null, onClose }) {
           {s.finish && <div><dt>Placed</dt><dd>{s.finish}</dd></div>}
         </dl>
         {(s.temp_c != null || s.wind_kmh != null || s.light) && (
-          <p className="small muted">{[s.temp_c != null && `${s.temp_c}°C`, s.wind_kmh != null && `wind ${s.wind_kmh} km/h${s.wind_from ? ` from ${s.wind_from}` : ''}`,
+          <p className="small muted">{[s.temp_c != null && `${s.temp_c}°C`, s.pressure_hpa != null && `${s.pressure_hpa} hPa`, s.humidity_pct != null && `${s.humidity_pct}% humidity`, s.wind_kmh != null && `wind ${s.wind_kmh} km/h${s.wind_from ? ` from ${s.wind_from}` : ''}`,
             s.light].filter(Boolean).join(' · ')}</p>
         )}
         {s.notes && <p className="small shoot-notes">{s.notes}</p>}
@@ -476,6 +478,7 @@ export function AmmoPanel({ id = null, onClose }) {
           </div>
         )}
       </section>
+      <TempSensitivity ammoId={a.ammo_id} />
       <section className="panel-section">
         <h3 className="section-title">How it groups</h3>
         {a.rifles.length === 0 ? <p className="muted small">Log a session with groups to see this.</p> : (
@@ -488,6 +491,26 @@ export function AmmoPanel({ id = null, onClose }) {
         )}
       </section>
     </Drawer>
+  )
+}
+
+// Ammo: how its speed follows the temperature, fitted from sessions with a temperature and chronograph speeds.
+function TempSensitivity({ ammoId }) {
+  const [t, setT] = useState(null)
+  useEffect(() => { api.ammoTempSensitivity(ammoId).then(setT).catch(() => setT(null)) }, [ammoId])
+  if (!t || t.points.length === 0) return null
+  return (
+    <section className="panel-section">
+      <h3 className="section-title">Speed and temperature</h3>
+      {t.fit ? (
+        <p className="small">{t.fit.fps_per_f > 0 ? 'Faster' : 'Slower'} by <strong>{Math.abs(t.fit.fps_per_f)} fps per °F</strong> ({Math.abs(t.fit.fps_per_c)} fps per °C), from {t.fit.n} sessions
+          {' '}{t.fit.span}° apart (fit {t.fit.r2}). The solver uses it for the day's temperature.</p>
+      ) : <p className="small muted">{t.need} You have {t.points.length}.</p>}
+      <table className="shoot-table">
+        <thead><tr><th>Session</th><th>Temperature</th><th>Average</th><th>Shots</th></tr></thead>
+        <tbody>{t.points.map((p) => <tr key={p.session_id}><td>{shortDate(p.on)}</td><td>{p.temp_c}°C</td><td>{p.avg_ms} m/s</td><td>{p.shots}</td></tr>)}</tbody>
+      </table>
+    </section>
   )
 }
 

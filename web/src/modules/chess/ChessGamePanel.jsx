@@ -10,7 +10,7 @@ import { OtbForm, RatingChange, ResultPill, timeControl } from './chessParts.jsx
 // One game: how it went (result, ratings, accuracy, opening), the moves on a board - or its review (Review.jsx: Stockfish,
 // when you press Review this game) - your notes, journal pages about it. Over-the-board games can be changed or removed; online ones come from
 // chess.com (only their notes are yours to change).
-export default function ChessGamePanel({ id, onClose }) {
+export default function ChessGamePanel({ id, ply, onClose }) {
   const { changed } = useApp()
   const [game, setGame] = useState(null)
   const [error, setError] = useState('')
@@ -69,7 +69,7 @@ export default function ChessGamePanel({ id, onClose }) {
         </section>
       )}
 
-      {game.pgn ? <section className="panel-section">{game.rules === 'chess' ? <GameReview game={game} /> : <Board pgn={game.pgn} colour={game.colour} />}</section>
+      {game.pgn ? <section className="panel-section">{game.rules === 'chess' ? <GameReview game={game} startPly={ply} /> : <Board pgn={game.pgn} colour={game.colour} />}</section>
         : otb && <p className="panel-section small muted">No moves saved. Edit details to paste them (PGN) and replay the game here.</p>}
 
       <section className="panel-section">

@@ -7,6 +7,7 @@ const ChessGamePanel = part(() => import('./ChessGamePanel.jsx'))
 const Dashboard = part(() => import('./ChessViews.jsx'), 'Dashboard')
 const GamesView = part(() => import('./ChessViews.jsx'), 'GamesView')
 const OpeningsView = part(() => import('./ChessViews.jsx'), 'OpeningsView')
+const PuzzlesView = part(() => import('./ChessInsights.jsx'), 'PuzzlesView')
 
 // Chess: your chess.com games (the official public API, api/app/chess.py - synced daily) and games
 // over the board, logged by hand. Pages live at /chess/<path>; games show on the calendar (one
@@ -26,5 +27,6 @@ export default {
     { path: 'dashboard', label: 'Dashboard', Icon: TrophyIcon, render: () => <Dashboard /> },
     { path: 'games', label: 'Games', Icon: ChessIcon, render: () => <GamesView /> },
     { path: 'openings', label: 'Openings', Icon: GridIcon, render: () => <OpeningsView /> },
+    { path: 'puzzles', label: 'Your puzzles', Icon: TrophyIcon, render: () => <PuzzlesView /> },
   ],
 }

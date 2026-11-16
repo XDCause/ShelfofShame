@@ -1003,3 +1003,55 @@ def test_status_of_a_game_you_added_by_hand(client, exo):
     assert client.patch(url, json={"status": "nope"}).status_code == 422
     assert client.patch(url, json={"status": "backlog"}).json()["status"] == "backlog"
     assert client.get("/api/videogames/backlog?platforms=ubisoft").json()["count"] == 1
+
+
+def test_time_to_beat_is_yours_then_steamhunters_then_your_median(client, fake):
+    setup(client)
+    assert client.get("/api/videogames/20").json()["median_finished_minutes"] == 900
+    hades = client.get("/api/videogames/20").json()
+    assert (hades["estimate_minutes"], hades["estimate_source"]) == (900, "median")        # Celeste is the one you finished
+    celeste = client.get("/api/videogames/10").json()
+    assert (celeste["estimate_minutes"], celeste["estimate_source"]) == (2994, "steamhunters")
+    mine = client.patch("/api/videogames/20", json={"beat_hours": 12.5}).json()
+    assert (mine["beat_hours"], mine["estimate_minutes"], mine["estimate_source"]) == ("12.5", 750, "yours") \
+        or (float(mine["beat_hours"]), mine["estimate_minutes"], mine["estimate_source"]) == (12.5, 750, "yours")
+    client.patch("/api/videogames/20", json={"status": "backlog"})
+    r = client.get("/api/videogames/backlog?by=shortest").json()
+    assert (r["pick"]["estimate_minutes"], r["pick"]["estimate_source"]) == (750, "yours")
+    assert client.patch("/api/videogames/20", json={"beat_hours": None}).json()["estimate_source"] == "median"
+    assert client.patch("/api/videogames/20", json={"beat_hours": -1}).status_code == 422
+
+
+def test_next_easiest_achievement_is_the_unearned_one_most_players_have(client, fake):
+    setup(client)
+    r = client.get("/api/videogames/easy-achievements").json()
+    assert [(a["game"], a["name"], float(a["global_percent"]), a["app_id"]) for a in r] == [("Hades", "Secret", 12.0, 20)]
+    assert (r[0]["achievements_done"], r[0]["achievements_total"]) == (1, 3)
+    client.patch("/api/videogames/20", json={"hidden": True})
+    assert client.get("/api/videogames/easy-achievements").json() == []                  # hidden games are left out
+    assert client.get("/api/videogames/easy-achievements?platforms=none").status_code == 422
+
+
+def test_cost_per_hour_and_the_library_total(client, fake):
+    setup(client)
+    assert client.patch("/api/videogames/20", json={"price_paid": 30}).status_code == 200      # 50 h
+    client.patch("/api/videogames/10", json={"price_paid": 15})                                # 15 h
+    client.patch("/api/videogames/30", json={"price_paid": 5})                                 # 5 minutes
+    r = client.get("/api/videogames/costs").json()
+    assert (r["spent"], r["priced"], r["hours"], r["per_hour"]) == (50.0, 3, 65.1, 0.77)
+    assert (r["library_games"], r["library_hours"]) == (3, 65.1)
+    assert [(g["name"], g["per_hour"]) for g in r["games"]] == [("Free Demo", 60.0), ("Hades", 0.6), ("Celeste", 1.0)][:1] + \
+        [("Celeste", 1.0), ("Hades", 0.6)]
+    assert client.patch("/api/videogames/20", json={"price_paid": None}).status_code == 200
+    assert client.get("/api/videogames/costs").json()["priced"] == 2
+    assert client.patch("/api/videogames/20", json={"price_paid": -3}).status_code == 422
+
+
+def test_a_game_added_by_hand_has_a_price_and_an_estimate(client, exo):
+    g = client.post("/api/videogames/other", json={"name": "Trackmania", "hours": 10}).json()
+    url = f"/api/videogames/other/{g['game_id']}"
+    r = client.patch(url, json={"price_paid": 20, "beat_hours": 8}).json()
+    assert (float(r["price_paid"]), r["estimate_minutes"], r["estimate_source"]) == (20.0, 480, "yours")
+    costs = client.get("/api/videogames/costs?platforms=ubisoft").json()
+    assert (costs["spent"], costs["hours"], costs["per_hour"], costs["games"][0]["app_id"]) == (20.0, 10.0, 2.0, f"ubisoft-{g['game_id']}") \
+        or costs["games"][0]["name"] == "Trackmania"

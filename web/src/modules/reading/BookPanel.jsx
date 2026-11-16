@@ -59,6 +59,7 @@ export default function BookPanel({ id, onClose }) {
           <p className="muted small">{[book.year, book.pages && `${book.pages} pages`, book.format && FORMATS.find(([f]) => f === book.format)?.[1]]
             .filter(Boolean).join(' · ')}</p>
           {book.genres.length > 0 && <p className="chips">{book.genres.map((g) => <span key={g} className="chip">{g}</span>)}</p>}
+          {book.tags?.length > 0 && <p className="chips" aria-label="Your private tags">{book.tags.map((t) => <span key={t} className="chip rdm-tag">{t}</span>)}</p>}
           <p className="muted small">
             {book.started_on && `Started ${shortDate(book.started_on)}`}{book.started_on && book.finished_on && ' · '}
             {book.finished_on && `${book.status === 'dnf' ? 'Stopped' : 'Finished'} ${shortDate(book.finished_on)}`}
@@ -193,7 +194,7 @@ function Quotes({ book, onChange }) {
 function BookForm({ book, onSaved, onCancel }) {
   const [f, setF] = useState({
     title: book.title, author: book.author ?? '', pages: book.pages ?? '', year: book.year ?? '', isbn: book.isbn ?? '',
-    format: book.format ?? '', genres: book.genres.join(', '), series: book.series ?? '', series_number: book.series_number ?? '', started_on: book.started_on ?? '', finished_on: book.finished_on ?? '',
+    format: book.format ?? '', genres: book.genres.join(', '), tags: (book.tags ?? []).join(', '), series: book.series ?? '', series_number: book.series_number ?? '', started_on: book.started_on ?? '', finished_on: book.finished_on ?? '',
   })
   const [error, setError] = useState('')
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
@@ -205,6 +206,7 @@ function BookForm({ book, onSaved, onCancel }) {
       onSaved(await api.updateBook(book.book_id, {
         ...f, pages: num(f.pages), year: num(f.year), series_number: num(f.series_number), format: f.format || null, started_on: f.started_on || null,
         finished_on: f.finished_on || null, genres: f.genres.split(',').map((g) => g.trim()).filter(Boolean),
+        tags: f.tags.split(',').map((g) => g.trim()).filter(Boolean),
       }))
     } catch (err) {
       setError(err.message)
@@ -220,6 +222,7 @@ function BookForm({ book, onSaved, onCancel }) {
         <label>ISBN<input value={f.isbn} onChange={set('isbn')} inputMode="numeric" /></label>
         <label>Format<select value={f.format} onChange={set('format')}>{FORMATS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
         <label>Genres<input value={f.genres} onChange={set('genres')} placeholder="Fantasy, Mystery" /></label>
+        <label>Private tags<input value={f.tags} onChange={set('tags')} placeholder="slow start, dark themes" /></label>
         <label>Series<input value={f.series} onChange={set('series')} placeholder="e.g. Red Rising Saga" /></label>
         <label>Number in the series<input type="number" min="0" step="0.5" value={f.series_number} onChange={set('series_number')} /></label>
         <label>Started<input type="date" value={f.started_on} onChange={set('started_on')} /></label>

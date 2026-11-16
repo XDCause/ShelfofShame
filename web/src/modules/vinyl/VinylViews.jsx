@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { api, money, shortDate, timeAgo, vinylExportUrl } from '../../api.js'
-import { BarList, ColumnChart, LineChart } from '../../components/charts.jsx'
+import { BarList, ColumnChart } from '../../components/charts.jsx'
 import { VinylIcon } from '../../components/icons.jsx'
 import { useApp } from '../../core/app-context.js'
 import EmptyState from '../../core/EmptyState.jsx'
 import Stat from '../../core/Stat.jsx'
+import { StylusReminder, ValueHistoryCard } from './VinylMore.jsx'
 import { GradePill, PlayedButton, RecordCover, StatusPill, formatText, moneyLine, useVinylSummary } from './vinylParts.jsx'
 
 // The Vinyl hobby's pages: a dashboard (now spinning, what to play next, recently played and added, gathering dust),
@@ -38,6 +39,7 @@ export function Dashboard() {
   return (
     <section className="page vinyl">
       {s.now_spinning && <NowSpinning play={s.now_spinning} />}
+      <StylusReminder stylus={s.stylus} />
       <div className="home-stats">
         <Stat to="/vinyl/crate" Icon={VinylIcon} tone="tint" value={s.owned} label="Records" sub={`${s.wanted} on the wantlist`} />
         <Stat to="/vinyl/plays" Icon={VinylIcon} tone="teal" value={s.plays_this_month} label="Plays this month" sub={`${plural(s.plays_this_year, 'play')} this year`} />
@@ -371,11 +373,7 @@ export function StatsView() {
           {st.growth.length ? <ColumnChart title="Year" valueLabel="records in the collection" labelValues={st.growth.length <= 12}
             rows={st.growth.map((g) => ({ label: String(g.year), value: g.total, tip: `${g.year}: +${g.added}` }))} /> : null}
         </section>
-        <section className="card home-card wide-card">
-          <h2 className="home-card-title">What it's worth</h2>
-          {st.value_by_month.length > 1 ? <LineChart title="Collection value" rows={st.value_by_month.map((v) => ({ x: `${v.month}-28`, y: v.value }))} valueLabel="AUD" />
-            : <p className="muted small">The value is checked on Discogs every week; the line starts after the second month.</p>}
-        </section>
+        <ValueHistoryCard />
         <RecordList title="Most valuable" rows={st.most_valuable} detail={(r) => money(r.value)} onOpen={(id) => openPanel('record', { id })} />
         <RecordList title="Most played" rows={st.most_played} detail={(r) => plural(r.plays, 'play')} onOpen={(id) => openPanel('record', { id })} />
         <RecordList title="Best buys" rows={st.best_buys} detail={(r) => `${money(r.price_paid)} → ${money(r.value)}`} onOpen={(id) => openPanel('record', { id })} />

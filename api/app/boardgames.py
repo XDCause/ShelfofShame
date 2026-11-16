@@ -100,6 +100,7 @@ class PlayIn(BaseModel):
     rounds: int | None = Field(None, ge=0, le=999)
     fun: int | None = Field(None, ge=1, le=5)
     notes: str | None = None
+    tags: list[str] = Field(default_factory=list, max_length=12)     # "close game", "first time with the expansion"
     finished: bool = True           # false = abandoned before the end (no winner)
 
 
@@ -124,6 +125,7 @@ class PlayPatch(BaseModel):
     rounds: int | None = Field(None, ge=0, le=999)
     fun: int | None = Field(None, ge=1, le=5)
     notes: str | None = None
+    tags: list[str] | None = Field(None, max_length=12)
     finished: bool | None = None
 
 
@@ -144,7 +146,8 @@ PLAY_SELECT = f"""
 SELECT p.*, g.name AS game_name, g.status AS game_status, g.scoring,
        COALESCE((SELECT json_agg(json_build_object('player_id', s.player_id, 'name', pl.name, 'is_me', pl.is_me,
                     'score', s.score, 'parts', s.parts, 'place', s.place, 'won', s.won, 'team', s.team, 'colour', s.colour,
-                    'first_time', s.first_time) ORDER BY s.seat)
+                    'first_time', s.first_time, 'turn_seconds', s.turn_seconds, 'turn_count', s.turn_count,
+                    'turn_over', s.turn_over) ORDER BY s.seat)
                  FROM board_game_play_players s JOIN board_game_players pl USING (player_id) WHERE s.play_id = p.play_id),
                 '[]'::json) AS seats,
        (SELECT name FROM board_game_players WHERE player_id = p.first_player_id) AS first_player,
@@ -159,6 +162,7 @@ def fetch_game(conn, game_id: int) -> dict:
     game["play_log"] = conn.execute(PLAY_SELECT + " WHERE p.game_id = %s ORDER BY p.played_on DESC, p.play_id DESC",
                                     (game_id,)).fetchall()
     game["stats"] = people.game_stats(conn, game_id).get(game_id)
+    game["score_stats"] = people.score_stats(conn, game_id)
     game["add_on_list"] = conn.execute("SELECT game_id, name FROM board_games WHERE base_game_id = %s "
                                        "AND status NOT IN ('Gone', 'Wanted') ORDER BY name", (game_id,)).fetchall()
     return game
@@ -193,6 +197,7 @@ def add_play(conn, game_id: int, body: PlayIn) -> dict:
     """A play and who sat at it: the seats given, or the players / winner text made into seats."""
     data = tidy_text(body.model_dump(exclude={"game_name", "seats"}))
     data["played_on"] = data["played_on"] or date.today()
+    data["tags"] = people.tidy_tags(data.get("tags"))
     unfinished_has_no_winner(data)
     if not data["finished"]:
         data["coop_won"] = None
@@ -394,10 +399,20 @@ def from_shop(game_id: int, body: ShopIn, background: BackgroundTasks):
 
 
 @router.get("/board-games/plays")
-def list_plays(limit: int = Query(100, ge=1, le=1000)):
-    """Every play, newest first."""
+def list_plays(limit: int = Query(100, ge=1, le=1000), tag: str | None = Query(None, max_length=40)):
+    """Every play, newest first; ?tag= only the plays with that tag (any case)."""
     with db() as conn:
-        return conn.execute(PLAY_SELECT + " ORDER BY p.played_on DESC, p.play_id DESC LIMIT %s", (limit,)).fetchall()
+        return conn.execute(
+            PLAY_SELECT + " WHERE %(tag)s::text IS NULL OR EXISTS (SELECT 1 FROM unnest(p.tags) t WHERE lower(t) = lower(%(tag)s)) "
+            "ORDER BY p.played_on DESC, p.play_id DESC LIMIT %(limit)s", {"tag": tag, "limit": limit}).fetchall()
+
+
+@router.get("/board-games/tags")
+def play_tags():
+    """Every tag used on a play, most used first (the suggestions the play forms offer)."""
+    with db() as conn:
+        return conn.execute("SELECT min(t) AS tag, count(*)::int AS plays FROM board_game_plays p, unnest(p.tags) t "
+                            "GROUP BY lower(t) ORDER BY 2 DESC, lower(min(t)) LIMIT 100").fetchall()
 
 
 # ---------------------------------------------------------------------------
@@ -542,6 +557,8 @@ def update_play(play_id: int, body: PlayPatch):
     if "expansions" in data and data["expansions"] is None:
         raise HTTPException(422, "Expansions must be a list.")
     unfinished_has_no_winner(data)
+    if "tags" in data:
+        data["tags"] = people.tidy_tags(data["tags"])
     data.pop("seats", None)
     with db() as conn:
         play = found(conn.execute("SELECT game_id, players, winner FROM board_game_plays WHERE play_id = %s",

@@ -42,11 +42,11 @@ from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI
 
-from . import (activity, auth, auth_passkeys, banners, boardgames, boardgames_live, boardgames_people, bookseries, build, calendar, catalog, chess, chess_review, chess_trainer, colours, garden, garden_doctor, garden_guide,
-               garden_items, garden_logs, garden_today,
-               gear, goals, hiking, journal, journal_drawings, journal_more, calendar_more, owned, supplies_more, wanted_more, shooting, shooting_sessions, shooting_shots, travel, travel_places, travel_trip,
-               gundam, lookups, minis, vgsync, models, othergames, products, reading, readimport, reading_recs, settings, sitecheck, spending, supplies, vbclips, vbcoach, vgfind, vgfriends, videogames, videogames_stats, wanted, webphoto,
-               sudoku, system, todos, vinyl, vinyl_sync, volleyball, warhammer, wishlist)
+from . import (activity, auth, auth_passkeys, banners, boardgames, boardgames_live, boardgames_people, bookseries, build, calendar, calendar_feed, catalog, chess, chess_insights, chess_review, chess_trainer, colours, garden, garden_doctor, garden_guide,
+               garden_items, garden_logs, garden_today, focus, goals_review, journal_day, travel_extras,
+               gear, goals, hiking, journal, journal_drawings, journal_more, calendar_more, owned, supplies_more, wanted_more, shooting, shooting_sessions, shooting_shots, ballistics, travel, travel_places, travel_trip,
+               gundam, lookups, minis, vgsync, models, othergames, products, reading, readimport, reading_more, reading_recs, recipes, settings, sitecheck, spending, supplies, vbclips, vbcoach, vbstats, vgfind, vgfriends, videogames, videogames_stats, wanted, webphoto,
+               sudoku, system, todos, vinyl, vinyl_care, vinyl_more, vinyl_sync, volleyball, warhammer, wishlist)
 from .db import db
 
 # The walk-through's throwaway copy never asks the real outside sites (small shops among them): stand-ins answer.
@@ -72,11 +72,12 @@ async def lifespan(_app):
 
 app = FastAPI(title="Off the Clock API", docs_url="/api/docs", openapi_url="/api/openapi.json", lifespan=lifespan)
 
-for part in (activity, banners, goals, todos, journal_drawings, journal_more, journal, calendar, calendar_more, owned, supplies_more, supplies, wanted_more, wishlist, products, catalog, models, minis, build, colours,
-             boardgames_people, boardgames_live, boardgames, volleyball, gear, vbclips, vbcoach, othergames, vgfind, vgfriends, videogames_stats, videogames, chess_trainer, chess_review, chess, reading, readimport, hiking, garden, garden_logs, garden_today, garden_doctor, garden_guide, garden_items, shooting, shooting_sessions, shooting_shots, travel, travel_places, travel_trip, vinyl_sync, vinyl, sudoku, reading_recs, bookseries, warhammer, gundam, spending, settings, system, sitecheck, lookups, webphoto, wanted):
+for part in (activity, banners, goals_review, goals, todos, focus, journal_drawings, journal_more, journal_day, journal, calendar_feed, calendar, calendar_more, owned, supplies_more, supplies, wanted_more, wishlist, products, catalog, models, minis, build, recipes, colours,
+             boardgames_people, boardgames_live, boardgames, volleyball, gear, vbclips, vbcoach, vbstats, othergames, vgfind, vgfriends, videogames_stats, videogames, chess_trainer, chess_insights, chess_review, chess, reading, reading_more, readimport, hiking, garden, garden_logs, garden_today, garden_doctor, garden_guide, garden_items, shooting, shooting_sessions, shooting_shots, ballistics, travel, travel_places, travel_extras, travel_trip, vinyl_sync, vinyl, vinyl_care, vinyl_more, sudoku, reading_recs, bookseries, warhammer, gundam, spending, settings, system, sitecheck, lookups, webphoto, wanted):
     app.include_router(part.router, dependencies=[Depends(auth.require_session)])   # signed in only (auth.py)
 app.include_router(auth.router)                  # signing in itself: each route checks what it needs
 app.include_router(auth_passkeys.router)         # (passkeys: the same - split out of auth.py)
+app.include_router(calendar_feed.public)         # the phone calendar's feed: its own secret key instead of a sign-in
 
 
 @app.get("/api/health")

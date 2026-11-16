@@ -4,6 +4,7 @@ import Drawer from '../../components/Drawer.jsx'
 import RecordFields, { RowPhoto, useRecordForm } from '../../components/RecordFields.jsx'
 import { useApp } from '../../core/app-context.js'
 import JournalMentions from '../../core/journal/JournalMentions.jsx'
+import { RoundTable, ScoreStats, TagEditor, TurnTimes } from './turnParts.jsx'
 import { FunPicker, PlayPhotos, PlayerPicker, SCORING, SeatScores, minutesText, placeText, scoreText, seatsOut } from './tableParts.jsx'
 
 const GAME_FIELDS = [
@@ -231,6 +232,7 @@ export default function GamePanel({ id, onClose }) {
           )}
         </div>
         {game.stats && <GameStats stats={game.stats} scoring={game.scoring} />}
+        <ScoreStats stats={game.score_stats} />
         {logging && (
           <PlayForm gameId={game.game_id} onCancel={() => setLogging(false)}
             onSaved={(p) => { setLogging(false); run(() => reload(p.highlights?.[0] ?? 'Play logged ✓')) }} />
@@ -363,6 +365,7 @@ function PlayForm({ gameId, games, onSaved, onCancel, day = null }) {
   const [expansions, setExpansions] = useState([])
   const [fun, setFun] = useState(null)
   const [firstId, setFirstId] = useState('')
+  const [tags, setTags] = useState([])
   const elsewhere = pick === ELSEWHERE
   useEffect(() => {
     api.boardGamePlayers().then((r) => {
@@ -384,7 +387,7 @@ function PlayForm({ gameId, games, onSaved, onCancel, day = null }) {
     setError('')
     const first = seats.find((s) => (s.player_id != null ? `p${s.player_id}` : `n${s.name}`) === firstId)
     const play = { ...payload(), finished: !unfinished, seats: seatsOut(unfinished ? seats.map((s) => ({ ...s, won: null })) : seats),
-      coop_won: scoring === 'coop' && !unfinished ? coopWon : null, expansions, fun, first_player_id: first?.player_id ?? null }
+      coop_won: scoring === 'coop' && !unfinished ? coopWon : null, expansions, fun, tags, first_player_id: first?.player_id ?? null }
     try {
       onSaved(elsewhere ? await api.addPlayElsewhere({ ...play, game_name: otherName.trim() }) : await api.addPlay(pick, play))
     } catch (e) {
@@ -459,6 +462,7 @@ function PlayForm({ gameId, games, onSaved, onCancel, day = null }) {
       <RecordFields fields={PLAY_FIELDS} form={form} set={set} />
       <datalist id="bgt-log-places">{(roster?.places ?? []).map((pl) => <option key={pl} value={pl} />)}</datalist>
       <FunPicker value={fun} onChange={setFun} />
+      <TagEditor tags={tags} onChange={setTags} />
       <div className="button-row">
         <button type="button" className="primary" onClick={save} disabled={busy}>{busy ? 'Saving...' : 'Save play'}</button>
         <button type="button" className="plain" onClick={onCancel}>Cancel</button>
@@ -523,7 +527,8 @@ function PlayRow({ play: p, onChanged }) {
           <span className="item-title">{shortDate(p.played_on)}{!p.finished ? <span className="pill low">Abandoned</span>
             : p.scoring === 'coop' ? (p.coop_won ? <span className="pill ok">Won together</span> : p.coop_won === false && <span className="pill low">The game won</span>)
               : p.winner && <span className="pill ok">🏆 {p.winner}</span>}
-            {p.photos.length > 0 && <span className="pill">📷 {p.photos.length}</span>}</span>
+            {p.photos.length > 0 && <span className="pill">📷 {p.photos.length}</span>}
+            {p.tags?.map((t) => <span key={t} className="pill tint">{t}</span>)}</span>
           {scores.length > 0 && (
             <span className="bgt-play-scores">{p.seats.map((s) => (
               <span key={s.player_id} className={s.won ? 'bgt-won' : ''}>{s.name} {scoreText(s.score)}{s.first_time && <span className="muted"> (new)</span>}</span>
@@ -552,6 +557,9 @@ function PlayRow({ play: p, onChanged }) {
             </ol>
           )}
           {p.notes && <p className="detail-desc">{p.notes}</p>}
+          <TurnTimes seats={p.seats} />
+          {p.round_scores?.length > 0 && <RoundTable rows={p.round_scores} seats={p.seats} />}
+          <TagEditor tags={p.tags ?? []} onChange={(tags) => run(() => api.updatePlay(p.play_id, { tags }), 'Saved ✓')} />
           <PlayPhotos photos={p.photos} onAdd={(blob) => api.addPlayPhoto(p.play_id, blob).then(() => onChanged('Photo added ✓'))}
             onRemove={(ph) => run(() => api.deletePlayPhoto(ph.photo_id), 'Photo removed')} />
           <FunPicker value={p.fun} onChange={(n) => run(() => api.updatePlay(p.play_id, { fun: n }), 'Saved ✓')} />

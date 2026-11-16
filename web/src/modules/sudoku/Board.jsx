@@ -1,10 +1,10 @@
 import { bit, engineFor, sym } from './engine.js'
 
 // The board (9 x 9 or 16 x 16): each cell a button (its digit, or its notes as a small grid). `look(c)` says how a cell
-// looks (a list of class names); `struck(c, d)` marks a note a hint rules out. Thick lines between the boxes.
+// looks (a list of class names); `struck(c, d)` marks a note a hint rules out; `noteMark(c, d)` is a note's colour (0-4). Thick lines between the boxes.
 // Its size comes from its own width (a container), not the window's - so it stays square and its digits fit however
 // the window is sized, with or without the sidebar.
-export default function Board({ size = 9, variant = 'classic', values, notes, given, sel, onSelect, look = () => [], struck = () => false, label = 'Sudoku board',
+export default function Board({ size = 9, variant = 'classic', values, notes, given, sel, onSelect, look = () => [], struck = () => false, noteMark = () => 0, label = 'Sudoku board',
   hidden = false, theme = 'classic' }) {
   const e = engineFor(size, variant)
   const ds = Array.from({ length: size }, (_, i) => i + 1)
@@ -25,7 +25,7 @@ export default function Board({ size = 9, variant = 'classic', values, notes, gi
                   aria-label={`Row ${r + 1}, column ${c + 1}, box ${e.boxOf(i) + 1}: ${v ? `${sym(v)}${given[i] ? ' (clue)' : ''}` : notes[i] ? `notes ${ds.filter((d) => notes[i] & bit(d)).map(sym).join(' ')}` : 'empty'}`}>
                   {hidden ? null : v ? <span className="sdk-digit">{sym(v)}</span> : notes[i] ? (
                     <span className="sdk-notes" aria-hidden="true">
-                      {ds.map((d) => <span key={d} className={struck(i, d) ? 'struck' : ''}>{notes[i] & bit(d) ? sym(d) : ''}</span>)}
+                      {ds.map((d) => <span key={d} className={`${struck(i, d) ? 'struck' : ''}${noteMark(i, d) ? ` sdk-nm${noteMark(i, d)}` : ''}`}>{notes[i] & bit(d) ? sym(d) : ''}</span>)}
                     </span>
                   ) : null}
                 </button>

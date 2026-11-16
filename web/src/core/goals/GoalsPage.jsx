@@ -3,7 +3,9 @@ import { Link, useNavigate } from 'react-router'
 import { api } from '../../api.js'
 import { TargetIcon } from '../../components/icons.jsx'
 import { useApp } from '../app-context.js'
+import Fold from '../../components/Fold.jsx'
 import EmptyState from '../EmptyState.jsx'
+import WeeklyReview from './WeeklyReview.jsx'
 import { dueText, groupGoals, hobbyName, PaceBadge, periodChoices, periodLabel, ProgressBar, progressText, STATUS } from './goalParts.jsx'
 
 // (Upcoming: active goals whose time hasn't begun - a 2027 goal now - apart from the ones you can work on)
@@ -76,6 +78,7 @@ export default function GoalsPage() {
           </div>
           {error && <p className="alert error">{error}</p>}
           {adding && newForm}
+          <Fold title="Weekly review" open={new Date().getDay() === 0} className="weekly-review-fold"><WeeklyReview /></Fold>
           {shown.length === 0 ? <p className="muted">No {show === 'upcoming' ? 'upcoming' : STATUS[show]?.label.toLowerCase()} goals.</p>
             : sections.map((s) => <GoalSection key={s.key || 'none'} section={s} thisYear={data.this_year} />)}
         </>

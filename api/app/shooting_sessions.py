@@ -60,6 +60,8 @@ class SessionFields(BaseModel):
     finish: str | None = Field(None, max_length=60)
     rounds: int | None = Field(None, ge=0, le=100000)
     temp_c: float | None = Field(None, ge=-40, le=60)
+    pressure_hpa: float | None = Field(None, ge=300, le=1100)    # station pressure (what a Kestrel / the weather reads at the range)
+    humidity_pct: int | None = Field(None, ge=0, le=100)
     wind_kmh: float | None = Field(None, ge=0, le=200)
     wind_from: str | None = Field(None, max_length=40)
     light: str | None = Field(None, max_length=60)
@@ -72,7 +74,7 @@ class SessionIn(SessionFields):
 
 SESSION_SELECT = f"""
 SELECT s.session_id, s.shot_on, s.kind, s.range_id, s.rifle_id, s.ammo_id, s.match_name, s.finish, s.rounds AS rounds_entered,
-       {SESSION_ROUNDS}::int AS rounds, s.temp_c::float8 AS temp_c, s.wind_kmh::float8 AS wind_kmh, s.wind_from, s.light, s.notes,
+       {SESSION_ROUNDS}::int AS rounds, s.temp_c::float8 AS temp_c, s.pressure_hpa::float8 AS pressure_hpa, s.humidity_pct, s.wind_kmh::float8 AS wind_kmh, s.wind_from, s.light, s.notes,
        s.created_at, rg.name AS range_name, rg.counts_for_club, r.name AS rifle_name, COALESCE(r.scope_unit, 'MOA') AS scope_unit,
        r.click::float8 AS click, a.name AS ammo_name,
        (SELECT count(*) FROM shooting_groups g WHERE g.session_id = s.session_id)::int AS groups,

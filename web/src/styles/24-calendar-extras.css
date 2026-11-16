@@ -152,3 +152,12 @@
   .day-todo { padding: 0; height: 4px; border: 0; border-radius: 2px; background: var(--muted); color: transparent; }
   .day-holiday { font-size: 0.6rem; }
 }
+
+/* Settings > Calendar feed (components/CalendarFeed.jsx): the private address and how to subscribe on a phone. */
+.cal-feed { display: flex; flex-direction: column; gap: 10px; }
+.cal-feed p { margin: 0; }
+.cal-feed input[readonly] { width: 100%; font-size: 0.85rem; }
+.cal-feed-how { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+
+/* The "sow now" note above the calendar (SowNote) */
+.cal-sow-note { margin: 0; padding: 8px 12px; border-radius: 10px; background: var(--ok-bg); }

@@ -6,6 +6,7 @@ import { CrosshairIcon, TargetIcon, TrophyIcon } from '../../components/icons.js
 import { useApp } from '../../core/app-context.js'
 import EmptyState from '../../core/EmptyState.jsx'
 import Stat from '../../core/Stat.jsx'
+import BallisticsCard from './BallisticsCard.jsx'
 import { startShooting } from './ShootingLive.jsx'
 import { KIND_TONE, LicenceCard, angle, dist, plural, useShootingSummary, useShootingThings } from './shootingParts.jsx'
 
@@ -356,6 +357,7 @@ export function DopeView() {
           </table>
         )}
       </section>
+      <BallisticsCard rifleId={rifleId} ammoId={ammoId} dopeRows={card?.rows} />
       <form className="card shoot-noprint shoot-dope-add" onSubmit={add} aria-label="Add a DOPE row">
         <h2 className="home-card-title">Add a distance</h2>
         <div className="shoot-form-grid">

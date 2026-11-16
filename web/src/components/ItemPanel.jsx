@@ -4,6 +4,7 @@ import JournalMentions from '../core/journal/JournalMentions.jsx'
 import KitParts from './KitParts.jsx'
 import { FillBar, fillOf } from '../modules/models/fill.jsx'
 import ColourMatches from './ColourMatches.jsx'
+import OwnedInstead from './OwnedInstead.jsx'
 import Drawer from './Drawer.jsx'
 import Fold from './Fold.jsx'
 import PhotoUpload from './PhotoUpload.jsx'
@@ -336,6 +337,8 @@ export default function ItemPanel({ supplyId, lookups, reloadKey, onClose, onCha
               </div>
             </details>
           </section>
+
+          {item.product_code && item.brand_id && item.stock_status !== 'OK' && <OwnedInstead item={item} onOpenItem={onOpenItem} />}
 
           {item.product_code && item.brand_id && (
             <section className="panel-section">

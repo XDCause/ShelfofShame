@@ -247,3 +247,83 @@ def test_stats_h_index_streaks_and_first_player(client):
     f = s["first_player"]
     assert (f["plays"], f["wins"], f["rate"], f["chance"]) == (4, 3, 75, 50)
     assert f["games"][0]["name"] == "Catan"
+
+
+def test_the_turn_timer_adds_up_each_players_thinking_time(client, clock):
+    catan = add_game(client)
+    live = client.post("/api/board-games/live", json={"game_id": catan["game_id"], "stage": "play",
+                                                      "seats": [{"name": "Me"}, {"name": "Sam"}]}).json()
+    lid = live["live_id"]
+    me, sam = (s["player_id"] for s in live["seats"])
+    url = f"/api/board-games/live/{lid}/turns"
+    assert client.post(url, json={"action": "next"}).status_code == 409               # not on yet
+    on = client.post(url, json={"action": "start", "limit": 30}).json()["turns"]
+    assert (on["on"], on["order"], on["current"], on["limit"], on["running"]) == (True, [me, sam], me, 30, True)
+    clock(1)                                                                           # Me thinks for 60 s (over the limit)
+    t = client.post(url, json={"action": "next"}).json()["turns"]
+    assert (t["current"], t["totals"][str(me)], t["counts"][str(me)], t["over"][str(me)]) == (sam, 60, 1, 1)
+    clock(2)
+    paused = client.post(f"/api/board-games/live/{lid}/stage", json={"to": "pause"}).json()["turns"]
+    assert (paused["since"], paused["totals"][str(sam)]) == (None, 120)
+    clock(10)                                                                          # a break: nobody's clock runs
+    resumed = client.post(f"/api/board-games/live/{lid}/stage", json={"to": "resume"}).json()["turns"]
+    assert resumed["since"] and resumed["cur_s"] == 120
+    clock(1)
+    back = client.post(url, json={"action": "to", "player_id": me}).json()["turns"]    # hand the turn to Me (out of order)
+    assert (back["current"], back["totals"][str(sam)], back["over"].get(str(sam))) == (me, 180, 1)
+    assert client.post(url, json={"action": "to", "player_id": 99999}).status_code == 422
+    clock(0.25)
+    p = client.post(f"/api/board-games/live/{lid}/finish", json={}).json()["play"]    # Me's turn in progress counts
+    seats = {s["name"]: s for s in p["seats"]}
+    assert (seats["Me"]["turn_seconds"], seats["Me"]["turn_count"], seats["Me"]["turn_over"]) == (75, 2, 1)
+    assert (seats["Sam"]["turn_seconds"], seats["Sam"]["turn_count"], p["turn_limit_s"]) == (180, 1, 30)
+    # editing who sat there keeps the times
+    again = client.patch(f"/api/board-game-plays/{p['play_id']}", json={"seats": [{"name": "Me", "score": 3}, {"name": "Sam", "score": 5}]}).json()
+    assert [s["turn_seconds"] for s in again["seats"]] == [75, 180]
+
+
+def test_turn_timer_stops_and_a_play_without_one_has_no_times(client, clock):
+    live = client.post("/api/board-games/live", json={"game_name": "Ark Nova", "stage": "setup", "seats": [{"name": "Me"}, {"name": "Sam"}]}).json()
+    url = f"/api/board-games/live/{live['live_id']}/turns"
+    started = client.post(url, json={"action": "start"}).json()["turns"]
+    assert (started["since"], started["running"]) == (None, False)                    # setup: no clock yet
+    client.post(f"/api/board-games/live/{live['live_id']}/stage", json={"to": "play"})
+    clock(3)
+    stopped = client.post(url, json={"action": "stop"}).json()["turns"]
+    assert (stopped["on"], stopped["totals"]) == (False, {str(live["seats"][0]["player_id"]): 180})
+    assert client.post(url, json={"action": "next"}).status_code == 409
+    other = client.post("/api/board-games/live", json={"game_name": "Ark Nova", "seats": [{"name": "Me"}]}).json()
+    assert client.post(f"/api/board-games/live/{other['live_id']}/finish", json={}).json()["play"]["seats"][0]["turn_seconds"] is None
+
+
+def test_round_scores_tags_and_the_stats_they_feed(client, clock):
+    game = add_game(client, score_parts=["Roads", "Cities"])
+    for roads, grid in ((2, [{"a": 4, "b": 6}, {"a": 8}]), (6, [{"a": 2, "b": 3}])):
+        live = client.post("/api/board-games/live", json={"game_id": game["game_id"], "stage": "play",
+                                                          "seats": [{"name": "Me"}, {"name": "Sam"}]}).json()
+        me, sam = (s["player_id"] for s in live["seats"])
+        rows = [{str(me if k == "a" else sam): v for k, v in r.items()} for r in grid]
+        patched = client.patch(f"/api/board-games/live/{live['live_id']}", json={
+            "round_scores": rows, "tags": [" close game ", "Close Game", "", "on the last turn"],
+            "seats": [{"player_id": me, "parts": {"Roads": roads, "Cities": 1}}, {"player_id": sam, "parts": {"Roads": 1, "Cities": 3}}]}).json()
+        assert patched["tags"] == ["close game", "on the last turn"] and patched["round_scores"] == rows
+        p = client.post(f"/api/board-games/live/{live['live_id']}/finish", json={"tags": ["Close game", "first time with the expansion"]}).json()["play"]
+        assert p["tags"] == ["close game", "on the last turn", "first time with the expansion"] and p["round_scores"] == rows
+    assert client.get("/api/board-games/tags").json()[0] == {"tag": "close game", "plays": 2}
+    assert len(client.get("/api/board-games/plays?tag=CLOSE GAME").json()) == 2
+    assert client.get("/api/board-games/plays?tag=nope").json() == []
+    stats = client.get(f"/api/board-games/{game['game_id']}").json()["score_stats"]
+    roads = next(x for x in stats["parts"] if x["part"] == "Roads")["players"]
+    assert [(x["name"], x["avg"], x["high"], x["low"], x["n"]) for x in roads] == [("Me", 4.0, 6.0, 2.0, 2), ("Sam", 1.0, 1.0, 1.0, 2)]
+    me_rounds = next(x for x in stats["rounds"] if x["name"] == "Me")
+    assert (me_rounds["n"], me_rounds["avg"], me_rounds["high"], me_rounds["low"]) == (3, 4.7, 8.0, 2.0)
+    # tags on a logged play, changed later
+    logged = client.post(f"/api/board-games/{game['game_id']}/plays", json={"tags": ["Teach", "teach"]}).json()
+    assert logged["tags"] == ["Teach"]
+    assert client.patch(f"/api/board-game-plays/{logged['play_id']}", json={"tags": ["x"]}).json()["tags"] == ["x"]
+
+
+def test_tags_and_round_helpers():
+    from app import boardgames_people as bp
+    assert bp.tidy_tags(["  a   b ", "A B", "", "c"]) == ["a b", "c"]
+    assert bp.tidy_rounds([{"1": 2, "x": 3, "2": None}, {}]) == [{"1": 2.0}, {}]

@@ -6,6 +6,7 @@
     POST /garden/guides                             your own entry;  POST /garden/guides/{id}/copy  a copy to edit
     PATCH / DELETE /garden/guides/{id}              yours only (the app's own stay as written - copy one to change it)
     GET  /garden/sow-now                            this month's and next month's sowing list for your climate
+    GET  /garden/sowing-calendar                    a hand-written Brisbane sowing calendar: what to sow each month
 """
 import re
 
@@ -210,3 +211,58 @@ def delete_guide(guide_id: int):
             raise HTTPException(409, "The app's own entries can't be removed.")
         conn.execute("DELETE FROM garden_guides WHERE guide_id = %s", (guide_id,))
     return Response(status_code=204)
+
+# ---------------------------------------------------------------------------------------------
+# A sowing calendar for Brisbane (subtropical south-east Queensland), written by hand from general gardening knowledge
+# (council and gardening-programme planting guides). No website was copied. A guide, not a promise: microclimates vary.
+# ---------------------------------------------------------------------------------------------
+SOWING_REGION = "Brisbane (subtropical, south-east Queensland)"
+SOWING = {
+    1: ("Hot, humid and stormy. Sow in the morning, give seedlings afternoon shade, and watch for mildew.",
+        ["beans", "cucumber", "pumpkin", "zucchini", "sweet corn", "okra", "basil", "amaranth", "Warrigal greens"],
+        ["basil", "eggplant", "capsicum", "chilli", "cherry tomato"]),
+    2: ("Still hot. The first cool-season crops can go into trays in the shade late in the month.",
+        ["beans", "cucumber", "zucchini", "sweet corn", "okra", "basil", "radish", "Asian greens", "beetroot (late)"],
+        ["tomato", "capsicum", "eggplant", "chilli", "broccoli (late)"]),
+    3: ("Autumn starts: the best month to start the cool-season garden.",
+        ["beetroot", "carrot", "radish", "lettuce", "rocket", "silverbeet", "kale", "Asian greens", "coriander", "spring onion", "bush beans"],
+        ["broccoli", "cabbage", "cauliflower", "kale", "lettuce", "celery", "tomato (early)"]),
+    4: ("Mild and drier: ideal for leafy greens, roots and peas.",
+        ["carrot", "beetroot", "radish", "lettuce", "rocket", "peas", "snow peas", "turnip", "spinach", "silverbeet", "coriander", "parsley", "dill", "spring onion"],
+        ["broccoli", "cabbage", "cauliflower", "kale", "celery", "leek", "onion", "lettuce", "strawberry"]),
+    5: ("Cool mornings. Peas, broad beans and garlic like it now; slower growth, less watering.",
+        ["peas", "snow peas", "broad beans", "carrot", "beetroot", "radish", "lettuce", "spinach", "silverbeet", "kale", "rocket", "coriander", "parsley", "spring onion", "garlic"],
+        ["broccoli", "cabbage", "cauliflower", "kale", "lettuce", "onion", "leek", "celery", "strawberry"]),
+    6: ("The coolest month. Frost is rare in the city but cold snaps slow tender plants.",
+        ["peas", "broad beans", "carrot", "beetroot", "radish", "lettuce", "rocket", "spinach", "silverbeet", "coriander", "parsley", "spring onion", "onion", "garlic (early)"],
+        ["broccoli", "cabbage", "cauliflower", "kale", "lettuce", "onion", "strawberry"]),
+    7: ("Cool and dry. Start tomatoes, capsicum, eggplant and chilli in trays in a warm, sheltered spot.",
+        ["peas", "snow peas", "carrot", "beetroot", "radish", "lettuce", "rocket", "spinach", "turnip", "potato (seed potatoes)",
+         "tomato (trays)", "capsicum (trays)", "eggplant (trays)", "chilli (trays)"],
+        ["broccoli", "cabbage", "lettuce", "onion"]),
+    8: ("Warming up. Warm-season crops go in; the last cool-season sowings finish before the heat.",
+        ["tomato", "capsicum", "eggplant", "chilli", "beans (late)", "cucumber (late)", "zucchini", "pumpkin", "sweet corn", "carrot", "beetroot", "radish", "lettuce", "basil (late)", "sweet potato (slips)"],
+        ["tomato", "capsicum", "eggplant", "chilli", "lettuce", "herbs"]),
+    9: ("Spring: the main month for warm-season crops. Dry and windy, so water well.",
+        ["beans", "cucumber", "zucchini", "pumpkin", "sweet corn", "sweet potato", "okra", "rockmelon", "watermelon", "basil", "carrot", "radish", "lettuce", "amaranth", "sunflower"],
+        ["tomato", "capsicum", "eggplant", "chilli", "basil", "cucumber", "zucchini"]),
+    10: ("Warm to hot. Lettuce and other leaves want shade now; heat-lovers thrive.",
+         ["beans", "cucumber", "zucchini", "pumpkin", "sweet corn", "okra", "rockmelon", "watermelon", "basil", "sweet potato", "sunflower", "radish", "Warrigal greens"],
+         ["eggplant", "capsicum", "chilli", "basil", "Thai basil", "cherry tomato"]),
+    11: ("Hot, with the first storms. Use shade cloth, mulch well and pick the heat-tolerant crops.",
+         ["beans", "cucumber", "zucchini", "pumpkin", "sweet corn", "okra", "basil", "sweet potato", "amaranth", "radish", "sunflower"],
+         ["eggplant", "capsicum", "chilli", "basil", "cherry tomato", "sweet potato (slips)"]),
+    12: ("Midsummer heat and storms. Water early, shade the young plants and keep sowing the tough ones.",
+         ["beans", "cucumber", "zucchini", "pumpkin", "sweet corn", "okra", "basil", "amaranth", "Malabar spinach", "sweet potato"],
+         ["eggplant", "chilli", "basil", "sweet potato (slips)", "cherry tomato"]),
+}
+
+
+@router.get("/garden/sowing-calendar")
+def sowing_calendar():
+    """What to sow each month in Brisbane (hand-written general guidance; the Guide has the per-plant months), with this month marked."""
+    with db() as conn:
+        month = today(conn).month
+    return {"region": SOWING_REGION, "this_month": month,
+            "months": [{"month": m, "name": MONTHS[m - 1], "note": note, "seeds": seeds, "seedlings": seedlings}
+                       for m, (note, seeds, seedlings) in SOWING.items()]}

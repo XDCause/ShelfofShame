@@ -6,6 +6,7 @@ import { RowPhoto } from '../../components/RecordFields.jsx'
 import { useApp } from '../../core/app-context.js'
 import JournalMentions from '../../core/journal/JournalMentions.jsx'
 import { StatusPicker } from './Backlog.jsx'
+import { GameExtras } from './GameExtras.jsx'
 import { BellCurveIcon, ClockIcon, EyeIcon, EyeOffIcon, HourglassIcon, TrophyIcon } from '../../components/icons.jsx'
 import { CompletionBar, GamePicture, HandTicked, playtime, rarity } from './steam.jsx'
 
@@ -144,6 +145,7 @@ export default function VideoGamePanel({ id, onClose }) {
           </p>
         )}
         <StatusPicker game={game} other={other} otherId={otherId} onSaved={update} />
+        <GameExtras key={`${game.beat_hours}-${game.price_paid}`} game={game} other={other} otherId={otherId} onSaved={update} />
         {other ? <HoursPlayed game={game} onSaved={update} id={otherId} />
           : game.extra ? <p className="muted small">Added by hand: Steam doesn't list it in your library, so playtime isn't known.</p>
             : <p className="muted small">{game.playtime_minutes > 0 ? `${playtime(game.playtime_minutes)} played` : 'Playtime not known'}

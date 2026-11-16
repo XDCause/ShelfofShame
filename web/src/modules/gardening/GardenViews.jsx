@@ -66,7 +66,21 @@ export function TodayView() {
               {t.water.length > 1 && <button type="button" className="primary small" onClick={() => careAll('watered')}>Watered all {t.water.length}</button>}
             </div>
             {t.water.length === 0 ? <p className="muted small">Nothing needs water today.</p> : (
-              <CareList plants={t.water} due="water_due_on" today={t.today} onDone={(p) => careOne('watered', p)} doneLabel="Watered" />
+              <CareList plants={t.water} due="water_due_weather" today={t.today} onDone={(p) => careOne('watered', p)} doneLabel="Watered" />
+            )}
+            {t.water_held?.length > 0 && (
+              <>
+                <h3 className="section-title">Held back by the weather</h3>
+                <ul className="list plain-list garden-held">
+                  {t.water_held.map((p) => (
+                    <li key={p.planting_id}><button type="button" className="row-button" onClick={() => openPanel('planting', { id: p.planting_id })}>
+                      <span className="garden-emoji" aria-hidden="true">{plantEmoji(p)}</span>
+                      <span className="grow"><span className="item-title">{p.name}</span>
+                        <span className="item-meta">{p.water_plan.note} Next {dueText(p.water_plan.due_on, t.today)}.</span></span>
+                    </button></li>
+                  ))}
+                </ul>
+              </>
             )}
           </section>
           {t.feed.length > 0 && (
@@ -141,7 +155,7 @@ function CareList({ plants, due, today, onDone, doneLabel }) {
             <span className="garden-emoji" aria-hidden="true">{plantEmoji(p)}</span>
             <span className="grow">
               <span className="item-title">{p.name}{p.quantity > 1 && <span className="muted"> ×{p.quantity}</span>}</span>
-              <span className="item-meta">{[p.space_name && `${p.space_name} › ${p.container_name}`, `due ${dueText(p[due], today)}`].filter(Boolean).join(' · ')}</span>
+              <span className="item-meta">{[p.space_name && `${p.space_name} › ${p.container_name}`, `due ${dueText(p[due], today)}`, p.water_plan?.status === 'sooner' && p.water_plan.note].filter(Boolean).join(' · ')}</span>
             </span>
           </button>
           <button type="button" className="secondary small" onClick={() => onDone(p)}>{doneLabel}</button>

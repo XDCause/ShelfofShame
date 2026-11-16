@@ -170,7 +170,35 @@ def fetch_model(conn, model_id):
         "FROM model_log l WHERE l.model_id = %s ORDER BY l.entry_date DESC, l.entry_id DESC", (model_id,)).fetchall()
     minis = conn.execute("SELECT mini_id, unit, name, stage FROM model_minis WHERE model_id = %s "
                          "ORDER BY sort_order, mini_id", (model_id,)).fetchall()
-    return {**model, "paints": paints_, "sessions": sessions, "log": log, "minis": minis}
+    return {**model, "paints": paints_, "sessions": sessions, "log": log, "minis": minis,
+            "stage_minutes": stage_minutes(conn, model_id)}
+
+
+def stage_minutes(conn, model_id=None) -> list[dict]:
+    """Time spent per build step, [{step, minutes}] in step order: a session counts towards the step the model
+    was working on when it started (the one after the last step done). One model's, or all of them.
+    Sessions from before this was recorded are 'Earlier'."""
+    rows = conn.execute("SELECT m.hobby, x.stage, round(sum(extract(epoch FROM (COALESCE(x.ended_at, now()) - x.started_at)))"
+                        " / 60)::int AS minutes FROM model_sessions x JOIN models m USING (model_id) "
+                        "WHERE (%(m)s::int IS NULL OR x.model_id = %(m)s) GROUP BY m.hobby, x.stage",
+                        {"m": model_id}).fetchall()
+    totals, order = {}, []
+    for r in rows:
+        steps = STAGES[r["hobby"]]
+        if r["stage"] is None:
+            step = "Earlier"
+        elif r["stage"] == "Not built":
+            step = steps[0]
+        elif r["stage"] in steps:
+            at = steps.index(r["stage"]) + 1
+            step = steps[at] if at < len(steps) else "After " + steps[-1]
+        else:
+            step = "Earlier"
+        totals[step] = totals.get(step, 0) + r["minutes"]
+    for hobby in STAGES.values():                          # step order (Built, Primed...), the odd ones last
+        order += [s for s in hobby if s not in order]
+    order += ["Earlier"] + [s for s in totals if s not in order]
+    return [{"step": s, "minutes": totals[s]} for s in order if totals.get(s)]
 
 
 def tamiya_id_of(conn):
@@ -287,8 +315,13 @@ def stash_summary():
             "FROM models WHERE status <> 'Wanted'").fetchone()
         minutes = conn.execute("SELECT COALESCE(round(sum(extract(epoch FROM (COALESCE(ended_at, now()) - started_at)))"
                                " / 60), 0)::int AS m FROM model_sessions").fetchone()["m"]
+        finished_by_year = conn.execute(
+            "SELECT extract(year FROM finished_on)::int AS year, count(*)::int AS kits, sum(figures)::int AS minis, "
+            "COALESCE(round(sum((SELECT sum(extract(epoch FROM (x.ended_at - x.started_at))) FROM model_sessions x "
+            "WHERE x.model_id = m.model_id AND x.ended_at IS NOT NULL)) / 60), 0)::int AS minutes "
+            "FROM models m WHERE status = 'Finished' AND finished_on IS NOT NULL GROUP BY 1 ORDER BY 1").fetchall()
         return {"counts": {s: counts.get(s, 0) for s in MODEL_STATUSES}, "shelf_of_shame": shame, "all_kits": bought,
-                "total_minutes": minutes}
+                "total_minutes": minutes, "finished_by_year": finished_by_year, "stage_minutes": stage_minutes(conn)}
 
 
 @router.post("/models", status_code=201)

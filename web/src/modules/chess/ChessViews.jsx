@@ -10,6 +10,7 @@ import { CLASSES, ChessSetup, ChessSyncBar, OtbForm, RatingChange, ResultPill, c
 import { useChessSummary } from './HomeTiles.jsx'
 import OpeningExplorer from './OpeningExplorer.jsx'
 import OpeningTrainer from './OpeningTrainer.jsx'
+import { InsightCards } from './ChessInsights.jsx'
 import { ReviewsSummary } from './Review.jsx'
 
 // The Chess hobby's pages: a dashboard (ratings, the rating over time, this week, recent games),
@@ -73,6 +74,7 @@ export function Dashboard() {
                 <button type="button" className="secondary" onClick={() => navigate('/chess/games?add=1')}>+ Log a game</button>
               </section>
               <ReviewsSummary />
+              <InsightCards />
             </div>
             <section className="card home-card">
               <h2 className="home-card-title">Recent games</h2>

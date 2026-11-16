@@ -1,7 +1,7 @@
 // The Sudoku engine: puzzles with one answer, steps that never contradict it, the daily puzzle the same each day,
 // techniques found where they apply, and hints that point out a mistake first.
 import { describe, expect, it } from 'vitest'
-import { ALL, apply, bit, candidates, engineFor, findStep, generate, grade, hintFor, makePuzzle, parse, seeded, solve, solveCount, toText } from '../modules/sudoku/engine.js'
+import { ALL, apply, bit, candidates, engineFor, findStep, generate, grade, hintFor, makePuzzle, parse, seeded, solve, solvePath, solveCount, toText } from '../modules/sudoku/engine.js'
 
 const engineFor9 = () => engineFor(9)
 
@@ -205,5 +205,26 @@ describe('the weekly', () => {
     expect(WEEKLY.length).toBeGreaterThan(300)
     for (const text of WEEKLY) expect(parse(text).filter(Boolean).length).toBeLessThanOrEqual(30)
     for (const text of WEEKLY.slice(0, 15)) expect(grade(parse(text)).level).toBe(5)
+  })
+})
+
+describe('the solving path', () => {
+  it('walks the whole puzzle to the answer, each step starting from the board before it', () => {
+    const path = solvePath(WIKI)
+    expect(path.solved).toBe(true)
+    expect(path.steps.length).toBeGreaterThan(20)
+    expect(path.steps[0].values).toEqual(WIKI)                               // the first step starts at the clues
+    const used = {}
+    for (const s of path.steps) used[s.technique] = (used[s.technique] ?? 0) + 1
+    expect(used).toEqual(grade(WIKI).techniques)                             // the same walk the grader takes
+    const last = path.steps.at(-1)
+    const board = [...last.values]
+    if (last.place) board[last.place.cell] = last.place.digit
+    expect(board).toEqual(WIKI_ANSWER)
+  })
+  it('says where it stopped when the techniques run out', () => {
+    const path = solvePath(new Array(81).fill(0))
+    expect(path.solved).toBe(false)
+    expect(path.stuck.values).toHaveLength(81)
   })
 })

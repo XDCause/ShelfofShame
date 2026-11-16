@@ -177,6 +177,9 @@ def save_seats(conn, play_id: int, seats: list[SeatIn] | list[dict], *, resolved
                         "FROM board_game_plays p JOIN board_games g USING (game_id) WHERE p.play_id = %s",
                         (play_id,)).fetchone()
     rows = outcome(seats if resolved else resolve(conn, seats), play["scoring"], play["finished"], play["coop_won"])
+    turns = {r["player_id"]: r for r in conn.execute(           # the turn timer's totals survive a re-save
+        "SELECT player_id, turn_seconds, turn_count, turn_over FROM board_game_play_players WHERE play_id = %s",
+        (play_id,)).fetchall()}
     conn.execute("DELETE FROM board_game_play_players WHERE play_id = %s", (play_id,))
     for i, s in enumerate(rows):
         parts = {k: float(v) for k, v in (s.get("parts") or {}).items() if v is not None} or None
@@ -189,6 +192,11 @@ def save_seats(conn, play_id: int, seats: list[SeatIn] | list[dict], *, resolved
             (play_id, s["player_id"], i + 1, s["score"], parts and Jsonb(parts), [num(a) for a in s.get("adds") or []],
              s["place"], s["won"], (s.get("team") or "").strip() or None, (s.get("colour") or "").strip() or None,
              s["player_id"], play["game_id"], play_id, play["played_on"], play_id))
+        t = turns.get(s["player_id"])
+        if t and t["turn_seconds"] is not None:
+            conn.execute("UPDATE board_game_play_players SET turn_seconds = %s, turn_count = %s, turn_over = %s "
+                         "WHERE play_id = %s AND player_id = %s",
+                         (t["turn_seconds"], t["turn_count"], t["turn_over"], play_id, s["player_id"]))
     names = conn.execute("SELECT pl.name, s.won FROM board_game_play_players s JOIN board_game_players pl USING (player_id) "
                          "WHERE s.play_id = %s ORDER BY s.seat", (play_id,)).fetchall()
     if play["scoring"] == "coop":
@@ -377,6 +385,53 @@ def delete_group(group_id: int):
     with db() as conn:
         found(conn.execute("DELETE FROM board_game_groups WHERE group_id = %s RETURNING 1", (group_id,)).fetchone(), "Group")
     return Response(status_code=204)
+
+
+# ---------------------------------------------------------------------------
+# Tags and round scores on a play (A05_games_extras.sql)
+# ---------------------------------------------------------------------------
+def tidy_tags(tags: list[str] | None) -> list[str]:
+    """Tags as kept: trimmed, one space between words, no blanks, each once (any case), at most 12."""
+    out: list[str] = []
+    for t in tags or []:
+        t = " ".join(str(t).split())[:40]
+        if t and t.lower() not in {o.lower() for o in out}:
+            out.append(t)
+    return out[:12]
+
+
+def tidy_rounds(rows: list[dict] | None) -> list[dict]:
+    """A round-by-round score grid as kept: one dict per round, player id (as text) -> score; blanks dropped."""
+    out = []
+    for row in (rows or [])[:999]:
+        out.append({str(k): float(v) for k, v in row.items() if str(k).isdigit() and v is not None})
+    return out
+
+
+def score_stats(conn, game_id: int) -> dict:
+    """What one game's score sheets and round grids add up to, per player: for each category (a score sheet part)
+    and for rounds - plays counted, average, highest and lowest."""
+    def summary(values: list[float]) -> dict:
+        return {"n": len(values), "avg": round(sum(values) / len(values), 1), "high": max(values), "low": min(values)}
+
+    names = {r["player_id"]: r["name"] for r in conn.execute("SELECT player_id, name FROM board_game_players").fetchall()}
+    parts: dict[str, dict[int, list[float]]] = {}
+    for r in conn.execute("SELECT s.player_id, s.parts FROM board_game_play_players s JOIN board_game_plays p USING (play_id) "
+                          "WHERE p.game_id = %s AND p.finished AND s.parts IS NOT NULL", (game_id,)).fetchall():
+        for part, v in r["parts"].items():
+            if v is not None:
+                parts.setdefault(part, {}).setdefault(r["player_id"], []).append(float(v))
+    rounds: dict[int, list[float]] = {}
+    for r in conn.execute("SELECT round_scores FROM board_game_plays WHERE game_id = %s AND finished", (game_id,)).fetchall():
+        for row in r["round_scores"] or []:
+            for pid, v in row.items():
+                if int(pid) in names:
+                    rounds.setdefault(int(pid), []).append(float(v))
+    return {
+        "parts": [{"part": part, "players": sorted(({"name": names[pid], **summary(v)} for pid, v in by.items() if pid in names),
+                                                   key=lambda x: -x["avg"])} for part, by in parts.items()],
+        "rounds": sorted(({"name": names[pid], **summary(v)} for pid, v in rounds.items()), key=lambda x: -x["avg"]),
+    }
 
 
 # ---------------------------------------------------------------------------

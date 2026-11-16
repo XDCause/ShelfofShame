@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { api, duration, imageUrl, money } from '../api.js'
 import { buildProgress, StepBar } from '../modules/models/steps.jsx'
 import EmptyState from '../core/EmptyState.jsx'
+import ModelStats from './ModelStats.jsx'
 import { PlaneIcon } from '../components/icons.jsx'
 
 const UNBUILT = ['In stash', 'In progress', 'On hold']
@@ -66,6 +67,8 @@ export default function ModelsView({ lookups, refreshKey, onOpen }) {
           <div><span>Time building</span><strong>{duration(summary.total_minutes)}</strong></div>
         </div>
       )}
+
+      {summary && <ModelStats summary={summary} />}
 
       {hobbies.length > 1 && (
         <div className="segmented hobby-filter" role="group" aria-label="Hobby">

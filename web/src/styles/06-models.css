@@ -90,3 +90,33 @@
 .log time { font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
 .log p { margin: 4px 0 0; white-space: pre-line; }
 .log img { display: block; margin-top: 8px; max-width: 100%; max-height: 320px; border-radius: 12px; }
+
+/* ---------- Paint recipes, "can I paint this now?", the finished-per-year chart (RecipeParts, PaintCheck, ModelStats) ---------- */
+.rcp-card { display: flex; flex-direction: column; gap: 8px; padding: 12px 0; border-top: 1px solid var(--separator); }
+.rcp-title { margin: 0; font-size: 1rem; }
+.rcp-steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+.rcp-step { display: list-item; }
+.rcp-step > * { margin-right: 6px; vertical-align: middle; }
+.rcp-form { display: flex; flex-direction: column; gap: 10px; }
+.rcp-step-edit { display: grid; grid-template-columns: minmax(70px, 0.7fr) minmax(0, 1.4fr) minmax(0, 1.4fr) auto; gap: 6px; align-items: center; }
+.rcp-step-buttons { display: inline-flex; gap: 2px; }
+.rcp-check { margin: 4px 0 8px; }
+.rcp-check > summary { cursor: pointer; padding: 6px 0; }
+.pck-box { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 12px; background: var(--fill-2); }
+.pck-headline { margin: 0; font-weight: 600; }
+.pck-headline.pck-ready { color: var(--ok); }
+.pck-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.pck-item { display: flex; justify-content: space-between; gap: 8px; }
+.pck-state { color: var(--muted); }
+.pck-owned .pck-state { color: var(--ok); }
+.pck-low .pck-state { color: var(--low); }
+.pck-out .pck-state, .pck-missing .pck-state { color: var(--out); }
+.mst-box { padding: 10px 14px; }
+.mst-box > summary { cursor: pointer; font-weight: 600; padding: 6px 0; }
+.mst-downloads { margin: 8px 0 0; }
+.oin-box { background: var(--low-bg); border-radius: 12px; padding: 10px 12px; }
+.oin-list { margin: 0 0 6px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+@media (max-width: 560px) {
+  .rcp-step-edit { grid-template-columns: 1fr 1fr; }
+  .rcp-step-edit > input:nth-child(2), .rcp-step-edit > input:nth-child(3) { grid-column: 1 / -1; }
+}

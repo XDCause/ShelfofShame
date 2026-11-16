@@ -96,9 +96,21 @@
 .shoot-board-done { display: grid; gap: 12px; justify-items: center; text-align: center; margin: auto 0; }
 .shoot-board-result { margin: 0; font-size: 3.5rem; font-weight: 800; }
 .shoot-board-result span { font-size: 1.2rem; font-weight: 600; color: var(--muted); }
+/* Predicted against your DOPE (ballistic solver) */
+.ballistics-card { display: grid; gap: 10px; }
+.ballistics-form { display: grid; gap: 8px; }
+.ballistics-form details { font-size: 0.9rem; }
+.ballistics-scroll { overflow-x: auto; }
+.ballistics-table td, .ballistics-table th { white-space: nowrap; }
+.ballistics-air { margin: 0; }
 @media print {
   .shoot-noprint, nav, header, .section-tabs { display: none !important; }
-  .shoot-dope { box-shadow: none; border: 1px solid #999; }
+  .shoot-dope, .ballistics-card { box-shadow: none; border: 1px solid #999; background: #fff; color: #000; break-inside: avoid; }
+  .shoot-dope .muted, .ballistics-card .muted { color: #333; }
+  .shoot-table th, .shoot-table td { border-bottom: 1px solid #999; padding: 3px 6px; color: #000; }
+  .ballistics-scroll, .shoot-dope { overflow: visible; }
+  .ballistics-table td, .ballistics-table th { white-space: normal; font-size: 0.8rem; }
+  @page { margin: 12mm; }
 }
 .ammo-compare { display: flex; flex-direction: column; gap: 10px; }
 .ammo-compare-sub { margin: 8px 0 0; font-size: 1rem; }

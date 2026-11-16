@@ -31,3 +31,26 @@
     mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent); }
   .home-now > .card > .todos { flex: none; }
 }
+
+/* Focus timer (core/focus/FocusTimer.jsx): the running bar, the start row, time already focused */
+.focus-bar-box { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; margin: 0 0 10px;
+  border: 1px solid var(--border); border-left: 4px solid var(--tint); border-radius: 10px; background: var(--surface); }
+.focus-bar-what { display: flex; flex-direction: column; min-width: 120px; }
+.focus-bar-clock { font-variant-numeric: tabular-nums; font-size: 1.5rem; font-weight: 700; }
+.focus-start { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+.focus-start input { width: 6em; }
+.focus-time { margin-top: 8px; }
+
+/* A habit's freezes (core/goals/HabitFreeze.jsx) */
+.habit-freeze { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+.habit-freeze-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0; }
+.habit-freeze li { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+/* The weekly review (core/goals/WeeklyReview.jsx) */
+.weekly-review-nav { display: flex; gap: 8px; margin-bottom: 6px; }
+.weekly-review-sum { margin: 4px 0 10px; }
+.weekly-review-goal { display: flex; align-items: center; gap: 8px; padding: 6px 0; color: inherit; text-decoration: none; }
+.weekly-review-slipping { margin: 8px 0; }
+.weekly-review-note { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.weekly-review-note textarea { width: 100%; }
+.weekly-review-fold { margin-bottom: 12px; }

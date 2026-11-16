@@ -310,3 +310,57 @@ def test_estimate_a_route_saves_nothing(client):
     assert client.get("/api/hiking/pace").json()["flat_kmh"] > 0
     assert client.post("/api/hiking/estimate", content=b"nope").status_code == 422
     assert len(client.get("/api/hiking/hikes").json()) == before
+
+
+def test_same_trail_rules():
+    from app import hikepace
+    here = {"trail_name": "Mt Example", "start_lat": -27.5, "start_lon": 153.0, "end_lat": -27.49, "end_lon": 153.0, "distance_m": 3000}
+    assert hikepace.same_trail(here, {**here, "trail_name": " mt example ", "start_lat": -27.0, "end_lat": -27.0})      # the name wins
+    near = {"trail_name": None, "start_lat": -27.5008, "start_lon": 153.0, "end_lat": -27.4905, "end_lon": 153.0, "distance_m": 3100}
+    assert hikepace.same_trail(here, near)                                                  # starts and finishes within 200 m
+    assert not hikepace.same_trail(here, {**near, "start_lat": -27.5030})                   # the start is 330 m off
+    assert not hikepace.same_trail(here, {**near, "distance_m": 6000})                      # twice as long: not the same walk
+    assert not hikepace.same_trail(here, {"trail_name": None, "distance_m": 3000})          # nothing to go on
+
+
+def test_compare_runs_and_split_gaps():
+    from app import hikepace
+    this = {"hike_id": 2, "name": "B", "hiked_on": "2026-02-01", "moving_s": 2000}
+    runs = [{"hike_id": 1, "name": "A", "hiked_on": "2026-01-01", "moving_s": 1800}, {"hike_id": 3, "name": "C", "hiked_on": "2026-03-01", "elapsed_s": 2400}]
+    c = hikepace.compare_runs(this, runs)
+    assert (c["best_id"], c["rank"], c["of"], c["behind_best_s"], c["average_s"]) == (1, 2, 3, 200, 2067)
+    assert [r["hike_id"] for r in c["runs"]] == [1, 2, 3] and [r["is_this"] for r in c["runs"]] == [False, True, False]
+    assert hikepace.compare_runs(this, []) is None and hikepace.compare_runs({"hike_id": 9, "hiked_on": "2026-01-01"}, runs) is None
+    gaps = hikepace.split_gaps([{"km": 1, "metres": 1000, "seconds": 620}, {"km": 2, "metres": 400, "seconds": 300}],
+                               [{"km": 1, "metres": 1000, "seconds": 600}, {"km": 2, "metres": 1000, "seconds": 580}])
+    assert gaps == [{"km": 1, "seconds": 620, "best_seconds": 600, "gap_s": 20}]               # the short last bit isn't compared
+    assert hikepace.split_gaps(None, None) == []
+
+
+def test_thin_track_for_drawing():
+    from app import hikepace
+    t = [[-27.5 + i * 0.001, 153.0, 100, i, i * 10] for i in range(1000)]
+    thin = hikepace.thin_track(t, 100)
+    assert len(thin) == 100 and thin[0] == [-27.5, 153.0] and thin[-1] == [round(-27.5 + 0.999, 5), 153.0]
+    assert hikepace.thin_track(t[:5], 100) == [[round(p[0], 5), round(p[1], 5)] for p in t[:5]] and hikepace.thin_track(None) == []
+
+
+def test_same_trail_route_and_the_year_in_review(client):
+    first = client.post("/api/hiking/import?filename=a.gpx", content=track(walk(every=60))).json()
+    second = client.post("/api/hiking/import?filename=b.gpx", content=track(walk(every=50))).json()
+    far = client.post("/api/hiking/import?filename=c.gpx", content=track(walk(lat=-26.5, every=70), name="Far Away")).json()
+    r = client.get(f"/api/hiking/hikes/{first['hike_id']}/same-trail").json()
+    assert r["others"] == 1 and r["compare"]["best_id"] == second["hike_id"] and r["compare"]["rank"] == 2
+    assert r["compare"]["behind_best_s"] == 300 and r["split_gaps"] and all(g["gap_s"] > 0 for g in r["split_gaps"])
+    quick = client.get(f"/api/hiking/hikes/{second['hike_id']}/same-trail").json()
+    assert quick["compare"]["rank"] == 1 and quick["split_gaps"] == []                          # nothing to chase
+    alone = client.get(f"/api/hiking/hikes/{far['hike_id']}/same-trail").json()
+    assert alone["others"] == 0 and alone["compare"] is None
+    assert client.get("/api/hiking/hikes/999999/same-trail").status_code == 404
+
+    y = client.get("/api/hiking/year?year=2026").json()
+    assert y["year"] == 2026 and y["hikes"] == 3 and y["days"] == 1 and 8.9 < y["km"] < 9.2 and 895 < y["ascent_m"] < 905
+    assert y["longest"]["hike_id"] and y["highest"]["max_ele_m"] == 400 and len(y["tracks"]) == 3 and len(y["tracks"][0]["points"]) >= 2
+    assert [m["hikes"] for m in y["months"]][8] == 3 and y["best_month"]["month"] == 9 and 2026 in y["years"]
+    assert client.get("/api/hiking/year?year=1999").json()["hikes"] == 0
+    assert client.get("/api/hiking/year?year=1800").status_code == 422

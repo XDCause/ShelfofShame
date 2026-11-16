@@ -11,6 +11,7 @@ import { useApp } from './app-context.js'
 import { ComingUp } from './calendar/CalendarPage.jsx'
 import TodoHome from './todo/TodoHome.jsx'
 import GoalNudges from './goals/GoalNudges.jsx'
+import { WeeklyReviewHome } from './goals/WeeklyReview.jsx'
 import JournalHome from './journal/JournalHome.jsx'
 import { useNewPage } from './journal/JournalList.jsx'
 import { SiteCheckWarning, useFailingSites } from '../components/SiteChecks.jsx'
@@ -102,6 +103,7 @@ export default function Home() {
         <TodoHome />
       </div>
       <GoalNudges />
+      <WeeklyReviewHome />
 
       <section className="home-hobbies" aria-labelledby="home-hobbies">
         <h2 id="home-hobbies" className="home-section-title">Your hobbies</h2>

@@ -10,6 +10,7 @@ import { Stars } from '../reading/readingParts.jsx'
 import { readExif } from './exif.js'
 import HikeMap from './HikeMap.jsx'
 import { steepestStretch } from './hikingMath.js'
+import HikeCompare from './HikeCompare.jsx'
 import { ElevationProfile, HikeForm, PhotoViewer, Splits, hikeTime, km, metres, pace } from './hikingParts.jsx'
 
 // One hike: the numbers; the route on a topographic or satellite map with its elevation profile (hover
@@ -222,6 +223,8 @@ export default function HikePanel({ id: startId, onClose }) {
           </Fold>
         </section>
       )}
+
+      <HikeCompare hikeId={h.hike_id} onOpen={setId} />
 
       <section className="panel-section">
         {editing ? (

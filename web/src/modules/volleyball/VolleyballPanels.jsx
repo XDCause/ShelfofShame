@@ -5,6 +5,7 @@ import PhotoPick from '../../components/PhotoPick.jsx'
 import RecordFields, { useRecordForm } from '../../components/RecordFields.jsx'
 import { useApp } from '../../core/app-context.js'
 import ClipEditor, { Making } from './ClipEditor.jsx'
+import { GameTracker } from './VolleyballMore.jsx'
 import { useNewPage } from '../../core/journal/JournalList.jsx'
 
 // The game form: your team is picked from your registered teams; Against and Where suggest what
@@ -129,6 +130,7 @@ export function VolleyballGamePanel({ id = null, eventId = null, day = null, ven
       onField={onField} onClose={onClose} onSave={save} saveLabel={game ? 'Save' : 'Log it'}
       onDelete={game && (async () => { await api.deleteVolleyball(game.game_id); changed(); onClose() })}
       before={game && (
+        <>
         <section className="panel-section">
           <div className="button-row">
             {score(game) && <span className={`pill ${resultTone(game.result)}`}>{score(game)}</span>}
@@ -146,6 +148,8 @@ export function VolleyballGamePanel({ id = null, eventId = null, day = null, ven
           )}
           <button type="button" className="plain small" onClick={() => openPanel('video', { gameId: game.game_id })}>+ Add a video of it</button>
         </section>
+        {!game.bye && <GameTracker gameId={game.game_id} />}
+        </>
       )}>
       {() => (
         <>

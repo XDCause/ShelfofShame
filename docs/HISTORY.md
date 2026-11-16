@@ -1036,3 +1036,48 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
      very bottom of the screen); toolbar buttons keep their words on one line ("+ New / page"); the "Playing now"
      tile shows how long it's been going, with the game's name under it (a long name in the number font overflowed);
      "1 plays"; the hikes search's placeholder fits a phone.
+
+5z. **The market review, built out** (2026-11-16, the user: "build out all of the hobby recommendations you have in dev",
+   after staging the 5y batch). Six subagents (two waves of hobbies, each its own files and its own db/init number
+   A01-A06; two were cut off by the usage limit and resumed after it reset), the calendar feed here; everything checked,
+   fixed and tested here. docs/MARKET-REVIEW.md marks what's DONE; left on purpose: anything needing a new outside service
+   or account (RetroAchievements, an "am I back?" alert service, plant ID, booking emails) and the big ones (offline
+   map navigation, killer / thermo sudoku).
+   - Calendar feed (calendar_feed.py, Settings > Calendar feed): your events (repeats spread out, a month back to a year
+     ahead) and trips as a private .ics address for the phone's calendar app. A calendar app can't sign in, so the address
+     carries its own secret key (settings.calendar_feed_key, never in /api/settings); a wrong or missing key is a 404 like
+     no feed at all; New address retires the old one. The one route main.py includes without the sign-in check besides
+     auth's (test_auth's PUBLIC list; test_calendar_feed checks a stranger gets nothing). Lines folded at 75 octets,
+     times in UTC from Brisbane's fixed +10. Google Calendar's servers can't reach a home network: subscribe on the phone.
+   - Models and Supplies (A01, recipes.py): paint recipes (steps with a paint from your supplies or typed) on a model or on
+     their own, copyable; "Can I paint this now?" (owned / low / out / missing, one tap to the wishlist) for a recipe or a
+     kit's paint list; time per build step (a trigger stamps each timer session with the step) and finished per year;
+     "You own something close" on a low / out paint; Low, out and getting old (opened-on + shelf life); price history and
+     "Price dropped" on the wishlist; a paint rack of swatches; CSV exports of builds and recipes.
+   - Chess and Sudoku (A02, chess_insights.py): clock stats from the PGN's [%clk] (time per move, mistakes in time
+     trouble - old reviews get them from the stored PGN); Your puzzles: your own mistakes as spaced-repetition puzzles;
+     won positions you let go; skill scores against your own history; endgame types. Sudoku: per-technique stats with a
+     "Practise it" link, a solving-path stepper, colour marking for chains (saved with the game).
+   - Core and Travel (A03, focus.py, goals_review.py, journal_day.py, travel_extras.py): a focus timer on a to-do or goal
+     (server-kept start; minutes logged; a focus_minutes goal source); voice notes in the journal (the browser's speech
+     recognition - Chrome / Edge send the audio to their makers: the tooltip says so, BEFORE_GOING_PUBLIC lists it);
+     "Your day" summary into a journal page; habit streak freezes (3 a month) and a weekly review (Sundays, saved as a
+     journal page); trip cost splitting (who paid, who shares, settle-up) and a day-by-day trip map (straight-line legs).
+   - Shooting, Hiking, Gardening (A04, ballistics.py): a point-mass solver with G1 / G7 drag (RK4), air density and
+     density altitude from the session's temperature, pressure and humidity, powder temperature sensitivity from your
+     chronograph sessions, the predicted table beside your DOPE (printable). The drag tables were typed from general
+     knowledge - check a rifle against your own ballistic app before relying on it (BEFORE_GOING_PUBLIC lists it). Hiking:
+     the same trail compared (best time, rank, per-km gaps) and a Year page with every track on one map. Gardening:
+     watering that follows the weather (rain on an open space counts; a hot spell brings it forward; rain likely tomorrow
+     waits), a photo timeline per plant with a before / after slider, a hand-written Brisbane sowing calendar (the Guide and
+     a calendar layer), sun hours per spot.
+   - Board and Video games (A05): a per-player turn timer in a live play (the server keeps whose turn and since when; it
+     folds into the totals on a pause or a stage change), score by round, tags on plays; time to beat (your guess, else
+     SteamHunters' median, else your own median - no HowLongToBeat), the easiest achievement left, cost per hour.
+   - Reading, Vinyl, Volleyball (A06, reading_more.py, vinyl_care.py, vinyl_more.py, vbstats.py): a reading year in review,
+     private tags and challenges; vinyl value over time, loans, a cleaning log and stylus hours, an insurance page (print),
+     a listening year; volleyball serve / pass ratings (0-3), optional rally entry for rotation stats (side-out % per
+     rotation), clips tagged by skill and outcome, drill logs with bests and weekly volume.
+   - Fixed while checking: the hiking year's "top" helper had a default argument that referenced a name that didn't exist
+     yet (the Year page would have crashed); a ballistics test asked for a step bigger than the route allows; a garden test
+     didn't fake the forecast that Today's tips ask for.

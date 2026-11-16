@@ -1,15 +1,14 @@
 """Video games: time played, the stats page, the year's recap and the yearly goal. Split out of videogames.py
 (2026-10-22)."""
 import random
-import statistics
 from datetime import date, timedelta
 
 from fastapi import APIRouter, Query
 
 from .db import db
-from .videogames import (ALL_GAMES, COMPLETION_BANDS, GOAL_KEY, GoalIn, PLATFORMS_QUERY,
-                         RARITY_BANDS, UNLOCKS, games_where, platforms_from, played,
-                         steam_ids, streaks, summary)
+from .videogames import (ALL_ACHIEVEMENTS, ALL_GAMES, COMPLETION_BANDS, GOAL_KEY, GoalIn, PLATFORMS_QUERY,
+                         RARITY_BANDS, UNLOCKS, finished_median, games_where, platforms_from, played,
+                         steam_ids, streaks, summary, with_estimate)
 
 router = APIRouter(prefix="/api", tags=["video games"])
 
@@ -114,19 +113,17 @@ def set_goal(body: GoalIn):
 @router.get("/videogames/backlog")
 def backlog(by: str = Query("shortest", pattern="^(shortest|achievements|random)$"), platforms: str | None = PLATFORMS_QUERY):
     """What next? From the games in your Backlog (status backlog, hidden ones left out):
-        shortest      the least time to play: SteamHunters' median time to 100% if it has one, else your own median
-                      playtime of the games you've finished (median_finished_minutes)
+        shortest      the least time to play: your own estimate (beat_hours) if you gave one, else SteamHunters' median
+                      time to 100%, else your own median playtime of the games you've finished (median_finished_minutes)
         achievements  the fewest achievements left (games without any come last)
         random        any one
     pick is the one to play, others the next few. (Declared before /videogames/{app_id}.)"""
     chosen = platforms_from(platforms)
     with db() as conn:
         games = games_where(conn, chosen, "NOT hidden AND status = 'backlog'", lambda g: g["name"].lower(), counted_only=False)
-        done = [g["playtime_minutes"] for g in games_where(conn, chosen, "NOT hidden AND status = 'finished' AND playtime_minutes > 0",
-                                                            lambda g: 0, counted_only=False)]
-    median = round(statistics.median(done)) if done else None
+        median = finished_median(conn, chosen)
     for g in games:
-        g["estimate_minutes"] = g["sh_median_minutes"] if (g["sh_median_minutes"] or 0) > 0 else median
+        with_estimate(g, median)
     if by == "random":
         random.shuffle(games)
     elif by == "achievements":
@@ -134,7 +131,54 @@ def backlog(by: str = Query("shortest", pattern="^(shortest|achievements|random)
     else:
         games.sort(key=lambda g: (g["estimate_minutes"] is None, g["estimate_minutes"] or 0))
     keep = ("platform", "app_id", "name", "header_url", "playtime_minutes", "achievements_total", "left_to_get",
-            "sh_median_minutes", "estimate_minutes", "status")
+            "sh_median_minutes", "estimate_minutes", "estimate_source", "beat_hours", "status")
     slim = [{k: g.get(k) for k in keep} for g in games[:5]]
     return {"by": by, "count": len(games), "median_finished_minutes": median,
             "pick": slim[0] if slim else None, "others": slim[1:]}
+
+
+@router.get("/videogames/easy-achievements")
+def easy_achievements(limit: int = Query(12, ge=1, le=50), platforms: str | None = PLATFORMS_QUERY):
+    """Your next easiest achievements: in each game (not hidden, on the chosen platforms) the one you don't have yet
+    that the most players have (Steam's / Exophase's global %), easiest first. Ones that can't be earned any more
+    are left out. (Declared before /videogames/{app_id}.)"""
+    with db() as conn:
+        rows = conn.execute(f"""
+            SELECT * FROM (
+                SELECT DISTINCT ON (a.platform, a.app_id) a.platform, a.app_id, a.game, a.api_name, a.name, a.description,
+                       a.icon, a.global_percent, g.achievements_done, g.achievements_total
+                FROM {ALL_ACHIEVEMENTS} a
+                JOIN {ALL_GAMES} g ON g.platform = a.platform AND g.app_id = a.app_id
+                WHERE a.platform = ANY(%(platforms)s) AND NOT a.game_hidden AND NOT g.hidden AND NOT a.achieved
+                  AND a.global_percent IS NOT NULL
+                  AND NOT EXISTS (SELECT 1 FROM vg_achievements u WHERE a.platform = 'steam' AND u.app_id::text = a.app_id
+                                  AND u.api_name = a.api_name AND u.unobtainable)
+                ORDER BY a.platform, a.app_id, a.global_percent DESC, a.name) x
+            ORDER BY global_percent DESC, achievements_done DESC, game LIMIT %(limit)s""",
+                            {"platforms": platforms_from(platforms), "limit": limit}).fetchall()
+    return steam_ids(rows)
+
+
+@router.get("/videogames/costs")
+def costs(platforms: str | None = PLATFORMS_QUERY):
+    """What your games cost per hour played. Only games you gave a price (price_paid) count towards spent:
+        spent / hours       the price of those games and the hours you've played them; per_hour = spent / hours
+        library_hours       every hour in the library (priced or not), games = how many games it is
+        games               the priced games, the dearest per hour first (a game never played has no per_hour)"""
+    chosen = platforms_from(platforms)
+    with db() as conn:
+        priced = games_where(conn, chosen, "price_paid IS NOT NULL", lambda g: 0, counted_only=False)
+        library = conn.execute(f"SELECT count(*)::int AS games, COALESCE(sum(playtime_minutes), 0)::int AS minutes "
+                               f"FROM {ALL_GAMES} g WHERE platform = ANY(%(p)s) AND NOT hidden", {"p": chosen}).fetchone()
+    rows = []
+    for g in priced:
+        hours = g["playtime_minutes"] / 60
+        rows.append({k: g.get(k) for k in ("platform", "app_id", "name", "header_url", "price_paid", "playtime_minutes")}
+                    | {"per_hour": round(float(g["price_paid"]) / hours, 2) if hours > 0 else None})
+    rows.sort(key=lambda r: (r["per_hour"] is None, -(r["per_hour"] or 0), r["name"].lower()))
+    spent = sum(float(r["price_paid"]) for r in rows)
+    minutes = sum(r["playtime_minutes"] for r in rows)
+    return {"spent": round(spent, 2), "priced": len(rows), "hours": round(minutes / 60, 1),
+            "per_hour": round(spent / (minutes / 60), 2) if minutes else None,
+            "unplayed": sum(r["per_hour"] is None for r in rows),
+            "library_games": library["games"], "library_hours": round(library["minutes"] / 60, 1), "games": rows}

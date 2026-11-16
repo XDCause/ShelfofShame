@@ -25,12 +25,13 @@ works in the offline copy too, and no puzzle site is ever asked). Here they're k
 
 Solved games show on the calendar and in Recent activity (activity.py); goals can count them (goal_sources.py).
 """
+import re
 from datetime import date, timedelta
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Path, Query, Response
 from psycopg.types.json import Jsonb
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from . import wikimedia
 from .db import db, found, insert_row, update_row
@@ -157,6 +158,14 @@ class State(BaseModel):
     v: str = Field(pattern=GRID)                           # your digits (and the clues)
     n: list[int] = Field(min_length=81, max_length=256)    # each cell's notes (bit d-1 = d)
     m: list[list[int]] | None = Field(None, max_length=5000)   # every digit change: [second, cell, digit (0 = taken out)] - the replay
+    c: dict[str, int] | None = Field(None, max_length=600)     # colour marks: "cell" or "cell:digit" (a note) -> colour 1-4
+
+    @field_validator("c")
+    @classmethod
+    def _marks(cls, c):
+        if c and any(not re.fullmatch(r"\d{1,3}(:\d{1,2})?", k) or not 1 <= v <= 4 for k, v in c.items()):
+            raise ValueError("Colour marks are a cell (or cell:digit) and a colour from 1 to 4.")
+        return c
 
 
 class GameIn(BaseModel):
@@ -511,6 +520,52 @@ def stats(days: int = Query(365, ge=7, le=3660)):
                 "by_day": by_day, "techniques_needed": needed, "hints_by_technique": hinted, "totals": totals,
                 "streak": streaks(_days(conn), today), "since": today - timedelta(days=days),
                 "mistakes_by_cell": by_cell, "mistakes_by_digit": by_digit}
+
+
+@router.get("/sudoku/technique-stats")
+def technique_stats():
+    """Per technique: hints asked, how many solved 9 x 9s needed it, how long those took (against the par for their
+    difficulty), practice puzzles solved; per difficulty: times; and the technique you most need to work on."""
+    with db() as conn:
+        rows = conn.execute("""SELECT difficulty, status, seconds, hints, practice, techniques, hint_kinds FROM sudoku_games
+                               WHERE size = 9""").fetchall()
+    per, diffs = {}, {}
+    row = lambda k: per.setdefault(k, {"key": k, "hints": 0, "hint_games": 0, "needed": 0, "seconds": [], "vs_par": [], "practised": 0})   # noqa: E731
+    for g in rows:
+        for k, n in (g["hint_kinds"] or {}).items():
+            if n:
+                row(k)["hints"] += n
+                row(k)["hint_games"] += 1
+        if g["status"] != "solved":
+            continue
+        if g["practice"]:
+            row(g["practice"])["practised"] += 1
+            continue
+        d = diffs.setdefault(g["difficulty"], {"difficulty": g["difficulty"], "solved": 0, "seconds": [], "vs_par": []})
+        d["solved"] += 1
+        par = SPEED.get(g["difficulty"])
+        if g["seconds"]:
+            d["seconds"].append(g["seconds"])
+            if par:
+                d["vs_par"].append(g["seconds"] / par)
+        for k in (g["techniques"] or {}):
+            t = row(k)
+            t["needed"] += 1
+            if g["seconds"]:
+                t["seconds"].append(g["seconds"])
+                if par:
+                    t["vs_par"].append(g["seconds"] / par)
+    avg = lambda xs, nd=0: round(sum(xs) / len(xs), nd) if xs else None    # noqa: E731
+    out = [{"key": t["key"], "hints": t["hints"], "hint_games": t["hint_games"], "needed": t["needed"], "practised": t["practised"],
+            "avg_seconds": avg(t["seconds"]), "vs_par": avg(t["vs_par"], 2)} for t in per.values()]
+    out.sort(key=lambda t: (-t["hints"], -t["needed"], t["key"]))
+    # The one to work on: asks for the most hints for each puzzle that needed it (only techniques with a practice puzzle).
+    wanted = [t for t in out if t["key"] in PRACTISABLE and t["hints"] > 0]
+    weakest = max(wanted, key=lambda t: (t["hints"] / max(1, t["needed"]), t["vs_par"] or 0), default=None)
+    return {"techniques": out, "weakest": weakest["key"] if weakest else None,
+            "difficulties": [{"difficulty": d["difficulty"], "solved": d["solved"], "avg_seconds": avg(d["seconds"]),
+                              "best_seconds": min(d["seconds"], default=None), "vs_par": avg(d["vs_par"], 2)}
+                             for d in sorted(diffs.values(), key=lambda d: list(SPEED).index(d["difficulty"]))]}
 
 
 # ---------------------------------------------------------------- achievements

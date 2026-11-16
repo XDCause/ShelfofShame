@@ -20,7 +20,7 @@ import secrets
 import subprocess
 import threading
 from decimal import Decimal
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Response
 from pydantic import BaseModel, Field
@@ -46,16 +46,24 @@ def hundredths(seconds: float) -> Decimal:
     return Decimal(str(round(seconds, 2)))
 
 
+Skill = Literal["serve", "pass", "set", "attack", "block", "dig"]     # a clip's tags (A06_reading_vinyl_volleyball.sql)
+Outcome = Literal["good", "error"]
+
+
 class ClipIn(BaseModel):
     title: str | None = Field(None, max_length=120)
     start: Seconds
     end: Seconds
+    skill: Skill | None = None
+    outcome: Outcome | None = None
 
 
 class ClipPatch(BaseModel):
     title: str | None = Field(None, max_length=120)
     start: Seconds | None = None
     end: Seconds | None = None
+    skill: Skill | None = None
+    outcome: Outcome | None = None
 
 
 class HighlightIn(BaseModel):
@@ -64,7 +72,7 @@ class HighlightIn(BaseModel):
 
 
 CLIP_SELECT = """
-SELECT c.clip_id, c.video_id, c.title, c.start_s::float AS start, c.end_s::float AS "end",
+SELECT c.clip_id, c.video_id, c.title, c.skill, c.outcome, c.start_s::float AS start, c.end_s::float AS "end",
        (c.end_s - c.start_s)::float AS seconds, x.title AS video_title
 FROM volleyball_clips c JOIN volleyball_videos x USING (video_id)"""
 
@@ -78,6 +86,25 @@ def _check_times(start, end):
 
 def _clip(conn, clip_id: int) -> dict:
     return found(conn.execute(CLIP_SELECT + " WHERE c.clip_id = %s", (clip_id,)).fetchone(), "Clip")
+
+
+@router.get("/volleyball/clips")
+def tagged_clips(skill: Skill | None = None, outcome: Outcome | None = None):
+    """Every clip (newest first), or only those tagged with a skill and / or an outcome ("my serve errors"), with the
+    video each is in and the counts per skill x outcome (for the filter buttons)."""
+    where, params = ["true"], {}
+    for col, val in (("skill", skill), ("outcome", outcome)):
+        if val:
+            where.append(f"c.{col} = %({col})s")
+            params[col] = val
+    with db() as conn:
+        clips = conn.execute(CLIP_SELECT.replace("x.title AS video_title", """x.title AS video_title, x.topic,
+            CASE WHEN x.file_name IS NOT NULL THEN '/api/volleyball/videos/' || x.video_id || '/file?v=' || x.file_name END AS file_url,
+            g.played_on AS game_day""").replace("JOIN volleyball_videos x USING (video_id)",
+            "JOIN volleyball_videos x USING (video_id) LEFT JOIN volleyball_games g ON g.game_id = x.game_id")
+            + f" WHERE {' AND '.join(where)} ORDER BY c.clip_id DESC", params).fetchall()
+        counts = conn.execute("SELECT skill, outcome, count(*)::int AS n FROM volleyball_clips GROUP BY 1, 2").fetchall()
+    return {"clips": clips, "counts": counts}
 
 
 @router.get("/volleyball/videos/{video_id}/clips")
@@ -98,8 +125,9 @@ def add_clip(video_id: int, body: ClipIn):
             raise HTTPException(409, "Clips are for uploaded videos (not links).")
         if video["processing"]:
             raise HTTPException(409, "That video isn't ready yet.")
-        clip_id = conn.execute("INSERT INTO volleyball_clips (video_id, title, start_s, end_s) VALUES (%s, %s, %s, %s) "
-                               "RETURNING clip_id", (video_id, (body.title or "").strip() or None, start, end)
+        clip_id = conn.execute("INSERT INTO volleyball_clips (video_id, title, start_s, end_s, skill, outcome) "
+                               "VALUES (%s, %s, %s, %s, %s, %s) RETURNING clip_id",
+                               (video_id, (body.title or "").strip() or None, start, end, body.skill, body.outcome)
                                ).fetchone()["clip_id"]
         return _clip(conn, clip_id)
 
@@ -113,8 +141,10 @@ def update_clip(clip_id: int, body: ClipPatch):
         end = hundredths(sent["end"] if sent.get("end") is not None else clip["end"])
         _check_times(start, end)
         title = ((sent["title"] or "").strip() or None) if "title" in sent else clip["title"]
-        conn.execute("UPDATE volleyball_clips SET title = %s, start_s = %s, end_s = %s WHERE clip_id = %s",
-                     (title, start, end, clip_id))
+        skill = sent["skill"] if "skill" in sent else clip["skill"]
+        outcome = sent["outcome"] if "outcome" in sent else clip["outcome"]
+        conn.execute("UPDATE volleyball_clips SET title = %s, start_s = %s, end_s = %s, skill = %s, outcome = %s WHERE clip_id = %s",
+                     (title, start, end, skill, outcome, clip_id))
         return _clip(conn, clip_id)
 
 

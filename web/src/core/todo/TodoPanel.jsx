@@ -3,6 +3,7 @@ import { api } from '../../api.js'
 import Drawer from '../../components/Drawer.jsx'
 import { useHobbies } from '../useHobbies.js'
 import { useApp } from '../app-context.js'
+import { FocusStart, FocusTime } from '../focus/FocusTimer.jsx'
 import { REPEATS } from './todoParts.jsx'
 
 // A to-do in full: its words and notes, when it's due, how important, a hobby, the goal it helps, and whether it
@@ -71,6 +72,11 @@ export default function TodoPanel({ id, onClose }) {
         {f.repeats !== 'never' && <p className="hint wide">Ticked off, the next one appears, due a step on.</p>}
         {error && <p className="alert error small wide" role="alert">{error}</p>}
       </form>
+      <section className="panel-section">
+        <h3 className="section-title">Focus</h3>
+        <FocusStart target={{ todo_id: id }} label="Focus on this to-do" />
+        <FocusTime kind="todo" id={id} />
+      </section>
     </Drawer>
   )
 }

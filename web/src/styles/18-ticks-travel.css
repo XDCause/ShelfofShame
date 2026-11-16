@@ -92,3 +92,18 @@
 .packing-list-fold { margin-bottom: 8px; }
 .packing-list-group { margin: 6px 0; display: grid; gap: 4px; }
 .packing-list-group .chip { display: inline-flex; align-items: center; gap: 2px; }
+
+/* Splitting a trip's costs (modules/travel/TripSplit.jsx) and the day-by-day map (TripDayMap.jsx) */
+.split-people { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0 0 8px; padding: 0; }
+.split-person { display: inline-flex; align-items: center; gap: 2px; padding: 2px 4px 2px 10px; border: 1px solid var(--border); border-radius: 999px; }
+.split-add { display: flex; gap: 8px; flex-wrap: wrap; }
+.split-show { display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem; }
+.split-settle li { padding: 4px 0; }
+.split-balances { width: 100%; border-collapse: collapse; margin: 8px 0; font-variant-numeric: tabular-nums; }
+.split-balances th, .split-balances td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--border); }
+.split-cost { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.split-shared { display: flex; gap: 4px; flex-wrap: wrap; flex-basis: 100%; }
+.daymap-days { display: flex; flex-wrap: wrap; margin: 4px 0 8px; }
+.daymap-stops { margin-top: 10px; }
+.daymap-stop { display: flex; align-items: center; gap: 8px; margin: 0; }
+.daymap-leg { margin: 2px 0 2px 32px; }

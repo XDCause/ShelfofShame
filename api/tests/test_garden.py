@@ -387,3 +387,67 @@ def test_harvest_worth_it_cost_against_harvest(client):
     client.put("/api/garden/harvests/values", json={"crop": "worth lettuce", "unit": "g", "per_unit": None})
     row = next(p for p in client.get("/api/garden/harvests/worth").json()["plantings"] if p["planting_id"] == a["planting_id"])
     assert row["verdict"] is None
+
+
+def test_watering_follows_the_weather(client, monkeypatch):
+    from datetime import date, timedelta
+    t = date(2026, 1, 10)
+    iso = lambda o: (t + timedelta(days=o)).isoformat()                                # noqa: E731
+
+    def week(by_offset=None):
+        return [{"day": iso(o), "max": 28, "min": 20, "rain_mm": 0, "rain_chance": 0, **(by_offset or {}).get(o, {})} for o in range(-2, 4)]
+    plant = {"water_every_days": 3, "self_watering": False, "covered": False, "space_kind": "Balcony",
+             "last_watered_on": t - timedelta(days=3), "water_due_on": t}
+    assert garden_today.water_plan(plant, week(), t) is None                              # a mild week changes nothing
+    # rain on an open balcony counts as a watering: due 3 days after it
+    r = garden_today.water_plan(plant, week({0: {"rain_mm": 12}}), t)
+    assert (r["status"], r["due_on"]) == ("skip", t + timedelta(days=3)) and "counts as a watering" in r["note"]
+    assert garden_today.water_plan(plant, week({-1: {"rain_mm": 6}}), t)["due_on"] == t + timedelta(days=2)
+    assert garden_today.water_plan({**plant, "covered": True}, week({0: {"rain_mm": 12}}), t) is None   # a roof keeps the rain off
+    assert garden_today.water_plan({**plant, "space_kind": "Indoor"}, week({0: {"rain_mm": 12}}), t) is None
+    # rain coming tomorrow: wait for it
+    w = garden_today.water_plan(plant, week({1: {"rain_mm": 10, "rain_chance": 80}}), t)
+    assert (w["status"], w["due_on"]) == ("wait", t + timedelta(days=1))
+    assert garden_today.water_plan(plant, week({1: {"rain_mm": 10, "rain_chance": 30}}), t) is None   # not likely enough
+    # a hot spell shortens the gap: every 3 days becomes every 2 (4 becomes 2 when very hot)
+    hot = garden_today.water_plan({**plant, "last_watered_on": t - timedelta(days=2), "water_due_on": t + timedelta(days=1)},
+                                  week({0: {"max": 34}, 1: {"max": 35}}), t)
+    assert (hot["status"], hot["due_on"]) == ("sooner", t) and "Hot spell" in hot["note"]
+    assert garden_today.water_plan({**plant, "water_every_days": 4, "last_watered_on": t - timedelta(days=2), "water_due_on": t + timedelta(days=2)},
+                                   week({0: {"max": 38}}), t)["due_on"] == t
+    assert garden_today.water_plan({**plant, "water_every_days": None}, week(), t) is None
+
+    # in Today: a plant that the schedule says to water is held back after rain, and the Home count follows
+    now = date.fromisoformat(client.get("/api/garden/today").json()["today"])
+    days = [{"day": (now + timedelta(days=o)).isoformat(), "max": 28, "min": 20, "rain_mm": 15 if o == 0 else 0, "rain_chance": 0}
+            for o in range(-2, 4)]
+    monkeypatch.setattr(openmeteo, "care_days", lambda lat, lon: days)
+    monkeypatch.setattr(openmeteo, "forecast", lambda lat, lon: [])          # (Today's weather tips: none here)
+    client.put("/api/garden/settings", json={"place_name": "Brisbane", "lat": -27.47, "lon": 153.03})
+    space = client.post("/api/garden/spaces", json={"name": "Open balcony", "kind": "Balcony", "covered": False}).json()
+    pot = client.post("/api/garden/containers", json={"space_id": space["space_id"], "name": "Pot"}).json()
+    p = client.post("/api/garden/plantings", json={"container_id": pot["container_id"], "name": "Basil", "water_every_days": 2,
+                                                  "stage": "Growing"}).json()
+    today_list = client.get("/api/garden/today").json()
+    assert p["planting_id"] not in [x["planting_id"] for x in today_list["water"]]
+    held = [x for x in today_list["water_held"] if x["planting_id"] == p["planting_id"]]
+    assert held and held[0]["water_plan"]["status"] == "skip" and "rain" in held[0]["water_plan"]["note"]
+    assert today_list["water_held"] and all("water_due_weather" in x for x in today_list["water"])
+
+
+def test_brisbane_sowing_calendar(client):
+    c = client.get("/api/garden/sowing-calendar").json()
+    assert c["region"].startswith("Brisbane") and [m["month"] for m in c["months"]] == list(range(1, 13)) and 1 <= c["this_month"] <= 12
+    assert c["months"][0]["name"] == "January" and all(m["note"] and m["seeds"] and m["seedlings"] for m in c["months"])
+    assert "peas" in c["months"][4]["seeds"] and "tomato (trays)" in c["months"][6]["seeds"]          # May and July
+
+
+def test_sun_by_time_of_day_sets_the_sun_hours(client):
+    s = client.post("/api/garden/spaces", json={"name": "East rail", "sun_morning": 3.5, "sun_midday": 2, "sun_afternoon": 0}).json()
+    assert (s["sun_morning"], s["sun_midday"], s["sun_afternoon"], s["sun_hours"]) == (3.5, 2.0, 0.0, 5.5)
+    # changing one part re-adds them all (the guide's "too little sun" checks read sun_hours)
+    s = client.patch(f"/api/garden/spaces/{s['space_id']}", json={"sun_afternoon": 1.5}).json()
+    assert (s["sun_hours"], s["sun_afternoon"]) == (7.0, 1.5)
+    plain = client.post("/api/garden/spaces", json={"name": "Plain", "sun_hours": 4}).json()
+    assert (plain["sun_hours"], plain["sun_morning"]) == (4.0, None)
+    assert client.post("/api/garden/spaces", json={"name": "Too much", "sun_morning": 5}).status_code == 422

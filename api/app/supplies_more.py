@@ -319,3 +319,26 @@ def value_report():
     total = round(sum(s["total"] for s in sections), 2)
     return {"on": now, "total": total, "sections": sections, "unpriced": sum(s["unpriced"] for s in sections),
             "money": str(Decimal(str(total)))}
+
+
+# ---------------------------------------------------------------- low / out / getting old
+@router.get("/supplies/stock-report")
+def stock_report():
+    """What to look at: Out and Low supplies (with whether they're on the wishlist already), and "getting old" ones -
+    opened, with a shelf life that's up or ends within 30 days (paint, glue, putty go off)."""
+    with db() as conn:
+        low = conn.execute(SUPPLY_SELECT + " WHERE v.stock_status <> 'OK' ORDER BY v.stock_status DESC, v.category, s.name").fetchall()
+        old = conn.execute(SUPPLY_SELECT + " WHERE s.qty_on_hand > 0 AND s.opened_on IS NOT NULL "
+                           "AND COALESCE(s.shelf_months, cat.shelf_months) IS NOT NULL "
+                           "AND s.opened_on + make_interval(months => COALESCE(s.shelf_months, cat.shelf_months)) "
+                           "<= current_date + 30 ORDER BY check_by, s.name").fetchall()
+    return {"out": [r for r in low if r["stock_status"] == "Out"], "low": [r for r in low if r["stock_status"] == "Low"],
+            "old": old, "to_add": sum(1 for r in low if not r["on_wishlist"])}
+
+
+@router.post("/supplies/stock-report/wishlist")
+def stock_report_to_wishlist():
+    """One tap: every Out and Low supply that isn't on the wishlist yet goes on it."""
+    with db() as conn:
+        added = wish_from_supplies(conn, "v.stock_status <> 'OK'", notes="Added from the low / out report")
+    return {"added": [r["name"] for r in added]}

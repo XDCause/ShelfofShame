@@ -10,6 +10,8 @@ import { DIFF_TONE, PAPERS, clockText, clearLocal, dailyDifficulty, dailySeed, e
 import { WEEKLY } from './weekly.js'
 import { AwardList } from './Awards.jsx'
 import PhotoReader from './PhotoReader.jsx'
+import SolvePath from './SolvePath.jsx'
+import { COLOURS, COLOUR_NAMES, cellColour, cellKey, dropNoteMarks, noteColour, noteKey, toggleMark } from './sudokuMarks.js'
 import { EVENT, HARDEST, THEMES, earnedThemes, stops } from './events.js'
 
 // Sudoku > Play: a new game (pick a size and a difficulty), the daily puzzle, practising a technique, or a puzzle typed
@@ -212,6 +214,10 @@ function Game({ record }) {
   const [rated, setRated] = useState(null)
   const [moves, setMoves] = useState(() => record.state?.m ?? [])
   const [replay, setReplay] = useState(null)          // {at: moves shown, playing}
+  const [path, setPath] = useState(false)           // stepping through the solving path (a finished game)
+  const [marks, setMarks] = useState(() => record.state?.c ?? {})     // colour marks: cells and notes (sudokuMarks.js)
+  const [ink, setInk] = useState(1)                  // the colour in use
+  const [inkOn, setInkOn] = useState('cell')         // what a colour goes on: 'cell' | 'note' (tap a digit to colour its note)
   const { data: summary } = useSudokuSummary()
   const themes = earnedThemes(summary?.sets)
   const finished = status !== 'playing'
@@ -225,12 +231,12 @@ function Game({ record }) {
 
   // ---- saving (a second after the last change; and when leaving). A finished game only takes its final save.
   const latest = useRef({})
-  latest.current = { values, notes, seconds, mistakes, hints, hintKinds, moves }
+  latest.current = { values, notes, seconds, mistakes, hints, hintKinds, moves, marks }
   const over = useRef(record.status !== 'playing')
   const persist = useCallback(async (extra = {}) => {
     if (over.current && !extra.status) return null
     const l = latest.current
-    const state = { v: l.values.map(sym).join(''), n: l.notes, m: l.moves.slice(-5000) }
+    const state = { v: l.values.map(sym).join(''), n: l.notes, m: l.moves.slice(-5000), c: Object.keys(l.marks).length ? l.marks : null }
     if (record.local) {
       saveLocal({ ...readLocal(), state, seconds: l.seconds, mistakes: l.mistakes, hints: l.hints, hintKinds: l.hintKinds, solved: extra.status === 'solved' })
       return null
@@ -250,7 +256,7 @@ function Game({ record }) {
     dirty.current = true
     const t = setTimeout(() => { dirty.current = false; persist() }, 1000)
     return () => clearTimeout(t)
-  }, [values, notes, mistakes, hints, persist, finished])
+  }, [values, notes, marks, mistakes, hints, persist, finished])
   useEffect(() => () => { if (dirty.current) persist() }, [persist])
   useEffect(() => {                               // the time, now and then
     if (finished || paused) return undefined
@@ -296,6 +302,10 @@ function Game({ record }) {
   }
   const place = (d, asNote = noteMode) => {
     if (finished || paused || sel == null || given[sel] || !d || d > size) return
+    if (inkOn === 'note' && !asNote && !values[sel]) {              // colouring a note: the digit's note takes the colour
+      if (notes[sel] & bit(d)) setMarks((m) => toggleMark(m, noteKey(sel, d), ink))
+      return
+    }
     if (asNote) {
       if (values[sel]) return
       remember()
@@ -307,6 +317,7 @@ function Game({ record }) {
     if (nv[sel] && nv[sel] !== solution[sel]) setMistakes((m) => m + 1)
     setValues(nv)
     if (nv[sel]) {
+      setMarks((m) => dropNoteMarks(m, sel))
       setNotes((n) => n.map((m, i) => (i === sel ? 0 : settings.autoNotes && eng.PEERS[sel].includes(i) ? m & ~bit(d) : m)))
     }
     setHint(null)
@@ -377,6 +388,11 @@ function Game({ record }) {
     setHint(null)
   }
 
+  const paint = (colour) => {
+    setInk(colour)
+    if (inkOn === 'cell' && sel != null && !finished) setMarks((m) => toggleMark(m, cellKey(sel), colour))
+  }
+
   const giveUp = async () => {
     if (!window.confirm('Give up and see the answer?')) return
     over.current = true
@@ -395,6 +411,7 @@ function Game({ record }) {
     remember()
     setValues(values.map((v, i) => (given[i] ? v : 0)))
     setNotes(new Array(size * size).fill(0))
+    setMarks({})
     setHint(null)
   }
 
@@ -449,6 +466,7 @@ function Game({ record }) {
     if (!given[i] && values[i] && (settings.mistakes === 'answer' ? values[i] !== solution[i] : bad.has(i))) out.push('wrong')
     if (hintUnits.has(i)) out.push('hint-area')
     if (hintCells.has(i)) out.push('hint-cell')
+    if (cellColour(marks, i)) out.push(`sdk-mk${cellColour(marks, i)}`)
     if (hint?.level >= 2 && hint.step.eliminate.some((e) => e.cell === i)) out.push('hint-elim')
     if (finished && status === 'gave_up' && !given[i]) out.push('revealed')
     return out
@@ -463,6 +481,7 @@ function Game({ record }) {
     : record.set_key === 'hardest' ? `Hardest 100 · number ${record.set_stop}`
       : record.set_key ? `${EVENT[record.set_key]?.name ?? record.set_key} · ${stops(EVENT[record.set_key] ?? { length: 0 })[record.set_stop - 1]?.name ?? `stop ${record.set_stop}`}`
         : record.paper ? `From ${record.paper}` : record.practice ? `Practising ${TECHNIQUE[record.practice]?.name ?? record.practice}` : `${record.difficulty} ${sizeText}sudoku`
+  if (path) return <SolvePath record={record} onClose={() => setPath(false)} />
   return (
     <section className={`page sudoku sdk-play${size === 16 ? ' giant' : ''}`}>
       <div className="sdk-top">
@@ -479,14 +498,14 @@ function Game({ record }) {
           <Board size={size} variant={variant} values={replay ? replayValues(record.puzzle, moves, replay.at) : values}
             notes={replay ? new Array(size * size).fill(0) : notes} given={given} sel={replay ? moves[replay.at - 1]?.[1] ?? null : sel}
             onSelect={(i) => !finished && setSel(i)} look={replay ? (i) => replayLook(i, replay.at) : look}
-            struck={(i, d) => hintElim.has(`${i}:${d}`)} hidden={paused && !finished} theme={themes.has(settings.theme) ? settings.theme : 'classic'} />
+            struck={(i, d) => hintElim.has(`${i}:${d}`)} noteMark={(i, d) => noteColour(marks, i, d)} hidden={paused && !finished} theme={themes.has(settings.theme) ? settings.theme : 'classic'} />
           {paused && !finished && (
             <div className="sdk-paused"><p><strong>Paused</strong></p><button type="button" className="primary" onClick={() => setPaused(false)}>Resume</button></div>
           )}
         </div>
         <div className="sdk-side">
           {finished && replay ? <Replay moves={moves} replay={replay} setReplay={setReplay} /> : finished ? <Finished status={status} seconds={seconds} mistakes={mistakes} hints={hints} record={record} best={best} earned={earned} rated={rated}
-            onReplay={moves.length ? () => setReplay({ at: 0, playing: true }) : null}
+            onReplay={moves.length ? () => setReplay({ at: 0, playing: true }) : null} onPath={() => setPath(true)}
             onNew={() => navigate(`/sudoku/play?new=${record.difficulty}${size === 16 ? '&size=16' : variant === 'x' ? '&variant=x' : ''}`)} /> : (
             <>
               <div className={`sdk-pad${size === 16 ? ' giant' : ''}`} role="group" aria-label={noteMode ? 'Notes' : 'Digits'}>
@@ -508,6 +527,22 @@ function Game({ record }) {
               {lessonDone && !hint && <p className="alert ok small">That's the {TECHNIQUE[record.practice]?.name}. The rest of the puzzle is yours -
                 it may need it again (ask for a hint if you get stuck).</p>}
               <p className="muted small sdk-keys">Keys: {size === 16 ? '1-9 and A-G' : '1-9'} place (Shift = a note) · arrows move · Backspace erase · N notes · H hint · P pause · Ctrl+Z / Ctrl+Y undo / redo</p>
+              <Fold title="Colours (for chains)">
+                <p className="muted small">Mark cells, or the notes in them, in up to four colours to follow a chain: the same colour on both ends of a link,
+                  another for the other choice. They're saved with the game.</p>
+                <div className="segmented" role="group" aria-label="What a colour goes on">
+                  <button type="button" aria-pressed={inkOn === 'cell'} onClick={() => setInkOn('cell')}>The cell</button>
+                  <button type="button" aria-pressed={inkOn === 'note'} onClick={() => setInkOn('note')}>A note</button>
+                </div>
+                <div className="sdk-inks" role="group" aria-label="Colours">
+                  {COLOURS.map((c) => (
+                    <button key={c} type="button" className={`sdk-ink sdk-mk${c}`} aria-pressed={ink === c} onClick={() => paint(c)}
+                      aria-label={`${COLOUR_NAMES[c]}${inkOn === 'cell' ? ': colour the selected cell' : ': then tap a digit to colour its note'}`} />
+                  ))}
+                  <button type="button" className="plain small" onClick={() => setMarks({})} disabled={!Object.keys(marks).length}>Clear colours</button>
+                </div>
+                <p className="muted small">{inkOn === 'cell' ? 'Pick a cell, then a colour (the same colour again takes it off).' : 'Pick a colour, a cell with notes, then tap a digit to colour its note.'}</p>
+              </Fold>
               <Fold title="Options">
                 <label className="field small">Mistakes
                   <select value={settings.mistakes} onChange={(e) => setSettings({ ...settings, mistakes: e.target.value })}>
@@ -616,7 +651,7 @@ function HintCard({ hint, eng, onShow, onClose }) {
   )
 }
 
-function Finished({ status, seconds, mistakes, hints, record, best, earned, rated, onNew, onReplay }) {
+function Finished({ status, seconds, mistakes, hints, record, best, earned, rated, onNew, onReplay, onPath }) {
   const event = record.set_key && EVENT[record.set_key]
   const nextStop = !record.set_key || status !== 'solved' ? null
     : record.set_key === 'hardest' ? (record.set_stop > 1 ? record.set_stop - 1 : null)        // (it counts down to number 1)
@@ -648,6 +683,7 @@ function Finished({ status, seconds, mistakes, hints, record, best, earned, rate
       {record.hardest && <p className="muted small">It needed: <Link to={`/sudoku/learn#${record.hardest}`}>{TECHNIQUE[record.hardest]?.name}</Link>
         {easier > 0 && ` (and ${easier} easier technique${easier === 1 ? '' : 's'})`}</p>}
       {onReplay && <button type="button" className="secondary small" onClick={onReplay}>▶ Watch the replay</button>}
+      <button type="button" className="secondary small" onClick={onPath}>Step through the solving path</button>
       <div className="button-row">
         {nextStop ? <Link className="button primary" to={`/sudoku/play?set=${record.set_key}&stop=${nextStop}`}>On to {record.set_key === 'hardest' ? `number ${nextStop}` : `stop ${nextStop}`}</Link>
           : !record.set_key && !record.week_of && <button type="button" className="primary" onClick={onNew}>New {record.difficulty} game</button>}

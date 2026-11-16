@@ -222,7 +222,8 @@ export const api = {
   boardGameFromShop: (id, r, replace = false) => request(`/board-games/${id}/shop`, send('POST', { ...shopRef(r), replace })),
   updateBoardGame: (id, data) => request(`/board-games/${id}`, send('PATCH', data)),
   deleteBoardGame: (id) => request(`/board-games/${id}`, send('DELETE')),
-  listPlays: (limit = 200) => request(`/board-games/plays?limit=${limit}`),
+  listPlays: (limit = 200, tag = '') => request(`/board-games/plays?limit=${limit}${tag ? `&tag=${encodeURIComponent(tag)}` : ''}`),
+  boardGameTags: () => request('/board-games/tags'),
   owned: () => request('/owned'),
   // More for Supplies (api/app/supplies_more.py): places, labels, stocktake, shopping, attachments, bulk, the value report
   places: () => request('/places'),
@@ -284,6 +285,8 @@ export const api = {
   startLivePlay: (data) => request('/board-games/live', send('POST', data)),
   updateLivePlay: (id, data) => request(`/board-games/live/${id}`, send('PATCH', data)),
   liveStage: (id, to) => request(`/board-games/live/${id}/stage`, send('POST', { to })),
+  // The turn timer: action = start (limit seconds) / next / to (playerId) / stop
+  liveTurns: (id, action, extra = {}) => request(`/board-games/live/${id}/turns`, send('POST', { action, ...extra })),
   addLivePhoto: (id, blob, caption) => request(`/board-games/live/${id}/photos?${query({ caption })}`, image('POST', blob)),
   finishLivePlay: (id, data) => request(`/board-games/live/${id}/finish`, send('POST', data)),
   discardLivePlay: (id) => request(`/board-games/live/${id}`, send('DELETE')),
@@ -329,6 +332,22 @@ export const api = {
   deleteClip: (clipId) => request(`/volleyball/clips/${clipId}`, send('DELETE')),
   makeHighlights: (title, clipIds) => request('/volleyball/highlights', send('POST', { title, clip_ids: clipIds })),
   highlightProgress: (id) => request(`/volleyball/highlights/${id}`),
+  // Volleyball numbers (api/app/vbstats.py, vbclips.py): ratings, rotations, tagged clips, drills
+  gameRatings: (id) => request(`/volleyball/games/${id}/ratings`),
+  addRating: (id, skill, score) => request(`/volleyball/games/${id}/ratings`, send('POST', { skill, score })),
+  deleteRating: (ratingId) => request(`/volleyball/ratings/${ratingId}`, send('DELETE')),
+  ratingsSummary: () => request('/volleyball/ratings'),
+  gamePoints: (id) => request(`/volleyball/games/${id}/points`),
+  addPoint: (id, data) => request(`/volleyball/games/${id}/points`, send('POST', data)),
+  deletePoint: (pointId) => request(`/volleyball/points/${pointId}`, send('DELETE')),
+  rotationStats: () => request('/volleyball/rotations'),
+  taggedClips: (params = {}) => request(`/volleyball/clips?${new URLSearchParams(Object.entries(params).filter(([, v]) => v))}`),
+  updateClip: (clipId, data) => request(`/volleyball/clips/${clipId}`, send('PATCH', data)),
+  drillStats: () => request('/volleyball/drills'),
+  drillLogs: (noteId) => request(`/volleyball/coach/${noteId}/logs`),
+  addDrillLog: (noteId, data) => request(`/volleyball/coach/${noteId}/logs`, send('POST', data)),
+  setDrillResult: (noteId, data) => request(`/volleyball/coach/${noteId}/result`, send('PUT', data)),
+  deleteDrillLog: (logId) => request(`/volleyball/drill-logs/${logId}`, send('DELETE')),
 
   // Video games (Steam achievements)
   steamAccount: () => request('/videogames/account'),
@@ -346,6 +365,10 @@ export const api = {
   // A game's status (backlog / playing / finished / dropped; null = back to the guess), Steam's or an Epic / Ubisoft one's
   setVideoGameStatus: (id, status) => request(`/videogames/${id}`, send('PATCH', { status })),
   setOtherGameStatus: (id, status) => request(`/videogames/other/${id}`, send('PATCH', { status })),
+  // Your time-to-beat guess (hours) and price paid; null clears (api/app/videogames.py, A05_games_extras.sql)
+  setVideoGameDetails: (id, data) => request(`/videogames/${id}`, send('PATCH', data)),
+  videoGameEasy: (platforms, limit = 12) => request(`/videogames/easy-achievements?${query({ limit, platforms: platforms?.join(',') })}`),
+  videoGameCosts: (platforms) => request(`/videogames/costs?${query({ platforms: platforms?.join(',') })}`),
   // What next? by = shortest / achievements / random
   videoGameBacklog: (by = 'shortest', platforms) => request(`/videogames/backlog?${query({ by, platforms: platforms?.join(',') })}`),
   setVideoGameGoal: (percent) => request('/videogames/goal', send('PUT', { percent })),
@@ -383,6 +406,15 @@ export const api = {
   readingSummary: () => request('/reading/summary'),
   readingStats: (months = 24) => request(`/reading/stats?months=${months}`),
   setReadingGoal: (books) => request('/reading/goal', send('PUT', { books })),
+  // Reading more (api/app/reading_more.py): year in review, tags, challenges
+  readingReview: (year) => request(`/reading/review${year ? `?year=${year}` : ''}`),
+  readingTags: () => request('/reading/tags'),
+  readingChallenges: () => request('/reading/challenges'),
+  addReadingChallenge: (data) => request('/reading/challenges', send('POST', data)),
+  updateReadingChallenge: (id, data) => request(`/reading/challenges/${id}`, send('PATCH', data)),
+  deleteReadingChallenge: (id) => request(`/reading/challenges/${id}`, send('DELETE')),
+  tickChallengeBook: (id, bookId) => request(`/reading/challenges/${id}/books/${bookId}`, send('PUT')),
+  untickChallengeBook: (id, bookId) => request(`/reading/challenges/${id}/books/${bookId}`, send('DELETE')),
   // Travel (api/app/travel.py: trips, places, countries, the dashboard; travel_trip.py: what's on a trip). Every
   // change to a trip's bookings, plan, money, packing, journal or photos answers with the whole trip.
   travelLists: () => request('/travel/lists'),
@@ -493,6 +525,9 @@ export const api = {
   dope: (rifleId, ammoId) => request(`/shooting/dope?${query({ rifle_id: rifleId, ammo_id: ammoId })}`),
   addDope: (data) => request('/shooting/dope', send('POST', data)),
   deleteDope: (id) => request(`/shooting/dope/${id}`, send('DELETE')),
+  // The ballistic solver and speed against temperature (api/app/ballistics.py)
+  ballistics: (params) => request(`/shooting/ballistics?${query(params)}`),
+  ammoTempSensitivity: (id, rifleId) => request(`/shooting/ammo/${id}/temp-sensitivity?${query({ rifle_id: rifleId })}`),
   // Hiking (api/app/hiking.py): a GPX file goes up as-is, like a photo.
   hikes: (params = {}) => request(`/hiking/hikes?${new URLSearchParams(Object.entries(params).filter(([, v]) => v != null && v !== ''))}`),
   hike: (id) => request(`/hiking/hikes/${id}`),
@@ -510,6 +545,8 @@ export const api = {
   updateHikePhoto: (photoId, caption) => request(`/hiking/photos/${photoId}`, send('PATCH', { caption })),
   deleteHikePhoto: (photoId) => request(`/hiking/photos/${photoId}`, send('DELETE')),
   setHikeGear: (id, gearIds) => request(`/hiking/hikes/${id}/gear`, send('PUT', { gear_ids: gearIds })),
+  hikeSameTrail: (id) => request(`/hiking/hikes/${id}/same-trail`),
+  hikingYear: (year) => request(`/hiking/year${year ? `?year=${year}` : ''}`),
   lookAgainHike: (id) => request(`/hiking/hikes/${id}/landmarks`, send('POST')),
   // Gardening (api/app/garden.py, garden_guide.py, garden_items.py)
   gardenLists: () => request('/garden/lists'),
@@ -555,6 +592,7 @@ export const api = {
   updateGardenGuide: (id, data) => request(`/garden/guides/${id}`, send('PATCH', data)),
   deleteGardenGuide: (id) => request(`/garden/guides/${id}`, send('DELETE')),
   gardenSowNow: () => request('/garden/sow-now'),
+  gardenSowingCalendar: () => request('/garden/sowing-calendar'),
   gardenItems: (params = {}) => request(`/garden/items?${query(params)}`),
   gardenItem: (id) => request(`/garden/items/${id}`),
   addGardenItem: (data) => request('/garden/items', send('POST', data)),
@@ -599,6 +637,15 @@ export const api = {
   lastfmStart: () => request('/vinyl/lastfm/start', send('POST')),
   lastfmFinish: () => request('/vinyl/lastfm/finish', send('POST')),
   lastfmDisconnect: () => request('/vinyl/lastfm', send('DELETE')),
+  // Vinyl more (api/app/vinyl_care.py, vinyl_more.py): care, loans, stylus, the listening year, value history
+  vinylLoans: () => request('/vinyl/loans'),
+  cleanVinylRecord: (id, data = {}) => request(`/vinyl/records/${id}/clean`, send('POST', data)),
+  deleteVinylCare: (careId) => request(`/vinyl/care/${careId}`, send('DELETE')),
+  vinylStylus: () => request('/vinyl/stylus'),
+  setVinylStylus: (limitHours) => request('/vinyl/stylus', send('PUT', { limit_hours: limitHours })),
+  vinylStylusFitted: (data = {}) => request('/vinyl/stylus/fitted', send('POST', data)),
+  vinylReview: (year) => request(`/vinyl/review${year ? `?year=${year}` : ''}`),
+  vinylValueHistory: () => request('/vinyl/value-history'),
   // Sudoku (api/app/sudoku.py; the puzzles are made in the browser: modules/sudoku/engine.js)
   sudokuGames: (status) => request(`/sudoku/games${status ? `?status=${status}` : ''}`),
   sudokuGame: (id) => request(`/sudoku/games/${id}`),
@@ -613,6 +660,7 @@ export const api = {
   sudokuDailies: (days = 21) => request(`/sudoku/dailies?days=${days}`),
   sudokuSet: (key) => request(`/sudoku/sets/${key}`),
   sudokuRating: () => request('/sudoku/rating'),
+  sudokuTechniqueStats: () => request('/sudoku/technique-stats'),
   sudokuEventPhoto: (key) => request(`/sudoku/events/${key}/photo-info`),
   sudokuLibrary: (key, first = 1, last = 1000) => request(`/sudoku/library/${key}?first=${first}&last=${last}`),
   chessAccount: () => request('/chess/account'),
@@ -631,6 +679,11 @@ export const api = {
   startChessReview: (id, again = false) => request(`/chess/games/${id}/review${again ? '?again=true' : ''}`, send('POST')),
   deleteChessReview: (id) => request(`/chess/games/${id}/review`, send('DELETE')),
   chessReviews: () => request('/chess/reviews'),
+  // What your reviews say about you + your mistakes as puzzles (api/app/chess_insights.py)
+  chessInsights: () => request('/chess/insights'),
+  chessPuzzles: () => request('/chess/puzzles?limit=30'),
+  syncChessPuzzles: () => request('/chess/puzzles/sync', send('POST')),
+  answerChessPuzzle: (id, correct) => request(`/chess/puzzles/${id}/answer`, send('POST', { correct })),
   // Opening trainer (api/app/chess_trainer.py): explore a position, learn an opening, drill it
   trainerExplore: (position, engine = false) => request(`/chess/trainer/explore?${new URLSearchParams({ ...position, ...(engine ? { engine: 'true' } : {}) })}`),
   trainerRecommend: (position) => request(`/chess/trainer/recommend?${new URLSearchParams(position)}`),
@@ -669,6 +722,19 @@ export const api = {
   deleteLogEntry: (id) => request(`/model-log/${id}`, send('DELETE')),
   addLogPhoto: (id, blob) => request(`/model-log/${id}/photos`, image('POST', blob)),
   deleteLogPhoto: (photoId) => request(`/model-log-photos/${photoId}`, send('DELETE')),
+  // Paint recipes, "can I paint this now?", the low / out report (api/app/recipes.py, supplies_more.py, colours.py)
+  listRecipes: (modelId) => request(`/recipes${modelId ? `?model_id=${modelId}` : ''}`),
+  addRecipe: (data) => request('/recipes', send('POST', data)),
+  updateRecipe: (id, data) => request(`/recipes/${id}`, send('PATCH', data)),
+  deleteRecipe: (id) => request(`/recipes/${id}`, send('DELETE')),
+  copyRecipe: (id, data) => request(`/recipes/${id}/copy`, send('POST', data)),
+  recipeToWishlist: (id) => request(`/recipes/${id}/paint-check/wishlist`, send('POST')),
+  modelPaintCheck: (id) => request(`/models/${id}/paint-check`),
+  modelPaintsToWishlist: (id) => request(`/models/${id}/paint-check/wishlist`, send('POST')),
+  stockReport: () => request('/supplies/stock-report'),
+  stockReportToWishlist: () => request('/supplies/stock-report/wishlist', send('POST')),
+  ownedInstead: (brandId, productCode, name = '') =>
+    request(`/colours/owned-alternatives?brand_id=${brandId}&product_code=${enc(productCode)}&name=${enc(name)}`),
 
   // Colours
   colourMatches: (brandId, productCode, name = '') =>
@@ -691,6 +757,27 @@ export const api = {
   todoUndone: (id) => request(`/todos/${id}/undone`, send('POST')),
   deleteTodo: (id) => request(`/todos/${id}`, send('DELETE')),
 
+  // Core + travel extras: the focus timer (focus.py), habit freezes and the weekly review (goals_review.py), a journal
+  // page's "Your day" (journal_day.py), splitting trip costs and the day-by-day map (travel_extras.py)
+  focusCurrent: () => request('/focus/current'),
+  focusSummary: (kind, id) => request(`/focus/summary?${query({ [`${kind}_id`]: id })}`),
+  startFocus: (data) => request('/focus', send('POST', data)),
+  pauseFocus: (id) => request(`/focus/${id}/pause`, send('POST')),
+  resumeFocus: (id) => request(`/focus/${id}/resume`, send('POST')),
+  finishFocus: (id) => request(`/focus/${id}/finish`, send('POST')),
+  freezeHabit: (goalId, day) => request(`/goals/${goalId}/freezes`, send('POST', { day: day || null })),
+  unfreezeHabit: (freezeId) => request(`/goal-freezes/${freezeId}`, send('DELETE')),
+  weeklyReview: (week) => request(`/goals/weekly-review?${query({ week })}`),
+  saveWeeklyReview: (note, week) => request('/goals/weekly-review', send('POST', { note, week: week || null })),
+  daySummary: (day) => request(`/journal/day-summary?${query({ day })}`),
+  tripSplit: (tripId, show) => request(`/travel/trips/${tripId}/split?${query({ show })}`),
+  addTripPerson: (tripId, name) => request(`/travel/trips/${tripId}/people`, send('POST', { name })),
+  renameTripPerson: (id, name) => request(`/travel/people/${id}`, send('PATCH', { name })),
+  deleteTripPerson: (id) => request(`/travel/people/${id}`, send('DELETE')),
+  splitExpense: (id, data) => request(`/travel/expenses/${id}/split`, send('PUT', data)),
+  splitBooking: (id, data) => request(`/travel/bookings/${id}/split`, send('PUT', data)),
+  tripDayMap: (tripId) => request(`/travel/trips/${tripId}/day-map`),
+
   // Page banners (api/app/banners.py): a picture of your own per area ('home', 'journal', a hobby's id)
   banners: () => request('/banners'),
   setBanner: (area, blob) => request(`/banners/area/${area}/photo`, image('PUT', blob)),
@@ -704,6 +791,10 @@ export const api = {
   system: () => request('/system'),
   runSiteChecks: () => request('/site-checks/run', send('POST')),
   updateSettings: (data) => request('/settings', send('PATCH', data)),
+  // The phone calendar's feed (api/app/calendar_feed.py): on (a new secret address), its state, off
+  calendarFeed: () => request('/calendar/feed'),
+  calendarFeedOn: () => request('/calendar/feed', send('POST')),
+  calendarFeedOff: () => request('/calendar/feed', send('DELETE')),
   priceGuide: () => request('/price-guide'),
   addPriceRule: (data) => request('/price-guide', send('POST', data)),
   updatePriceRule: (id, data) => request(`/price-guide/${id}`, send('PATCH', data)),

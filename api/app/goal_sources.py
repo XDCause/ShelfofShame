@@ -67,6 +67,9 @@ SOURCES = {
                        "SELECT finished_at::date AS day, 1 AS amount FROM sudoku_games WHERE status = 'solved'"),
     "sudokus_hard": ("Hard or harder sudokus solved", "puzzles", "sudoku", "sum",
                      "SELECT finished_at::date AS day, 1 AS amount FROM sudoku_games WHERE status = 'solved' AND difficulty IN ('Hard', 'Expert', 'Extreme')"),
+    "focus_minutes": ("Focus time (the focus timer)", "minutes", None, "sum",
+                      "SELECT started_at::date AS day, focused_seconds / 60.0 AS amount FROM focus_sessions "
+                      "WHERE status IN ('done', 'stopped') AND focused_seconds IS NOT NULL"),
     "journal_pages": ("Journal pages", "pages", None, "sum",
                       "SELECT COALESCE(entry_date, created_at::date) AS day, 1 AS amount FROM journal_pages"),
 }
