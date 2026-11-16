@@ -223,6 +223,14 @@ def _wanted_prices():
         log.exception("Weekly wanted-price refresh failed")
 
 
+def failing() -> list[str]:
+    """The sites (still checked) whose last result was a failure."""
+    names = [site for site, _, _ in CHECKS]
+    with db() as conn:
+        rows = conn.execute("SELECT site FROM site_checks WHERE NOT ok AND site = ANY(%s)", (names,)).fetchall()
+    return [r["site"] for r in rows]
+
+
 def due():
     """What the 6-hourly look should do: 'all' (a site never checked, or the oldest result a week old), the list of
     sites that failed more than a day ago (asked again on their own: a one-off timeout clears itself), or None.

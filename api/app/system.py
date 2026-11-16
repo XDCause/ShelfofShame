@@ -18,7 +18,7 @@ import os
 import shutil
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter
+from fastapi import APIRouter, BackgroundTasks
 
 from .db import db
 from . import settings, sitecheck
@@ -212,4 +212,14 @@ def system():
     checks = backup_checks(now, _read("status.json")) + other_checks(now)
     worst = max((c["state"] for c in checks), key=lambda s: ORDER[s], default="ok")
     return {"checks": checks, "worst": "ok" if worst == "off" else worst,
-            "attention": [c for c in checks if c["state"] in ("warn", "bad")]}
+            "attention": [c for c in checks if c["state"] in ("warn", "bad")], "checking": sitecheck.STATE["running"]}
+
+
+@router.post("/system/check", status_code=202)
+def check_now(tasks: BackgroundTasks):
+    """Settings > System's Check now: the failing websites are asked again (only those - the small shops keep their one
+    look a week; Lookup sites' own Check now asks every site). Everything else System shows is read fresh on each GET."""
+    names = sitecheck.failing()
+    if names and not sitecheck.STATE["running"]:
+        tasks.add_task(sitecheck.run_all, names)
+    return {"rechecking": names}

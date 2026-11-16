@@ -405,6 +405,11 @@ def settings_more(page):
     expect(d.locator(".site-check")).to_have_count(17)          # (+ the Lichess explorer)
     expect(d.get_by_role("button", name="Check now")).to_be_visible()
     shot(page, "d22_settings", full=False)
+    d.locator(".fold-title", has_text=re.compile("^System$")).click()    # System's own Check now: reads it all again
+    system = d.locator(".settings .fold", has_text="Disk space")
+    system.get_by_role("button", name="Check now").click()
+    expect(system.get_by_role("status")).to_contain_text("Checked at", timeout=60000)
+    expect(system.get_by_role("button", name="Check now")).to_be_enabled()
     page.keyboard.press("Escape")
 
 

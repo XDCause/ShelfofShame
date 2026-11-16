@@ -146,3 +146,18 @@ def test_due_counts_only_the_sites_still_checked_and_retries_a_failure_a_day_lat
     with db() as conn:
         conn.execute("UPDATE site_checks SET checked_at = now() - interval '8 days' WHERE site = 'Tamiya'")
     assert sitecheck.due() == "all"                                               # a week on: everything
+
+
+def test_system_check_now_asks_only_the_failing_sites_again(client, monkeypatch):
+    monkeypatch.setattr(sitecheck, "CHECKS", fake({"Tamiya": "ok", "Open-Meteo": TimeoutError("timed out")}))
+    sitecheck.run_all()
+    assert client.get("/api/system").json()["checking"] is False
+    asked = []
+    monkeypatch.setattr(sitecheck, "CHECKS", [(s, w, (lambda s=s: asked.append(s) or "fine now")) for s, w, _ in sitecheck.CHECKS])
+    r = client.post("/api/system/check")
+    assert r.status_code == 202 and r.json() == {"rechecking": ["Open-Meteo"]}
+    assert asked == ["Open-Meteo"]                                    # (the background task has run by the time the reply is read)
+    got = {s["site"]: s for s in client.get("/api/site-checks").json()["sites"]}
+    assert got["Open-Meteo"]["ok"] and got["Open-Meteo"]["detail"] == "fine now"
+    assert client.post("/api/system/check").json() == {"rechecking": []}   # nothing failing: nothing asked
+    assert asked == ["Open-Meteo"]

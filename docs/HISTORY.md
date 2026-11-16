@@ -1137,3 +1137,10 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
    (RETRY; run_all(only=...)), so a one-off timeout clears itself instead of waiting a week - tonight's was Open-Meteo
    (a TLS handshake timeout from this PC, every other site fine). The amber Updates line was only stale: updates.json
    was from before that day's updates; check-updates.ps1 run again (3 newer, 0 security problems).
+
+5zd. **Settings > System: Check now** (2026-11-17, the user: "add a check now button in the system section ... to get
+   the latest info"). Most of System is read fresh on every GET (backups, the restore test, Drive, disk, Steam, the
+   updates note); only the website check is stored. So Check now (POST /api/system/check) asks the FAILING websites
+   again - only those: the small shops keep their one look a week (Lookup sites' own Check now still asks every site) -
+   and SystemStatus reads everything again, every 2 s while the re-check runs (GET /system says `checking`), then
+   "Checked at 7:52 am". The updates note can't be refreshed from the app: check-updates.ps1 runs on the PC.

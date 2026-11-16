@@ -789,6 +789,7 @@ export const api = {
   // The weekly check of the websites the app reads
   siteChecks: () => request('/site-checks'),
   system: () => request('/system'),
+  checkSystem: () => request('/system/check', send('POST')),
   runSiteChecks: () => request('/site-checks/run', send('POST')),
   updateSettings: (data) => request('/settings', send('PATCH', data)),
   // The phone calendar's feed (api/app/calendar_feed.py): on (a new secret address), its state, off

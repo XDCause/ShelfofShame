@@ -12,7 +12,8 @@ const HomeWarning = () => <SystemWarning data={useSystemAttention()} />
 
 vi.mock('../api.js', async (importOriginal) => {
   const real = await importOriginal()
-  return { ...real, api: { ...real.api, updateSettings: vi.fn(), backups: vi.fn(), backUpNow: vi.fn(), system: vi.fn() } }
+  return { ...real, api: { ...real.api, updateSettings: vi.fn(), backups: vi.fn(), backUpNow: vi.fn(), system: vi.fn(),
+    checkSystem: vi.fn() } }
 })
 beforeEach(() => { try { localStorage.clear() } catch { /* fine */ } })
 afterEach(() => { cleanup(); vi.clearAllMocks() })
@@ -131,6 +132,20 @@ describe('System', () => {
     expect(screen.getByText('OK')).toBeTruthy()
     expect(screen.getByText('Off')).toBeTruthy()
     expect(screen.getByText('Is Google Drive for desktop running and signed in?')).toBeTruthy()
+  })
+
+  it('Check now asks the failing websites again and reads everything again', async () => {
+    const failing = { worst: 'warn', checks: [{ key: 'sites', label: 'Website check', state: 'warn', detail: '1 site failing' }] }
+    const fine = { worst: 'ok', checks: [{ key: 'sites', label: 'Website check', state: 'ok', detail: 'every site fine' }] }
+    api.system.mockResolvedValueOnce(failing).mockResolvedValue(fine)
+    api.checkSystem.mockResolvedValue({ rechecking: ['Open-Meteo'] })
+    render(<SystemStatus />)
+    expect(await screen.findByText('1 site failing')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Check now' }))
+    expect(await screen.findByText('every site fine')).toBeTruthy()
+    expect(api.checkSystem).toHaveBeenCalledTimes(1)
+    expect(await screen.findByText(/^Checked at /)).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Check now' }).disabled).toBe(false)
   })
 
   it("Home's warning shows only what needs a look, and opens Settings", async () => {

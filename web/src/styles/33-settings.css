@@ -48,3 +48,6 @@
 }
 :root[data-look='journal'] .set-icon { border-radius: 50%; }
 :root[data-look='journal'] .settings-look { margin-top: 0; }
+
+/* Settings > System's Check now (SystemStatus.jsx) */
+.sys-check-now { align-items: center; margin-bottom: 4px; }
