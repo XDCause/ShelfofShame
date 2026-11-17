@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-// A chess board for one position that you can play on: tap (or click) a piece, then where it goes - the legal moves
-// light up (chess.js, loaded with the board). Used by the game review ("Retry": find the better move) and the opening
+// A chess board for one position that you can play on: tap (or click) a piece, then where it goes - or drag it there
+// (pointer events: mouse, finger or pen) - the legal moves light up (chess.js, loaded with the board). Used by the game review ("Retry": find the better move) and the opening
 // trainer. Arrows (best move, theory) and coloured squares (a move's from / to, a mark on a square) are drawn over it.
 //   fen          the position
 //   orientation  'white' | 'black' (whose side is at the bottom)
@@ -39,25 +39,70 @@ export default function PlayBoard({ fen, orientation = 'white', onMove, arrows =
   }, [Chess, fen])
   useEffect(() => setPicked(null), [fen])
   const boardRef = useRef(null)
+  // A drag: {from, x, y} (x / y: the pointer within the board, in px) once the pointer has moved a few px from where it
+  // went down; until then it's a tap and the square's click handles it. justDragged swallows the click a drop can fire.
+  const [drag, setDrag] = useState(null)
+  const press = useRef(null)
+  const justDragged = useRef(false)
   if (!game) return <div className="chess-board pb-board" aria-busy="true" />
   const flipped = orientation === 'black'
   const grid = game.board()
   const rows = flipped ? [...grid].reverse().map((row) => [...row].reverse()) : grid
   const targets = picked ? new Map(game.moves({ square: picked, verbose: true }).map((m) => [m.to, m])) : new Map()
+  const play = (from, to) => {
+    const options = game.moves({ square: from, verbose: true }).filter((m) => m.to === to)
+    if (!options.length) return false
+    const m = options.find((o) => !o.promotion || o.promotion === 'q') ?? options[0]       // (promote to a queen)
+    const next = new Chess(fen)
+    const done = next.move({ from: m.from, to: m.to, promotion: m.promotion })
+    setPicked(null)
+    onMove({ san: done.san, uci: `${done.from}${done.to}${done.promotion ?? ''}`, from: done.from, to: done.to, fen: next.fen() })
+    return true
+  }
   const tap = (square) => {
     if (!onMove) return
-    if (picked && targets.has(square)) {
-      const options = game.moves({ square: picked, verbose: true }).filter((m) => m.to === square)
-      const m = options.find((o) => !o.promotion || o.promotion === 'q') ?? options[0]       // (promote to a queen)
-      const next = new Chess(fen)
-      const done = next.move({ from: m.from, to: m.to, promotion: m.promotion })
-      setPicked(null)
-      onMove({ san: done.san, uci: `${done.from}${done.to}${done.promotion ?? ''}`, from: done.from, to: done.to, fen: next.fen() })
-      return
-    }
+    if (justDragged.current) { justDragged.current = false; return }
+    if (picked && targets.has(square)) { play(picked, square); return }
     const piece = game.get(square)
     setPicked(piece && piece.color === game.turn() && picked !== square ? square : null)
   }
+  // The square under a point on the screen (null off the board).
+  const squareAt = (clientX, clientY) => {
+    const box = boardRef.current.getBoundingClientRect()
+    const x = Math.floor(((clientX - box.left) / box.width) * 8)
+    const y = Math.floor(((clientY - box.top) / box.height) * 8)
+    if (x < 0 || x > 7 || y < 0 || y > 7) return null
+    return `${FILES[flipped ? 7 - x : x]}${flipped ? y + 1 : 8 - y}`
+  }
+  const down = (e) => {
+    justDragged.current = false
+    if (!onMove || e.button !== 0) return
+    const square = squareAt(e.clientX, e.clientY)
+    const piece = square && game.get(square)
+    press.current = piece && piece.color === game.turn() ? { from: square, x: e.clientX, y: e.clientY, id: e.pointerId } : null
+  }
+  const moveTo = (e) => {
+    const p = press.current
+    if (!p || e.pointerId !== p.id) return
+    if (!p.dragging && Math.hypot(e.clientX - p.x, e.clientY - p.y) < 6) return
+    if (!p.dragging) {
+      p.dragging = true
+      boardRef.current.setPointerCapture?.(e.pointerId)
+      setPicked(p.from)
+    }
+    const box = boardRef.current.getBoundingClientRect()
+    setDrag({ from: p.from, x: e.clientX - box.left, y: e.clientY - box.top })
+  }
+  const up = (e) => {
+    const p = press.current
+    press.current = null
+    if (!p?.dragging) return
+    setDrag(null)
+    justDragged.current = true
+    const to = squareAt(e.clientX, e.clientY)
+    if (!(to && to !== p.from && play(p.from, to))) setPicked(null)
+  }
+  const cancel = () => { press.current = null; setDrag(null); setPicked(null) }
   return (
     <div className={`pb-wrap${evalBar != null ? ' with-bar' : ''}`}>
       {evalBar != null && (
@@ -66,7 +111,10 @@ export default function PlayBoard({ fen, orientation = 'white', onMove, arrows =
           <span className="pb-eval-white" style={{ height: `${evalBar}%` }} />
         </div>
       )}
-      <div className="chess-board pb-board" ref={boardRef} role={onMove ? 'grid' : 'img'} aria-label={label ?? 'Chess board'}>
+      <div className={`chess-board pb-board${onMove ? ' pb-playable' : ''}${drag ? ' pb-dragging' : ''}`} ref={boardRef}
+        role={onMove ? 'grid' : 'img'} aria-label={label ?? 'Chess board'}
+        onPointerDown={onMove ? down : undefined} onPointerMove={onMove ? moveTo : undefined}
+        onPointerUp={onMove ? up : undefined} onPointerCancel={onMove ? cancel : undefined}>
         {rows.map((row, r) => row.map((sq, f) => {
           const rank = flipped ? r + 1 : 8 - r
           const file = FILES[flipped ? 7 - f : f]
@@ -76,7 +124,7 @@ export default function PlayBoard({ fen, orientation = 'white', onMove, arrows =
           const cls = `sq ${dark ? 'dark' : 'light'}${mark ? ` pb-${mark}` : ''}${picked === name ? ' pb-picked' : ''}${targets.has(name) ? ' pb-target' : ''}`
           const inner = (
             <>
-              {sq && <span className={`pc ${sq.color === 'w' ? 'w' : 'b'}`}>{PIECE[sq.type]}</span>}
+              {sq && <span className={`pc ${sq.color === 'w' ? 'w' : 'b'}${drag?.from === name ? ' pb-lifted' : ''}`}>{PIECE[sq.type]}</span>}
               {f === 0 && <span className="coord rank">{rank}</span>}
               {r === 7 && <span className="coord file">{file}</span>}
               {badge?.square === name && <span className={`pb-badge cr-${badge.kind}`} aria-hidden="true">{badge.label}</span>}
@@ -89,6 +137,11 @@ export default function PlayBoard({ fen, orientation = 'white', onMove, arrows =
             </button>
           ) : <span key={name} className={cls}>{inner}</span>
         }))}
+        {drag && (() => {
+          const p = game.get(drag.from)
+          return <span className={`pc ${p.color === 'w' ? 'w' : 'b'} pb-ghost`} aria-hidden="true"
+            style={{ left: `${drag.x}px`, top: `${drag.y}px` }}>{PIECE[p.type]}</span>
+        })()}
         {arrows.length > 0 && (
           <svg className="pb-arrows" viewBox="0 0 100 100" aria-hidden="true">
             <defs>

@@ -1179,3 +1179,10 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
    and rain chance. openmeteo._get asks the forecast server first and, when it can't be reached, openmeteo.BACKUP;
    the website check says "(their forecast server is down: from the backup)". Place search has its own server
    (geocoding-api), which answers, and no backup.
+
+5zi. **Chess: drag a piece** (2026-11-17, the user: "In the chess train why cant i click and drag pieces"). PlayBoard
+   (opening trainer, explorer, review's Retry) only took tap-tap. Now pointer events on the board: a press on a piece
+   of the side to move becomes a drag after 6 px (pointer capture, the legal squares lit, a copy follows the pointer);
+   dropped on a legal square it plays, anywhere else it goes back. A press that doesn't move stays a tap (the square's
+   click), and the click a drop can fire is swallowed. touch-action: none on the pieces only, so a phone still scrolls
+   from an empty square.

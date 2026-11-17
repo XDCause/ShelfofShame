@@ -24,6 +24,12 @@
 .pb-board .sq.pb-picked { box-shadow: inset 0 0 0 4px rgb(20 85 30 / 0.7); }
 .pb-board .sq.pb-target::after { content: ''; position: absolute; width: 28%; height: 28%; border-radius: 50%; background: rgb(20 85 30 / 0.45); }
 .pb-board .sq.pb-target:has(.pc)::after { width: 88%; height: 88%; background: none; border: 4px solid rgb(20 85 30 / 0.45); }
+/* Dragging a piece: the finger mustn't scroll the page, the piece left behind fades, a copy follows the pointer. */
+.pb-board.pb-playable .pc { touch-action: none; }
+.pb-board.pb-playable button.sq:has(.pc) { cursor: grab; }
+.pb-board.pb-dragging, .pb-board.pb-dragging button.sq { cursor: grabbing; }
+.pb-board .pc.pb-lifted { opacity: 0.3; }
+.pb-board .pc.pb-ghost { position: absolute; z-index: 3; transform: translate(-50%, -50%) scale(1.15); pointer-events: none; }
 .pb-arrows { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .pb-badge { position: absolute; top: -6%; right: -6%; z-index: 2; min-width: 34%; height: 34%; padding: 0 3%; border-radius: 999px; display: grid;
   place-items: center; background: var(--cr, #6f9f3c); color: #fff; font-size: 3.2cqw; font-weight: 800; box-shadow: 0 1px 3px rgb(0 0 0 / 0.4); }
