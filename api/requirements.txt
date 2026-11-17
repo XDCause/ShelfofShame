@@ -13,3 +13,4 @@ segno==1.6.6
 chess==1.11.2
 # tests (run_tests.ps1)
 pytest==9.2.0
+pytest-xdist==3.8.0      # the tests in several processes side by side, a database each

@@ -101,8 +101,10 @@ def test_an_empty_or_junk_body_is_refused_not_a_crash(client):
                    for body in ({}, [], "not json")])
 
 
-def test_junk_in_every_field_is_refused_not_a_crash(client):
-    """Each field each route takes, given each kind of junk (the others left out)."""
+@pytest.mark.parametrize("part", range(8))
+def test_junk_in_every_field_is_refused_not_a_crash(client, part):
+    """Each field each route takes, given each kind of junk (the others left out). In 8 slices (every 8th case), so
+    the side-by-side workers share it: whole, it was a minute on its own (2026-11-17)."""
     spec = app.openapi()
     cases = []
     for method, path in ROUTES:
@@ -115,7 +117,7 @@ def test_junk_in_every_field_is_refused_not_a_crash(client):
         for name in spec["components"]["schemas"][ref.split("/")[-1]].get("properties", {}):
             cases += [(method, filled(path, "999999"), {"json": {name: junk}}, not_a_crash) for junk in JUNK]
     assert len(cases) > 1000                    # (the sweep really ran over the routes)
-    sweep(client, cases)
+    sweep(client, cases[part::8])
 
 
 def test_every_list_answers_on_an_empty_database(client):

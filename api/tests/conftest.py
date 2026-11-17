@@ -8,6 +8,12 @@ from pathlib import Path
 
 import pytest
 
+# Side by side (pytest-xdist, run_tests.ps1 -Workers): each worker process has its own copy of the test database,
+# made by run_tests.ps1 from hobby_inventory_test (hobby_inventory_gw0_test, ...). Set before the app is imported:
+# db.py reads POSTGRES_DB once.
+if os.environ.get("PYTEST_XDIST_WORKER") and os.environ.get("POSTGRES_DB", "").endswith("_test"):
+    os.environ["POSTGRES_DB"] = os.environ["POSTGRES_DB"][:-len("_test")] + f"_{os.environ['PYTEST_XDIST_WORKER']}_test"
+
 if not os.environ.get("POSTGRES_DB", "").endswith("_test"):
     pytest.exit("Refusing to run: POSTGRES_DB must be a *_test database (use run_tests.ps1).",
                 returncode=2)

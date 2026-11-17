@@ -445,7 +445,8 @@ def offline_copy(page):
         expect(p.locator(".offline-banner")).to_be_visible()
         expect(p.locator("main")).to_contain_text(MARK)
         p.goto(f"{BASE}/hiking/hikes")                         # a hobby's page (loaded on demand) too
-        expect(p.locator(".hike-list li").first if HIKING else p.get_by_text("No hikes yet")).to_be_visible()
+        # (hikes or none: the hiking step adds one, but in its own half of the walk-through - another copy)
+        expect(p.locator(".hike-list li").or_(p.get_by_text("No hikes yet")).first).to_be_visible()
         expect(p.locator(".offline-banner")).to_be_visible()
         shot(p, "d24_offline_banner", full=False)
         p.goto(f"{BASE}/")                                     # Home: its top row is pulled up over the hero

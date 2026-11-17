@@ -13,7 +13,9 @@
 #   3. tamiya.com is replaced by a fake inside the tests, so they're fast and offline.
 #   .\run_tests.ps1 -Coverage     # + which API lines no test runs (api\coverage.txt; pytest-cov goes
 #                                 into the throwaway test container only)
-param([string]$k = '', [switch]$Coverage, [switch]$Failed)
+#   .\run_tests.ps1 -Workers 1    # one process (default 6: the test files shared out among 6 processes, each with
+#                                 # its own copy of the test database - ~1.5 minutes instead of ~3.5)
+param([string]$k = '', [switch]$Coverage, [switch]$Failed, [int]$Workers = 6)
 
 . "$PSScriptRoot\scripts\common.ps1"
 Set-Location -Path $Root
@@ -43,8 +45,20 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-Host "  $($files.Count) db\init files ok ($($files[0].Name) ... $($files[-1].Name))"
 
-Write-Host 'Running tests...' -ForegroundColor Cyan
+# One copy of the fresh database per worker (a template copy: instant). Each worker's conftest picks its own.
+if ($Workers -gt 1) {
+    $copies = 0..($Workers - 1) | ForEach-Object { "hobby_inventory_gw${_}_test" }
+    # (synchronous_commit off: a commit doesn't wait for the disk - the tests empty tables before each test, and six
+    # workers waiting on one disk were most of the time. Throwaway databases only: the setting is per database.)
+    $sql = foreach ($c in $copies) { "DROP DATABASE IF EXISTS $c;"; "CREATE DATABASE $c TEMPLATE $testDb;"; "ALTER DATABASE $c SET synchronous_commit = off;" }
+    ($sql -join "`n") | docker exec -i @quiet $db psql -U hobby -d postgres -q -v ON_ERROR_STOP=1
+    if ($LASTEXITCODE -ne 0) { Write-Host 'Copying the test database for the workers failed.' -ForegroundColor Red; exit 1 }
+}
+
+Write-Host "Running tests$(if ($Workers -gt 1) { " ($Workers side by side)" })..." -ForegroundColor Cyan
 $pytestArgs = @('-q')
+# Each test goes to whichever worker is free (every test starts from an emptied database: conftest's clean_database).
+if ($Workers -gt 1) { $pytestArgs += @('-n', "$Workers") }
 if ($k) { $pytestArgs += @('-k', $k) }
 if ($Failed) { $pytestArgs += @('--lf', '--lfnf=none') }   # (nothing failed last time: runs nothing)
 # What the tests see, read-only besides the code: db\init (a test can run a migration file as it is), web\src\api.js
@@ -62,7 +76,8 @@ if ($Coverage) {
 }
 $result = $LASTEXITCODE
 
-docker exec $db psql -U hobby -d postgres -q -c "DROP DATABASE IF EXISTS $testDb" | Out-Null
+$drop = @($testDb) + @(if ($Workers -gt 1) { $copies }) | ForEach-Object { "DROP DATABASE IF EXISTS $_;" }
+($drop -join "`n") | docker exec -i $db psql -U hobby -d postgres -q | Out-Null
 if ($result -eq 0) {
     Write-Host 'All tests passed.' -ForegroundColor Green
     if (-not $k -and -not $Coverage -and -not $Failed) { Set-Stamp 'api' $code }   # only a full run counts

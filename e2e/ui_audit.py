@@ -11,7 +11,8 @@ person notices - and the walk-through doesn't look for:
   console      browser errors and failed requests while the page was open
 
 Run by run_e2e.ps1 after the walk-through, on the same throwaway copy (http://web, stand-ins for outside sites).
-Read only: it opens pages and panels and presses Escape, nothing else. One process per screen size, side by side. Writes /out/ui_audit.json and a screenshot per
+Read only: it opens pages and panels and presses Escape, nothing else. A job per screen size and look (both themes), shared
+out among AUDIT_WORKERS processes (default 6), the slow ones (with axe) first. Writes /out/ui_audit.json and a screenshot per
 problem page (outlined in red: /out/audit_*.png), and a gallery of the journal look (/out/journal_*.png: every page on a PC
 and a phone, to look over). Exits 1 if it finds anything not in ACCEPTED. AUDIT_LOOK=journal (run_e2e.ps1 -Look) checks
 one look only.
@@ -349,14 +350,15 @@ def audit(page, where, problems, label, with_axe):
     return len(fresh)
 
 
-def worker(size_name):
-    """One screen size, both themes: its pages and panels. Writes /out/ui_audit_<size>.json."""
+def worker(size_name, look_name):
+    """One screen size in one look, both themes: its pages and panels. Writes /out/ui_audit_<size>_<look>.json."""
+    started = time.time()
     size, w, h, touch = next(s for s in SIZES if s[0] == size_name)
     pages = json.load(open(f"{OUT}/ui_routes.json"))
     problems, console = [], []
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        for look, theme in [(lk, th) for lk in LOOKS for th in THEMES]:
+        for look, theme in [(look_name, th) for th in THEMES]:
             prefs = f"localStorage.setItem('offtheclock.theme', '{theme}'); localStorage.setItem('offtheclock.look', '{look}')"
             ctx = signed_in_context(browser, viewport={"width": w, "height": h}, is_mobile=touch and w < 700, has_touch=touch,
                                     device_scale_factor=1, bypass_csp=True, timezone_id="Australia/Brisbane")
@@ -410,8 +412,9 @@ def worker(size_name):
                 page.keyboard.press("Escape")
             ctx.close()
         browser.close()
-    with open(f"{OUT}/ui_audit_{size}.json", "w") as f:
+    with open(f"{OUT}/ui_audit_{size}_{look_name}.json", "w") as f:
         json.dump({"problems": problems, "console": console}, f)
+    print(f"  {size}/{look_name}: {time.time() - started:.0f}s", flush=True)
 
 
 # The art check, checked: a tiny banner with one tree on its hill and one floating above it. If the detector doesn't
@@ -433,8 +436,14 @@ def self_test(browser):
         raise SystemExit(f"The audit's art check is broken (expected one floating tree, got {found}).")
 
 
+def jobs():
+    """(size, look) pairs, the slow ones first: axe runs at AXE_SIZES, and the slowest job last would leave the
+    other workers idle while it finished."""
+    return sorted(((s[0], lk) for s in SIZES for lk in LOOKS), key=lambda j: j[0] not in AXE_SIZES)
+
+
 def main():
-    """Find the pages once, then one worker process per screen size, side by side; then the report."""
+    """Find the pages once, then the jobs shared out among AUDIT_WORKERS processes; then the report."""
     started = time.time()
     with sync_playwright() as p:
         browser = p.chromium.launch()
@@ -445,24 +454,36 @@ def main():
     with open(f"{OUT}/ui_routes.json", "w") as f:
         json.dump(pages, f)
     print(f"{len(pages)} pages + {len(PANELS)} panels, at {len(SIZES)} sizes x {len(THEMES)} themes x {len(LOOKS)} looks (axe at {', '.join(AXE_SIZES)})", flush=True)
-    for size, *_ in SIZES:          # (a worker that dies must not leave an older run's results to be read as its own)
+    todo = jobs()
+    for size, look in todo:         # (a worker that dies must not leave an older run's results to be read as its own)
         try:
-            os.remove(f"{OUT}/ui_audit_{size}.json")
+            os.remove(f"{OUT}/ui_audit_{size}_{look}.json")
         except FileNotFoundError:
             pass
-    procs = [subprocess.Popen([sys.executable, __file__, "--worker", s[0]] + ([ONLY] if ONLY else [])) for s in SIZES]
-    codes = [proc.wait() for proc in procs]
+    # A small pool: each job its own process (and browser); a new one starts as one ends.
+    limit = max(1, int(os.environ.get("AUDIT_WORKERS") or 6))
+    waiting, running, codes = list(todo), {}, {}
+    while waiting or running:
+        while waiting and len(running) < limit:
+            job = waiting.pop(0)
+            running[job] = subprocess.Popen([sys.executable, __file__, "--worker", *job] + ([ONLY] if ONLY else []))
+        time.sleep(0.5)
+        for job, proc in list(running.items()):
+            if proc.poll() is not None:
+                codes[job] = proc.returncode
+                del running[job]
     problems, console = [], []
-    for (size, *_), code in zip(SIZES, codes):
+    for size, look in todo:
+        code = codes[(size, look)]
         try:
-            part = json.load(open(f"{OUT}/ui_audit_{size}.json"))
+            part = json.load(open(f"{OUT}/ui_audit_{size}_{look}.json"))
         except FileNotFoundError:
-            console.append(f"{size}: the audit itself failed (exit {code})")
+            console.append(f"{size}/{look}: the audit itself failed (exit {code})")
             continue
         problems += part["problems"]
         console += part["console"]
         if code != 0:
-            console.append(f"{size}: the audit itself failed (exit {code})")
+            console.append(f"{size}/{look}: the audit itself failed (exit {code})")
 
     # The report: each distinct problem once, with where it shows.
     by_key = {}
@@ -486,8 +507,8 @@ def main():
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 2 and sys.argv[1] == "--worker":
-        ONLY = sys.argv[3] if len(sys.argv) > 3 else ""
-        worker(sys.argv[2])
+    if len(sys.argv) > 3 and sys.argv[1] == "--worker":
+        ONLY = sys.argv[4] if len(sys.argv) > 4 else ""
+        worker(sys.argv[2], sys.argv[3])
     else:
         sys.exit(main())

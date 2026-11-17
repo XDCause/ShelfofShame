@@ -5,11 +5,12 @@
 #   .\run_e2e.ps1 -Steps calendar,global_search   # only those steps (their function names in walkthrough.py's ORDER):
 #                                                  # ~1-2 minutes, to check a fix. A step that needs an earlier one's
 #                                                  # data fails alone too - name both. No audit; not a pass for promote.
-#   .\run_e2e.ps1 -Failed      # only the steps that failed last time (e2e\out\failed.txt); the same rules
+#   .\run_e2e.ps1 -Failed      # only the steps that failed last time (e2e\out\failed_*.txt); the same rules
 #   .\run_e2e.ps1 -AuditOnly [-Look journal]   # only the UI audit (one look, or both): to check a fix to the look.
 #                                                  # Not a pass for promote.
 #
-# Neither runs against this copy's own app. Each gets a THROWAWAY copy next to it, started from:
+# Neither runs against this copy's own app. Each gets a THROWAWAY copy next to it (the full walk-through two: its core
+# and hobby halves side by side, walkthrough.py's HOBBIES), started from:
 #   - the images this copy is running (so it tests exactly what .\dev.ps1 built), and
 #   - a fresh pg_dump of your real data, read only: prod's database when this is dev and prod is running (dev may
 #     hold made-up sample data - sample-data.ps1 - and the walk-through expects the real thing), else this copy's;
@@ -17,7 +18,8 @@
 # with no daily syncs, stand-ins for every outside site, and its own password (a new one each run: the copy's account
 # is reset - yours is never used or seen). Two copies because the walk-through changes data while the audit is
 # looking at pages: separate copies keep both steady, and lets them run at the same time.
-#   hobby-e2e-*    the walk-through (e2e\walkthrough.py)
+#   hobby-e2e-*    the walk-through (e2e\walkthrough.py): all of it for -Steps / -Failed, else its core half
+#   hobby-e2eh-*   the walk-through's hobby half (and the phone)
 #   hobby-e2ea-*   the UI audit (e2e\ui_audit.py: every page at 5 sizes x 2 themes x 2 looks - overflow, clipped or overlapping
 #                  text, touch targets, broken pictures, axe-core accessibility, browser errors)
 # When it ends - pass, fail or Ctrl+C - both copies and their volumes are deleted. You can keep using the app while
@@ -29,9 +31,10 @@ Set-Location -Path $Root
 $image = 'offtheclock-e2e:1.64.0'    # e2e\Dockerfile: Playwright's image with its Python packages installed
 $code = Get-CodeHash
 if ($Failed) {
-    $last = Join-Path $Root 'e2e\out\failed.txt'
-    $Steps = if (Test-Path $last) { (Get-Content $last -Raw).Trim() } else { '' }
-    if (-not $Steps) { Write-Host 'No failed steps from the last run (e2e\out\failed.txt is empty or missing).' -ForegroundColor Yellow; exit 0 }
+    $Steps = (@(Get-ChildItem (Join-Path $Root 'e2e\out\failed_*.txt') -ErrorAction SilentlyContinue |
+        ForEach-Object { (Get-Content $_.FullName -Raw) -split ',' }) | ForEach-Object { "$_".Trim() } | Where-Object { $_ } |
+        Select-Object -Unique) -join ','
+    if (-not $Steps) { Write-Host 'No failed steps from the last run (e2e\out\failed_*.txt are empty or missing).' -ForegroundColor Yellow; exit 0 }
     Write-Host "Running the steps that failed last time: $Steps" -ForegroundColor Cyan
 }
 $partial = [bool]$Steps
@@ -43,8 +46,12 @@ if ($LASTEXITCODE -ne 0) { Write-Host 'Building the walk-through image failed.' 
 
 # The throwaway copies' settings: compose reads these before .env (see docker-compose.yml).
 $copies = @(
-    @{ Name = 'hobby-e2e'; Volume = 'hobby_e2e_pgdata'; Db = '5436'; Api = '8003'; Web = '8083'; Https = '8446'; Run = 'walkthrough.py' }
+    @{ Name = 'hobby-e2e'; Volume = 'hobby_e2e_pgdata'; Db = '5436'; Api = '8003'; Web = '8083'; Https = '8446'; Run = 'walkthrough.py'
+       Half = $(if ($partial) { '' } else { 'core' }) }
 )
+if (-not $partial) {
+    $copies += @{ Name = 'hobby-e2eh'; Volume = 'hobby_e2eh_pgdata'; Db = '5438'; Api = '8005'; Web = '8085'; Https = '8448'; Run = 'walkthrough.py'; Half = 'hobbies' }
+}
 if ($AuditOnly) { $copies = @(); $NoAudit = $false; $partial = $true }
 if (-not $NoAudit) {
     $copies += @{ Name = 'hobby-e2ea'; Volume = 'hobby_e2ea_pgdata'; Db = '5437'; Api = '8004'; Web = '8084'; Https = '8447'; Run = 'ui_audit.py' }
@@ -74,7 +81,7 @@ function Remove-Copy($c) {
 
 foreach ($c in $copies) { Assert-CopyConfig $c }
 New-Item -ItemType Directory -Force .e2e\media, .e2e\backups, e2e\out | Out-Null
-Remove-Item e2e\out\*.png -ErrorAction SilentlyContinue
+Remove-Item e2e\out\*.png, e2e\out\failed*.txt -ErrorAction SilentlyContinue   # (-Failed has read them by now)
 foreach ($c in $copies) { docker rm -f "$($c.Name)-run" 2>$null | Out-Null; Remove-Copy $c }   # leftovers from a killed run
 # Your videos, as hard links (same files, no copying, no extra space): deleting a link in the
 # walk-through leaves your file alone.
@@ -124,16 +131,16 @@ try {
     }
 
     # 3. The walk-through and the audit, side by side, each on its copy's network (https://web is its nginx).
-    if ($copies.Count -gt 1) { Write-Host 'Walk-through and UI audit (every page, 5 sizes x 2 themes x 2 looks), side by side...' -ForegroundColor Cyan }
+    if ($copies.Count -gt 1) { Write-Host "Side by side: $(($copies | ForEach-Object { $_.Run + $(if ($_.Half) { " ($($_.Half))" }) }) -join ', ')..." -ForegroundColor Cyan }
     foreach ($c in $copies) {
-        docker run -d --name "$($c.Name)-run" --network "$($c.Name)_default" --ipc=host -e "E2E_PASSWORD=$password" -e "E2E_STEPS=$Steps" -e "AUDIT_LOOK=$Look" `
+        docker run -d --name "$($c.Name)-run" --network "$($c.Name)_default" --ipc=host -e "E2E_PASSWORD=$password" -e "E2E_STEPS=$Steps" -e "E2E_HALF=$($c.Half)" -e "AUDIT_LOOK=$Look" `
             -v "${PSScriptRoot}\e2e:/e2e" -v "${PSScriptRoot}\e2e\out:/out" $image python "/e2e/$($c.Run)" | Out-Null
     }
     $result = 0
     foreach ($c in $copies) {
         $exit = [int](docker wait "$($c.Name)-run")
         Write-Host ''
-        Write-Host "----- $($c.Run) (exit $exit) -----" -ForegroundColor Cyan
+        Write-Host "----- $($c.Run)$(if ($c.Half) { " ($($c.Half))" }) (exit $exit) -----" -ForegroundColor Cyan
         docker logs "$($c.Name)-run" 2>&1 | ForEach-Object { "$_" }
         docker rm "$($c.Name)-run" 2>$null | Out-Null
         if ($exit -ne 0) { $result = $exit }

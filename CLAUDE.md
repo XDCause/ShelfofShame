@@ -38,7 +38,7 @@ AI via MCP server (later) -----------------/
 **Only the API talks to PostgreSQL.** Exceptions are admin/dev tools: DBeaver, psql, the scripts (backup, migrate).
 
 ## Where to look
-- **Why things are the way they are: docs/HISTORY.md** (entries 3zzt - 5zd; 1 - 3zzs are in docs/HISTORY-early.md).
+- **Why things are the way they are: docs/HISTORY.md** (entries 3zzt - 5zf; 1 - 3zzs are in docs/HISTORY-early.md).
   Search both before changing something old - most odd-looking code has a lesson behind it. Design system:
   docs/DESIGN.md. Plans: docs/ROADMAP.md. **BEFORE_GOING_PUBLIC.md: add a row whenever a new data source, scraper,
   copied content or single-user shortcut is added.**
@@ -68,7 +68,7 @@ AI via MCP server (later) -----------------/
 - `.\test_all.ps1` in dev (~9 minutes) = the API tests (run_tests.ps1: a fresh test DB from db\init, pytest), the web
   code's own tests (run_web_tests.ps1: Vitest + jsdom, web/src/tests) and the browser walk-through (run_e2e.ps1:
   e2e/walkthrough.py runs the steps in e2e/wt_<area>.py in its ORDER - a step left out of ORDER stops the run) side
-  by side. The walk-through runs on its OWN throwaway copy (hobby-e2e-*) with a
+  by side. The walk-through runs in two halves (core / hobbies, walkthrough.py HOBBIES) on its OWN throwaway copies (hobby-e2e-*, hobby-e2eh-*) with a
   copy of dev's data, which is never touched. That copy has OUTSIDE_SITES=stand-ins: no outside site is ever asked by
   the tests (user, 2026-10-18: small shops get one look a week - the weekly site check).
 - The walk-through ends with **e2e/ui_audit.py**: every page + some panels at 5 widths x 2 themes x 2 looks (overflow, clipped /

@@ -2,7 +2,7 @@
 Steps build on each other, so ORDER matters. A step that isn't in ORDER stops the run before it starts (a step
 that was written but never added to the list used to be skipped quietly).
 E2E_STEPS=name,name (run_e2e.ps1 -Steps / -Failed): only those steps, in ORDER - to check a fix quickly. A step that
-needs an earlier one's data fails alone too: then name both (or run them all). Failed steps go in /out/failed.txt."""
+needs an earlier one's data fails alone too: then name both (or run them all). Failed steps go in /out/failed_<half>.txt."""
 import os
 import wt_core, wt_hobbies, wt_journal, wt_models, wt_supplies, wt_wishlist
 from wt_common import *  # noqa: F401,F403
@@ -109,6 +109,18 @@ if _left_out or _unknown:
     raise SystemExit(2)
 
 
+# A full run is two halves side by side, each on its own throwaway copy (run_e2e.ps1, E2E_HALF): the hobbies (and the
+# phone), and the core with everything else (and the sign-in). The hobby steps don't use what the core steps made -
+# a step that comes to need it moves to the core half. 2026-11-17: the walk-through was ~11 minutes in one line.
+# (volleyball stays in the core half: it opens the game the calendar step logged)
+HOBBIES = {"board_games", "video_games", "chess", "reading", "vinyl", "sudoku", "board_game_kinds",
+           "board_game_elsewhere", "board_game_table", "chess_review", "video_game_friends",
+           "hiking", "gardening", "shooting", "travel"}
+HALF = os.environ.get("E2E_HALF", "")       # "core", "hobbies", or "" (all of it, one line)
+if HALF not in ("", "core", "hobbies") or HOBBIES - set(ORDER):
+    print(f"Walk-through set-up problem: E2E_HALF={HALF!r}, or HOBBIES names steps not in ORDER: {sorted(HOBBIES - set(ORDER))}")
+    raise SystemExit(2)
+
 ONLY = {s.strip() for s in os.environ.get("E2E_STEPS", "").split(",") if s.strip()}
 if ONLY - set(STEPS):
     print(f"No such step: {', '.join(sorted(ONLY - set(STEPS)))}. The steps are the function names in ORDER.")
@@ -129,24 +141,30 @@ with sync_playwright() as p:
     browser = p.chromium.launch(args=["--ignore-certificate-errors"])
     # The user's time zone: "today" in the browser must be the same day the app dates pages by.
     zone = "Australia/Brisbane"
-    if not ONLY or "sign_in_ui" in ONLY:
+    def wanted(name):             # in this run: named (-Steps), or in this half
+        if ONLY:
+            return name in ONLY
+        if name == "no_panel" or not HALF:
+            return True
+        return (name in HOBBIES or name == "phone") == (HALF == "hobbies")
+    if wanted("sign_in_ui"):
         sign_in_page(browser, zone)
     desk = signed_in(browser.new_context(viewport={"width": 1280, "height": 860}, timezone_id=zone, ignore_https_errors=True)).new_page()
     watch(desk, "desktop")
-    if ONLY:                      # (in a full run the first step opens the app; a later one alone needs it open)
+    if ONLY or HALF == "hobbies":  # (in a full run the first step opens the app; a later one alone needs it open)
         desk.goto(BASE + "/")
         expect(desk.locator(".home-banner h2")).to_be_visible()
     for name in ORDER:
-        if not ONLY or name in ONLY:
+        if wanted(name):
             STEPS[name](desk)
-    if not ONLY or "phone" in ONLY:
+    if wanted("phone"):
         ctx = signed_in(browser.new_context(**p.devices["iPhone 13"], timezone_id=zone, ignore_https_errors=True))
         mob = ctx.new_page()
         watch(mob, "phone")
         STEPS["phone"](mob)
     browser.close()
 
-with open(f"{OUT}/failed.txt", "w") as f:     # for run_e2e.ps1 -Failed
+with open(f"{OUT}/failed_{HALF or 'all'}.txt", "w") as f:     # for run_e2e.ps1 -Failed (it reads every failed_*.txt)
     f.write(",".join(failed_steps))
 
 for name, status, info in results:
