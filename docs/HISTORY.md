@@ -1186,3 +1186,41 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
    dropped on a legal square it plays, anywhere else it goes back. A press that doesn't move stays a tap (the square's
    click), and the click a drop can fire is swallowed. touch-action: none on the pieces only, so a phone still scrolls
    from an empty square.
+
+5zj. **Golf, a new hobby** (2026-11-17, the user: "Do a desktop check of a large sample of other apps and then build out
+   the best one mixing them with the best features ... full creative liberty"). Looked at 18Birdies, Hole19, Golfshot
+   (GPS to the green, a hole map, tap to measure), TheGrint / GolfLink (handicap, scorecards), Arccos / Shot Scope (shots
+   and clubs, strokes gained, benchmarks by handicap), Clippd / V1 Game (stats). Built (A08_golf.sql; api golf.py,
+   golf_rounds.py, golf_scores.py, golfmath.py, golf_map.py; web modules/golf - the pages and the live round were
+   built by two subagents side by side from the finished API, with a lock file around run_tests.ps1 since they share
+   one test database):
+   - Courses from OpenStreetMap (overpass.golf_courses_near / golf_course, one human-started request each): the hole
+     lines (ref, par, handicap = stroke index) and every green, tee, fairway, bunker and pond given to the nearest hole
+     (golf_map.py); or typed. Tees with rating and slope - typed from Golf Australia's lists, never read from a site.
+   - The handicap: the WHS sums (best 8 of the last 20, fewer with the table's adjustments; net double bogey; a 9-hole
+     differential + 0.52 x index + 1.2) as an ESTIMATE - no playing-conditions adjustment or caps - and Golf
+     Australia's daily handicap (x 0.93, a setting). A typed official GA Handicap (GolfLink) wins. Checked against
+     Golf Australia's worked example (15.2, slope 124, rating 72, par 70 -> 17).
+   - Rounds hole by hole on the phone (GPS front / middle / back, the hole drawn from its shapes, shots marked with a
+     club; saves queue in localStorage while there's no signal - every write is an idempotent PUT, so resending is
+     safe) or the scorecard typed in after. Stableford, net, the differential.
+   - Stats: FIR / GIR / putts / scrambling / sand saves / three-putts / penalties, "plays like a N" against rough
+     averages by handicap, strokes gained by category against Broadie's tour baseline (typed from general knowledge,
+     like the ballistic tables: labelled rough), club distances from marked shots, hardest holes per course.
+   - Practice sessions and drills; goals (rounds, practice minutes); activity, calendar (tee times as golf events),
+     journal; CSV exports (rounds, holes).
+   Postgres names a column's CHECK `<table>_<column>_check`: a named constraint with that name clashed on a fresh
+   database (golf_round_holes_putts_check) - named *_fit instead.
+
+5zk. **Language learning, a new hobby** (2026-11-17, the user: "Can you also build a language learning hobby" - built by a
+   subagent alongside golf). From the best of the language apps, with no outside service: a deck per language on FSRS-5
+   spaced repetition (Anki's scheduler, written out in srs.py: each card's stability and difficulty, the next review
+   when recall would fall to 90%; learning steps of 1 / 5 / 10 minutes; Hard <= Good <= Easy) - asked by flipping,
+   typing (accents forgiven but pointed out, one slip a typo) or listening (the browser's own speechSynthesis), cloze
+   sentences with {{gaps}} (Clozemaster), Again / Hard / Good / Easy showing when each brings the card back, keys, Undo,
+   new cards a day mixed in among the reviews; paste many cards ("word - meaning" a line); a study log by activity with
+   tutor and class notes (italki), a daily minutes goal, a streak, this week and a 12-week heatmap (Duolingo); input
+   hours toward Dreaming Spanish / Refold's 50-1500 h milestones; resources (LingQ's library); a CEFR can-do checklist
+   in our own words; Progress charts and the cards you keep forgetting. Home: cards to review and this week's study;
+   quick action Review cards; activity, calendar, goals (minutes, input hours, reviews, words) and two CSV exports.
+   Tables in A09_language.sql (which also lets calendar events belong to golf and language).

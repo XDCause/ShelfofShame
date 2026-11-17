@@ -143,6 +143,17 @@ export const MountainIcon = (p) => (
 export const VinylIcon = (p) => (
   <Icon {...p}><circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="2.6" /><path d="M7.2 9.2a5.6 5.6 0 0 1 2.4-2.5M16.8 14.8a5.6 5.6 0 0 1-2.4 2.5" /></Icon>
 )
+// Golf: a flag in the hole, on a green.
+export const GolfIcon = (p) => (
+  <Icon {...p}><path d="M9 20V3.5l7.5 3.2L9 10" /><ellipse cx="11" cy="19.5" rx="7.5" ry="2" /><circle cx="15.5" cy="17" r="1.1" /></Icon>
+)
+// Language learning: two speech bubbles, an A in one and a character-like mark in the other.
+export const LanguageIcon = (p) => (
+  <Icon {...p}><path d="M3.5 5.5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v4.5a2 2 0 0 1-2 2H9l-3 2.5V12h-.5a2 2 0 0 1-2-2z" />
+    <path d="m6.8 10 2.2-5 2.2 5M7.6 8.3h2.8" strokeWidth="1.4" />
+    <path d="M14.5 9.5h4a2 2 0 0 1 2 2V16a2 2 0 0 1-2 2H18v2.5L15 18h-3a2 2 0 0 1-2-2v-1.5" />
+    <path d="M13.5 13.5h4.5M15.7 12.3v1.2M17 13.5c-.3 1.6-1.4 2.7-3 3.2M14.8 14.6c.5.9 1.4 1.6 2.6 2" strokeWidth="1.3" /></Icon>
+)
 // A sudoku: a 3 x 3 grid with a digit in it.
 export const SudokuIcon = (p) => (
   <Icon {...p}><rect x="3.5" y="3.5" width="17" height="17" rx="2.5" /><path d="M9.2 3.5v17M14.8 3.5v17M3.5 9.2h17M3.5 14.8h17" />

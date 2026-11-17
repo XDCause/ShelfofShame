@@ -99,16 +99,19 @@ export function BarList({ title, rows, valueLabel, onPick }) {
 
 // A line over time (one series, e.g. a rating): rows [{x: 'YYYY-MM-DD', y, tip?}], oldest first.
 // The axis is fitted to the values (a rating doesn't start at 0); hovering shows the nearest
-// point with a crosshair; dots only when there are few points.
-export function LineChart({ title, rows, valueLabel, height = 200 }) {
+// point with a crosshair; dots only when there are few points. Optional: `stepChoices`, the axis steps to pick from
+// (small numbers - a golf handicap going 18.4 -> 16.2 - want e.g. GOLF_STEPS [0.5, 1, 2, 5...]); `empty`, what to say
+// with fewer than two points. (Without them: steps from 10 up, as before.)
+const RATING_STEPS = [10, 20, 25, 50, 100, 200, 250, 500, 1000]
+export function LineChart({ title, rows, valueLabel, height = 200, stepChoices = RATING_STEPS, empty = 'Not enough games yet to draw this.' }) {
   const [hover, setHover] = useState(null)
-  if (rows.length < 2) return <p className="muted small">Not enough games yet to draw this.</p>
+  if (rows.length < 2) return <p className="muted small">{empty}</p>
   const ys = rows.map((r) => r.y)
-  const span = Math.max(...ys) - Math.min(...ys) || 50
-  const step = [10, 20, 25, 50, 100, 200, 250, 500].find((s) => span / s <= 5) ?? 1000
+  const span = Math.max(...ys) - Math.min(...ys) || 5 * stepChoices[0]
+  const step = stepChoices.find((s) => span / s <= 5) ?? stepChoices.at(-1)
   const lo = Math.floor((Math.min(...ys) - span * 0.05) / step) * step
   const hi = Math.ceil((Math.max(...ys) + span * 0.05) / step) * step
-  const steps = Array.from({ length: Math.round((hi - lo) / step) + 1 }, (_, i) => lo + i * step)
+  const steps = Array.from({ length: Math.round((hi - lo) / step) + 1 }, (_, i) => Number((lo + i * step).toPrecision(12)))
   const t = rows.map((r) => new Date(`${r.x}T12:00:00`).getTime())
   const t0 = t[0], t1 = t[t.length - 1] || t0 + 1
   const X = (i) => (100 * (t[i] - t0)) / (t1 - t0 || 1)

@@ -70,6 +70,10 @@
  *                                    (most used: .jl)
  *   33-settings.css                  Settings: the groups, their rows and icons, the find box
  *                                    (most used: .set)
+ *   34-golf.css                      golf: the dashboard's handicap card, rounds, the scorecard, courses (tees, holes, hole
+ *                                    sketches), stats, the bag's distances, practice  (most used: .golf)
+ *   35-golf-live.css                 golf's live round (GolfPlay.jsx): the hole strip, green distances, steppers, shots;
+ *                                    the hole drawing (HoleMap.jsx)  (most used: .gplay)
  */
 @import './styles/01-base.css';
 @import './styles/02-inventory-panels.css';
@@ -104,3 +108,6 @@
 @import './styles/31-chess-openings.css';
 @import './styles/32-look-journal.css';
 @import './styles/33-settings.css';
+@import './styles/34-golf.css';
+@import './styles/35-golf-live.css';
+@import './styles/36-language.css';

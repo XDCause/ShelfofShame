@@ -10,6 +10,7 @@ A habit goal (so many times a week / month) uses the sum sources too: "hike 20 k
 """
 from datetime import date
 
+from .language import MINUTES as language_minutes
 from .vgplaytime import PLAYED
 
 SOURCES = {
@@ -65,6 +66,18 @@ SOURCES = {
                       "SELECT added_on AS day, 1 AS amount FROM vinyl_records WHERE status IN ('Owned', 'Gone')"),
     "sudokus_solved": ("Sudokus solved", "puzzles", "sudoku", "sum",
                        "SELECT finished_at::date AS day, 1 AS amount FROM sudoku_games WHERE status = 'solved'"),
+    "golf_rounds": ("Golf rounds", "rounds", "golf", "sum",
+                    "SELECT played_on AS day, CASE WHEN holes = '18' THEN 1 ELSE 0.5 END AS amount FROM golf_rounds WHERE status = 'done'"),
+    "golf_practice": ("Golf practice", "minutes", "golf", "sum",
+                      "SELECT practiced_on AS day, minutes AS amount FROM golf_practice WHERE minutes IS NOT NULL"),
+    "language_minutes": ("Language study (the log and card reviews)", "minutes", "language", "sum",
+                         "SELECT day, minutes AS amount FROM (" + language_minutes + ") m"),
+    "language_input": ("Language input (listening, watching, reading, classes)", "hours", "language", "sum",
+                       "SELECT day, input / 60.0 AS amount FROM (" + language_minutes + ") m WHERE input > 0"),
+    "language_reviews": ("Language cards reviewed", "cards", "language", "sum",
+                         "SELECT reviewed_at::date AS day, 1 AS amount FROM lang_reviews"),
+    "language_words": ("Language words learned (cards that reached review)", "words", "language", "sum",
+                       "SELECT learned_on AS day, 1 AS amount FROM lang_cards WHERE learned_on IS NOT NULL"),
     "sudokus_hard": ("Hard or harder sudokus solved", "puzzles", "sudoku", "sum",
                      "SELECT finished_at::date AS day, 1 AS amount FROM sudoku_games WHERE status = 'solved' AND difficulty IN ('Hard', 'Expert', 'Extreme')"),
     "focus_minutes": ("Focus time (the focus timer)", "minutes", None, "sum",

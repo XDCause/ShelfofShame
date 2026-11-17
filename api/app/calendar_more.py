@@ -18,7 +18,7 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 from psycopg.types.json import Jsonb
 
-from . import activity, openmeteo, vgplaytime
+from . import activity, language, openmeteo, vgplaytime
 from .calendar import MAX_DAYS, days_of, fetch_event, occurrences
 from .db import MODULE_IDS, db, insert_row, update_row
 from .holidays import holidays_between
@@ -28,7 +28,8 @@ router = APIRouter(prefix="/api", tags=["calendar"])
 # What each hobby's log shows as in the activity feed (activity.py kinds): a hobby event that day counts as done.
 HOBBY_KINDS = {"models": ("model",), "boardgames": ("game",), "volleyball": ("volleyball",), "videogames": ("videogame",),
                "chess": ("chess",), "reading": ("book",), "travel": ("trip",), "shooting": ("shoot",), "hiking": ("hike",),
-               "gardening": ("planting", "gcontainer", "gspace"), "vinyl": ("record",), "sudoku": ("sudoku",), "car": ()}
+               "gardening": ("planting", "gcontainer", "gspace"), "vinyl": ("record",), "sudoku": ("sudoku",), "golf": ("golfround", "golfpractice"),
+               "language": ("langstudy", "langreview"), "car": ()}
 KIND_HOBBY = {k: h for h, kinds in HOBBY_KINDS.items() for k in kinds}
 
 
@@ -47,6 +48,9 @@ MONTH_RE = "|".join(sorted(MONTH_WORD, key=len, reverse=True))
 NTH = {"first": 1, "1st": 1, "second": 2, "2nd": 2, "third": 3, "3rd": 3, "fourth": 4, "4th": 4, "last": 5}
 HOBBY_WORDS = [  # (pattern, hobby) - the first that matches wins
     (r"volley ?ball|vball", "volleyball"), (r"chess", "chess"), (r"sudokus?", "sudoku"),
+    (r"golf|tee ?time|driving range|putting green|9 holes|18 holes|stableford|pennant", "golf"),
+    (r"(?:spanish|french|german|italian|japanese|mandarin|chinese|korean|portuguese|dutch|greek|arabic|hindi|indonesian"
+     r"|vietnamese|thai|russian|language) (?:class|lesson|tutor(?:ing)?|exchange|meetup)|italki|preply|tandem|language study", "language"),
     (r"shoot(?:ing)?|range day|rifle|rimfire|club match|prs", "shooting"),
     (r"hike|hiking|bushwalk|trail|summit", "hiking"), (r"garden(?:ing)?|repot|sow(?:ing)?|plant(?:ing)? out", "gardening"),
     (r"vinyl|record (?:store|shop|fair)s?|records? day|rsd|crate digging|gig|concert|listening party", "vinyl"),
@@ -319,6 +323,8 @@ DONE_MINUTES = {   # hobby -> minutes done per day, from that hobby's own log (o
     "reading": "SELECT logged_on AS day, sum(minutes) AS minutes FROM reading_log WHERE minutes IS NOT NULL GROUP BY 1",
     # (vg_playtime holds each game's running TOTAL: a day's playing is the change - vgplaytime.PLAYED)
     "videogames": f"SELECT day, sum(played) AS minutes FROM ({vgplaytime.PLAYED}) p GROUP BY 1",
+    # (the study log and card reviews: language.MINUTES)
+    "language": f"SELECT day, sum(minutes) AS minutes FROM ({language.MINUTES}) m GROUP BY 1",
 }
 
 

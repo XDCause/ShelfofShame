@@ -152,6 +152,42 @@ EXPORTS = {
         LEFT JOIN vg_games g ON p.platform = 'steam' AND g.app_id::text = p.app_id
         LEFT JOIN vg_other_games o ON p.platform <> 'steam' AND p.platform || '-' || o.game_id = p.app_id
         ORDER BY p.day, 2""",
+    # Golf: each round (Stableford points and the differential are worked out by the app: see the round's scorecard)
+    "golf-rounds": """
+        SELECT r.played_on AS "Date", c.name AS "Course", t.name AS "Tees",
+               CASE r.holes WHEN '18' THEN '18 holes' WHEN 'front' THEN 'Front 9' ELSE 'Back 9' END AS "Holes",
+               r.format AS "Format", r.competition AS "Competition", r.handicap AS "Handicap",
+               r.daily_handicap AS "Daily handicap",
+               CASE WHEN bool_and(NOT h.picked_up) THEN sum(h.strokes) END AS "Strokes",
+               sum(h.putts) AS "Putts", count(*) FILTER (WHERE h.fairway = 'hit') AS "Fairways hit",
+               count(*) FILTER (WHERE h.strokes - h.putts <= gh.par - 2) AS "Greens in regulation",
+               sum(h.penalties) AS "Penalties", count(h.hole_no) AS "Holes scored",
+               CASE WHEN r.counts THEN 'Yes' ELSE 'No' END AS "Counts", r.partners AS "Partners", r.notes AS "Notes"
+        FROM golf_rounds r JOIN golf_courses c USING (course_id) LEFT JOIN golf_tees t ON t.tee_id = r.tee_id
+        LEFT JOIN golf_round_holes h ON h.round_id = r.round_id
+        LEFT JOIN golf_holes gh ON gh.course_id = r.course_id AND gh.hole_no = h.hole_no
+        WHERE r.status = 'done'
+        GROUP BY r.round_id, c.name, t.name ORDER BY r.played_on, r.round_id""",
+    "golf-holes": """
+        SELECT r.played_on AS "Date", c.name AS "Course", h.hole_no AS "Hole", gh.par AS "Par", gh.stroke_index AS "Index",
+               CASE WHEN h.picked_up THEN 'Picked up' ELSE h.strokes::text END AS "Strokes", h.putts AS "Putts",
+               h.fairway AS "Fairway", h.penalties AS "Penalties", h.sand AS "Bunker shots", h.first_putt_m AS "First putt (m)"
+        FROM golf_round_holes h JOIN golf_rounds r USING (round_id) JOIN golf_courses c USING (course_id)
+        LEFT JOIN golf_holes gh ON gh.course_id = r.course_id AND gh.hole_no = h.hole_no
+        ORDER BY r.played_on, r.round_id, h.hole_no""",
+    # Language learning: the deck (each card's memory as FSRS keeps it) and the study log (reviews' time not included)
+    "language-cards": """
+        SELECT l.name AS "Language", c.kind AS "Kind", c.front AS "Front", c.back AS "Back", c.example AS "Example",
+               c.example_meaning AS "Example means", array_to_string(c.tags, ' ') AS "Tags", c.notes AS "Notes",
+               c.state AS "State", c.due::date AS "Due", round(c.stability::numeric, 1) AS "Stability (days)",
+               round(c.difficulty::numeric, 1) AS "Difficulty", c.reps AS "Reviews", c.lapses AS "Lapses",
+               c.learned_on AS "Learned", c.suspended AS "Suspended", c.created_at::date AS "Added"
+        FROM lang_cards c JOIN lang_languages l USING (language_id) ORDER BY l.name, c.created_at, c.card_id""",
+    "language-study": """
+        SELECT s.studied_on AS "Date", l.name AS "Language", s.activity AS "Activity", s.minutes AS "Minutes",
+               r.title AS "Resource", s.with_whom AS "With", s.notes AS "Notes"
+        FROM lang_study s JOIN lang_languages l USING (language_id) LEFT JOIN lang_resources r USING (resource_id)
+        ORDER BY s.studied_on, s.study_id""",
 }
 
 

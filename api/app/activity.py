@@ -20,6 +20,9 @@
                 (not every watering - that's what Today is for)
     vinyl       a record played (one entry per record per day); bought / added      (vinyl_plays, vinyl_records)
     sudoku      a puzzle solved: difficulty, time, hints                            (sudoku_games)
+    golf        a round finished: course, strokes, competition; a practice session  (golf_rounds, golf_practice)
+    langstudy   language study logged: the activity, minutes, with whom             (lang_study)
+    langreview  a day's flashcard reviews in a language: how many, % remembered     (lang_reviews; ref = the language)
 
 Each item: {at, day, kind, ref, verb, title, detail, photo_url}; the photo (if any) is the
 product's, the game's or the gear's. Newest first. Part of the core: Home shows the latest, and
@@ -233,6 +236,34 @@ WITH feed AS (
                      CASE WHEN g.hints = 0 AND g.mistakes = 0 THEN 'clean' WHEN g.hints > 0 THEN g.hints || CASE WHEN g.hints = 1 THEN ' hint' ELSE ' hints' END END),
            NULL, NULL, NULL
     FROM sudoku_games g WHERE g.status = 'solved'
+  UNION ALL
+    SELECT {_on_day('r.played_on', 'r.finished_at')}, 'golfround', r.round_id, 'Played', c.name,
+           concat_ws(' · ', CASE r.holes WHEN 'front' THEN 'Front 9' WHEN 'back' THEN 'Back 9' END,
+                     (SELECT CASE WHEN count(*) > 0 AND bool_and(NOT h.picked_up) THEN sum(h.strokes) || ' strokes' END
+                      FROM golf_round_holes h WHERE h.round_id = r.round_id),
+                     r.competition, CASE WHEN r.format <> 'Social' THEN r.format END),
+           NULL, NULL, NULL
+    FROM golf_rounds r JOIN golf_courses c USING (course_id) WHERE r.status = 'done'
+  UNION ALL
+    SELECT {_on_day('p.practiced_on', 'p.created_at')}, 'golfpractice', p.practice_id, 'Practised', p.kind || ' practice',
+           concat_ws(' · ', p.minutes || ' min', p.balls || ' balls', p.drill || CASE WHEN p.made IS NOT NULL THEN ' ' || p.made || '/' || p.attempts ELSE '' END, p.focus),
+           NULL, NULL, NULL
+    FROM golf_practice p
+  UNION ALL
+    SELECT {_on_day('s.studied_on', 's.created_at')}, 'langstudy', s.study_id, 'Studied', l.name || ': ' || lower(s.activity),
+           concat_ws(' · ', s.minutes || ' min', CASE WHEN s.with_whom IS NOT NULL THEN 'with ' || s.with_whom END,
+                     (SELECT r.title FROM lang_resources r WHERE r.resource_id = s.resource_id)),
+           NULL, NULL, NULL
+    FROM lang_study s JOIN lang_languages l USING (language_id)
+  UNION ALL
+    SELECT max(r.reviewed_at), 'langreview', c.language_id, 'Reviewed', min(l.name) || ' cards',
+           concat_ws(' · ', count(*) || CASE WHEN count(*) = 1 THEN ' card' ELSE ' cards' END,
+                     round(100.0 * count(*) FILTER (WHERE r.grade > 1) / count(*)) || '%% remembered',
+                     CASE WHEN count(*) FILTER (WHERE r.state_before = 'new') > 0
+                          THEN count(*) FILTER (WHERE r.state_before = 'new') || ' new' END),
+           NULL, NULL, NULL
+    FROM lang_reviews r JOIN lang_cards c USING (card_id) JOIN lang_languages l USING (language_id)
+    GROUP BY c.language_id, r.reviewed_at::date
 )
 SELECT f.at, (f.at AT TIME ZONE current_setting('TimeZone'))::date AS day,
        f.kind, f.ref, f.verb, f.title, NULLIF(f.detail, '') AS detail,

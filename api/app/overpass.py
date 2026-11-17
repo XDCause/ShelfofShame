@@ -59,8 +59,28 @@ def _post(data: str) -> dict:
 
 def near_line(points: list[tuple[float, float]], radius: int = 250) -> list[dict]:
     """The raw elements near the line; a busy server is asked again after RETRY_WAITS."""
-    data = query(points, radius)
-    for wait in (0, *RETRY_WAITS):
+    return _ask(query(points, radius))
+
+
+# Golf (golf.py, golf_map.py): courses near a place, and one course's holes, greens, tees, fairways, bunkers and water.
+# Each is one request a person started (a search, an import).
+def golf_courses_near(lat: float, lon: float, radius: int = 25000) -> list[dict]:
+    return _ask(f'[out:json][timeout:60];nwr["leisure"="golf_course"](around:{radius},{lat:.5f},{lon:.5f});out center tags 40;', waits=RETRY_WAITS[:1])
+
+
+def golf_course(osm: str) -> list[dict]:
+    """osm: 'way/123' or 'relation/123' - the course's outline (tags, centre), then everything golf inside it (and water)."""
+    kind, ref = osm.split("/")
+    sel = "way" if kind == "way" else "rel"
+    return _ask(f'[out:json][timeout:90];{sel}({int(ref)})->.c;.c out tags center;.c map_to_area->.a;'
+                f'(nwr(area.a)["golf"];way(area.a)["natural"="water"];rel(area.a)["natural"="water"];);out geom tags;',
+                waits=RETRY_WAITS[:1])
+
+
+def _ask(data: str, waits=None) -> list[dict]:
+    """The elements; a busy server is asked again after each of `waits` seconds (RETRY_WAITS; a person waiting on the
+    page: just the first)."""
+    for wait in (0, *(RETRY_WAITS if waits is None else waits)):
         if wait:
             time.sleep(wait)
         try:

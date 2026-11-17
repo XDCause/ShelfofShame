@@ -288,6 +288,8 @@ const EXPORTS = [
   ['inventory', 'Inventory'], ['wishlist', 'Wishlist'], ['models', 'Models'],
   ['model-paints', 'Model paint lists'], ['builds', 'Build sessions (time)'], ['paint-recipes', 'Paint recipes'], ['history', 'Stock history'],
   ['video-games', 'Video games'], ['video-game-achievements', 'Video game achievements'], ['video-game-playtime', 'Video game playtime (per day)'],
+  ['golf-rounds', 'Golf rounds'], ['golf-holes', 'Golf scores hole by hole'],
+  ['language-cards', 'Language cards'], ['language-study', 'Language study log'],
 ]
 
 function Exports() {

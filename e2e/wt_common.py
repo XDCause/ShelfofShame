@@ -72,6 +72,8 @@ _vinyl = get_json("/api/vinyl/summary")
 VINYL = bool(_vinyl["owned"] or _vinyl["wanted"])                                       # Home: records + plays this month
 _sudoku = get_json("/api/sudoku/summary")
 SUDOKU = bool(_sudoku["solved"] or _sudoku["playing_count"])                                 # Home: the daily + this week
+GOLF = bool(get_json("/api/golf/summary")["rounds"])                                           # Home: handicap + last round
+LANGUAGE = bool(get_json("/api/language/summary")["languages"])                                # Home: cards to review + this week
 MARK = f"e2e{int(time.time())}"   # a word only this run's journal page contains
 
 

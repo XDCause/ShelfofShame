@@ -73,7 +73,7 @@ describe('The panel', () => {
     fireEvent.change(screen.getByLabelText('Find a setting'), { target: { value: 'excel' } })
     expect(screen.queryByRole('heading', { name: 'Shopping' })).toBeNull()
     expect(screen.getByText('Export to CSV')).toBeTruthy()
-    expect(screen.getAllByRole('link', { name: 'Download CSV', hidden: true })).toHaveLength(10)   // the only match: opened
+    expect(screen.getAllByRole('link', { name: 'Download CSV', hidden: true })).toHaveLength(14)   // the only match: opened
     fireEvent.change(screen.getByLabelText('Find a setting'), { target: { value: 'zebra' } })
     expect(screen.getByText('No setting matches "zebra".')).toBeTruthy()
   })

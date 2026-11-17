@@ -1430,3 +1430,177 @@ def sudoku(page):
     # the daily card's own button, whatever it says (dev's copy may have today's daily started or solved already)
     page.locator(".sdk-daily").get_by_role("link", name=re.compile("^(Play today's puzzle|Carry on|See it)$")).click()
     expect(page.locator(".sdk-title")).to_contain_text("Daily sudoku", timeout=30000)
+
+
+@step("Language learning: add a language, paste cards and add one, a review (typed with accents forgiven, flipped, keys, Again's return, undo), log study, a resource, a can-do ticked; every page")
+def language(page):
+    name = f"Esperanto {MARK}"
+    page.goto(BASE + "/language/today")
+    page.get_by_role("button", name="+ Add a language").first.click()
+    d = drawer(page)
+    d.get_by_label(re.compile(r"^Language")).fill(name)
+    d.get_by_label(re.compile(r"^Voice")).fill("eo")
+    d.get_by_label(re.compile(r"^New cards a day")).fill("10")
+    d.get_by_role("button", name="Add", exact=True).click()
+    expect(d).to_have_count(0)
+    lang = next(x for x in get_json("/api/language/languages") if x["name"] == name)
+    expect(page.locator(".lng-toolbar")).to_contain_text(f"{name} settings")         # the new language is the one shown
+    expect(page.locator(".home-stat", has_text="Cards to review today")).to_be_visible()
+
+    # cards: three pasted (one a cloze, one line unreadable), one typed in
+    tabs = page.locator(".section-tabs")
+    tabs.get_by_role("link", name="Cards").click()
+    page.get_by_role("button", name="Paste many").click()
+    d.get_by_label(re.compile(r"^One card a line")).fill("la kafo - the coffee\nla hundo - the dog\nMi {{estas}} feliĉa - I am happy\nnonsense")
+    d.get_by_role("button", name="Add 4 cards").click()
+    expect(d.locator(".lng-bulk-result")).to_contain_text("3 added")
+    expect(d.locator(".lng-bulk-result")).to_contain_text("1 line couldn't be read")
+    page.keyboard.press("Escape")
+    page.get_by_role("button", name="+ Add a card").first.click()
+    d.get_by_label(re.compile(r"^Word or phrase")).fill("la kato")
+    d.get_by_label(re.compile(r"^Meaning")).fill("the cat")
+    d.get_by_role("button", name="Add and next").click()
+    expect(d.get_by_label(re.compile(r"^Word or phrase"))).to_have_value("")        # a fresh form for the next one
+    page.keyboard.press("Escape")
+    expect(page.locator(".lng-cards li")).to_have_count(4)
+    shot(page, "d70_language_cards", full=False)
+
+    # the review: the first card typed (its answer without the accent: right, but noted), then the rest flipped
+    tabs.get_by_role("link", name="Review").click()
+    page.get_by_role("group", name="Ask by").get_by_role("button", name="Type").click()
+    first = get_json(f"/api/language/review?language_id={lang['language_id']}")["cards"][0]
+    assert first["front"] == "la kafo", first
+    expect(page.locator(".lng-front")).to_have_text("the coffee")
+    page.get_by_label(f"In {name}").fill("la kafó")
+    page.get_by_role("button", name="Check").click()
+    expect(page.locator(".lng-verdict")).to_contain_text("mind the accents")
+    expect(page.locator(".lng-grade.lng-suggest")).to_contain_text("Hard")
+    page.get_by_role("button", name=re.compile("^Good")).click()
+    page.get_by_role("group", name="Ask by").get_by_role("button", name="Flip").click()
+    expect(page.locator(".lng-front")).to_have_text("la hundo")
+    page.keyboard.press("Enter")                                                     # keys: Enter shows, 4 is Easy
+    expect(page.locator(".lng-answer")).to_contain_text("the dog")
+    page.keyboard.press("4")
+    expect(page.locator(".lng-cloze")).to_contain_text("Mi")                        # the cloze: its gap
+    expect(page.locator(".lng-gap")).to_be_visible()
+    shot(page, "d71_language_review", full=False)
+    for _ in range(12):                                                              # the rest Easy (the Good one comes back)
+        page.locator(".lng-done, .lng-show").first.wait_for()                       # (the next card, or the end)
+        if page.locator(".lng-done").count():
+            break
+        page.get_by_role("button", name="Show the answer").click()
+        page.get_by_role("button", name=re.compile("^Easy")).click()
+    expect(page.locator(".lng-done")).to_contain_text("Done for today")
+    expect(page.locator(".lng-done")).to_contain_text("5 answers")
+    page.get_by_role("button", name="Undo the last answer").click()                 # undo: the card is back
+    expect(page.get_by_role("button", name="Show the answer")).to_be_visible()
+    page.get_by_role("button", name="Show the answer").click()
+    page.get_by_role("button", name=re.compile("^Easy")).click()
+    expect(page.locator(".lng-done")).to_be_visible()
+    cards = get_json(f"/api/language/cards?language_id={lang['language_id']}")
+    assert all(c["state"] == "review" for c in cards), [(c["front"], c["state"]) for c in cards]
+
+    # study: 45 minutes of listening (input hours), shown on Today and in the log
+    tabs.get_by_role("link", name="Today").click()
+    page.get_by_role("button", name="+ Log study").click()
+    d.get_by_label(re.compile(r"^What you did")).select_option("Listening")
+    d.get_by_label(re.compile(r"^Minutes")).fill("45")
+    d.get_by_label(re.compile(r"^Notes")).fill(f"A podcast {MARK}")
+    d.get_by_role("button", name="Log it").click()
+    expect(d).to_have_count(0)
+    expect(page.locator(".home-card", has_text="Latest study")).to_contain_text("Listening · 45 min")
+    expect(page.locator(".lng-heat")).to_be_visible()
+    shot(page, "d72_language_today", full=False)
+    tabs.get_by_role("link", name="Study log").click()
+    expect(page.locator(".lng-log")).to_contain_text(f"A podcast {MARK}")
+
+    # a resource
+    tabs.get_by_role("link", name="Resources").click()
+    page.get_by_role("button", name="+ Add a resource").first.click()
+    d.get_by_label(re.compile(r"^Title")).fill(f"Muzzy {MARK}")
+    d.get_by_label(re.compile(r"^Kind")).select_option("Show")
+    d.get_by_role("button", name="Add", exact=True).click()
+    expect(page.locator(".lng-res-group")).to_contain_text(f"Muzzy {MARK}")
+
+    # progress: the input hours, a can-do ticked
+    tabs.get_by_role("link", name="Progress").click()
+    expect(page.locator(".lng-milestone")).to_contain_text("0.8 hours")
+    box = page.get_by_label("Introduce yourself and say where you're from and what you do")
+    box.click()
+    expect(box).to_be_checked()
+    page.wait_for_timeout(500)                                    # (saved just after)
+    cando = get_json(f"/api/language/languages/{lang['language_id']}/cando")
+    assert cando[0]["done_on"], cando[0]
+    shot(page, "d73_language_progress", full=False)
+
+
+@step("Golf: find a course (stand-in OpenStreetMap), a tee's rating, play two holes on the phone page, finish, the scorecard; stats, bag, practice")
+def golf(page):
+    go(page, "Golf")
+    expect(page.locator(".navbar h1")).to_contain_text("Golf")
+    page.goto(BASE + "/golf/courses")
+    page.get_by_role("button", name="Find a course").first.click()
+    d = drawer(page)
+    d.get_by_label("Town or suburb").fill("Testville")
+    d.get_by_role("button", name="Search").click()
+    row = d.locator(".golf-found-row", has_text="Stand-in Golf Club")
+    expect(row).to_be_visible(timeout=15000)
+    row.get_by_role("button", name=re.compile("^(Add|Already added)$")).click()
+    expect(d.get_by_role("heading", name="Stand-in Golf Club")).to_be_visible(timeout=15000)
+    course = next(c for c in get_json("/api/golf/courses") if c["name"] == "Stand-in Golf Club")
+    assert course["mapped"] == 2, course
+    expect(d.locator("svg").first).to_be_visible()                                       # its holes, drawn
+    shot(page, "golf01_course", full=False)
+    page.keyboard.press("Escape")
+    expect(page.locator("aside.drawer")).to_have_count(0)
+
+    # a round, live: the quick action's panel, Play now -> the phone page
+    page.goto(BASE + "/golf/dashboard")
+    page.get_by_role("button", name="Start a round").first.click()
+    d = drawer(page)
+    d.get_by_role("button", name="Play now").click()
+    expect(page).to_have_url(re.compile(r"/golf/play\?round=\d+"), timeout=15000)
+    round_id = int(re.search(r"round=(\d+)", page.url).group(1))
+    expect(page.get_by_role("img").first).to_be_visible()                               # hole 1's map
+    page.get_by_role("button", name="Strokes: one more").click()                         # starts at par (4)...
+    page.get_by_role("button", name="Strokes: one more").click()                         # ...then 5
+    page.get_by_role("button", name="Putts: one more").click()
+    page.get_by_role("group", name="Fairway").get_by_role("button", name="Hit").click()
+    expect(page.locator(".gplay-verdict")).to_contain_text(re.compile("bogey", re.I))
+    shot(page, "golf02_play", full=False)
+    page.get_by_role("button", name="Next hole").click()
+    page.get_by_role("button", name="Strokes: one more").click()                         # par on the par 3
+    page.get_by_role("button", name="Putts: one more").click()
+    expect(page.locator(".gplay-verdict")).to_contain_text(re.compile("par", re.I))
+    def saved():
+        r = get_json(f"/api/golf/rounds/{round_id}")
+        return [(h["hole_no"], h["strokes"]) for h in r["holes"] if h["entered"]]
+    for _ in range(40):                                                                   # (saves wait ~0.6 s)
+        if saved() == [(1, 5), (2, 3)]:
+            break
+        page.wait_for_timeout(250)
+    assert saved() == [(1, 5), (2, 3)], saved()
+    page.get_by_role("button", name="Finish round").first.click()
+    page.get_by_role("button", name="Finish round").last.click()                          # (holes missing: asked first)
+    expect(page).to_have_url(re.compile(r"/golf/rounds"), timeout=15000)
+    d = drawer(page)
+    expect(d).to_contain_text("Stand-in Golf Club")
+    expect(d.locator("table").first).to_be_visible()                                     # the scorecard
+    assert get_json(f"/api/golf/rounds/{round_id}")["status"] == "done"
+    page.keyboard.press("Escape")
+    expect(page.locator("aside.drawer")).to_have_count(0)
+
+    # stats, the bag (a standard one), practice
+    page.goto(BASE + "/golf/stats")
+    expect(page.locator(".navbar h1")).to_contain_text("Golf")
+    page.goto(BASE + "/golf/bag")
+    if not get_json("/api/golf/clubs"):
+        page.get_by_role("button", name="Fill a standard bag").click()
+    expect(page.get_by_text("7 iron").first).to_be_visible()
+    page.goto(BASE + "/golf/practice")
+    page.get_by_role("button", name="+ Log practice").first.click()
+    d = drawer(page)
+    d.get_by_label("Minutes").fill("30")
+    d.get_by_role("button", name="Log it").click()
+    expect(page.locator("aside.drawer")).to_have_count(0)
+    assert get_json("/api/golf/practice")["year"]["minutes"] >= 30

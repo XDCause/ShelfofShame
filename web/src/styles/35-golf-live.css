@@ -1,0 +1,137 @@
+/* ---------- Golf: the live round (modules/golf/GolfPlay.jsx) and the hole drawing (HoleMap.jsx), 2026-11-17 ---------- */
+/* Phone first: one centred column, big buttons (44 px and up) for gloved / sunny-day thumbs. Scores have a colour each
+   (eagle gold, birdie red, par plain, bogey blue, double navy), always with the score written on it. */
+.gplay { max-width: 560px; width: 100%; margin: 0 auto; gap: 14px; }
+.gplay .card { padding: 14px; }
+.gplay h2 { margin: 0; }
+.gplay-big { min-height: 48px; width: 100%; font-size: 1.05rem; }
+
+/* No round: start one, or carry one on. */
+.gplay-pick { display: flex; flex-direction: column; gap: 10px; }
+.gplay-pick p { margin: 0; }
+.gplay-pick-list li { padding: 0; }
+.gplay-pick-link { display: flex; flex-direction: column; gap: 2px; width: 100%; min-height: 52px; justify-content: center; padding: 8px 14px;
+  color: var(--text); text-decoration: none; }
+.gplay-pick-link:hover { background: var(--fill); }
+
+/* The top: where, and the round so far. */
+.gplay-top { display: flex; flex-direction: column; gap: 8px; }
+.gplay-where { display: flex; flex-direction: column; min-width: 0; }
+.gplay-where strong { overflow-wrap: anywhere; }
+.gplay-totals { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 0; }
+.gplay-totals div { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px 4px; text-align: center; }
+.gplay-totals dt { font-size: var(--text-xs); color: var(--muted); }
+.gplay-totals dd { margin: 0; font-size: 1.35rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.gplay-note { margin: 0; font-size: var(--text-sm); color: var(--muted); }
+.gplay-waiting { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 12px; border-radius: var(--radius-sm);
+  background: var(--low-bg); color: var(--low); font-weight: 600; font-size: var(--text-sm); }
+.gplay-waiting .plain { color: var(--low); text-decoration: underline; min-height: 32px; }
+
+/* The strip of holes (scrolls sideways on a phone). */
+.gplay-strip { display: flex; gap: 4px; overflow-x: auto; padding: 2px 2px 6px; scrollbar-width: thin; }
+.gplay-strip-hole { flex: none; width: 44px; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 0; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); padding: 2px 0; }
+.gplay-strip-hole[aria-current='true'] { outline: 3px solid var(--tint); outline-offset: -1px; }
+.gplay-strip-no { font-size: var(--text-xs); font-weight: 600; }
+.gplay-strip-score { font-size: 1.05rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* Score colours: shared by the strip and the verdict (each with its own text colour: 4.5:1 or better). */
+.gplay-kind-eagle { background: #f2d16b; color: #3a2c00; border-color: #c9a227; }
+.gplay-kind-birdie { background: #c0392b; color: #ffffff; border-color: #a5281c; }
+.gplay-kind-par { background: var(--tint-soft); color: var(--text); }
+.gplay-kind-bogey { background: #2c64a8; color: #ffffff; border-color: #1f4f8a; }
+.gplay-kind-double { background: #1c355e; color: #ffffff; border-color: #102544; }
+.gplay-kind { display: inline-block; padding: 2px 10px; border-radius: 999px; font-weight: 650; text-transform: capitalize; }
+
+/* The hole: its name, par, index, metres and the strokes you get, between Prev and Next. */
+.gplay-swipe { display: flex; flex-direction: column; gap: 14px; }
+.gplay-hole-head { display: flex; align-items: center; gap: 10px; }
+.gplay-hole-title { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.gplay-hole-title h2 { font-size: 1.6rem; line-height: 1.2; }
+.gplay-nav { width: 52px; height: 52px; min-height: 52px; padding: 0; font-size: 1.8rem; line-height: 1; flex: none; }
+.gplay-received { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-sm); color: var(--muted); }
+.gplay-received [aria-hidden='true'] { color: var(--text); letter-spacing: 2px; }
+
+/* Front / middle / back of the green. */
+.gplay-green { display: flex; flex-direction: column; gap: 6px; }
+.gplay-gmb { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; text-align: center; }
+.gplay-gmb.gplay-gmb-plain { grid-template-columns: 1fr; }
+.gplay-gmb span { display: block; font-size: var(--text-xs); color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+.gplay-gmb strong { display: block; font-size: 2.2rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.gplay-gmb-mid strong { font-size: 3.2rem; color: var(--tint); }
+.gplay-gps { margin: 0; text-align: center; }
+.gplay-gps-error { margin: 0; text-align: center; color: var(--out); font-size: var(--text-sm); }
+
+/* Scoring. */
+.gplay-score { display: flex; flex-direction: column; gap: 12px; }
+.gplay-steppers { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+.gplay-stepper { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+.gplay-stepper-label { font-size: var(--text-sm); color: var(--muted); font-weight: 600; }
+.gplay-stepper-row { display: flex; align-items: center; gap: 4px; }
+.gplay-step { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--tint-soft); color: var(--tint); font-size: 1.5rem;
+  font-weight: 700; line-height: 1; display: grid; place-items: center; padding: 0; }
+.gplay-step:hover { background: color-mix(in srgb, var(--tint) 22%, transparent); }
+.gplay-step:active { transform: scale(0.95); }
+.gplay-stepper-value { min-width: 2.6rem; text-align: center; font-size: 1.4rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.gplay-stepper.gplay-stepper-big .gplay-step { width: 50px; height: 50px; background: var(--primary-bg); color: var(--primary-text); }
+.gplay-stepper.gplay-stepper-big .gplay-stepper-value { font-size: 2.2rem; }
+.gplay-verdict { margin: 0; text-align: center; }
+.gplay-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.gplay-row.gplay-row-end { justify-content: flex-end; }
+.gplay-row.gplay-row-end .gplay-big { flex: 1; width: auto; }
+.gplay-row-label { font-size: var(--text-sm); color: var(--muted); font-weight: 600; min-width: 5.5em; }
+.segmented.gplay-seg { display: flex; flex: 1; flex-wrap: wrap; border-radius: 14px; }
+.segmented.gplay-seg button { flex: 1; min-height: 44px; padding: 6px 8px; }
+.gplay-chips, .gplay-clubs { display: flex; flex-wrap: wrap; gap: 6px; }
+.gplay-chips { flex: 1; }
+.gplay-chip { min-height: 44px; min-width: 44px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface);
+  color: var(--text); font-weight: 550; }
+.gplay-chip[aria-pressed='true'] { background: var(--primary-bg); color: var(--primary-text); border-color: var(--primary-bg); }
+.gplay-carry { font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
+.gplay .secondary[aria-pressed='true'] { background: var(--primary-bg); color: var(--primary-text); }
+.gplay .gplay-row .primary, .gplay .gplay-row .secondary { min-height: 44px; }
+
+/* Shots marked on the hole. */
+.gplay-shots { display: flex; flex-direction: column; gap: 10px; }
+.gplay-shots h3 { margin: 0; }
+.gplay-shots p { margin: 0; }
+.gplay-shot-list { margin: 0; padding-left: 1.4em; display: flex; flex-direction: column; gap: 4px; }
+.gplay-shot-list li { padding-left: 2px; }
+.gplay-shot-list li > span, .gplay-shot-list li > strong { display: inline; }
+.gplay-shot-list li > strong { float: right; font-variant-numeric: tabular-nums; }
+.gplay-finish { display: flex; flex-direction: column; gap: 10px; }
+.gplay-finish p { margin: 0; }
+
+/* ---------- The hole drawing (HoleMap.jsx): fixed golf colours, a darker set at night ---------- */
+.gplay-map {
+  --gm-rough: #9dbb7c; --gm-fairway: #6faa55; --gm-green: #8cd67a; --gm-green-edge: #2f6b2a; --gm-tee: #c4e0ae;
+  --gm-bunker: #ecdcae; --gm-bunker-edge: #a88b4c; --gm-water: #5b9bd5; --gm-water-edge: #2b679f;
+  display: flex; flex-direction: column; gap: 6px; align-items: center;
+}
+:root[data-theme='dark'] .gplay-map {
+  --gm-rough: #2c4527; --gm-fairway: #3d6b34; --gm-green: #5ea64f; --gm-green-edge: #b5e3a6; --gm-tee: #4c6e40;
+  --gm-bunker: #bba977; --gm-bunker-edge: #e2d3a5; --gm-water: #2d5f92; --gm-water-edge: #7fb4e6;
+}
+.gplay-map-svg { display: block; width: 100%; max-height: 62vh; border-radius: var(--radius); border: 1px solid var(--border); background: var(--gm-rough); }
+.gplay-map-svg.gplay-map-tappable { cursor: crosshair; touch-action: manipulation; }
+.gplay-map-rough { fill: var(--gm-rough); }
+.gplay-map-water { fill: var(--gm-water); stroke: var(--gm-water-edge); stroke-width: 1px; vector-effect: non-scaling-stroke; }
+.gplay-map-fairway { fill: var(--gm-fairway); }
+.gplay-map-tee { fill: var(--gm-tee); stroke: var(--gm-green-edge); stroke-width: 1px; vector-effect: non-scaling-stroke; }
+.gplay-map-green { fill: var(--gm-green); stroke: var(--gm-green-edge); stroke-width: 1.5px; vector-effect: non-scaling-stroke; }
+.gplay-map-bunker { fill: var(--gm-bunker); stroke: var(--gm-bunker-edge); stroke-width: 1px; vector-effect: non-scaling-stroke; }
+.gplay-map-line { fill: none; stroke: rgb(255 255 255 / 0.75); stroke-width: 1.5px; stroke-dasharray: 5 5; vector-effect: non-scaling-stroke; }
+.gplay-map-flag { fill: #d32f2f; stroke: #ffffff; stroke-width: 1.5px; vector-effect: non-scaling-stroke; }
+.gplay-map-shotline { fill: none; stroke: #ffffff; stroke-width: 2px; vector-effect: non-scaling-stroke; }
+.gplay-map-shot { fill: #ffffff; stroke: #1d2620; stroke-width: 1.5px; vector-effect: non-scaling-stroke; }
+.gplay-map-me { fill: #1e88e5; stroke: #ffffff; stroke-width: 2.5px; vector-effect: non-scaling-stroke; }
+.gplay-map-measure { stroke: #ffffff; stroke-width: 1.5px; stroke-dasharray: 3 4; vector-effect: non-scaling-stroke; }
+.gplay-map-mark { fill: #ffb300; stroke: #1d2620; stroke-width: 1.5px; vector-effect: non-scaling-stroke; }
+.gplay-map-label rect { fill: rgb(17 22 18 / 0.85); }
+.gplay-map-label text { fill: #ffffff; font-weight: 700; font-family: var(--font-ui); }
+.gplay-map-readout { margin: 0; text-align: center; font-size: var(--text-sm); color: var(--muted); }
+.gplay-map-readout strong { color: var(--text); }
+
+@media (min-width: 701px) {
+  .gplay-strip { flex-wrap: wrap; overflow: visible; }
+}

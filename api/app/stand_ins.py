@@ -252,7 +252,7 @@ def install():
     openlibrary._get = lambda params: []
     bookseries._wikidata = lambda query: []
     # Hiking and gardening
-    overpass._post = lambda data: {"elements": []}
+    overpass._post = lambda data: golf_osm(data) if "golf" in data else {"elements": []}
     wikimedia._get = lambda url, params: {}
     bunnings._get = _refuse(bunnings.BunningsError, "Bunnings")
     # "Add from a link": a product page, as the stand-in shop's (robots.txt: allowed)
@@ -290,3 +290,31 @@ def install():
     lastfm.get_session = lambda token: ("stand-in-listener", "stand-in-session")
     lastfm.scrobble = lambda key, tracks: len(tracks)
     log.warning("Outside websites are stand-ins (OUTSIDE_SITES=stand-ins): nothing is fetched from them.")
+
+
+def golf_osm(data: str) -> dict:
+    """OpenStreetMap's golf answers, made up: one course near anywhere ("Stand-in Golf Club"), with two mapped holes -
+    a par 4 (green, tee, fairway, a bunker, a pond) and a par 3 - so the import and the hole maps have something."""
+    lat, lon = -27.47, 153.02
+    if "leisure" in data and "map_to_area" not in data:
+        return {"elements": [{"type": "way", "id": 990001, "center": {"lat": lat, "lon": lon},
+                              "tags": {"leisure": "golf_course", "name": "Stand-in Golf Club", "addr:suburb": "Testville",
+                                       "addr:state": "QLD"}}]}
+    def box(la, lo, d=0.00012):
+        return [{"lat": la - d, "lon": lo - d}, {"lat": la - d, "lon": lo + d}, {"lat": la + d, "lon": lo + d},
+                {"lat": la + d, "lon": lo - d}, {"lat": la - d, "lon": lo - d}]
+    g1, g2 = (lat + 0.0032, lon), (lat + 0.0032, lon + 0.0016)
+    return {"elements": [
+        {"type": "way", "id": 990001, "center": {"lat": lat + 0.0016, "lon": lon + 0.0008},
+         "tags": {"leisure": "golf_course", "name": "Stand-in Golf Club", "addr:suburb": "Testville", "addr:state": "QLD"}},
+        {"type": "way", "id": 1, "tags": {"golf": "hole", "ref": "1", "par": "4", "handicap": "3"},
+         "geometry": [{"lat": lat, "lon": lon}, {"lat": lat + 0.0016, "lon": lon + 0.0001}, {"lat": g1[0], "lon": g1[1]}]},
+        {"type": "way", "id": 2, "tags": {"golf": "green"}, "geometry": box(*g1)},
+        {"type": "way", "id": 3, "tags": {"golf": "tee"}, "geometry": box(lat, lon, 0.00005)},
+        {"type": "way", "id": 4, "tags": {"golf": "fairway"}, "geometry": box(lat + 0.0016, lon + 0.0001, 0.0004)},
+        {"type": "way", "id": 5, "tags": {"golf": "bunker"}, "geometry": box(g1[0] - 0.0002, g1[1] + 0.0002, 0.00005)},
+        {"type": "way", "id": 6, "tags": {"natural": "water"}, "geometry": box(lat + 0.001, lon - 0.0004, 0.0001)},
+        {"type": "way", "id": 7, "tags": {"golf": "hole", "ref": "2", "par": "3", "handicap": "15"},
+         "geometry": [{"lat": lat + 0.0034, "lon": lon + 0.0004}, {"lat": g2[0], "lon": g2[1]}]},
+        {"type": "way", "id": 8, "tags": {"golf": "green"}, "geometry": box(*g2)},
+    ]}
