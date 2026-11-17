@@ -141,7 +141,7 @@ def _bunnings():
 
 
 def _openmeteo():
-    days = openmeteo.forecast(-27.47, 153.03)
+    days = openmeteo.forecast(-27.47, 153.03, fresh=True)       # (never the kept copy: is Open-Meteo answering?)
     expect(days and days[0].get("max") is not None, "Open-Meteo's forecast has no temperatures")
     expect(openmeteo.find_place("Brisbane"), "Open-Meteo couldn't find Brisbane")
     return f"Brisbane today: {days[0]['max']:.0f}° max"
@@ -210,6 +210,9 @@ def run_all(only=None):
                 log.warning("Site check failed for %s: %s", site, detail)
             with db() as conn:
                 conn.execute(SAVE, {"site": site, "ok": ok, "detail": (detail or "")[:500]})
+                conn.execute("INSERT INTO site_check_log (site, ok, detail) VALUES (%s, %s, %s)", (site, ok, (detail or "")[:500]))
+        with db() as conn:            # (a year of history is plenty)
+            conn.execute("DELETE FROM site_check_log WHERE checked_at < now() - interval '1 year'")
     finally:
         STATE["running"] = False
 
@@ -267,9 +270,15 @@ def start_weekly():
 def site_checks():
     with db() as conn:
         rows = {r["site"]: r for r in conn.execute("SELECT * FROM site_checks").fetchall()}
+        # the last 30 days: how many checks, how many failed (site_check_log, kept since 2026-11-17)
+        month = {r["site"]: r for r in conn.execute(
+            "SELECT site, count(*) AS checks, count(*) FILTER (WHERE NOT ok) AS failed FROM site_check_log "
+            "WHERE checked_at > now() - interval '30 days' GROUP BY site").fetchall()}
     empty = {"ok": None, "detail": None, "checked_at": None, "failing_since": None}
     sites = [{"site": site, "used_for": what,
-              **({k: rows[site][k] for k in empty} if site in rows else empty)} for site, what, _ in CHECKS]
+              **({k: rows[site][k] for k in empty} if site in rows else empty),
+              "checks_30d": month[site]["checks"] if site in month else 0,
+              "failed_30d": month[site]["failed"] if site in month else 0} for site, what, _ in CHECKS]
     return {"sites": sites, "running": STATE["running"], "failing": sum(1 for s in sites if s["ok"] is False),
             "last_run": max((s["checked_at"] for s in sites if s["checked_at"]), default=None)}
 

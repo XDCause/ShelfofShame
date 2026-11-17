@@ -164,7 +164,9 @@ def other_checks(now: datetime) -> list[dict]:
     out = []
     with db() as conn:
         steam = conn.execute("SELECT steam_id, last_sync_at, last_error FROM vg_sync WHERE id = 1").fetchone()
-        sites = conn.execute("SELECT max(checked_at) AS last, count(*) FILTER (WHERE NOT ok) AS failing FROM site_checks "
+        sites = conn.execute("SELECT max(checked_at) AS last, count(*) FILTER (WHERE NOT ok) AS failing, "
+                             "string_agg(site || ' since ' || to_char(failing_since, 'FMDD Mon'), ', ' ORDER BY site) "
+                             "FILTER (WHERE NOT ok) AS which FROM site_checks "
                              "WHERE site = ANY(%s)", ([site for site, _, _ in sitecheck.CHECKS],)).fetchone()
     if os.environ.get("STEAM_API_KEY") and steam and steam["steam_id"]:
         when = steam["last_sync_at"].astimezone().replace(tzinfo=None) if steam["last_sync_at"] else None
@@ -183,7 +185,7 @@ def other_checks(now: datetime) -> list[dict]:
         state = "warn" if sites["failing"] or now - when > timedelta(days=9) else "ok"
         out.append(check("sites", "Website check", state,
                          f"Checked {_ago(when, now)}" + (f" - {sites['failing']} site{'s' if sites['failing'] != 1 else ''} failing"
-                                                           if sites["failing"] else ", every site fine"), when,
+                                                           f" ({sites['which']})" if sites["failing"] else ", every site fine"), when,
                          "Settings > Lookup sites" if state != "ok" else None))
     try:
         free = shutil.disk_usage(settings.BACKUP_DIR).free / 1e9

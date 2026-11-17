@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { api } from '../../api.js'
+import { api, keptAt } from '../../api.js'
 import Drawer from '../../components/Drawer.jsx'
 import { RowPhoto } from '../../components/RecordFields.jsx'
 import { useApp } from '../../core/app-context.js'
@@ -111,7 +111,7 @@ export default function TripPanel({ id = null, tab: askedTab = null, onClose }) 
         )}
         {t.weather && (
           <div className="trip-weather" role="group" aria-label={`Weather in ${t.weather.place}`}>
-            <span className="muted small">{t.weather.place}</span>
+            <span className="muted small">{t.weather.place}{t.weather.as_of && ` · forecast from ${keptAt(t.weather.as_of)}`}</span>
             {t.weather.days.map((d, i) => (
               <span key={d.day} className="trip-weather-day" title={d.sky ?? ''}>
                 <span className="small">{i === 0 ? 'Today' : new Date(`${d.day}T12:00:00`).toLocaleDateString('en-AU', { weekday: 'short' })}</span>

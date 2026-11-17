@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { api, money, shortDate } from '../../api.js'
+import { api, keptAt, money, shortDate } from '../../api.js'
 import { BarList, ColumnChart } from '../../components/charts.jsx'
 import Fold from '../../components/Fold.jsx'
 import { SproutIcon } from '../../components/icons.jsx'
@@ -190,6 +190,7 @@ function Weather({ w }) {
     <section className="card home-card">
       <h2 className="home-card-title">Weather{w.place && ` · ${w.place}`}</h2>
       {w.error && <p className="alert error small">{w.error}</p>}
+      {w.as_of && <p className="muted small weather-kept">Open-Meteo can't be reached: the forecast from {keptAt(w.as_of)}.</p>}
       {w.days.length > 0 && (
         <ul className="garden-weather">
           {w.days.map((d, i) => (

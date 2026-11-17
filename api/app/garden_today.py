@@ -124,8 +124,9 @@ def weather(conn) -> dict | None:
     try:
         days = openmeteo.forecast(s["lat"], s["lon"])
     except openmeteo.WeatherError as e:
-        return {"place": s["place_name"], "error": str(e), "days": [], "tips": []}
-    return {"place": s["place_name"], "error": None, "days": days, "tips": weather_tips(days, spaces)}
+        return {"place": s["place_name"], "error": str(e), "days": [], "tips": [], "as_of": None}
+    return {"place": s["place_name"], "error": None, "days": days, "tips": weather_tips(days, spaces),
+            "as_of": openmeteo.kept_since(days)}
 
 
 @router.get("/garden/today")

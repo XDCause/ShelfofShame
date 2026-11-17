@@ -32,6 +32,7 @@ export default function SiteChecks() {
               <span className="item-meta">{s.used_for}</span>
               {s.detail && <span className={`item-meta${s.ok ? '' : ' site-check-error'}`}>
                 {s.ok ? s.detail : `${s.detail}${s.failing_since ? ` (since ${shortDate(s.failing_since.slice(0, 10))})` : ''}`}</span>}
+              {s.failed_30d > 0 && <span className="item-meta">Failed {s.failed_30d} of {s.checks_30d} check{s.checks_30d === 1 ? '' : 's'} in the last 30 days</span>}
             </span>
           </li>
         ))}

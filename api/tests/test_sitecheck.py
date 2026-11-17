@@ -161,3 +161,18 @@ def test_system_check_now_asks_only_the_failing_sites_again(client, monkeypatch)
     assert got["Open-Meteo"]["ok"] and got["Open-Meteo"]["detail"] == "fine now"
     assert client.post("/api/system/check").json() == {"rechecking": []}   # nothing failing: nothing asked
     assert asked == ["Open-Meteo"]
+
+
+def test_each_check_is_logged_and_the_month_counted(client, monkeypatch):
+    monkeypatch.setattr(sitecheck, "CHECKS", fake({"Tamiya": "ok", "Open-Meteo": TimeoutError("timed out")}))
+    sitecheck.run_all()
+    sitecheck.run_all()
+    monkeypatch.setattr(sitecheck, "CHECKS", fake({"Tamiya": "ok", "Open-Meteo": "Brisbane today: 31° max"}))
+    sitecheck.run_all()
+    got = {s["site"]: s for s in client.get("/api/site-checks").json()["sites"]}
+    assert (got["Open-Meteo"]["failed_30d"], got["Open-Meteo"]["checks_30d"]) == (2, 3)
+    assert (got["Tamiya"]["failed_30d"], got["Tamiya"]["checks_30d"]) == (0, 3)
+    monkeypatch.setattr(sitecheck, "CHECKS", fake({"Tamiya": "ok", "Open-Meteo": TimeoutError("timed out")}))
+    sitecheck.run_all()
+    sites = next(c for c in client.get("/api/system").json()["checks"] if c["key"] == "sites")
+    assert "1 site failing (Open-Meteo since " in sites["detail"]

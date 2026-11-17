@@ -1,4 +1,4 @@
-"""UI audit: every page (and a sample of panels) at five screen widths in both themes and both looks, checked for the problems a
+"""UI audit: every page (and a sample of panels) at five screen widths in both looks (light everywhere, dark at pc and phone), checked for the problems a
 person notices - and the walk-through doesn't look for:
 
   overflow     the page scrolls sideways, or something pokes out past the screen's edge
@@ -351,14 +351,16 @@ def audit(page, where, problems, label, with_axe):
 
 
 def worker(size_name, look_name):
-    """One screen size in one look, both themes: its pages and panels. Writes /out/ui_audit_<size>_<look>.json."""
+    """One screen size in one look (both themes at AXE_SIZES, else light): its pages and panels. Writes /out/ui_audit_<size>_<look>.json."""
     started = time.time()
     size, w, h, touch = next(s for s in SIZES if s[0] == size_name)
     pages = json.load(open(f"{OUT}/ui_routes.json"))
     problems, console = [], []
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        for look, theme in [(look_name, th) for th in THEMES]:
+        # Dark changes colours, not layout: both themes where axe looks at contrast (AXE_SIZES), light only at the
+        # other widths (the layout checks there would repeat; 2026-11-17, ~30% off the audit).
+        for look, theme in [(look_name, th) for th in (THEMES if size in AXE_SIZES else THEMES[:1])]:
             prefs = f"localStorage.setItem('offtheclock.theme', '{theme}'); localStorage.setItem('offtheclock.look', '{look}')"
             ctx = signed_in_context(browser, viewport={"width": w, "height": h}, is_mobile=touch and w < 700, has_touch=touch,
                                     device_scale_factor=1, bypass_csp=True, timezone_id="Australia/Brisbane")
@@ -453,7 +455,8 @@ def main():
         browser.close()
     with open(f"{OUT}/ui_routes.json", "w") as f:
         json.dump(pages, f)
-    print(f"{len(pages)} pages + {len(PANELS)} panels, at {len(SIZES)} sizes x {len(THEMES)} themes x {len(LOOKS)} looks (axe at {', '.join(AXE_SIZES)})", flush=True)
+    print(f"{len(pages)} pages + {len(PANELS)} panels, at {len(SIZES)} sizes x {len(LOOKS)} looks, light at every size and dark "
+          f"at {', '.join(AXE_SIZES)} (with axe)", flush=True)
     todo = jobs()
     for size, look in todo:         # (a worker that dies must not leave an older run's results to be read as its own)
         try:

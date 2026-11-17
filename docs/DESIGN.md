@@ -92,4 +92,4 @@ under `:root[data-look='journal']`, so the botanical look above is untouched and
   banner's picture (your photo or the drawn landscape) as a photo taped to the page. Home's has a sticky note on it.
   A hobby's pages are tabs on the edge of the page (a filled tab with a band of the hobby's colour).
 - **Shape**: cards 10 px with a paper shadow; buttons are labels (9 px corners) rather than pills; chips stay round.
-- The UI audit checks both looks (every page, 5 sizes x 2 themes) and saves a gallery of this one (e2e/out/journal_*.png).
+- The UI audit checks both looks (every page, 5 sizes; dark at pc and phone) and saves a gallery of this one (e2e/out/journal_*.png).

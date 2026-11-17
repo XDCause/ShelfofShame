@@ -20,7 +20,7 @@
 # looking at pages: separate copies keep both steady, and lets them run at the same time.
 #   hobby-e2e-*    the walk-through (e2e\walkthrough.py): all of it for -Steps / -Failed, else its core half
 #   hobby-e2eh-*   the walk-through's hobby half (and the phone)
-#   hobby-e2ea-*   the UI audit (e2e\ui_audit.py: every page at 5 sizes x 2 themes x 2 looks - overflow, clipped or overlapping
+#   hobby-e2ea-*   the UI audit (e2e\ui_audit.py: every page at 5 sizes x 2 looks, light + dark at pc and phone - overflow, clipped or overlapping
 #                  text, touch targets, broken pictures, axe-core accessibility, browser errors)
 # When it ends - pass, fail or Ctrl+C - both copies and their volumes are deleted. You can keep using the app while
 # it runs. Screenshots go to e2e\out\ (git-ignored).

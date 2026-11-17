@@ -1160,3 +1160,14 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
    spending.EXPORTS: video-games (Steam's and Epic / Ubisoft's games in one list, with status, hours, achievements,
    time to beat, price), video-game-achievements (every platform's lists) and video-game-playtime (what you played each
    day: vgplaytime.PLAYED). Links on Video games > Stats and in Settings > Your data > Exports.
+
+5zg. **Weather that survives Open-Meteo, a site check history, a lighter audit** (2026-11-17, the user: "Open meteo
+   seems to keep failing quite often"; yes to all three). Open-Meteo's forecast server (api.open-meteo.com,
+   51.81.167.44) stopped answering this network on 2026-11-16 - TCP connects, nothing comes back - while its other
+   servers answer, and every weather card went blank. openmeteo._kept: each good answer is also kept in the database
+   (weather_kept, A07); while Open-Meteo can't be reached, one up to 3 days old answers instead, days already gone left
+   out, each day marked as_of - Gardening's weather card and a trip's say "the forecast from 6:05 am". The website
+   check asks with fresh=True (never the kept copy). Every check is now logged (site_check_log, a year kept): Lookup
+   sites says "Failed 2 of 3 checks in the last 30 days", and System's Website check names the failing sites and since
+   when. The UI audit checks dark only at pc and phone (where axe checks contrast): dark changes colours, not layout,
+   so the other widths repeated the layout checks (~30% off the audit).

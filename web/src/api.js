@@ -812,6 +812,12 @@ export const api = {
 // Plain links (downloads open straight from these).
 export const backupUrl = (name) => `/api/backups/${enc(name)}`
 export const exportUrl = (kind) => `/api/export/${kind}.csv`
+// When a kept forecast was fetched (openmeteo.py: shown while Open-Meteo can't be reached): "6:05 am" today, else "Mon 6:05 am".
+export function keptAt(iso) {
+  const t = new Date(iso)
+  const time = t.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' })
+  return t.toDateString() === new Date().toDateString() ? time : `${t.toLocaleDateString('en-AU', { weekday: 'short' })} ${time}`
+}
 export const vinylExportUrl = '/api/vinyl/export.csv'
 export const logPhotoUrl = (photoId) => `/api/model-log-photos/${photoId}`   // a photo never changes: its id is enough
 

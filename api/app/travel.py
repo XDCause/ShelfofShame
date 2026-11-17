@@ -310,7 +310,8 @@ def forecast_for(t: dict) -> dict | None:
     today = date.today()
     spot = next((p for p in spots if p["visit_on"] == today), spots[0])
     try:
-        return {"place": spot["name"], "days": openmeteo.forecast(spot["lat"], spot["lon"])}
+        days = openmeteo.forecast(spot["lat"], spot["lon"])
+        return {"place": spot["name"], "days": days, "as_of": openmeteo.kept_since(days)}
     except openmeteo.WeatherError:
         return None
 

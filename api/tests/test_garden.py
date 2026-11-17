@@ -3,6 +3,8 @@ the plant guide, supplies and seeds, Bunnings links (a made-up page here) and we
 import json
 from datetime import date, timedelta
 
+import pytest
+
 from app import bunnings, garden_today, openmeteo
 from app.db import db
 
@@ -451,3 +453,24 @@ def test_sun_by_time_of_day_sets_the_sun_hours(client):
     plain = client.post("/api/garden/spaces", json={"name": "Plain", "sun_hours": 4}).json()
     assert (plain["sun_hours"], plain["sun_morning"]) == (4.0, None)
     assert client.post("/api/garden/spaces", json={"name": "Too much", "sun_morning": 5}).status_code == 422
+
+
+def test_the_last_good_forecast_is_kept_for_when_open_meteo_cant_be_reached(client, monkeypatch):
+    days = [(date.today() + timedelta(days=n)).isoformat() for n in (-1, 0, 1)]
+    monkeypatch.setattr(openmeteo, "_get", lambda url, params: {"daily": {
+        "time": days, "temperature_2m_max": [25, 31, 28], "temperature_2m_min": [18, 20, 19], "precipitation_sum": [0, 0, 2],
+        "precipitation_probability_max": [0, 10, 60], "wind_gusts_10m_max": [20, 20, 30], "uv_index_max": [8, 8, 6],
+        "weather_code": [0, 0, 61]}})
+    client.put("/api/garden/settings", json={"place_name": "Brisbane", "lat": -27.47, "lon": 153.03})
+    w = client.get("/api/garden/today").json()["weather"]
+    assert w["as_of"] is None and [d["max"] for d in w["days"]] == [25, 31, 28]          # fresh
+    monkeypatch.setattr(openmeteo, "_get", lambda url, params: (_ for _ in ()).throw(openmeteo.WeatherError("Couldn't reach Open-Meteo (ConnectTimeout).")))
+    openmeteo._cache.clear()                                                              # (an hour later)
+    w = client.get("/api/garden/today").json()["weather"]
+    assert w["error"] is None and w["as_of"] and [d["max"] for d in w["days"]] == [31, 28]   # kept: yesterday left out
+    with pytest.raises(openmeteo.WeatherError):
+        openmeteo.forecast(-27.47, 153.03, fresh=True)                                    # the website check asks for real
+    with db() as conn:
+        conn.execute("UPDATE weather_kept SET fetched_at = now() - interval '4 days'")
+    w = client.get("/api/garden/today").json()["weather"]
+    assert w["error"] and w["days"] == [] and w["as_of"] is None                          # too old to show
