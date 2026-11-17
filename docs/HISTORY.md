@@ -1171,3 +1171,11 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
    sites says "Failed 2 of 3 checks in the last 30 days", and System's Website check names the failing sites and since
    when. The UI audit checks dark only at pc and phone (where axe checks contrast): dark changes colours, not layout,
    so the other widths repeated the layout checks (~30% off the audit).
+
+5zh. **Open-Meteo's backup server** (2026-11-17, the user: "Can we swap out Open Meteo as it looks like it wont work").
+   Not swapped: their historical-forecast server (historical-forecast-api.open-meteo.com, another machine) answers
+   here and takes the same parameters - 3 and 16 days ahead, past_days, a single past day - with every field the app
+   uses. Another provider (MET Norway) would have lost the 16-day calendar forecast, past days (watering, the journal)
+   and rain chance. openmeteo._get asks the forecast server first and, when it can't be reached, openmeteo.BACKUP;
+   the website check says "(their forecast server is down: from the backup)". Place search has its own server
+   (geocoding-api), which answers, and no backup.

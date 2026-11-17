@@ -143,8 +143,9 @@ def _bunnings():
 def _openmeteo():
     days = openmeteo.forecast(-27.47, 153.03, fresh=True)       # (never the kept copy: is Open-Meteo answering?)
     expect(days and days[0].get("max") is not None, "Open-Meteo's forecast has no temperatures")
+    backup = openmeteo.USED["backup"]
     expect(openmeteo.find_place("Brisbane"), "Open-Meteo couldn't find Brisbane")
-    return f"Brisbane today: {days[0]['max']:.0f}° max"
+    return f"Brisbane today: {days[0]['max']:.0f}° max" + (" (their forecast server is down: from the backup)" if backup else "")
 
 
 def _frankfurter():

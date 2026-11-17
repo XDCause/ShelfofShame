@@ -23,6 +23,10 @@ from .openlibrary import HEADERS
 
 GEOCODE = "https://geocoding-api.open-meteo.com/v1/search"
 FORECAST = "https://api.open-meteo.com/v1/forecast"
+# The same forecasts from another of their servers (their historical-forecast API takes the same parameters and goes
+# 16 days ahead too): asked when the forecast server can't be reached - it stopped answering this network on
+# 2026-11-16 while their other servers answered (HISTORY 5zh).
+BACKUP = "https://historical-forecast-api.open-meteo.com/v1/forecast"
 TIMEOUT = 20
 KEEP = 3600
 KEPT_FOR = timedelta(days=3)
@@ -81,11 +85,26 @@ class WeatherError(Exception):
     """Open-Meteo couldn't be asked; the message says why."""
 
 
+USED = {"backup": False}              # whether the last forecast came from BACKUP (the website check says so)
+
+
 def _get(url: str, params: dict) -> dict:
+    return _fetch(url, params)
+
+
+def _fetch(url: str, params: dict) -> dict:
+    """(_get's body: the tests replace _get, and ask this one with httpx faked.)"""
+    USED["backup"] = False
     try:
         r = httpx.get(url, params=params, headers=HEADERS, timeout=TIMEOUT)
     except httpx.HTTPError as e:
-        raise WeatherError(f"Couldn't reach Open-Meteo ({e.__class__.__name__}).") from None
+        if url != FORECAST:
+            raise WeatherError(f"Couldn't reach Open-Meteo ({e.__class__.__name__}).") from None
+        try:                          # their forecast server unreachable: the same forecast from BACKUP
+            r = httpx.get(BACKUP, params=params, headers=HEADERS, timeout=TIMEOUT)
+            USED["backup"] = True
+        except httpx.HTTPError:
+            raise WeatherError(f"Couldn't reach Open-Meteo ({e.__class__.__name__}), nor its backup server.") from None
     if r.status_code != 200:
         raise WeatherError(f"Open-Meteo didn't answer (HTTP {r.status_code}).")
     return r.json()

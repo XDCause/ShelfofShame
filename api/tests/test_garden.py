@@ -474,3 +474,25 @@ def test_the_last_good_forecast_is_kept_for_when_open_meteo_cant_be_reached(clie
         conn.execute("UPDATE weather_kept SET fetched_at = now() - interval '4 days'")
     w = client.get("/api/garden/today").json()["weather"]
     assert w["error"] and w["days"] == [] and w["as_of"] is None                          # too old to show
+
+
+def test_open_meteos_backup_server_answers_when_the_forecast_server_cant(monkeypatch):
+    import httpx
+    asked = []
+
+    def fake_get(url, **kw):
+        asked.append(url)
+        if url == openmeteo.FORECAST:
+            raise httpx.ConnectTimeout("timed out")
+        return httpx.Response(200, json={"daily": {"time": ["2026-11-18"], "temperature_2m_max": [25]}})
+    monkeypatch.setattr(openmeteo.httpx, "get", fake_get)
+    assert openmeteo._fetch(openmeteo.FORECAST, {})["daily"]["temperature_2m_max"] == [25]
+    assert asked == [openmeteo.FORECAST, openmeteo.BACKUP] and openmeteo.USED["backup"]
+    asked.clear()
+    monkeypatch.setattr(openmeteo.httpx, "get", lambda url, **kw: asked.append(url) or (_ for _ in ()).throw(httpx.ConnectTimeout("t")))
+    with pytest.raises(openmeteo.WeatherError, match="nor its backup server"):
+        openmeteo._fetch(openmeteo.FORECAST, {})
+    asked.clear()
+    with pytest.raises(openmeteo.WeatherError, match=r"^Couldn't reach Open-Meteo \(ConnectTimeout\)\.$"):
+        openmeteo._fetch(openmeteo.GEOCODE, {})                                    # place search: its own server, no backup
+    assert asked == [openmeteo.GEOCODE]
