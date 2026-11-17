@@ -807,6 +807,7 @@ def travel(page):
     # Packing: the Overseas list, the passport ticked
     d.get_by_role("tab", name=re.compile(r"^Packing")).click()
     lists = d.get_by_label("A packing list")
+    expect(lists.locator("option", has_text=re.compile(r"^Overseas"))).to_have_count(1)    # (loaded: a busy run read it too soon)
     lists.select_option(label=next(o for o in lists.locator("option").all_inner_texts() if o.startswith("Overseas")))
     d.get_by_role("button", name="Add list").click()
     expect(d.get_by_label("Passport", exact=True)).to_be_visible()

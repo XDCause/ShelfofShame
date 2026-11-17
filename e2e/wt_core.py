@@ -177,7 +177,13 @@ def appearance(page):
     page.locator(".quick-action", has_text="Wishlist").click()
     expect(page).to_have_url(re.compile(r"/wishlist\?add=1$"))
     expect(page.get_by_label("Search the Tamiya catalogue", exact=True)).to_be_visible()
-    page.keyboard.press("Escape")
+    # (closed for sure: on a busy run one Escape now and then didn't close it, and the next step's clicks hit the panel)
+    for _ in range(3):
+        page.keyboard.press("Escape")
+        if page.locator("aside.drawer").count() == 0:
+            break
+        page.wait_for_timeout(500)
+    expect(page.locator("aside.drawer")).to_have_count(0)
 
 
 @step("Calendar: a weekly volleyball night, a day's detail, Log the result")
@@ -431,7 +437,8 @@ def offline_copy(page):
         d = drawer(p)
         d.locator("summary", has_text="Offline copy").click()
         d.get_by_label("Keep a copy on this device").check()
-        expect(d.locator(".offline-progress")).to_be_visible()
+        # (the progress shows once the app's files are saved: on a busy run that took over 5 s)
+        expect(d.locator(".offline-progress").or_(d.locator(".offline-copy .alert.ok", has_text="On, and saved"))).to_be_visible(timeout=60000)
         expect(d.locator(".offline-copy .alert.ok")).to_contain_text("On, and saved", timeout=600000)
         expect(d.locator(".offline-copy")).to_contain_text("Everything saved:")
         shot(p, "d23_offline_settings", full=False)
