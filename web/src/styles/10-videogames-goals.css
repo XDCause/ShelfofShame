@@ -60,3 +60,6 @@
 .vgx-box { margin: 8px 0; }
 .vgx-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
 .vgx-row .field { flex: 1 1 140px; }
+
+/* Video games > Stats: the CSV downloads (StatsView.jsx) */
+.vgs-downloads { margin: 12px 0 0; }

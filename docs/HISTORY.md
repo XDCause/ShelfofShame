@@ -1144,3 +1144,19 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
    again - only those: the small shops keep their one look a week (Lookup sites' own Check now still asks every site) -
    and SystemStatus reads everything again, every 2 s while the re-check runs (GET /system says `checking`), then
    "Checked at 7:52 am". The updates note can't be refreshed from the app: check-updates.ps1 runs on the PC.
+
+5ze. **Quicker tests** (2026-11-17, the user: "make the testing quicker ... testing all the hobbies at the same time").
+   Timed first: a full run was ~18 minutes - the UI audit 17 (its pc and phone workers ran axe and finished long after
+   the others), the walk-through 11, the API tests 3.5 alone but 11 beside the browsers. The laptop (Core Ultra 7 155H:
+   6 fast cores, often on battery) is CPU-bound, so splitting only helps so far. Done: the API tests run in 6 pytest-xdist
+   workers (run_tests.ps1 -Workers; each its own template copy of the test database, conftest picks it by
+   PYTEST_XDIST_WORKER; the minute-long junk sweep in 8 slices): 3.5 -> 2.6 min. The walk-through runs in two halves
+   side by side on two throwaway copies (walkthrough.py HOBBIES / E2E_HALF; volleyball stays in the core half - it opens
+   the calendar step's game; the offline step accepts hikes or none): 11 -> ~7 min. The UI audit is ten (size, look)
+   jobs in a pool of 6, axe sizes first: 17 -> 15 min. synchronous_commit off on the test databases made no difference
+   (the CPU, not the disk). The Offline copy step's 3 minutes are the feature's own 0.7 s quiet wait per page - kept.
+
+5zf. **Video games: CSV exports** (2026-11-17, the user: "add export to export the data from video games"). Three in
+   spending.EXPORTS: video-games (Steam's and Epic / Ubisoft's games in one list, with status, hours, achievements,
+   time to beat, price), video-game-achievements (every platform's lists) and video-game-playtime (what you played each
+   day: vgplaytime.PLAYED). Links on Video games > Stats and in Settings > Your data > Exports.

@@ -6,6 +6,7 @@ from datetime import date
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
 
+from . import othergames, vgplaytime
 from .db import db
 
 router = APIRouter(prefix="/api", tags=["spending"])
@@ -117,6 +118,40 @@ EXPORTS = {
         SELECT name AS "Gear", kind AS "Kind", brand AS "Brand", size AS "Size", condition AS "Condition",
                purchase_date AS "Bought", price_paid AS "Price paid", notes AS "Notes"
         FROM gear ORDER BY lower(name)""",
+    # Video games: Steam's and the other platforms' (Epic, Ubisoft) in one list, as the Games page counts them.
+    "video-games": """
+        SELECT "Game", "Platform", initcap(status) AS "Status", "Hours played", "Last played", "Achievements", "Out of",
+               "Percent", "Completed", "Hours to beat", "Price paid", "Hidden" FROM (
+            SELECT g.name AS "Game", 'Steam' AS "Platform", """ + othergames.status_sql(
+                "g.completed_at IS NOT NULL", "g.playtime_minutes", "g.last_played", "g.play_status") + """ AS status,
+                   round(g.playtime_minutes / 60.0, 1) AS "Hours played", g.last_played AS "Last played",
+                   g.achievements_done AS "Achievements", g.achievements_total AS "Out of",
+                   CASE WHEN g.achievements_total > 0 THEN round(100.0 * g.achievements_done / g.achievements_total, 1) END
+                       AS "Percent", g.completed_at AS "Completed", g.beat_hours AS "Hours to beat",
+                   g.price_paid AS "Price paid", g.hidden AS "Hidden"
+            FROM vg_games g
+            UNION ALL
+            SELECT o.name, initcap(o.platform), o.status, round(o.playtime_minutes / 60.0, 1), o.last_played,
+                   o.achievements_done, o.achievements_total, o.percent, o.completed_at, o.beat_hours, o.price_paid, o.hidden
+            FROM (""" + othergames.SELECT + """) o
+        ) x ORDER BY lower("Game"), "Platform" """,
+    "video-game-achievements": """
+        SELECT * FROM (
+            SELECT g.name AS "Game", 'Steam' AS "Platform", a.name AS "Achievement", a.description AS "Description",
+                   a.dlc AS "DLC", a.achieved AS "Unlocked", a.unlocked_at AS "When", a.global_percent AS "% of players"
+            FROM vg_achievements a JOIN vg_games g USING (app_id)
+            UNION ALL
+            SELECT o.name, initcap(o.platform), a.name, a.description, NULL, a.achieved, a.unlocked_at, a.global_percent
+            FROM vg_other_achievements a JOIN vg_other_games o USING (game_id)
+        ) x ORDER BY lower("Game"), "Platform", "Unlocked" DESC, "When", "Achievement" """,
+    # What you played each day (the change in a game's total: vgplaytime.PLAYED), since the app started keeping it.
+    "video-game-playtime": """
+        SELECT p.day AS "Day", COALESCE(g.name, o.name, p.app_id) AS "Game", initcap(p.platform) AS "Platform",
+               p.played AS "Minutes"
+        FROM (""" + vgplaytime.PLAYED + """) p
+        LEFT JOIN vg_games g ON p.platform = 'steam' AND g.app_id::text = p.app_id
+        LEFT JOIN vg_other_games o ON p.platform <> 'steam' AND p.platform || '-' || o.game_id = p.app_id
+        ORDER BY p.day, 2""",
 }
 
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { api } from '../../api.js'
+import { api, exportUrl } from '../../api.js'
 import { BarList, ColumnChart } from '../../components/charts.jsx'
 import { useApp } from '../../core/app-context.js'
 import { Change } from '../../core/Stat.jsx'
@@ -57,6 +57,9 @@ export default function StatsView() {
             onPick={(r) => openPanel('videogame', { id: r.id })} />
         </section>
       </div>
+      <p className="small vgs-downloads">Download as CSV (every platform):{' '}
+        <a href={exportUrl('video-games')} download>games</a> · <a href={exportUrl('video-game-achievements')} download>achievements</a> ·{' '}
+        <a href={exportUrl('video-game-playtime')} download>playtime per day</a></p>
     </section>
   )
 }

@@ -1055,3 +1055,24 @@ def test_a_game_added_by_hand_has_a_price_and_an_estimate(client, exo):
     costs = client.get("/api/videogames/costs?platforms=ubisoft").json()
     assert (costs["spent"], costs["hours"], costs["per_hour"], costs["games"][0]["app_id"]) == (20.0, 10.0, 2.0, f"ubisoft-{g['game_id']}") \
         or costs["games"][0]["name"] == "Trackmania"
+
+
+def test_the_csv_exports_have_every_platform(client):
+    with db() as conn:
+        conn.execute("INSERT INTO vg_games (app_id, name, playtime_minutes, achievements_total, achievements_done) "
+                     "VALUES (620, 'Portal 2', 600, 2, 1)")
+        conn.execute("INSERT INTO vg_achievements (app_id, api_name, name, achieved, global_percent) "
+                     "VALUES (620, 'A', 'Wake Up Call', true, 80), (620, 'B', 'Party of Three', false, 5)")
+        epic = conn.execute("INSERT INTO vg_other_games (platform, name, my_minutes) VALUES ('epic', 'Alan Wake', 90) "
+                            "RETURNING game_id").fetchone()["game_id"]
+        conn.execute("INSERT INTO vg_playtime (platform, app_id, day, minutes) VALUES "
+                     "('steam', '620', current_date - 1, 500), ('steam', '620', current_date, 600), "
+                     "('epic', %s, current_date - 1, 30), ('epic', %s, current_date, 90)", (f"epic-{epic}", f"epic-{epic}"))
+    games = client.get("/api/export/video-games.csv").text.splitlines()
+    assert games[0].lstrip("﻿").startswith("Game,Platform,Status,Hours played")
+    assert games[1:] == ["Alan Wake,Epic,Backlog,1.5,,,,,,,,False",           # (no achievements known: blank)
+                         "Portal 2,Steam,Backlog,10.0,,1,2,50.0,,,,False"]
+    cheevos = client.get("/api/export/video-game-achievements.csv").text
+    assert "Portal 2,Steam,Wake Up Call" in cheevos and "Party of Three" in cheevos
+    played = client.get("/api/export/video-game-playtime.csv").text.splitlines()[1:]
+    assert sorted(line.split(",", 1)[1] for line in played) == ["Alan Wake,Epic,60", "Portal 2,Steam,100"]

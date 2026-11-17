@@ -287,6 +287,7 @@ export function Backups() {      // (exported for its tests)
 const EXPORTS = [
   ['inventory', 'Inventory'], ['wishlist', 'Wishlist'], ['models', 'Models'],
   ['model-paints', 'Model paint lists'], ['builds', 'Build sessions (time)'], ['paint-recipes', 'Paint recipes'], ['history', 'Stock history'],
+  ['video-games', 'Video games'], ['video-game-achievements', 'Video game achievements'], ['video-game-playtime', 'Video game playtime (per day)'],
 ]
 
 function Exports() {
