@@ -1747,3 +1747,119 @@ def golf(page):
     d.get_by_role("button", name="Log it").click()
     expect(page.locator("aside.drawer")).to_have_count(0)
     assert get_json("/api/golf/practice")["year"]["minutes"] >= 30
+
+
+# A made-up Subsurface log: one dive at a made-up site, with a computer profile (a descent to 18 m, a safety stop).
+SSRF = """<divelog program='subsurface' version='3'>
+<divesites><site uuid='5ca1ab1e' name='Walkthrough Wreck' gps='-27.4100 153.4500'/></divesites>
+<dives>
+<dive number='1' date='2026-10-04' time='09:12:00' duration='42:00 min' divesiteid='5ca1ab1e'>
+<divecomputer model='Stand-in Computer'>
+<depth max='18.2 m' mean='11.4 m' />
+<temperature water='22.0 C' />
+""" + "".join(f"<sample time='{m}:00 min' depth='{d} m' />\n" for m, d in [
+    (0, 0.0), (1, 6.0), (2, 12.0), (3, 18.2), (10, 17.5), (20, 14.0), (30, 10.0), (35, 6.0), (36, 5.0), (37, 5.0),
+    (38, 5.0), (39, 5.0), (41, 2.0), (42, 0.0)]) + """</divecomputer>
+</dive>
+</dives>
+</divelog>
+"""
+
+
+@step("Scuba diving: a site by hand, sites near it (stand-in OpenStreetMap), log a dive there with a sighting, import a Subsurface file (its profile drawn), the planner, the marine forecast; log, species, stats, gear, certs")
+def scuba(page):
+    go(page, "Scuba diving")
+    expect(page.locator(".navbar h1")).to_contain_text("Scuba")
+    # a site by hand, with a position
+    page.goto(BASE + "/scuba/sites")
+    page.get_by_role("button", name="+ Add a site").first.click()
+    d = drawer(page)
+    d.get_by_label(re.compile(r"^Name")).fill("Walkthrough Reef")
+    d.get_by_label("Latitude").fill("-27.47")
+    d.get_by_label("Longitude").fill("153.40")
+    d.get_by_role("button", name=re.compile("^(Save|Add)")).first.click()
+    expect(page.get_by_text("Walkthrough Reef").first).to_be_visible(timeout=15000)
+    page.keyboard.press("Escape")
+    expect(page.locator("aside.drawer")).to_have_count(0)
+    # dive sites near it, from OpenStreetMap (stand-in): add one
+    page.get_by_role("button", name="Find dive sites near...").click()
+    page.locator(".scb-find").get_by_label("A site I have").select_option(label="Walkthrough Reef")
+    row = page.locator(".scb-found-row").first
+    expect(row).to_be_visible(timeout=15000)
+    row.get_by_role("button", name=re.compile("^(Add|Already added)$")).click()
+    expect(drawer(page)).to_be_visible(timeout=15000)
+    shot(page, "scuba01_sites", full=False)
+    page.keyboard.press("Escape")
+    expect(page.locator("aside.drawer")).to_have_count(0)
+
+    # a dive at Walkthrough Reef (the quick action), with a sighting
+    before = len(get_json("/api/scuba/dives"))
+    page.goto(BASE + "/scuba/dashboard")
+    page.get_by_role("button", name="Log a dive").first.click()
+    d = drawer(page)
+    d.get_by_label("Site").select_option(label="Walkthrough Reef")
+    d.get_by_label("Max depth (m)").fill("16")
+    d.get_by_label("Average depth (m)").fill("10")
+    d.get_by_label("Dive time (min)").fill("45")
+    d.get_by_label("Tank (litres)").fill("12")
+    d.get_by_label("Start (bar)").fill("200")
+    d.get_by_label("End (bar)").fill("60")
+    d.get_by_label("Water (°C)").fill("23")
+    d.get_by_role("button", name="Save dive").click()
+    d = drawer(page)
+    expect(d).to_contain_text("Walkthrough Reef", timeout=15000)
+    expect(d).to_contain_text("L/min")                                                    # the SAC: 140 bar x 12 L / 45 / 2 = 18.7
+    dives = get_json("/api/scuba/dives")
+    assert len(dives) == before + 1, dives
+    dive = dives[0]
+    assert abs(float(dive["sac"]) - 18.7) < 0.1, dive
+    d.get_by_role("button", name="+ Add a sighting").click()
+    d.get_by_label("Species 1").fill("Green turtle")
+    d.get_by_label("How many 1").fill("2")
+    d.get_by_role("button", name="Save sightings").click()
+    for _ in range(40):
+        if get_json(f"/api/scuba/dives/{dive['dive_id']}")["sightings"]:
+            break
+        page.wait_for_timeout(250)
+    assert [s["species"] for s in get_json(f"/api/scuba/dives/{dive['dive_id']}")["sightings"]] == ["Green turtle"]
+    shot(page, "scuba02_dive", full=False)
+    page.keyboard.press("Escape")
+    expect(page.locator("aside.drawer")).to_have_count(0)
+
+    # import a dive computer's file: preview, import, its profile drawn
+    page.goto(BASE + "/scuba/log")
+    page.get_by_role("button", name="Import").first.click()
+    d = drawer(page)
+    d.locator("input[type=file]").set_input_files(files=[{"name": "walkthrough.ssrf", "mimeType": "application/xml",
+                                                          "buffer": SSRF.encode()}])
+    expect(d).to_contain_text("2026", timeout=15000)                                      # the preview lists its dive
+    if d.get_by_role("button", name="Import", exact=True).is_enabled():                   # (a rerun: already there)
+        d.get_by_role("button", name="Import", exact=True).click()
+        expect(d.get_by_role("button", name="Done")).to_be_visible(timeout=15000)
+    page.keyboard.press("Escape")
+    expect(page.locator("aside.drawer")).to_have_count(0)
+    imported = next(x for x in get_json("/api/scuba/dives") if x["dived_on"] == "2026-10-04")
+    assert imported["has_profile"], imported
+    page.goto(BASE + "/scuba/log")
+    page.locator("li", has_text="Walkthrough Wreck").first.click()
+    d = drawer(page)
+    expect(d.locator("svg").first).to_be_visible(timeout=15000)                          # the profile
+    shot(page, "scuba03_profile", full=False)
+    page.keyboard.press("Escape")
+    expect(page.locator("aside.drawer")).to_have_count(0)
+
+    # the planner (the NDL table), the forecast at the reef, and the other pages
+    page.goto(BASE + "/scuba/plan")
+    expect(page.locator("table").first).to_be_visible(timeout=15000)
+    expect(page.get_by_text(re.compile("for learning and checking", re.I)).first).to_be_visible()
+    page.goto(BASE + "/scuba/conditions")
+    page.get_by_label("Dive site").select_option(label="Walkthrough Reef")
+    expect(page.locator(".scuba-days > li").first).to_be_visible(timeout=15000)              # the days' verdicts
+    expect(page.locator(".scuba-days > li")).to_have_count(7)
+    shot(page, "scuba04_conditions", full=False)
+    for path in ("species", "stats", "gear", "certs", "trips"):
+        page.goto(BASE + f"/scuba/{path}")
+        expect(page.locator(".navbar h1")).to_contain_text("Scuba")
+    page.goto(BASE + "/scuba/species")
+    expect(page.get_by_text("Green turtle").first).to_be_visible(timeout=15000)
+    assert get_json("/api/scuba/summary")["dives"] >= 2

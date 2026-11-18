@@ -22,6 +22,7 @@ const gearFields = (hobby) => [
 const GEAR_EXAMPLE = {
   volleyball: ['e.g. Court shoes', 'Shoes, Knee pads, Ball...'], hiking: ['e.g. Hiking boots', 'Boots, Backpack, Poles...'],
   shooting: ['e.g. Harris bipod', 'Bipod, Rear bag, Chronograph...'],
+  scuba: ['e.g. Regulator', 'Regulator, BCD, Tank, Fins...'],
 }
 export const GEAR_KINDS = {
   volleyball: ['Shoes', 'Knee pads', 'Ball', 'Clothing', 'Bag', 'Ankle brace', 'Water bottle'],
@@ -29,6 +30,7 @@ export const GEAR_KINDS = {
     'Navigation', 'First aid', 'Tent', 'Sleeping bag', 'Sleeping mat', 'Stove'],
   shooting: ['Bipod', 'Rear bag', 'Shooting mat', 'Spotting scope', 'Chronograph', 'Wind meter', 'Rangefinder', 'Ear protection',
     'Eye protection', 'Sling', 'Rifle case', 'Cleaning kit', 'Bore guide', 'Targets', 'Data book'],
+  scuba: ['Regulator', 'BCD', 'Tank', 'Wetsuit', 'Fins', 'Mask', 'Snorkel', 'Dive computer', 'Torch', 'Surface marker', 'Weights', 'Hood', 'Gloves', 'Boots', 'Camera'],
 }
 const hikedKm = (g) => `${g.hikes} hike${g.hikes === 1 ? '' : 's'} · ${(g.hiked_m / 1000).toFixed(1)} km`
 
@@ -137,6 +139,7 @@ export function GearPanel({ id = null, wanted = false, hobby: newHobby = 'volley
             {gear.price_paid != null && <span className="chip">{money(gear.price_paid)}</span>}
             {gear.purchase_date && <span className="muted small"> Bought {shortDate(gear.purchase_date)}</span>}
             {hobby === 'hiking' && gear.hikes > 0 && <p className="small">Taken on {hikedKm(gear)}</p>}
+            {hobby === 'scuba' && <p className="small"><button type="button" className="link-plain" onClick={() => { onClose(); openPanel('scubaservice', { gearId: gear.gear_id }) }}>Service log and when it is next due</button></p>}
             {gear.shop_url && <p className="small"><a href={gear.shop_url} target="_blank" rel="noreferrer">
               {gear.shop_name}{gear.shop_price != null && ` ${money(gear.shop_price)}`} ↗</a></p>}
           </div>

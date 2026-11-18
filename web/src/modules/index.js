@@ -32,8 +32,9 @@ import vinyl from './vinyl/manifest.jsx'
 import volleyball from './volleyball/manifest.jsx'
 import golf from './golf/manifest.jsx'
 import language from './language/manifest.jsx'
+import scuba from './scuba/manifest.jsx'
 
-const ALL = [models, boardgames, volleyball, videogames, chess, reading, vinyl, sudoku, car, travel, shooting, golf, hiking, gardening, language]
+const ALL = [models, boardgames, volleyball, videogames, chess, reading, vinyl, sudoku, car, travel, shooting, golf, hiking, gardening, language, scuba]
 export const SHOW_UNFINISHED = !['prod', 'staging'].includes(import.meta.env.VITE_APP_ENV)   // (staging shows what prod will)
 export const MODULES = ALL.filter((m) => SHOW_UNFINISHED || !m.underConstruction)
 

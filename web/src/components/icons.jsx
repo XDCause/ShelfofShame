@@ -147,6 +147,11 @@ export const VinylIcon = (p) => (
 export const GolfIcon = (p) => (
   <Icon {...p}><path d="M9 20V3.5l7.5 3.2L9 10" /><ellipse cx="11" cy="19.5" rx="7.5" ry="2" /><circle cx="15.5" cy="17" r="1.1" /></Icon>
 )
+// Scuba diving: a dive mask (two lenses, a nose pocket, a strap each side) with a bubble rising.
+export const DiveIcon = (p) => (
+  <Icon {...p}><path d="M4.5 9.5a2.5 2.5 0 0 1 2.5-2.5h10a2.5 2.5 0 0 1 2.5 2.5v3a4 4 0 0 1-4 4h-1.2l-1.3-2h-2l-1.3 2H8.5a4 4 0 0 1-4-4z" />
+    <path d="M12 7v5.5M4.5 10H2.5M19.5 10h2" /><circle cx="17.5" cy="3.8" r="1" /><circle cx="14.8" cy="2.6" r="0.6" /></Icon>
+)
 // Language learning: two speech bubbles, an A in one and a character-like mark in the other.
 export const LanguageIcon = (p) => (
   <Icon {...p}><path d="M3.5 5.5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v4.5a2 2 0 0 1-2 2H9l-3 2.5V12h-.5a2 2 0 0 1-2-2z" />

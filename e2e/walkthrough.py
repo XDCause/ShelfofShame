@@ -81,6 +81,7 @@ ORDER = [
     "language",
     "language_course",
     "language_read",
+    "scuba",
     "warhammer_range",
     "warhammer_minis",
     "gundam_range",
@@ -117,7 +118,7 @@ if _left_out or _unknown:
 # phone), and the core with everything else (and the sign-in). The hobby steps don't use what the core steps made -
 # a step that comes to need it moves to the core half. 2026-11-17: the walk-through was ~11 minutes in one line.
 # (volleyball stays in the core half: it opens the game the calendar step logged)
-HOBBIES = {"board_games", "video_games", "chess", "reading", "vinyl", "sudoku", "golf", "language", "language_course", "language_read", "board_game_kinds",
+HOBBIES = {"board_games", "video_games", "chess", "reading", "vinyl", "sudoku", "golf", "language", "language_course", "language_read", "scuba", "board_game_kinds",
            "board_game_elsewhere", "board_game_table", "chess_review", "video_game_friends",
            "hiking", "gardening", "shooting", "travel"}
 HALF = os.environ.get("E2E_HALF", "")       # "core", "hobbies", or "" (all of it, one line)

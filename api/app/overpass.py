@@ -77,6 +77,19 @@ def golf_course(osm: str) -> list[dict]:
                 waits=RETRY_WAITS[:1])
 
 
+# Scuba diving (scuba_tools.py): dive sites near a place, and one site by its OpenStreetMap id. One request a person
+# started each. Dive centres and shops carry sport=scuba_diving too: only the places themselves (no shop / amenity / office).
+def scuba_sites_near(lat: float, lon: float, radius: int = 30000) -> list[dict]:
+    return _ask(f'[out:json][timeout:60];nwr["sport"="scuba_diving"][!"shop"][!"amenity"][!"office"](around:{radius},{lat:.5f},{lon:.5f});out center tags 80;',
+                waits=RETRY_WAITS[:1])
+
+
+def element(osm: str) -> list[dict]:
+    """osm: 'node/123', 'way/123' or 'relation/123' - that one thing with its tags and centre."""
+    kind, ref = osm.split("/")
+    return _ask(f"[out:json][timeout:30];{kind}({int(ref)});out center tags;", waits=RETRY_WAITS[:1])
+
+
 def _ask(data: str, waits=None) -> list[dict]:
     """The elements; a busy server is asked again after each of `waits` seconds (RETRY_WAITS; a person waiting on the
     page: just the first)."""

@@ -252,7 +252,7 @@ def install():
     openlibrary._get = lambda params: []
     bookseries._wikidata = lambda query: []
     # Hiking and gardening
-    overpass._post = lambda data: golf_osm(data) if "golf" in data else {"elements": []}
+    overpass._post = lambda data: golf_osm(data) if "golf" in data else scuba_osm(data)
     wikimedia._get = lambda url, params: {}
     bunnings._get = _refuse(bunnings.BunningsError, "Bunnings")
     # "Add from a link": a product page, as the stand-in shop's (robots.txt: allowed)
@@ -262,7 +262,8 @@ def install():
     bunnings.photo = lambda image: (PNG, "image/png")
     openmeteo._get = lambda url, params: ({"results": [{"name": "Brisbane", "admin1": "Queensland", "country": "Australia",
                                                         "latitude": -27.47, "longitude": 153.03, "country_code": "AU"}]}
-                                          if "geocoding" in url else FORECAST)
+                                          if "geocoding" in url else marine_stand_in() if "marine" in url
+                                          else wind_stand_in() if "wind_speed_10m_max" in params.get("daily", "") else FORECAST)
     # Exchange rates (units of each currency for 1 AUD)
     frankfurter._get = lambda url, params: {"amount": 1.0, "base": "AUD", "date": "2026-10-19",
                                             "rates": {"JPY": 100.0, "NZD": 1.1, "USD": 0.65, "EUR": 0.6}}
@@ -318,3 +319,45 @@ def golf_osm(data: str) -> dict:
          "geometry": [{"lat": lat + 0.0034, "lon": lon + 0.0004}, {"lat": g2[0], "lon": g2[1]}]},
         {"type": "way", "id": 8, "tags": {"golf": "green"}, "geometry": box(*g2)},
     ]}
+
+
+SCUBA_SITES = [(990101, "node", "Stand-in Reef", -27.30, 153.45, {"natural": "reef", "maxdepth": "18"}),
+               (990102, "way", "Stand-in Wreck", -27.36, 153.48, {"historic": "wreck"}),
+               (990103, "node", "Stand-in Pinnacle", -27.40, 153.40, {})]
+
+
+def scuba_osm(data: str) -> dict:
+    """OpenStreetMap's dive site answers, made up: three named sites near Brisbane for a "near" search (sport=scuba_diving),
+    or the one asked for by id (node(990101);...); anything else Overpass is asked gets nothing."""
+    import re
+
+    def element(site):
+        osm_id, kind, name, lat, lon, tags = site
+        position = {"lat": lat, "lon": lon} if kind == "node" else {"center": {"lat": lat, "lon": lon}}
+        return {"type": kind, "id": osm_id, **position, "tags": {"name": name, "sport": "scuba_diving", **tags}}
+    if "scuba_diving" in data:
+        return {"elements": [element(s) for s in SCUBA_SITES]}
+    one = re.search(r"(node|way|relation)\((\d+)\)", data)
+    if one:
+        return {"elements": [element(s) for s in SCUBA_SITES if s[1] == one.group(1) and s[0] == int(one.group(2))]}
+    return {"elements": []}
+
+
+def marine_stand_in() -> dict:
+    """Open-Meteo Marine's answer, made up: 7 days from today, a small swell that grows over the week, two tides a day."""
+    import math
+    from datetime import date, datetime, timedelta
+    start = datetime.combine(date.today(), datetime.min.time())
+    hours = [start + timedelta(hours=i) for i in range(24 * 7)]
+    return {"hourly": {"time": [h.strftime("%Y-%m-%dT%H:%M") for h in hours],
+                       "wave_height": [round(0.6 + 0.2 * (i // 24) + 0.1 * (i % 24 > 12), 2) for i in range(len(hours))],
+                       "swell_wave_height": [round(0.5 + 0.25 * (i // 24), 2) for i in range(len(hours))],
+                       "swell_wave_period": [9.0] * len(hours), "swell_wave_direction": [110] * len(hours),
+                       "sea_surface_temperature": [24.5] * len(hours),
+                       "sea_level_height_msl": [round(0.9 * math.sin(i * 2 * math.pi / 12.4), 2) for i in range(len(hours))]}}
+
+
+def wind_stand_in() -> dict:
+    from datetime import date, timedelta
+    days = [(date.today() + timedelta(days=i)).isoformat() for i in range(7)]
+    return {"daily": {"time": days, "wind_speed_10m_max": [12, 18, 22, 28, 36, 15, 10], "wind_gusts_10m_max": [20, 28, 33, 40, 52, 24, 16]}}

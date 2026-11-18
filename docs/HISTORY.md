@@ -1251,3 +1251,29 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
    translation, the 200,000 with the commonest words) and loads them into a copy (A11: lang_sentences,
    lang_sentence_words, lang_sentence_seen - no usernames, no audio). Run it in prod after the promote. Credited on the
    page and per sentence; a one-off download, not a live source (no weekly site check).
+
+5zn. **Scuba diving, a new hobby** (2026-11-18, the user: "build a scuba diving hobby now, follow the process we have
+   done previously"). Looked at Subsurface, MacDive, Shearwater Cloud, Garmin Dive, Suunto, Diving Log (logbooks and
+   computer downloads), Deep Tools, Dive Kit, Abysner (planners: ZHL-16C with gradient factors, gas and nitrox sums),
+   the PADI app, DiveMate and Zentacle (sites, species). Built by four subagents side by side from one brief - the
+   schema (A12_scuba.sql) and the API contract written first, so the two API halves and the two web halves agreed:
+   - The logbook (scuba.py, scuba_dives.py, scuba_stats.py): numbered dives carrying on from the ones logged before
+     the app (settings.dives_before), site, trip, depth and time, gas, tank and pressures -> SAC (surface L/min; the
+     average depth, else 0.6 x max), conditions, buddy / guide / operator, rating, sightings (a life list); sites,
+     trips, certification cards, scuba gear on the shared gear pages (GEAR_HOBBIES) with a service log and due dates;
+     alerts (medical, insurance, cards, servicing due in 60 days) and the no-fly time (DAN's 12 h after one dive, 18 h
+     after repeat dives or several days running).
+   - The tools (scuba_tools.py, divemath.py, diveimport.py): Buhlmann ZHL-16C with gradient factors (no-deco table,
+     plan a dive with stops, gas, turn pressure and rock bottom, repeat dives from the logbook's last 24 h), CNS / OTU;
+     a dive's analysis from its computer profile (ascent faster than 10 m/min, the safety stop, tissue loading,
+     surface GF). Import from UDDF and Subsurface files (every brand's software exports one; XML read with any DOCTYPE
+     or entity refused). Checked: air NDL at GF 100 = 60 min at 18 m, 17 at 30 m; EAN32's MOD at 1.4 = 33.75 m.
+     Labelled everywhere "for learning and checking - your computer and training rule".
+   - A dive-day forecast per site from Open-Meteo Marine (waves, swell, sea temperature, tide highs and lows from
+     sea_level_height_msl) and the wind, with a rough good / fair / poor verdict; dive sites near a place from
+     OpenStreetMap (sport=scuba_diving, dive shops left out) - both human-started, both with stand-ins.
+   - Pages: dashboard, logbook, plan, conditions, sites, trips, life list, stats, gear, certs; the dive panel draws the
+     profile (depth, temperature, fast ascents in red, the 3-6 m band, tissue strip). Home tiles, "Log a dive",
+     activity, calendar, journal, goals (dives, minutes), CSV exports (dives, sightings).
+   Walk-through: test_web_calls guesses a call's method from the text after it - a raw multipart fetch's
+   method: 'POST' was read as the next call's; the upload call moved above the others.

@@ -289,6 +289,7 @@ const EXPORTS = [
   ['model-paints', 'Model paint lists'], ['builds', 'Build sessions (time)'], ['paint-recipes', 'Paint recipes'], ['history', 'Stock history'],
   ['video-games', 'Video games'], ['video-game-achievements', 'Video game achievements'], ['video-game-playtime', 'Video game playtime (per day)'],
   ['golf-rounds', 'Golf rounds'], ['golf-holes', 'Golf scores hole by hole'],
+  ['scuba-dives', 'Scuba dives'], ['scuba-sightings', 'Scuba sightings (life list)'],
   ['language-cards', 'Language cards'], ['language-study', 'Language study log'],
 ]
 

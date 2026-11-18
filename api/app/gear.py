@@ -1,4 +1,4 @@
-"""Gear (shared by the hobbies that have it: volleyball and hiking - gear.hobby): shoes, knee pads, boots,
+"""Gear (shared by the hobbies that have it: volleyball, hiking, shooting and scuba - gear.hobby): shoes, knee pads, boots,
 packs... with condition, photo, and where to buy it. Wanted gear (not bought yet) has no purchase date or
 price paid. Volleyball gear can be found at Blue Sky Athletics (Way of Wade shoes; bluesky.py) and filled
 in from there. Hiking gear says how many hikes and km it's done (hike_gear, set on each hike in hiking.py).

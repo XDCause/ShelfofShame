@@ -28,7 +28,7 @@ router = APIRouter(prefix="/api", tags=["calendar"])
 # What each hobby's log shows as in the activity feed (activity.py kinds): a hobby event that day counts as done.
 HOBBY_KINDS = {"models": ("model",), "boardgames": ("game",), "volleyball": ("volleyball",), "videogames": ("videogame",),
                "chess": ("chess",), "reading": ("book",), "travel": ("trip",), "shooting": ("shoot",), "hiking": ("hike",),
-               "gardening": ("planting", "gcontainer", "gspace"), "vinyl": ("record",), "sudoku": ("sudoku",), "golf": ("golfround", "golfpractice"),
+               "gardening": ("planting", "gcontainer", "gspace"), "vinyl": ("record",), "sudoku": ("sudoku",), "golf": ("golfround", "golfpractice"), "scuba": ("scubadive",),
                "language": ("langstudy", "langreview", "langlesson"), "car": ()}
 KIND_HOBBY = {k: h for h, kinds in HOBBY_KINDS.items() for k in kinds}
 
@@ -48,6 +48,7 @@ MONTH_RE = "|".join(sorted(MONTH_WORD, key=len, reverse=True))
 NTH = {"first": 1, "1st": 1, "second": 2, "2nd": 2, "third": 3, "3rd": 3, "fourth": 4, "4th": 4, "last": 5}
 HOBBY_WORDS = [  # (pattern, hobby) - the first that matches wins
     (r"volley ?ball|vball", "volleyball"), (r"chess", "chess"), (r"sudokus?", "sudoku"),
+    (r"scuba|dive (?:trip|boat|day|weekend)|liveaboard|padi|open water course|snorkell?ing", "scuba"),
     (r"golf|tee ?time|driving range|putting green|9 holes|18 holes|stableford|pennant", "golf"),
     (r"(?:spanish|french|german|italian|japanese|mandarin|chinese|korean|portuguese|dutch|greek|arabic|hindi|indonesian"
      r"|vietnamese|thai|russian|language) (?:class|lesson|tutor(?:ing)?|exchange|meetup)|italki|preply|tandem|language study", "language"),

@@ -1,0 +1,87 @@
+/* ---------- Scuba diving (modules/scuba: the dashboard, logbook, a dive's panel, sites, trips, life list, stats, gear, certs) ----------
+   (the profile chart, planner, conditions and import are 40-scuba-tools.css) */
+
+/* a row of labelled numbers */
+.scb-numbers { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin: 8px 0 12px; }
+.scb-numbers > div { background: var(--fill-2); border-radius: 10px; padding: 8px 10px; min-width: 0; }
+.scb-numbers dt { font-size: 0.78rem; color: var(--muted); }
+.scb-numbers dd { margin: 0; font-size: 1.15rem; font-weight: 600; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.scb-numbers dd > span { display: block; font-size: 0.8rem; font-weight: 400; }
+
+/* the dashboard's hero: the number of dives, then this year / deepest / longest */
+.scb-hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px 28px; align-items: center;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--tint) 14%, var(--surface)), var(--surface) 70%); }
+.scb-hero-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.scb-hero-label { font-weight: 600; color: var(--muted); }
+.scb-hero-number { font-family: var(--font-display); font-size: var(--text-4xl); font-weight: 600; line-height: 1.05; color: var(--text); font-variant-numeric: tabular-nums; }
+.scb-hero-year { display: grid; grid-template-columns: repeat(3, minmax(88px, auto)); gap: 10px; margin: 0; }
+.scb-hero-year > div { background: var(--fill-2); border-radius: 10px; padding: 6px 12px; min-width: 0; }
+.scb-hero-year dt { font-size: 0.78rem; color: var(--muted); }
+.scb-hero-year dd { margin: 0; font-size: 1.1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+@media (max-width: 700px) {
+  .scb-hero { grid-template-columns: minmax(0, 1fr); }
+  .scb-hero-year { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* the no-fly time */
+.scb-nofly { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 14px; border-left: 4px solid var(--ok); }
+.scb-nofly.wait { border-left-color: var(--low); }
+.scb-nofly > .grow { flex: 1 1 220px; min-width: 0; }
+
+/* what is coming due */
+.scb-alerts { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 6px; }
+.scb-alert { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 8px 12px; border-radius: 10px; background: var(--low-bg); }
+.scb-alert.overdue { background: var(--out-bg); }
+.scb-alert .pill { text-transform: capitalize; }
+
+/* a dive in a list */
+.scb-dive-row { align-items: center; }
+.scb-dive-row > .grow, .scb-site-row > .row-button > .grow { min-width: 0; }
+.scb-dive-figures { display: flex; flex-direction: column; align-items: flex-end; text-align: right; flex: none; font-variant-numeric: tabular-nums; }
+.scb-stars { color: var(--low); letter-spacing: 1px; }
+.scb-search { flex: 1 1 200px; max-width: 320px; min-width: 0; }
+.scb-log-note { margin: 0 0 8px; }
+.scb-links .row-button { text-decoration: none; color: var(--tint); }
+
+/* sites: a row with its map link, and finding sites */
+.scb-site-row { display: flex; align-items: center; gap: 8px; }
+.scb-site-row > .row-button { flex: 1; min-width: 0; }
+.scb-site-row > a { flex: none; }
+.scb-find { display: grid; gap: 8px; }
+.scb-find-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
+.scb-find-row .field { min-width: 120px; }
+.scb-found-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+.scb-found-row > .grow { min-width: 0; }
+
+/* a dive's panel */
+.scb-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.scb-notes { white-space: pre-wrap; }
+.scb-more { margin: 12px 0 0; }
+.scb-sightings { list-style: none; margin: 4px 0 8px; padding: 0; display: grid; gap: 8px; }
+.scb-sightings li { display: grid; grid-template-columns: minmax(0, 2fr) 6.5em minmax(0, 2fr) auto; gap: 6px; align-items: center; }
+.scb-sightings input { min-width: 0; width: 100%; }
+@media (max-width: 600px) {
+  .scb-sightings li { grid-template-columns: minmax(0, 1fr) 6.5em; }
+  .scb-sightings li > :nth-child(3) { grid-column: 1 / -1; }
+  .scb-sightings li > button { justify-self: end; grid-row: 1; grid-column: 3; }
+}
+
+/* the stats' records */
+.scb-record-value { flex: none; font-variant-numeric: tabular-nums; }
+
+/* gear */
+.scb-gear-list { margin: 0; }
+.scb-gear-row { align-items: center; }
+.scb-gear-row > .grow { min-width: 0; }
+.scb-gear-photo { display: grid; place-items: center; flex: none; width: 48px; height: 48px; border-radius: 10px; overflow: hidden; background: var(--fill-2); color: var(--muted); }
+.scb-gear-photo img { width: 100%; height: 100%; object-fit: cover; }
+.scb-service-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; }
+.scb-service-row > .grow { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+
+/* certification cards */
+.scb-certs { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.scb-cert { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left; cursor: pointer; min-width: 0; font: inherit; color: inherit;
+  border-top: 4px solid var(--tint); }
+.scb-cert:hover { box-shadow: var(--shadow-hover, 0 2px 10px rgb(0 0 0 / 0.12)); }
+.scb-cert-agency { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; color: var(--tint); }
+.scb-cert-name { font-size: 1.05rem; overflow-wrap: anywhere; }

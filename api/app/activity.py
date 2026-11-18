@@ -21,6 +21,7 @@
     vinyl       a record played (one entry per record per day); bought / added      (vinyl_plays, vinyl_records)
     sudoku      a puzzle solved: difficulty, time, hints                            (sudoku_games)
     golf        a round finished: course, strokes, competition; a practice session  (golf_rounds, golf_practice)
+    scuba       a dive logged: site, depth, time, gas                                (scuba_dives)
     langstudy   language study logged: the activity, minutes, with whom             (lang_study)
     langreview  a day's flashcard reviews in a language: how many, % remembered     (lang_reviews; ref = the language)
     langlesson  a course lesson finished: unit, score, mistakes, cards it added     (lang_lesson_runs)
@@ -250,6 +251,11 @@ WITH feed AS (
            concat_ws(' · ', p.minutes || ' min', p.balls || ' balls', p.drill || CASE WHEN p.made IS NOT NULL THEN ' ' || p.made || '/' || p.attempts ELSE '' END, p.focus),
            NULL, NULL, NULL
     FROM golf_practice p
+  UNION ALL
+    SELECT {_on_day('d.dived_on', 'd.created_at')}, 'scubadive', d.dive_id, 'Dived', COALESCE(s.name, 'Dive ' || d.dive_no),
+           concat_ws(' · ', '#' || d.dive_no, d.max_depth || ' m', d.minutes || ' min', CASE WHEN d.gas_o2 > 21 THEN 'Nitrox ' || d.gas_o2 END),
+           NULL, NULL, NULL
+    FROM scuba_dives d LEFT JOIN scuba_sites s USING (site_id)
   UNION ALL
     SELECT {_on_day('s.studied_on', 's.created_at')}, 'langstudy', s.study_id, 'Studied', l.name || ': ' || lower(s.activity),
            concat_ws(' · ', s.minutes || ' min', CASE WHEN s.with_whom IS NOT NULL THEN 'with ' || s.with_whom END,

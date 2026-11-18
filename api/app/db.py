@@ -44,12 +44,12 @@ GUNDAM_GRADES = {"EG": "1/144", "HG": "1/144", "RG": "1/144", "FM": "1/100", "MG
 
 # The hobby modules (web/src/modules/); a calendar event can belong to one (db/init/20_calendar.sql).
 MODULE_IDS = ["models", "boardgames", "volleyball", "videogames", "chess", "reading", "car", "travel", "shooting", "hiking",
-              "gardening", "vinyl", "sudoku", "golf", "language"]   # 53 / 56 / 61 / 63 / 66 / 92 / 93 / A08 / A09
+              "gardening", "vinyl", "sudoku", "golf", "language", "scuba"]   # 53 / 56 / 61 / 63 / 66 / 92 / 93 / A08 / A09 / A12
 REPEATS = ["never", "weekly", "fortnightly", "monthly", "monthly_nth", "yearly", "weekdays"]   # 87_calendar_more.sql
 MOODS = ["great", "good", "okay", "meh", "rough"]                              # 25_mood.sql, best first
 GAME_STATUSES = ["Owned", "To sell", "Wanted", "Borrowed", "Played elsewhere", "Gone"]   # 21 / 47 / 54_board_game_elsewhere.sql
 GEAR_CONDITIONS = ["Wanted", "New", "Good", "Worn", "Needs replacing", "Retired"]   # 22_volleyball.sql, 50_gear_wanted.sql
-GEAR_HOBBIES = ["volleyball", "hiking", "shooting"]                              # 65 / 73
+GEAR_HOBBIES = ["volleyball", "hiking", "shooting", "scuba"]                     # 65 / 73 / A12
 VOLLEYBALL_KINDS = ["Game", "Training", "Social", "Tournament"]
 
 # Friendly messages for database rule violations, keyed by constraint name.
@@ -64,6 +64,11 @@ CONSTRAINT_MESSAGES = {
     "price_guide_condition_check": "A price rule needs a name to match, a paint type or a size.",
     "models_stage_check": "That build step isn't one of this hobby's steps.",
     "models_figures_check": "Minis done must be between 0 and the number in the box.",
+    "scuba_dives_avg_fit": "The average depth can't be deeper than the maximum.",
+    "scuba_dives_bar_fit": "The tank can't end with more air than it started with.",
+    "scuba_trips_dates_fit": "A trip can't end before it starts.",
+    "scuba_gear_service_due_fit": "The next service can't be due before this one was done.",
+    "scuba_settings_gf_order": "The low gradient factor can't be above the high one.",
     "calendar_events_until_check": "It can't stop repeating before it starts.",
     "calendar_events_time_check": "The end time must be after the start time.",
     "board_games_players_check": "Most players can't be fewer than fewest players.",

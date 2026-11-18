@@ -162,6 +162,7 @@ export default function App() {
     else if (kind === 'sudoku') navigate(`/sudoku/play?game=${id}`)
     else if (kind === 'golfround') openPanel('golfround', { id })
     else if (kind === 'golfpractice') openPanel('golfpractice', { id })
+    else if (kind === 'scubadive') openPanel('scubadive', { id })
     else if (kind === 'langstudy') openPanel('langstudy', { id })
     else if (kind === 'langreview') navigate('/language/progress')
     else if (kind === 'langlesson') navigate('/language/learn')

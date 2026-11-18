@@ -175,6 +175,25 @@ EXPORTS = {
         FROM golf_round_holes h JOIN golf_rounds r USING (round_id) JOIN golf_courses c USING (course_id)
         LEFT JOIN golf_holes gh ON gh.course_id = r.course_id AND gh.hole_no = h.hole_no
         ORDER BY r.played_on, r.round_id, h.hole_no""",
+    # Scuba diving: the logbook (SAC is worked out as in the app: bar used x tank litres / minutes / (average depth / 10 + 1))
+    "scuba-dives": """
+        SELECT d.dive_no AS "Dive no", d.dived_on AS "Date", to_char(d.time_in, 'HH24:MI') AS "Time in", s.name AS "Site", s.place AS "Place",
+               t.name AS "Trip", d.max_depth AS "Max depth (m)", d.avg_depth AS "Average depth (m)", d.minutes AS "Minutes",
+               d.water_temp AS "Water (C)", d.air_temp AS "Air (C)", d.visibility_m AS "Visibility (m)", d.current AS "Current",
+               d.entry AS "Entry", d.gas_o2 AS "O2 %", d.tank_l AS "Tank (L)", d.start_bar AS "Start (bar)", d.end_bar AS "End (bar)",
+               CASE WHEN d.start_bar IS NOT NULL AND d.end_bar IS NOT NULL AND d.tank_l IS NOT NULL AND d.minutes > 0
+                         AND COALESCE(d.avg_depth, d.max_depth * 0.6) IS NOT NULL
+                    THEN round(((d.start_bar - d.end_bar) * d.tank_l / d.minutes
+                                / (COALESCE(d.avg_depth, d.max_depth * 0.6) / 10 + 1))::numeric, 1) END AS "SAC (L/min)",
+               d.weight_kg AS "Weight (kg)", d.suit AS "Suit", d.buddy AS "Buddy", d.guide AS "Guide", d.operator AS "Operator",
+               d.rating AS "Rating", array_to_string(d.tags, ' ') AS "Tags", d.computer AS "Computer",
+               d.samples IS NOT NULL AS "Has profile", d.notes AS "Notes"
+        FROM scuba_dives d LEFT JOIN scuba_sites s USING (site_id) LEFT JOIN scuba_trips t USING (trip_id)
+        ORDER BY d.dived_on, COALESCE(d.time_in, '00:00'), d.dive_id""",
+    "scuba-sightings": """
+        SELECT g.species AS "Species", g.how_many AS "How many", d.dive_no AS "Dive no", d.dived_on AS "Date", s.name AS "Site", g.notes AS "Notes"
+        FROM scuba_sightings g JOIN scuba_dives d USING (dive_id) LEFT JOIN scuba_sites s USING (site_id)
+        ORDER BY d.dived_on, d.dive_id, lower(g.species)""",
     # Language learning: the deck (each card's memory as FSRS keeps it) and the study log (reviews' time not included)
     "language-cards": """
         SELECT l.name AS "Language", c.kind AS "Kind", c.front AS "Front", c.back AS "Back", c.example AS "Example",

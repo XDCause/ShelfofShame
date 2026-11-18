@@ -699,6 +699,36 @@ export const api = {
   golfSummary: () => request('/golf/summary'),
   golfStats: (params = {}) => request(`/golf/stats?${query(params)}`),
   golfHandicap: () => request('/golf/handicap'),
+  // Scuba diving (api/app/scuba.py: settings, the logbook, sites, trips, certs, gear service, stats)
+  scubaSettings: () => request('/scuba/settings'),
+  saveScubaSettings: (data) => request('/scuba/settings', send('PUT', data)),
+  scubaSummary: () => request('/scuba/summary'),
+  scubaDives: (params = {}) => request(`/scuba/dives?${query(params)}`),
+  scubaDive: (id) => request(`/scuba/dives/${id}`),
+  addScubaDive: (data) => request('/scuba/dives', send('POST', data)),
+  updateScubaDive: (id, data) => request(`/scuba/dives/${id}`, send('PATCH', data)),
+  deleteScubaDive: (id) => request(`/scuba/dives/${id}`, send('DELETE')),
+  saveScubaSightings: (id, rows) => request(`/scuba/dives/${id}/sightings`, send('PUT', rows)),
+  scubaSpecies: () => request('/scuba/species'),
+  scubaSites: () => request('/scuba/sites'),
+  scubaSite: (id) => request(`/scuba/sites/${id}`),
+  addScubaSite: (data) => request('/scuba/sites', send('POST', data)),
+  updateScubaSite: (id, data) => request(`/scuba/sites/${id}`, send('PATCH', data)),
+  deleteScubaSite: (id) => request(`/scuba/sites/${id}`, send('DELETE')),
+  scubaTrips: () => request('/scuba/trips'),
+  scubaTrip: (id) => request(`/scuba/trips/${id}`),
+  addScubaTrip: (data) => request('/scuba/trips', send('POST', data)),
+  updateScubaTrip: (id, data) => request(`/scuba/trips/${id}`, send('PATCH', data)),
+  deleteScubaTrip: (id) => request(`/scuba/trips/${id}`, send('DELETE')),
+  scubaCerts: () => request('/scuba/certs'),
+  addScubaCert: (data) => request('/scuba/certs', send('POST', data)),
+  updateScubaCert: (id, data) => request(`/scuba/certs/${id}`, send('PATCH', data)),
+  deleteScubaCert: (id) => request(`/scuba/certs/${id}`, send('DELETE')),
+  scubaGear: () => request('/scuba/gear'),
+  scubaGearService: (gearId) => request(`/scuba/gear/${gearId}/service`),
+  addScubaService: (gearId, data) => request(`/scuba/gear/${gearId}/service`, send('POST', data)),
+  deleteScubaService: (id) => request(`/scuba/service/${id}`, send('DELETE')),
+  scubaStats: (params = {}) => request(`/scuba/stats?${query(params)}`),
   // Language learning (api/app/language.py, language_cards.py; the scheduler is FSRS: srs.py)
   languageLists: () => request('/language/lists'),
   languages: () => request('/language/languages'),
@@ -880,6 +910,24 @@ export const api = {
   about: () => request('/about'),
   addLookup: (kind, name) => request(`/lookups/${kind}`, send('POST', { name })),
   deleteLookup: (kind, id) => request(`/lookups/${kind}/${id}`, send('DELETE')),
+  // Scuba diving: tools (api/app/scuba_tools.py: no-deco table, the planner, a dive's analysis, import, conditions, OSM sites)
+  scubaImport: async (file, dry) => {         // a multipart upload: no JSON Content-Type (the browser adds the boundary)
+    const form = new FormData()
+    form.append('file', file)
+    const res = await fetch(`/api/scuba/import${dry ? '?dry=1' : ''}`, { method: 'POST', body: form })
+    if (res.status === 401) window.dispatchEvent(new Event('otc-signed-out'))
+    const body = await res.json().catch(() => null)
+    if (!res.ok) throw Object.assign(new Error(errorMessage(body) || `${res.status} ${res.statusText}`), { status: res.status })
+    return body
+  },
+  scubaNdl: (params = {}) => request(`/scuba/ndl?${query(params)}`),
+  scubaPlan: (data) => request('/scuba/plan', send('POST', data)),
+  scubaAnalysis: (id) => request(`/scuba/dives/${id}/analysis`),
+  scubaConditions: (params) => request(`/scuba/conditions?${query(params)}`),
+  scubaToolSettings: () => request('/scuba/settings'),
+  scubaToolSites: () => request('/scuba/sites'),
+  scubaOsmNear: (params) => request(`/scuba/osm/near?${query(params)}`),
+  scubaOsmImport: (osm) => request('/scuba/osm/import', send('POST', { osm })),
 }
 
 // Plain links (downloads open straight from these).

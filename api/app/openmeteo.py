@@ -6,6 +6,9 @@ CC BY 4.0 - credited where the tips show). Used by Gardening for balcony tips: h
     forecast(lat, lon)   -> the next 3 days: [{day, max, min, rain_mm, rain_chance, gusts, uv, code, sky, icon}]
                             (sky / icon: the day's weather code in words - Sunny, Cloudy, Rain...)
 
+    marine(lat, lon)     -> 7 days of sea (waves, swell, sea temperature, tide) for Scuba diving (their Marine API);
+    wind(lat, lon)       -> 7 days of strongest wind and gusts (km/h), for the same dive-day verdict
+
 The forecast is kept for an hour (one request an hour at most, whatever the page does). The last good answer is also
 kept in the database (weather_kept): while Open-Meteo can't be reached, a forecast up to KEPT_FOR old is answered from
 it, each day marked as_of (when it was fetched) and the days already gone left out - the pages say how old it is.
@@ -27,6 +30,7 @@ FORECAST = "https://api.open-meteo.com/v1/forecast"
 # 16 days ahead too): asked when the forecast server can't be reached - it stopped answering this network on
 # 2026-11-16 while their other servers answered (HISTORY 5zh).
 BACKUP = "https://historical-forecast-api.open-meteo.com/v1/forecast"
+MARINE = "https://marine-api.open-meteo.com/v1/marine"          # waves, swell, sea temperature, tide (Scuba diving)
 TIMEOUT = 20
 KEEP = 3600
 KEPT_FOR = timedelta(days=3)
@@ -202,3 +206,65 @@ def day_weather(lat: float, lon: float, day: str) -> dict | None:
              "min": col("temperature_2m_min"), "rain_mm": col("precipitation_sum")}
     _cache[key] = (time.time(), found)
     return found
+
+
+def marine(lat: float, lon: float, fresh: bool = False) -> list[dict]:
+    """The next 7 days of sea at a place (Scuba diving; Open-Meteo Marine, CC BY 4.0, not for navigation):
+    [{day, wave_max, swell_max, swell_period, swell_dir, sst, tide [{time, height}]}] - the biggest wave and swell (m),
+    the swell's period (s) and direction (degrees) at its biggest, the day's mean sea temperature, and the tide's highs
+    and lows (sea level in m above mean, found as the turning points of the hourly figures). Kept an hour like the
+    forecast, and the last good one while Open-Meteo can't be reached (see _kept)."""
+    key = (round(lat, 2), round(lon, 2), "marine")
+    return _kept(key, lambda: _marine(key), fresh)
+
+
+def _marine(key) -> list[dict]:
+    data = _get(MARINE, {"latitude": key[0], "longitude": key[1], "timezone": "auto", "forecast_days": 7,
+                         "hourly": "wave_height,swell_wave_height,swell_wave_period,swell_wave_direction,"
+                                   "sea_surface_temperature,sea_level_height_msl"})
+    h = data.get("hourly") or {}
+    times = h.get("time") or []
+
+    def col(name):
+        values = h.get(name) or []
+        return [values[i] if i < len(values) else None for i in range(len(times))]
+    wave, swell, period, direction = col("wave_height"), col("swell_wave_height"), col("swell_wave_period"), col("swell_wave_direction")
+    sst, level = col("sea_surface_temperature"), col("sea_level_height_msl")
+    tides = {}
+    for i in range(1, len(times) - 1):                              # turning points of the sea level
+        a, b, c = level[i - 1], level[i], level[i + 1]
+        if None in (a, b, c):
+            continue
+        if (b > a and b >= c) or (b < a and b <= c):
+            tides.setdefault(times[i][:10], []).append({"time": times[i], "height": round(b, 2)})
+    days = []
+    for day in dict.fromkeys(t[:10] for t in times):
+        idx = [i for i, t in enumerate(times) if t.startswith(day)]
+        waves = [wave[i] for i in idx if wave[i] is not None]
+        swells = [(swell[i], i) for i in idx if swell[i] is not None]
+        temps = [sst[i] for i in idx if sst[i] is not None]
+        top = max(swells)[1] if swells else None
+        days.append({"day": day, "wave_max": max(waves) if waves else None,
+                     "swell_max": max(swells)[0] if swells else None,
+                     "swell_period": period[top] if top is not None else None,
+                     "swell_dir": direction[top] if top is not None else None,
+                     "sst": round(sum(temps) / len(temps), 1) if temps else None, "tide": tides.get(day, [])})
+    return days
+
+
+def wind(lat: float, lon: float, fresh: bool = False) -> list[dict]:
+    """The next 7 days' strongest wind at a place (km/h): [{day, wind_max, gusts}]. Kept an hour, like the others."""
+    key = (round(lat, 2), round(lon, 2), "wind7")
+    return _kept(key, lambda: _wind(key), fresh)
+
+
+def _wind(key) -> list[dict]:
+    data = _get(FORECAST, {"latitude": key[0], "longitude": key[1], "timezone": "auto", "forecast_days": 7,
+                           "daily": "wind_speed_10m_max,wind_gusts_10m_max"})
+    d = data.get("daily") or {}
+
+    def col(name, i):
+        values = d.get(name) or []
+        return values[i] if i < len(values) else None
+    return [{"day": day, "wind_max": col("wind_speed_10m_max", i), "gusts": col("wind_gusts_10m_max", i)}
+            for i, day in enumerate(d.get("time") or [])]
