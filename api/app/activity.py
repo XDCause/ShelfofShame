@@ -22,6 +22,7 @@
     sudoku      a puzzle solved: difficulty, time, hints                            (sudoku_games)
     golf        a round finished: course, strokes, competition; a practice session  (golf_rounds, golf_practice)
     scuba       a dive logged: site, depth, time, gas                                (scuba_dives)
+    fishing     a fishing trip: spot, fish caught, hours                              (fishing_trips)
     langstudy   language study logged: the activity, minutes, with whom             (lang_study)
     langreview  a day's flashcard reviews in a language: how many, % remembered     (lang_reviews; ref = the language)
     langlesson  a course lesson finished: unit, score, mistakes, cards it added     (lang_lesson_runs)
@@ -256,6 +257,12 @@ WITH feed AS (
            concat_ws(' · ', '#' || d.dive_no, d.max_depth || ' m', d.minutes || ' min', CASE WHEN d.gas_o2 > 21 THEN 'Nitrox ' || d.gas_o2 END),
            NULL, NULL, NULL
     FROM scuba_dives d LEFT JOIN scuba_sites s USING (site_id)
+  UNION ALL
+    SELECT {_on_day('t.started_at::date', 't.created_at')}, 'fishtrip', t.trip_id, 'Fished', COALESCE(s.name, 'Fishing trip'),
+           concat_ws(' · ', CASE WHEN k.n = 0 THEN 'No fish' ELSE k.n || ' caught' END, round(extract(epoch FROM t.ended_at - t.started_at) / 3600) || ' h'),
+           NULL, NULL, NULL
+    FROM fishing_trips t LEFT JOIN fishing_spots s USING (spot_id)
+         CROSS JOIN LATERAL (SELECT count(*)::int AS n FROM fishing_catches c WHERE c.trip_id = t.trip_id) k
   UNION ALL
     SELECT {_on_day('s.studied_on', 's.created_at')}, 'langstudy', s.study_id, 'Studied', l.name || ': ' || lower(s.activity),
            concat_ws(' · ', s.minutes || ' min', CASE WHEN s.with_whom IS NOT NULL THEN 'with ' || s.with_whom END,

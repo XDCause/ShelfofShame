@@ -729,6 +729,34 @@ export const api = {
   addScubaService: (gearId, data) => request(`/scuba/gear/${gearId}/service`, send('POST', data)),
   deleteScubaService: (id) => request(`/scuba/service/${id}`, send('DELETE')),
   scubaStats: (params = {}) => request(`/scuba/stats?${query(params)}`),
+
+  // Fishing (api/app/fishing.py: settings, trips with their catches, spots, species and the rules you typed, tackle, stats)
+  fishingSettings: () => request('/fishing/settings'),
+  saveFishingSettings: (data) => request('/fishing/settings', send('PUT', data)),
+  fishingSummary: () => request('/fishing/summary'),
+  fishingTrips: (params = {}) => request(`/fishing/trips?${query(params)}`),
+  fishingTrip: (id) => request(`/fishing/trips/${id}`),
+  addFishingTrip: (data) => request('/fishing/trips', send('POST', data)),
+  updateFishingTrip: (id, data) => request(`/fishing/trips/${id}`, send('PATCH', data)),
+  deleteFishingTrip: (id) => request(`/fishing/trips/${id}`, send('DELETE')),
+  endFishingTrip: (id, data = {}) => request(`/fishing/trips/${id}/end`, send('POST', data)),
+  addFishingCatch: (tripId, data) => request(`/fishing/trips/${tripId}/catches`, send('POST', data)),
+  updateFishingCatch: (id, data) => request(`/fishing/catches/${id}`, send('PATCH', data)),
+  deleteFishingCatch: (id) => request(`/fishing/catches/${id}`, send('DELETE')),
+  fishingSpecies: () => request('/fishing/species'),
+  addFishingSpecies: (data) => request('/fishing/species', send('POST', data)),
+  updateFishingSpecies: (id, data) => request(`/fishing/species/${id}`, send('PATCH', data)),
+  deleteFishingSpecies: (id) => request(`/fishing/species/${id}`, send('DELETE')),
+  fishingSpots: () => request('/fishing/spots'),
+  fishingSpot: (id) => request(`/fishing/spots/${id}`),
+  addFishingSpot: (data) => request('/fishing/spots', send('POST', data)),
+  updateFishingSpot: (id, data) => request(`/fishing/spots/${id}`, send('PATCH', data)),
+  deleteFishingSpot: (id) => request(`/fishing/spots/${id}`, send('DELETE')),
+  fishingLures: (params = {}) => request(`/fishing/lures?${query(params)}`),
+  addFishingLure: (data) => request('/fishing/lures', send('POST', data)),
+  updateFishingLure: (id, data) => request(`/fishing/lures/${id}`, send('PATCH', data)),
+  deleteFishingLure: (id) => request(`/fishing/lures/${id}`, send('DELETE')),
+  fishingStats: (params = {}) => request(`/fishing/stats?${query(params)}`),
   // Language learning (api/app/language.py, language_cards.py; the scheduler is FSRS: srs.py)
   languageLists: () => request('/language/lists'),
   languages: () => request('/language/languages'),
@@ -928,6 +956,23 @@ export const api = {
   scubaToolSites: () => request('/scuba/sites'),
   scubaOsmNear: (params) => request(`/scuba/osm/near?${query(params)}`),
   scubaOsmImport: (osm) => request('/scuba/osm/import', send('POST', { osm })),
+
+  // Fishing: tools (api/app/fishing_tools.py: the forecast, solunar, boat ramps), catch photos, and the calls of the live
+  // trip page (modules/fishing/FishingLive.jsx + fishQueue.js: named fishingLive* so the page needs nothing from the pages' block)
+  fishingForecast: (params) => request(`/fishing/forecast?${query(params)}`),
+  fishingSolunar: (params) => request(`/fishing/solunar?${query(params)}`),
+  fishingOsmNear: (params) => request(`/fishing/osm/near?${query(params)}`),
+  fishingOsmImport: (osm) => request('/fishing/osm/import', send('POST', { osm })),
+  addFishingPhoto: (catchId, blob) => request(`/fishing/catches/${catchId}/photos`, image('POST', blob)),
+  deleteFishingPhoto: (photoId) => request(`/fishing/photos/${photoId}`, send('DELETE')),
+  fishingLiveSummary: () => request('/fishing/summary'),
+  fishingLiveSpots: () => request('/fishing/spots'),
+  fishingLiveSpecies: () => request('/fishing/species'),
+  fishingLiveLures: () => request('/fishing/lures?retired=false'),
+  fishingLiveAddSpot: (data) => request('/fishing/spots', send('POST', data)),
+  fishingLiveStart: (data) => request('/fishing/trips', send('POST', data)),
+  fishingLiveCatch: (tripId, data) => request(`/fishing/trips/${tripId}/catches`, send('POST', data)),
+  fishingLiveEnd: (tripId, data) => request(`/fishing/trips/${tripId}/end`, send('POST', data)),
 }
 
 // Plain links (downloads open straight from these).

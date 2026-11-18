@@ -33,8 +33,9 @@ import volleyball from './volleyball/manifest.jsx'
 import golf from './golf/manifest.jsx'
 import language from './language/manifest.jsx'
 import scuba from './scuba/manifest.jsx'
+import fishing from './fishing/manifest.jsx'
 
-const ALL = [models, boardgames, volleyball, videogames, chess, reading, vinyl, sudoku, car, travel, shooting, golf, hiking, gardening, language, scuba]
+const ALL = [models, boardgames, volleyball, videogames, chess, reading, vinyl, sudoku, car, travel, shooting, golf, hiking, gardening, language, scuba, fishing]
 export const SHOW_UNFINISHED = !['prod', 'staging'].includes(import.meta.env.VITE_APP_ENV)   // (staging shows what prod will)
 export const MODULES = ALL.filter((m) => SHOW_UNFINISHED || !m.underConstruction)
 

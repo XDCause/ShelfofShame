@@ -1,0 +1,78 @@
+/* ---------- Fishing (modules/fishing: the dashboard, trips, a trip's and a catch's panels, spots, species rules, tackle, stats) ----------
+   (the live trip page and the forecast are 42-fishing-tools.css) */
+
+/* a row of labelled numbers */
+.fsh-numbers { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin: 8px 0 12px; }
+.fsh-numbers > div { background: var(--fill-2); border-radius: 10px; padding: 8px 10px; min-width: 0; }
+.fsh-numbers dt { font-size: 0.78rem; color: var(--muted); }
+.fsh-numbers dd { margin: 0; font-size: 1.15rem; font-weight: 600; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.fsh-numbers dd > span { display: block; font-size: 0.8rem; font-weight: 400; }
+
+/* the dashboard's hero: the number of fish, then this year */
+.fsh-hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px 28px; align-items: center;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--tint) 14%, var(--surface)), var(--surface) 70%); }
+.fsh-hero-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.fsh-hero-label { font-weight: 600; color: var(--muted); }
+.fsh-hero-number { font-family: var(--font-display); font-size: var(--text-4xl); font-weight: 600; line-height: 1.05; color: var(--text); font-variant-numeric: tabular-nums; }
+.fsh-hero-year { display: grid; grid-template-columns: repeat(2, minmax(110px, auto)); gap: 10px; margin: 0; }
+.fsh-hero-year > div { background: var(--fill-2); border-radius: 10px; padding: 6px 12px; min-width: 0; }
+.fsh-hero-year dt { font-size: 0.78rem; color: var(--muted); }
+.fsh-hero-year dd { margin: 0; font-size: 1.1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+@media (max-width: 700px) {
+  .fsh-hero { grid-template-columns: minmax(0, 1fr); }
+  .fsh-hero-year { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* a trip still on the water */
+.fsh-open { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 14px; border-left: 4px solid var(--low); }
+.fsh-open > .grow { flex: 1 1 220px; min-width: 0; }
+
+/* what is coming due */
+.fsh-alerts { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 6px; }
+.fsh-alert { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 8px 12px; border-radius: 10px; background: var(--low-bg); }
+.fsh-alert.overdue { background: var(--out-bg); }
+.fsh-alert .pill { text-transform: capitalize; }
+
+/* a trip or a catch in a list */
+.fsh-trip-row, .fsh-catch-row { align-items: center; }
+.fsh-trip-row > .grow, .fsh-catch-row > .grow, .fsh-spot-row > .row-button > .grow { min-width: 0; }
+.fsh-trip-figures { display: flex; flex-direction: column; align-items: flex-end; text-align: right; flex: none; font-variant-numeric: tabular-nums; }
+.fsh-open-pill { margin-left: 8px; }
+.fsh-stars { color: var(--low); letter-spacing: 1px; }
+.fsh-search { flex: 1 1 200px; max-width: 320px; min-width: 0; }
+.fsh-log-note { margin: 0 0 8px; }
+.fsh-links .row-button { text-decoration: none; color: var(--tint); }
+.fsh-record-value { flex: none; font-variant-numeric: tabular-nums; }
+.fsh-sci { font-style: italic; }
+
+/* rule warnings under a catch */
+.fsh-warnings { list-style: none; margin: 2px 0 8px 46px; padding: 0; display: grid; gap: 4px; font-size: 0.88rem; }
+.fsh-warnings li { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
+.fsh-rules-hint { margin: 4px 0 8px; padding: 8px 12px; border-radius: 10px; background: var(--fill-2); }
+.fsh-rules-note { border-left: 4px solid var(--low); }
+
+/* spots: a row with its map link, and finding spots */
+.fsh-spot-row { display: flex; align-items: center; gap: 8px; }
+.fsh-spot-row > .row-button { flex: 1; min-width: 0; }
+.fsh-spot-row > a { flex: none; }
+.fsh-find { display: grid; gap: 8px; }
+.fsh-find-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
+.fsh-find-row .field { min-width: 120px; }
+.fsh-found-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+.fsh-found-row > .grow { min-width: 0; }
+
+/* a trip's / spot's panel */
+.fsh-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.fsh-notes { white-space: pre-wrap; }
+.fsh-more { margin: 12px 0 0; }
+
+/* the seasons heat grid: species x month */
+.fsh-grid-wrap { overflow-x: auto; }
+.fsh-grid { border-collapse: separate; border-spacing: 2px; width: 100%; font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+.fsh-grid th { font-weight: 600; color: var(--muted); padding: 2px 4px; text-align: center; }
+.fsh-grid tbody th { text-align: left; white-space: nowrap; color: var(--text); padding-right: 8px; }
+.fsh-grid td { text-align: center; min-width: 26px; height: 26px; border-radius: 5px; background: var(--fill-2); color: var(--text); }
+.fsh-grid td.fsh-heat-1 { background: color-mix(in srgb, var(--tint) 22%, var(--fill-2)); }
+.fsh-grid td.fsh-heat-2 { background: color-mix(in srgb, var(--tint) 42%, var(--fill-2)); }
+.fsh-grid td.fsh-heat-3 { background: color-mix(in srgb, var(--tint) 70%, var(--fill-2)); color: var(--on-tint, #fff); }
+.fsh-grid td.fsh-heat-4 { background: color-mix(in srgb, var(--tint) 90%, var(--fill-2)); color: var(--on-tint, #fff); font-weight: 600; }

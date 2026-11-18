@@ -73,6 +73,12 @@ SOURCES = {
     "scuba_dives": ("Dives logged", "dives", "scuba", "sum", "SELECT dived_on AS day, 1 AS amount FROM scuba_dives"),
     "scuba_minutes": ("Time underwater", "minutes", "scuba", "sum",
                       "SELECT dived_on AS day, minutes AS amount FROM scuba_dives WHERE minutes IS NOT NULL"),
+    "fishing_trips": ("Fishing trips", "trips", "fishing", "sum", "SELECT started_at::date AS day, 1 AS amount FROM fishing_trips"),
+    "fishing_catches": ("Fish caught", "fish", "fishing", "sum",
+                        "SELECT COALESCE(c.caught_at, t.started_at)::date AS day, 1 AS amount FROM fishing_catches c JOIN fishing_trips t USING (trip_id)"),
+    "fishing_species": ("Species caught (each counts the day you first caught it)", "species", "fishing", "sum",
+                        "SELECT min(COALESCE(c.caught_at, t.started_at)::date) AS day, 1 AS amount FROM fishing_catches c JOIN fishing_trips t USING (trip_id) "
+                        "GROUP BY COALESCE(c.species_id::text, lower(btrim(c.species)))"),
     "language_minutes": ("Language study (the log and card reviews)", "minutes", "language", "sum",
                          "SELECT day, minutes AS amount FROM (" + language_minutes + ") m"),
     "language_input": ("Language input (listening, watching, reading, classes)", "hours", "language", "sum",

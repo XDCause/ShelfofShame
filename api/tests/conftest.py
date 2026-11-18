@@ -30,7 +30,7 @@ EMPTIED = ("stock_movements, wishlist, barcode_catalog, product_info, supplies, 
            "colour_group_members, mixes, mix_parts, price_guide, journal_pages, tags, page_tags, "
            "journal_links, journal_images, journal_drawings, journal_notebooks, journal_templates, attachments, wanted_extras, wanted_prices, wanted_history, calendar_events, board_games, board_game_plays, board_game_players, board_game_groups, gear, "
            "volleyball_games, volleyball_teams, volleyball_videos, vg_achievements, vg_games, vg_other_games, "
-           "chess_games, chess_archives, chess_explorer_cache, chess_repertoire, books, reading_log, book_quotes, vg_friends, volleyball_coach, goals, site_checks, hikes, hike_photos, hike_gear, garden_spaces, garden_containers, garden_plantings, garden_logs, garden_photos, garden_tasks, garden_items, shooting_ranges, rifles, ammo, shooting_sessions, shooting_groups, shooting_shots, shooting_media, rifle_logs, dope_rows, trips, trip_places, travel_countries, vg_playtime, vg_hidden_text, vg_hidden_read, banners, auth_account, auth_recovery_codes, auth_sessions, auth_passkeys, auth_failures, todos, vinyl_records, vinyl_values, vinyl_plays, sudoku_games, sudoku_library, sudoku_event_photos, weather_kept, site_check_log, golf_shots, golf_round_holes, golf_rounds, golf_hole_lengths, golf_tees, golf_holes, golf_courses, golf_clubs, golf_practice, scuba_gear_service, scuba_sightings, scuba_dives, scuba_trips, scuba_sites, scuba_certs, "
+           "chess_games, chess_archives, chess_explorer_cache, chess_repertoire, books, reading_log, book_quotes, vg_friends, volleyball_coach, goals, site_checks, hikes, hike_photos, hike_gear, garden_spaces, garden_containers, garden_plantings, garden_logs, garden_photos, garden_tasks, garden_items, shooting_ranges, rifles, ammo, shooting_sessions, shooting_groups, shooting_shots, shooting_media, rifle_logs, dope_rows, trips, trip_places, travel_countries, vg_playtime, vg_hidden_text, vg_hidden_read, banners, auth_account, auth_recovery_codes, auth_sessions, auth_passkeys, auth_failures, todos, vinyl_records, vinyl_values, vinyl_plays, sudoku_games, sudoku_library, sudoku_event_photos, weather_kept, site_check_log, golf_shots, golf_round_holes, golf_rounds, golf_hole_lengths, golf_tees, golf_holes, golf_courses, golf_clubs, golf_practice, fishing_trips, fishing_spots, fishing_lures, scuba_gear_service, scuba_sightings, scuba_dives, scuba_trips, scuba_sites, scuba_certs, "
            "lang_sentence_seen, lang_sentence_words, lang_sentences, lang_lesson_runs, lang_reviews, lang_cards, lang_study, lang_resources, lang_cando, lang_languages")
 _candidates = []   # EMPTIED and every table that refers to one (TRUNCATE ... CASCADE empties those too): found once
 
@@ -84,6 +84,13 @@ def clean_database():
         conn.execute("DELETE FROM categories WHERE name LIKE 'Test %'")
         conn.execute("DELETE FROM storage_locations WHERE parent_id IS NOT NULL")   # (places inside others: only tests make them)
         conn.execute("DELETE FROM storage_locations WHERE name LIKE 'Test %'")
+        # Fishing: the seeded species stay (names only), what a test typed goes (A13_fishing.sql)
+        conn.execute("DELETE FROM fishing_species WHERE species_id > 23")
+        conn.execute("UPDATE fishing_species SET min_cm = NULL, max_cm = NULL, bag = NULL, closed_from = NULL, closed_to = NULL, "
+                     "no_take = false, rules_checked_on = NULL, notes = NULL WHERE (min_cm, max_cm, bag, closed_from, closed_to, "
+                     "rules_checked_on, notes) IS DISTINCT FROM (NULL, NULL, NULL, NULL, NULL, NULL, NULL) OR no_take")
+        conn.execute("UPDATE fishing_settings SET home_lat = NULL, home_lon = NULL, sip_until = NULL, boat_rego_until = NULL, "
+                     "rules_url = DEFAULT")
     yield
 
 

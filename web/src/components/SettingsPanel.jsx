@@ -290,6 +290,7 @@ const EXPORTS = [
   ['video-games', 'Video games'], ['video-game-achievements', 'Video game achievements'], ['video-game-playtime', 'Video game playtime (per day)'],
   ['golf-rounds', 'Golf rounds'], ['golf-holes', 'Golf scores hole by hole'],
   ['scuba-dives', 'Scuba dives'], ['scuba-sightings', 'Scuba sightings (life list)'],
+  ['fishing-trips', 'Fishing trips'], ['fishing-catches', 'Fishing catches'],
   ['language-cards', 'Language cards'], ['language-study', 'Language study log'],
 ]
 

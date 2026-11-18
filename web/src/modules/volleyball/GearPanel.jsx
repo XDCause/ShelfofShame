@@ -23,6 +23,7 @@ const GEAR_EXAMPLE = {
   volleyball: ['e.g. Court shoes', 'Shoes, Knee pads, Ball...'], hiking: ['e.g. Hiking boots', 'Boots, Backpack, Poles...'],
   shooting: ['e.g. Harris bipod', 'Bipod, Rear bag, Chronograph...'],
   scuba: ['e.g. Regulator', 'Regulator, BCD, Tank, Fins...'],
+  fishing: ['e.g. Spinning rod', 'Rod, Reel, Net, Tackle box...'],
 }
 export const GEAR_KINDS = {
   volleyball: ['Shoes', 'Knee pads', 'Ball', 'Clothing', 'Bag', 'Ankle brace', 'Water bottle'],
@@ -31,6 +32,7 @@ export const GEAR_KINDS = {
   shooting: ['Bipod', 'Rear bag', 'Shooting mat', 'Spotting scope', 'Chronograph', 'Wind meter', 'Rangefinder', 'Ear protection',
     'Eye protection', 'Sling', 'Rifle case', 'Cleaning kit', 'Bore guide', 'Targets', 'Data book'],
   scuba: ['Regulator', 'BCD', 'Tank', 'Wetsuit', 'Fins', 'Mask', 'Snorkel', 'Dive computer', 'Torch', 'Surface marker', 'Weights', 'Hood', 'Gloves', 'Boots', 'Camera'],
+  fishing: ['Rod', 'Reel', 'Combo', 'Net', 'Tackle box', 'Pliers', 'Fish grip', 'Gaff', 'Esky', 'Crab pot', 'Cast net', 'Waders', 'Lifejacket', 'Sounder', 'Kayak'],
 }
 const hikedKm = (g) => `${g.hikes} hike${g.hikes === 1 ? '' : 's'} · ${(g.hiked_m / 1000).toFixed(1)} km`
 

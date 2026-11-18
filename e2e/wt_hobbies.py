@@ -1863,3 +1863,96 @@ def scuba(page):
     page.goto(BASE + "/scuba/species")
     expect(page.get_by_text("Green turtle").first).to_be_visible(timeout=15000)
     assert get_json("/api/scuba/summary")["dives"] >= 2
+
+
+@step("Fishing: a spot by hand, boat ramps near it (stand-in OpenStreetMap), a rule typed for a species, a trip on the water (start, a catch under the size you typed warns, end), the forecast (solunar, tides), trips, species, tackle, stats")
+def fishing(page):
+    go(page, "Fishing")
+    expect(page.locator(".navbar h1")).to_contain_text("Fishing")
+    # a spot by hand, with a position
+    page.goto(BASE + "/fishing/spots")
+    page.get_by_role("button", name="+ Add a spot").first.click()
+    d = drawer(page)
+    d.get_by_label(re.compile(r"^Name")).fill("Walkthrough Jetty")
+    d.get_by_label("Water").select_option("salt")
+    d.get_by_label("Latitude").fill("-27.40")
+    d.get_by_label("Longitude").fill("153.20")
+    d.get_by_role("button", name=re.compile("^(Save|Add)")).first.click()
+    expect(page.get_by_text("Walkthrough Jetty").first).to_be_visible(timeout=15000)
+    page.keyboard.press("Escape")
+    expect(page.locator("aside.drawer")).to_have_count(0)
+    # boat ramps near it, from OpenStreetMap (stand-in): add one
+    page.get_by_role("button", name="Find boat ramps and spots near...").click()
+    page.locator(".fsh-find").get_by_label("A spot I have").select_option(label="Walkthrough Jetty")
+    row = page.locator(".fsh-found-row").first
+    expect(row).to_be_visible(timeout=15000)
+    row.get_by_role("button", name=re.compile("^(Add|Already added)$")).click()
+    expect(drawer(page)).to_be_visible(timeout=15000)
+    shot(page, "fishing01_spots", full=False)
+    page.keyboard.press("Escape")
+    expect(page.locator("aside.drawer")).to_have_count(0)
+
+    # a rule typed for Dusky flathead (a made-up minimum: the app ships none)
+    page.goto(BASE + "/fishing/species")
+    expect(page.get_by_text(re.compile("official", re.I)).first).to_be_visible(timeout=15000)
+    page.locator("li", has_text="Dusky flathead").first.click()
+    d = drawer(page)
+    d.get_by_label("Minimum size (cm)").fill("40")
+    d.get_by_role("button", name="Save").click()
+    for _ in range(40):
+        if next(s for s in get_json("/api/fishing/species") if s["name"] == "Dusky flathead")["min_cm"]:
+            break
+        page.wait_for_timeout(250)
+    assert float(next(s for s in get_json("/api/fishing/species") if s["name"] == "Dusky flathead")["min_cm"]) == 40
+    page.keyboard.press("Escape")
+    expect(page.locator("aside.drawer")).to_have_count(0)
+
+    # on the water: start a trip at the jetty, a 35 cm flathead kept (under the 40 typed: a warning), end it
+    before = len(get_json("/api/fishing/trips"))
+    page.goto(BASE + "/fishing/live")
+    start = page.get_by_role("button", name="Start fishing")
+    fish = page.get_by_role("button", name="Fish!")
+    expect(start.or_(fish).first).to_be_visible(timeout=15000)
+    if start.is_visible():
+        page.locator(".fstl-start").get_by_label("Where").select_option(label="Walkthrough Jetty")
+        start.click()
+    fish.click()
+    sheet = page.get_by_label("Log a catch")
+    sheet.get_by_label("Find or type a species").fill("Dusky")
+    sheet.get_by_role("button", name="Dusky flathead").click()
+    sheet.get_by_label("Length (cm)").fill("35")
+    sheet.get_by_role("button", name="Kept").click()
+    expect(page.get_by_role("alert").filter(has_text=re.compile("40", re.I)).first).to_be_visible(timeout=15000)
+    shot(page, "fishing02_live", full=False)
+    page.get_by_role("button", name="End trip").first.click()
+    page.get_by_role("button", name="End trip").last.click()
+    for _ in range(40):
+        if not get_json("/api/fishing/summary")["open_trip"]:
+            break
+        page.wait_for_timeout(250)
+    summary = get_json("/api/fishing/summary")
+    assert not summary["open_trip"], summary
+    trips = get_json("/api/fishing/trips")
+    assert len(trips) == before + 1, trips
+    trip = get_json(f"/api/fishing/trips/{trips[0]['trip_id']}")
+    assert trip["spot_name"] == "Walkthrough Jetty" and len(trip["catches"]) == 1, trip
+    assert trip["catches"][0]["warnings"], trip                                           # under the size typed
+    assert (trip["conditions"] or {}).get("moon_phase"), trip                              # the snapshot
+
+    # the forecast at the jetty: 7 days with solunar times and tides
+    page.goto(BASE + "/fishing/forecast")
+    page.get_by_label("Spot").select_option(label="Walkthrough Jetty")
+    expect(page.locator(".fst-days > li").first).to_be_visible(timeout=15000)
+    expect(page.locator(".fst-days > li")).to_have_count(7)
+    shot(page, "fishing03_forecast", full=False)
+    # the trip's panel, and the other pages
+    page.goto(BASE + "/fishing/trips")
+    page.locator("li", has_text="Walkthrough Jetty").first.click()
+    d = drawer(page)
+    expect(d).to_contain_text("Dusky flathead", timeout=15000)
+    page.keyboard.press("Escape")
+    expect(page.locator("aside.drawer")).to_have_count(0)
+    for path in ("tackle", "stats", "species", "dashboard"):
+        page.goto(BASE + f"/fishing/{path}")
+        expect(page.locator(".navbar h1")).to_contain_text("Fishing")
+    assert get_json("/api/fishing/summary")["catches"] >= 1

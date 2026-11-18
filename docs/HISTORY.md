@@ -1277,3 +1277,31 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
      activity, calendar, journal, goals (dives, minutes), CSV exports (dives, sightings).
    Walk-through: test_web_calls guesses a call's method from the text after it - a raw multipart fetch's
    method: 'POST' was read as the next call's; the upload call moved above the others.
+
+5zo. **Fishing, a new hobby** (2026-11-18, the user: "build the hobby fishing, same process as above"). Looked at
+   Fishbrain, FishAngler, Fishing Points, Anglr, Fishidy, iAngler and Queensland's Qld Fishing 2.0. Built by four
+   subagents side by side from one brief (the schema A13_fishing.sql and the API contract written first):
+   - The log (fishing.py, fishing_trips.py, fishing_catches.py, fishing_stats.py): trips (when, where, shore / jetty /
+     boat / kayak, target, rating) with their catches (species from a list or typed, length, weight, kept / released /
+     tagged, lure or bait, method, depth, GPS position, photos like hike photos); spots; a tackle box (lures and
+     baits, so the stats say what worked); rods and reels on the shared gear pages; the Stocked Impoundment Permit and
+     boat rego reminders. Each trip saves the conditions then (moon, tide, wind, pressure) so the stats can show your
+     own catches by moon phase, tide stage, hour and month - and personal bests, best lures, spots by fish an hour.
+   - **No size or possession limits shipped**: Queensland changed them in 2026 and more changes were proposed, and a
+     wrong number could get the user fined. The species list is seeded with names only; the user types the rules from
+     the official page (linked everywhere) with a "checked on" date, and a kept fish breaking a typed rule (size, no
+     take, closed season over New Year, possession limit today) WARNS - never blocks. A rules alert when a kept
+     species' rules are unchecked or over a year old.
+   - On the water (FishingLive): start a trip ("use my position" picks your spot within 2 km), "Fish!" -> species,
+     length, kept / released in a few taps, with GPS and time; works with no signal - a queue in localStorage, a
+     temporary id swapped when the server answers, and a client_key on trips and catches so a resend never doubles.
+   - A fishing forecast (fishing_tools.py, solunar.py): the sun and moon worked out locally (rise / set / overhead /
+     underfoot, phase; sunrise in Brisbane within ~3 min of published times), solunar majors and minors with a day
+     rating - labelled an old angling theory, your own log shows what works - with Open-Meteo's wind, pressure trend
+     and (salt / estuary spots) Open-Meteo Marine's tide highs and lows; "best windows" where a period meets a tide
+     change or dawn / dusk. Boat ramps and fishing spots near a place from OpenStreetMap. Stand-ins for all.
+   - Home tiles, "Log a catch", activity, calendar, journal, goals (trips, catches, species), CSV exports (trips,
+     catches).
+   Location was blocked app-wide: the Permissions-Policy header (the 2026-10-21 health check: geolocation=()) stopped golf's GPS,
+   scuba's "near me" and a catch's position on the phone - the browser just said no. Now geolocation=(self); the
+   walk-through's console check caught it.

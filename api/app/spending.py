@@ -194,6 +194,27 @@ EXPORTS = {
         SELECT g.species AS "Species", g.how_many AS "How many", d.dive_no AS "Dive no", d.dived_on AS "Date", s.name AS "Site", g.notes AS "Notes"
         FROM scuba_sightings g JOIN scuba_dives d USING (dive_id) LEFT JOIN scuba_sites s USING (site_id)
         ORDER BY d.dived_on, d.dive_id, lower(g.species)""",
+    # Fishing: the trips (with the conditions saved then) and every catch
+    "fishing-trips": """
+        SELECT t.started_at::date AS "Date", to_char(t.started_at::timestamp, 'HH24:MI') AS "Start",
+               to_char(t.ended_at::timestamp, 'HH24:MI') AS "End",
+               round((extract(epoch FROM (t.ended_at - t.started_at)) / 3600)::numeric, 2) AS "Hours", s.name AS "Spot", s.place AS "Place",
+               t.platform AS "Platform", t.target AS "Target", t.companions AS "With",
+               (SELECT count(*) FROM fishing_catches c WHERE c.trip_id = t.trip_id) AS "Fish caught",
+               (SELECT count(*) FROM fishing_catches c WHERE c.trip_id = t.trip_id AND c.fate = 'kept') AS "Kept",
+               t.conditions->>'moon_phase' AS "Moon", t.conditions->>'wind_kmh' AS "Wind (km/h)",
+               t.conditions->>'pressure_hpa' AS "Pressure (hPa)", t.conditions->>'sst' AS "Sea temperature (C)",
+               t.rating AS "Rating", t.notes AS "Notes"
+        FROM fishing_trips t LEFT JOIN fishing_spots s USING (spot_id)
+        ORDER BY t.started_at, t.trip_id""",
+    "fishing-catches": """
+        SELECT COALESCE(c.caught_at, t.started_at)::date AS "Date", to_char(COALESCE(c.caught_at, t.started_at)::timestamp, 'HH24:MI') AS "Time",
+               COALESCE(sp.name, c.species) AS "Species", c.length_cm AS "Length (cm)", c.weight_kg AS "Weight (kg)", c.fate AS "Fate",
+               COALESCE(l.name, c.bait) AS "Lure or bait", c.method AS "Method", c.depth_m AS "Depth (m)", s.name AS "Spot",
+               c.lat AS "Latitude", c.lon AS "Longitude", c.notes AS "Notes"
+        FROM fishing_catches c JOIN fishing_trips t USING (trip_id) LEFT JOIN fishing_species sp USING (species_id)
+        LEFT JOIN fishing_lures l USING (lure_id) LEFT JOIN fishing_spots s ON s.spot_id = t.spot_id
+        ORDER BY COALESCE(c.caught_at, t.started_at), c.catch_id""",
     # Language learning: the deck (each card's memory as FSRS keeps it) and the study log (reviews' time not included)
     "language-cards": """
         SELECT l.name AS "Language", c.kind AS "Kind", c.front AS "Front", c.back AS "Back", c.example AS "Example",

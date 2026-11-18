@@ -268,3 +268,43 @@ def _wind(key) -> list[dict]:
         return values[i] if i < len(values) else None
     return [{"day": day, "wind_max": col("wind_speed_10m_max", i), "gusts": col("wind_gusts_10m_max", i)}
             for i, day in enumerate(d.get("time") or [])]
+
+
+def fishing_weather(lat: float, lon: float, fresh: bool = False) -> list[dict]:
+    """The next 7 days for fishing (Open-Meteo, CC BY 4.0): [{day, wind_max, wind_dir (the dominant direction the wind blows
+    FROM, degrees), gusts, pressure_mean (hPa at sea level), pressure_trend ('rising' | 'falling' | 'steady': against the
+    day before, 2 hPa or more), rain_mm, temp_max}]. Kept an hour like the others (and the last good one, see _kept)."""
+    key = (round(lat, 2), round(lon, 2), "fishing7")
+    return _kept(key, lambda: _fishing_weather(key), fresh)
+
+
+def _fishing_weather(key) -> list[dict]:
+    data = _get(FORECAST, {"latitude": key[0], "longitude": key[1], "timezone": "auto", "past_days": 1, "forecast_days": 7,
+                           "daily": "wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,precipitation_sum,temperature_2m_max",
+                           "hourly": "pressure_msl"})
+    d = data.get("daily") or {}
+    h = data.get("hourly") or {}
+    by_day: dict[str, list[float]] = {}
+    for t, v in zip(h.get("time") or [], h.get("pressure_msl") or []):
+        if v is not None:
+            by_day.setdefault(t[:10], []).append(v)
+    means = {day: sum(v) / len(v) for day, v in by_day.items()}
+
+    def col(name, i):
+        values = d.get(name) or []
+        return values[i] if i < len(values) else None
+    days = sorted(d.get("time") or [])
+    out = []
+    for i, day in enumerate(d.get("time") or []):
+        before = (date.fromisoformat(day) - timedelta(days=1)).isoformat()
+        now = means.get(day)
+        trend = None
+        if now is not None and before in means:
+            diff = now - means[before]
+            trend = "rising" if diff >= 2 else "falling" if diff <= -2 else "steady"
+        out.append({"day": day, "wind_max": col("wind_speed_10m_max", i), "wind_dir": col("wind_direction_10m_dominant", i),
+                    "gusts": col("wind_gusts_10m_max", i), "pressure_mean": round(now, 1) if now is not None else None,
+                    "pressure_trend": trend, "rain_mm": col("precipitation_sum", i), "temp_max": col("temperature_2m_max", i)})
+    first = days[0] if days else None
+    return [x for x in out if x["day"] != first] if len(days) > 7 else out
+

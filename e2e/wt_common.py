@@ -76,6 +76,8 @@ GOLF = bool(get_json("/api/golf/summary")["rounds"])                            
 LANGUAGE = bool(get_json("/api/language/summary")["languages"])                                # Home: cards to review + this week
 _scuba = get_json("/api/scuba/summary")                                                      # Home: dives, the last dive, no-fly time
 SCUBA_TILES = (1 + bool(_scuba["last_dive"]) + bool(_scuba["no_fly_until"])) if _scuba["dives"] else 0
+_fishing = get_json("/api/fishing/summary")                                                  # Home: on the water, trips, last trip, biggest fish
+FISHING_TILES = bool(_fishing["open_trip"]) + (1 + bool(_fishing["last_trip"]) + bool(_fishing["personal_bests"]) if _fishing["trips"] else 0)
 MARK = f"e2e{int(time.time())}"   # a word only this run's journal page contains
 
 

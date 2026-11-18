@@ -75,12 +75,14 @@
  *   35-golf-live.css                 golf's live round (GolfPlay.jsx): the hole strip, green distances, steppers, shots;
  *                                    the hole drawing (HoleMap.jsx)  (most used: .gplay)
  *   39-scuba.css                     scuba diving: the dashboard, the logbook, a dive's panel, sites, trips, life list, stats, gear
-@import './styles/40-scuba-tools.css';
  *                                    and service, certs  (most used: .scb)
+ *   40-scuba-tools.css               scuba diving's tools: the depth profile, planner, conditions, import  (most used: .scbt)
  *   37-language-course.css           language learning's course: Learn's path, the lesson player, Today's next lesson
  *                                    (LanguageLearn.jsx)  (most used: .lngc)
  *   38-language-read.css             language learning's Read: Tatoeba's sentences at your level, the highlighted new words
  *                                    (ReadView.jsx)  (most used: .lngr)
+ *   41-fishing.css                   fishing: dashboard, trips, a trip's and a catch's panels, spots, species rules, tackle, stats  (most used: .fsh)
+ *   42-fishing-tools.css             fishing's tools: the forecast, catch photos, the live trip page (FishingLive.jsx)  (most used: .fst, .fstl)
  */
 @import './styles/01-base.css';
 @import './styles/02-inventory-panels.css';
@@ -122,3 +124,5 @@
 @import './styles/38-language-read.css';
 @import './styles/39-scuba.css';
 @import './styles/40-scuba-tools.css';
+@import './styles/41-fishing.css';
+@import './styles/42-fishing-tools.css';

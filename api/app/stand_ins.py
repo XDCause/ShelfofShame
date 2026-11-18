@@ -252,7 +252,7 @@ def install():
     openlibrary._get = lambda params: []
     bookseries._wikidata = lambda query: []
     # Hiking and gardening
-    overpass._post = lambda data: golf_osm(data) if "golf" in data else scuba_osm(data)
+    overpass._post = lambda data: golf_osm(data) if "golf" in data else fishing_osm(data) if is_fishing_query(data) else scuba_osm(data)
     wikimedia._get = lambda url, params: {}
     bunnings._get = _refuse(bunnings.BunningsError, "Bunnings")
     # "Add from a link": a product page, as the stand-in shop's (robots.txt: allowed)
@@ -263,6 +263,7 @@ def install():
     openmeteo._get = lambda url, params: ({"results": [{"name": "Brisbane", "admin1": "Queensland", "country": "Australia",
                                                         "latitude": -27.47, "longitude": 153.03, "country_code": "AU"}]}
                                           if "geocoding" in url else marine_stand_in() if "marine" in url
+                                          else fishing_stand_in() if "pressure_msl" in params.get("hourly", "")
                                           else wind_stand_in() if "wind_speed_10m_max" in params.get("daily", "") else FORECAST)
     # Exchange rates (units of each currency for 1 AUD)
     frankfurter._get = lambda url, params: {"amount": 1.0, "base": "AUD", "date": "2026-10-19",
@@ -361,3 +362,45 @@ def wind_stand_in() -> dict:
     from datetime import date, timedelta
     days = [(date.today() + timedelta(days=i)).isoformat() for i in range(7)]
     return {"daily": {"time": days, "wind_speed_10m_max": [12, 18, 22, 28, 36, 15, 10], "wind_gusts_10m_max": [20, 28, 33, 40, 52, 24, 16]}}
+
+
+def fishing_stand_in() -> dict:
+    """Open-Meteo's fishing forecast, made up: yesterday and 7 days from today, pressure falling on day 3 and rising on day 6,
+    a south-easterly wind that picks up midweek."""
+    from datetime import date, timedelta
+    days = [(date.today() + timedelta(days=i)).isoformat() for i in range(-1, 7)]
+    base = [1016, 1016, 1017, 1012, 1012, 1011, 1016, 1017]
+    return {"daily": {"time": days, "wind_speed_10m_max": [10, 12, 18, 22, 28, 36, 15, 10],
+                      "wind_gusts_10m_max": [18, 20, 28, 33, 40, 52, 24, 16],
+                      "wind_direction_10m_dominant": [120, 110, 100, 130, 140, 150, 90, 80],
+                      "precipitation_sum": [0, 0, 0.2, 3.0, 8.5, 12.0, 0, 0], "temperature_2m_max": [27, 28, 28, 29, 27, 26, 28, 29]},
+            "hourly": {"time": [f"{day}T{hh:02d}:00" for day in days for hh in range(24)],
+                       "pressure_msl": [float(base[i]) for i in range(len(days)) for _ in range(24)]}}
+
+
+FISHING_SPOTS = [(990201, "node", "Stand-in Boat Ramp", -27.40, 153.15, {"leisure": "slipway"}),
+                 (990202, "way", "Stand-in Jetty Ramp", -27.45, 153.18, {"leisure": "slipway"}),
+                 (990203, "node", "Stand-in Fishing Pier", -27.35, 153.10, {"leisure": "fishing", "fishing": "yes"})]
+
+
+def is_fishing_query(data: str) -> bool:
+    return '"slipway"' in data or '"leisure"="fishing"' in data or any(f"({s[0]})" in data for s in FISHING_SPOTS)
+
+
+def fishing_osm(data: str) -> dict:
+    """OpenStreetMap's boat ramps (leisure=slipway) and fishing spots (leisure=fishing), made up: a few places near Brisbane
+    for a "near" search, or the one asked for by id (node(990201);...); anything else gets nothing."""
+    import re
+
+    def element(site):
+        osm_id, kind, name, lat, lon, tags = site
+        position = {"lat": lat, "lon": lon} if kind == "node" else {"center": {"lat": lat, "lon": lon}}
+        return {"type": kind, "id": osm_id, **position, "tags": {"name": name, **tags}}
+    for what in ("slipway", "fishing"):
+        if f'"{what}"' in data and "around:" in data:
+            return {"elements": [element(s) for s in FISHING_SPOTS if s[5].get("leisure") == what]}
+    one = re.search(r"(node|way|relation)\((\d+)\)", data)
+    if one:
+        return {"elements": [element(s) for s in FISHING_SPOTS if s[1] == one.group(1) and s[0] == int(one.group(2))]}
+    return {"elements": []}
+

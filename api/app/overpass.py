@@ -84,6 +84,13 @@ def scuba_sites_near(lat: float, lon: float, radius: int = 30000) -> list[dict]:
                 waits=RETRY_WAITS[:1])
 
 
+# Fishing (fishing_tools.py): boat ramps (leisure=slipway) or fishing spots (leisure=fishing) near a place. One request a
+# person started each; the one place by its id is element() above.
+def fishing_near(lat: float, lon: float, radius: int = 20000, what: str = "ramps") -> list[dict]:
+    pick = '["leisure"="slipway"]' if what == "ramps" else '["leisure"="fishing"]'
+    return _ask(f'[out:json][timeout:60];nwr{pick}(around:{radius},{lat:.5f},{lon:.5f});out center tags 100;', waits=RETRY_WAITS[:1])
+
+
 def element(osm: str) -> list[dict]:
     """osm: 'node/123', 'way/123' or 'relation/123' - that one thing with its tags and centre."""
     kind, ref = osm.split("/")

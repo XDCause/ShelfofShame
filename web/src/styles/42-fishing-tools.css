@@ -1,0 +1,80 @@
+/* ---------- Fishing tools: the forecast (FishingForecast.jsx), catch photos (CatchPhotos.jsx) and the live trip page
+   (FishingLive.jsx). fst- = tools, fstl- = the live page ---------- */
+
+.fst-h3 { font-size: 1rem; margin: 0; }
+.fst-days { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.fst-day { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.fst-day-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.fst-day-head .fst-fish { margin-left: auto; }
+.fst-why { margin: 0; }
+.fst-place { margin: 8px 0; }
+.fst-bar-tools { align-items: flex-end; }
+.fst-lookup { display: grid; gap: 10px; margin-top: 12px; }
+.fst-note { margin-top: 16px; }
+
+/* the day rating: fish */
+.fst-fish { display: inline-flex; gap: 2px; }
+.fst-fish-on { fill: var(--tint); }
+.fst-fish-off { fill: var(--fill-2); stroke: var(--muted); stroke-width: 1; }
+
+/* the moon */
+.fst-moon { flex: none; }
+.fst-moon-dark { fill: var(--fill-2); stroke: var(--muted); stroke-width: 1; }
+.fst-moon-lit { fill: var(--text); opacity: 0.85; }
+.fst-moonrow { display: flex; align-items: center; gap: 6px; }
+
+/* the 24 h bar */
+.fst-bar { display: block; width: 100%; height: auto; }
+.fst-bar-night { fill: var(--fill-2); }
+.fst-bar-day { fill: var(--low-bg); }
+.fst-bar-grid { stroke: var(--separator); stroke-width: 1; }
+.fst-bar-major { fill: var(--tint); opacity: 0.55; }
+.fst-bar-minor { fill: var(--tint-2); opacity: 0.5; }
+.fst-bar-tide { stroke: var(--tint-2); stroke-width: 2; }
+.fst-tide-high { fill: var(--tint-2); }
+.fst-tide-low { fill: var(--surface); stroke: var(--tint-2); stroke-width: 2; }
+.fst-bar-axis { fill: var(--muted); font-size: 11px; }
+
+.fst-times, .fst-numbers { margin: 0; display: grid; gap: 4px 12px; }
+.fst-times > div { display: flex; gap: 8px; flex-wrap: wrap; }
+.fst-times dt, .fst-numbers dt { color: var(--muted); font-size: 0.82rem; min-width: 3.5rem; }
+.fst-times dd, .fst-numbers dd { margin: 0; font-variant-numeric: tabular-nums; }
+.fst-numbers { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+.fst-numbers > div { background: var(--fill-2); border-radius: 10px; padding: 6px 10px; min-width: 0; }
+.fst-best { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.fst-best li { background: var(--ok-bg); color: var(--ok); border-radius: 8px; padding: 4px 10px; }
+.fst-best .muted { color: inherit; opacity: 0.85; }
+
+/* catch photos */
+.fst-photos { display: grid; gap: 8px; }
+.fst-thumbs { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.fst-thumb { padding: 0; border: 0; background: none; border-radius: 10px; overflow: hidden; min-width: 44px; min-height: 44px; }
+.fst-thumb img { display: block; width: 96px; height: 96px; object-fit: cover; }
+.fst-lightbox { position: fixed; inset: 0; z-index: 60; background: rgb(0 0 0 / 0.88); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 12px; padding: 16px; }
+.fst-lightbox img { max-width: 100%; max-height: calc(100% - 72px); object-fit: contain; border-radius: 8px; }
+.fst-lightbox-bar { display: flex; gap: 12px; }
+.fst-lightbox-bar .destructive { color: #ffb4a6; }
+
+/* the live trip page (phone first: big touch targets) */
+.fstl-live { display: grid; gap: 12px; max-width: 640px; margin: 0 auto; }
+.fstl-start, .fstl-sheet, .fstl-status { display: grid; gap: 10px; }
+.fstl-big { min-height: 52px; width: 100%; font-size: 1.05rem; }
+.fstl-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.fstl-chip { min-height: 44px; padding: 8px 14px; border-radius: 999px; }
+.fstl-chip[aria-pressed='true'] { background: var(--primary-bg); color: var(--primary-text); }
+.fstl-chosen { margin: 0; }
+.fstl-length { display: flex; gap: 8px; align-items: center; }
+.fstl-length input { flex: 1; min-width: 0; font-size: 1.3rem; text-align: center; }
+.fstl-step { width: 52px; height: 52px; font-size: 1.4rem; }
+.fstl-fates { display: flex; gap: 8px; flex-wrap: wrap; }
+.fstl-fates .fstl-big { flex: 1; width: auto; }
+.fstl-timer { font-size: 1.6rem; font-weight: 700; margin: 0; font-variant-numeric: tabular-nums; }
+.fstl-count { font-size: 1.4rem; }
+.fstl-fish { min-height: 88px; width: 100%; font-size: 1.6rem; font-weight: 700; border-radius: 18px; }
+.fstl-waiting { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.fstl-today { list-style: none; margin: 0; padding: 0; }
+.fstl-catches { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.fstl-catch { background: var(--fill-2); border-radius: 12px; padding: 10px 12px; display: grid; gap: 6px; }
+.fstl-catch-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.fstl-done, .fstl-endask { display: grid; gap: 8px; }

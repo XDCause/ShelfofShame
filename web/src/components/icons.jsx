@@ -152,6 +152,14 @@ export const DiveIcon = (p) => (
   <Icon {...p}><path d="M4.5 9.5a2.5 2.5 0 0 1 2.5-2.5h10a2.5 2.5 0 0 1 2.5 2.5v3a4 4 0 0 1-4 4h-1.2l-1.3-2h-2l-1.3 2H8.5a4 4 0 0 1-4-4z" />
     <path d="M12 7v5.5M4.5 10H2.5M19.5 10h2" /><circle cx="17.5" cy="3.8" r="1" /><circle cx="14.8" cy="2.6" r="0.6" /></Icon>
 )
+// Fishing: a fish (body, tail, eye) and a rod: FishIcon is the hobby's icon.
+export const FishIcon = (p) => (
+  <Icon {...p}><path d="M3 12c2.6-4.2 6.4-6 10-6 2.6 0 4.6 1 6.2 3.2L22 7.5v9l-2.8-1.7C17.6 17 15.6 18 13 18c-3.6 0-7.4-1.8-10-6z" /><circle cx="8.2" cy="11" r="0.9" /><path d="M12 8.5c.8 1 .8 5 0 7" /></Icon>
+)
+// A fishing rod: the rod, a reel on the handle, a line and a hook.
+export const RodIcon = (p) => (
+  <Icon {...p}><path d="M3 21 17 4.5" /><circle cx="7.5" cy="15.5" r="2" /><path d="M17 4.5c3 .5 4 3 4 6.5v4" /><path d="M21 15v2.5a1.8 1.8 0 1 1-3.4.6" /></Icon>
+)
 // Language learning: two speech bubbles, an A in one and a character-like mark in the other.
 export const LanguageIcon = (p) => (
   <Icon {...p}><path d="M3.5 5.5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v4.5a2 2 0 0 1-2 2H9l-3 2.5V12h-.5a2 2 0 0 1-2-2z" />

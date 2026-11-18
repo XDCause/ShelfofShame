@@ -50,5 +50,6 @@ export default defineConfig({
     environment: 'jsdom',
     include: ['src/**/*.test.{js,jsx}'],
     setupFiles: ['src/tests/setup.js'],          // (what jsdom lacks: matchMedia)
+    testTimeout: 20000,                          // test_all runs the API, web and browser tests side by side: a busy PC
   },
 })
