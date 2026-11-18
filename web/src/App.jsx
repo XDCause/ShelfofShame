@@ -164,6 +164,7 @@ export default function App() {
     else if (kind === 'golfpractice') openPanel('golfpractice', { id })
     else if (kind === 'langstudy') openPanel('langstudy', { id })
     else if (kind === 'langreview') navigate('/language/progress')
+    else if (kind === 'langlesson') navigate('/language/learn')
   }, [openModel, openItem, navigate, openPanel])
   // The hidden copy "Save everything now" walks through (offline/saveAll.js): it's told where to go next.
   useEffect(() => {

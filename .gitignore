@@ -38,7 +38,8 @@ certs/
 showcase/
 .showcase/
 
-# Data that is not ours to publish (e.g. the sudoku library: data/sudoku/hardest-published.tsv). Loaded into the database.
+# Data that is not ours to publish (e.g. the sudoku library: data/sudoku/hardest-published.tsv; Tatoeba's sentence
+# exports: data/tatoeba, load-tatoeba.ps1). Loaded into the database.
 /data/
 # The sudoku search's results (tools/sudoku-search): brought to the app PC by hand, loaded into the database.
 /tools/sudoku-search/found.tsv

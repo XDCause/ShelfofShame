@@ -1,0 +1,134 @@
+{
+  "unit": 6,
+  "title": "¿Dónde está?",
+  "cefr": "A1",
+  "goal": "Say where things and people are and how people feel, using estar, and start choosing between ser and estar.",
+  "lessons": [
+    {
+      "id": "es-u06-l1",
+      "title": "Where is it?",
+      "notes": "Spanish has a second 'to be': **estar**. You've met it already in **¿Cómo estás?** It's used for **where** something is and **how** someone is.\n**yo** estoy · **tú** estás · **él / ella / usted** está · **nosotros** estamos · **ellos / ustedes** están\n(Spain: vosotros **estáis**.)\nLocation always takes estar, even for things that never move: **¿Dónde está el baño?** - **Está allí.**\n**Aquí** = here, **allí** = there (also **allá**, a bit further). **Con** = with: **Estoy con Ana.**",
+      "items": [
+        {"es": "estar", "en": "to be (where, how)", "kind": "verb", "accept_en": ["to be"]},
+        {"es": "estoy", "en": "I am", "kind": "phrase", "accept_en": ["I'm"]},
+        {"es": "estás", "en": "you are (informal)", "kind": "phrase", "accept_en": ["you are", "you're"]},
+        {"es": "está", "en": "he / she / it is, you are (formal)", "kind": "phrase", "accept_en": ["he is", "she is", "it is", "is", "you are"]},
+        {"es": "estamos", "en": "we are", "kind": "phrase", "accept_en": ["we're"]},
+        {"es": "están", "en": "they are / you (plural) are", "kind": "phrase", "accept_en": ["they are", "you are", "they're", "are"]},
+        {"es": "¿dónde?", "en": "where?", "kind": "word"},
+        {"es": "aquí", "en": "here", "kind": "word", "accept": ["acá"]},
+        {"es": "allí", "en": "there", "kind": "word", "accept": ["allá", "ahí"], "accept_en": ["over there"]},
+        {"es": "con", "en": "with", "kind": "word"},
+        {"es": "el baño", "en": "the bathroom", "kind": "word", "gender": "m", "accept_en": ["the toilet", "the restroom", "the loo", "bathroom", "toilet"]},
+        {"es": "la oficina", "en": "the office", "kind": "word", "gender": "f", "accept_en": ["office"]}
+      ],
+      "sentences": [
+        {"es": "¿Dónde está el baño?", "en": "Where is the bathroom?", "focus": "Dónde", "accept_en": ["Where's the toilet?", "Where is the toilet?", "Where's the bathroom?"]},
+        {"es": "El baño está allí.", "en": "The bathroom is over there.", "focus": "allí", "accept_en": ["The toilet is there.", "The bathroom is there.", "The toilet's over there."]},
+        {"es": "Estoy en la oficina.", "en": "I'm in the office.", "focus": "Estoy", "accept_en": ["I am in the office.", "I'm at the office."]},
+        {"es": "¿Dónde estás?", "en": "Where are you?", "focus": "estás"},
+        {"es": "Estamos aquí, en la playa.", "en": "We're here, at the beach.", "focus": "Estamos", "accept_en": ["We are here, on the beach.", "We're here at the beach."]},
+        {"es": "Ana está con Carlos.", "en": "Ana is with Carlos.", "focus": "con"},
+        {"es": "Las llaves están en la mesa.", "en": "The keys are on the table.", "focus": "están"},
+        {"es": "¿Dónde están los niños?", "en": "Where are the children?", "focus": "niños", "accept_en": ["Where are the kids?"]},
+        {"es": "Están en la casa.", "en": "They're in the house.", "focus": "casa", "accept_en": ["They are in the house.", "They're at home."]},
+        {"es": "El hotel está aquí.", "en": "The hotel is here.", "focus": "aquí"},
+        {"es": "Carlos está en México con Ana.", "en": "Carlos is in Mexico with Ana.", "focus": "está"}
+      ]
+    },
+    {
+      "id": "es-u06-l2",
+      "title": "How do you feel?",
+      "notes": "Feelings and states that can change take **estar**: **Estoy cansado** (I'm tired) - today, not forever.\nThey're adjectives, so they match the person: Carlos está **cansado**, Ana está **cansada**, estamos **cansados**.\n**¿Qué tal?** is a handy, casual 'how's it going?' / 'how are things?'.\nOne word changes meaning with the verb: **Estoy aburrido** = I'm bored; **soy aburrido** = I'm boring! Spain says **enfadado** for angry; Latin America mostly **enojado**.",
+      "items": [
+        {"es": "cansado", "en": "tired", "kind": "word"},
+        {"es": "contento", "en": "happy", "kind": "word", "accept_en": ["pleased", "glad"]},
+        {"es": "triste", "en": "sad", "kind": "word"},
+        {"es": "enfermo", "en": "sick", "kind": "word", "accept_en": ["ill", "unwell"]},
+        {"es": "ocupado", "en": "busy", "kind": "word"},
+        {"es": "nervioso", "en": "nervous", "kind": "word"},
+        {"es": "aburrido", "en": "bored", "kind": "word", "accept_en": ["boring"], "note": "Estar aburrido = bored; ser aburrido = boring."},
+        {"es": "enojado", "en": "angry", "kind": "word", "accept": ["enfadado"], "accept_en": ["cross", "annoyed", "mad"], "note": "Spain: enfadado."},
+        {"es": "listo", "en": "ready", "kind": "word"},
+        {"es": "tranquilo", "en": "calm", "kind": "word", "accept_en": ["relaxed", "quiet"]},
+        {"es": "hoy", "en": "today", "kind": "word"},
+        {"es": "¿qué tal?", "en": "how's it going?", "kind": "phrase", "accept_en": ["how are things?", "how are you?", "what's up?"]}
+      ],
+      "sentences": [
+        {"es": "Hoy estoy muy cansado.", "en": "I'm very tired today.", "focus": "cansado", "accept_en": ["Today I am very tired.", "I'm really tired today."]},
+        {"es": "¿Qué tal? ¿Estás bien?", "en": "How's it going? Are you OK?", "focus": "tal", "accept_en": ["How are things? Are you well?", "How are you? Are you OK?"]},
+        {"es": "Ana está triste hoy.", "en": "Ana is sad today.", "focus": "triste"},
+        {"es": "Carlos está enfermo.", "en": "Carlos is sick.", "focus": "enfermo", "accept_en": ["Carlos is ill."]},
+        {"es": "Estamos muy contentos.", "en": "We're very happy.", "focus": "contentos", "accept_en": ["We are very happy.", "We're really pleased."]},
+        {"es": "¿Estás ocupada?", "en": "Are you busy?", "focus": "ocupada"},
+        {"es": "No, estoy aburrida.", "en": "No, I'm bored.", "focus": "aburrida", "accept_en": ["No, I am bored."]},
+        {"es": "El profesor está enojado.", "en": "The teacher is angry.", "focus": "enojado", "accept": ["El profesor está enfadado."], "accept_en": ["The teacher is cross."]},
+        {"es": "¿Estás listo?", "en": "Are you ready?", "focus": "listo"},
+        {"es": "Estoy nervioso pero contento.", "en": "I'm nervous but happy.", "focus": "nervioso", "accept_en": ["I am nervous but happy."]},
+        {"es": "Tranquilo, no hay problema.", "en": "Relax, there's no problem.", "focus": "Tranquilo", "accept_en": ["Calm down, it's no problem.", "Don't worry, no problem."]},
+        {"es": "Hoy es un buen día.", "en": "Today is a good day.", "focus": "Hoy"}
+      ]
+    },
+    {
+      "id": "es-u06-l3",
+      "title": "Ser or estar?",
+      "notes": "A rule of thumb: **ser** says **what** something is - identity, origin, nationality, job, lasting description. **Estar** says **where** it is and **how** it is right now.\n**Ana es de México, pero ahora está en Australia.** (origin: ser; location now: estar)\n**El carro es viejo, pero está limpio.** (what it's like: ser; its state today: estar)\n**La tienda está abierta** - open now, but it closes later.\n**De + el** squeezes into **del**: cerca **del** hotel (near the hotel). De + la stays apart: cerca de la playa.",
+      "items": [
+        {"es": "abierto", "en": "open", "kind": "word"},
+        {"es": "cerrado", "en": "closed", "kind": "word", "accept_en": ["shut"]},
+        {"es": "limpio", "en": "clean", "kind": "word"},
+        {"es": "sucio", "en": "dirty", "kind": "word"},
+        {"es": "ahora", "en": "now", "kind": "word", "accept_en": ["right now"]},
+        {"es": "cerca", "en": "near", "kind": "word", "accept_en": ["close", "nearby", "close by"], "note": "cerca de = near to"},
+        {"es": "lejos", "en": "far", "kind": "word", "accept_en": ["far away"], "note": "lejos de = far from"},
+        {"es": "del", "en": "of the / from the", "kind": "word", "accept_en": ["of the", "from the"], "note": "de + el = del"},
+        {"es": "la tienda", "en": "the shop", "kind": "word", "gender": "f", "accept_en": ["the store", "shop", "store"]},
+        {"es": "el banco", "en": "the bank", "kind": "word", "gender": "m", "accept_en": ["bank", "the bench"]},
+        {"es": "el supermercado", "en": "the supermarket", "kind": "word", "gender": "m", "accept_en": ["supermarket"]}
+      ],
+      "sentences": [
+        {"es": "La tienda está abierta ahora.", "en": "The shop is open now.", "focus": "abierta", "accept_en": ["The store is open now."]},
+        {"es": "El banco está cerrado hoy.", "en": "The bank is closed today.", "focus": "cerrado", "accept_en": ["The bank is shut today."]},
+        {"es": "El hotel es nuevo y está limpio.", "en": "The hotel is new and it's clean.", "focus": "limpio", "accept_en": ["The hotel is new and clean."]},
+        {"es": "La playa está cerca.", "en": "The beach is near.", "focus": "cerca", "accept_en": ["The beach is close.", "The beach is nearby."]},
+        {"es": "México está lejos de Australia.", "en": "Mexico is far from Australia.", "focus": "lejos"},
+        {"es": "El supermercado está cerca del hotel.", "en": "The supermarket is near the hotel.", "focus": "del", "accept_en": ["The supermarket is close to the hotel."]},
+        {"es": "Ana es de México, pero ahora está en Australia.", "en": "Ana is from Mexico, but now she's in Australia.", "focus": "ahora", "accept_en": ["Ana is from Mexico, but she's in Australia now."]},
+        {"es": "El carro es viejo, pero está limpio.", "en": "The car is old, but it's clean.", "focus": "viejo", "accept_en": ["The car is old but clean."]},
+        {"es": "El banco está lejos del supermercado.", "en": "The bank is far from the supermarket.", "focus": "supermercado"},
+        {"es": "La mesa está sucia.", "en": "The table is dirty.", "focus": "sucia"},
+        {"es": "¿Está abierta la tienda?", "en": "Is the shop open?", "focus": "tienda", "accept_en": ["Is the store open?"]},
+        {"es": "Carlos es simpático, pero hoy está enojado.", "en": "Carlos is nice, but today he's angry.", "focus": "es", "accept_en": ["Carlos is nice, but he's angry today."]}
+      ]
+    },
+    {
+      "id": "es-u06-l4",
+      "title": "At home",
+      "notes": "Rooms of the house - and estar to say where things and people are in it.\n**La habitación** is any room, and often 'bedroom' (also **el dormitorio**; in Mexico **la recámara**). In a hotel, **una habitación** is your room.\n**El apartamento** is a flat or unit; Spain says **el piso**.\n**Arriba** (upstairs, up) and **abajo** (downstairs, down) don't need 'de': **La cocina está abajo.**\n**Tener** works for houses too: **La casa tiene tres dormitorios.**",
+      "items": [
+        {"es": "el apartamento", "en": "the apartment", "kind": "word", "gender": "m", "accept": ["el departamento", "el piso"], "accept_en": ["the flat", "the unit", "apartment", "flat"], "note": "Spain: el piso. Mexico, Argentina: el departamento."},
+        {"es": "la cocina", "en": "the kitchen", "kind": "word", "gender": "f", "accept_en": ["kitchen"]},
+        {"es": "el dormitorio", "en": "the bedroom", "kind": "word", "gender": "m", "accept": ["la recámara"], "accept_en": ["bedroom"]},
+        {"es": "la sala", "en": "the living room", "kind": "word", "gender": "f", "accept": ["el salón"], "accept_en": ["the lounge", "the lounge room", "living room", "the sitting room"]},
+        {"es": "la habitación", "en": "the room", "kind": "word", "gender": "f", "accept_en": ["the bedroom", "room"]},
+        {"es": "el jardín", "en": "the garden", "kind": "word", "gender": "m", "accept_en": ["the yard", "the backyard", "garden"]},
+        {"es": "la cama", "en": "the bed", "kind": "word", "gender": "f", "accept_en": ["bed"]},
+        {"es": "el sofá", "en": "the sofa", "kind": "word", "gender": "m", "accept_en": ["the couch", "the lounge", "sofa", "couch"]},
+        {"es": "arriba", "en": "upstairs", "kind": "word", "accept_en": ["up", "above", "up there"]},
+        {"es": "abajo", "en": "downstairs", "kind": "word", "accept_en": ["down", "below", "down there"]}
+      ],
+      "sentences": [
+        {"es": "La cocina está abajo.", "en": "The kitchen is downstairs.", "focus": "abajo"},
+        {"es": "El dormitorio está arriba.", "en": "The bedroom is upstairs.", "focus": "arriba"},
+        {"es": "El gato está en la cama.", "en": "The cat is on the bed.", "focus": "cama", "accept_en": ["The cat is in the bed."]},
+        {"es": "Los niños están en la sala.", "en": "The children are in the living room.", "focus": "sala", "accept_en": ["The kids are in the lounge room.", "The kids are in the living room."]},
+        {"es": "Mi apartamento es pequeño pero bonito.", "en": "My apartment is small but nice.", "focus": "apartamento", "accept_en": ["My flat is small but pretty.", "My unit is small but nice."]},
+        {"es": "Hay un sofá grande en la sala.", "en": "There's a big sofa in the living room.", "focus": "sofá", "accept_en": ["There is a big couch in the lounge room."]},
+        {"es": "¿Dónde está el perro? Está en el jardín.", "en": "Where's the dog? It's in the garden.", "focus": "jardín", "accept_en": ["Where is the dog? He's in the yard."]},
+        {"es": "La casa tiene tres dormitorios.", "en": "The house has three bedrooms.", "focus": "dormitorios"},
+        {"es": "La habitación está limpia.", "en": "The room is clean.", "focus": "habitación"},
+        {"es": "La cocina es grande y está limpia.", "en": "The kitchen is big and it's clean.", "focus": "cocina", "accept_en": ["The kitchen is big and clean."]}
+      ]
+    }
+  ]
+}

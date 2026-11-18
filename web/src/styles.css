@@ -74,6 +74,10 @@
  *                                    sketches), stats, the bag's distances, practice  (most used: .golf)
  *   35-golf-live.css                 golf's live round (GolfPlay.jsx): the hole strip, green distances, steppers, shots;
  *                                    the hole drawing (HoleMap.jsx)  (most used: .gplay)
+ *   37-language-course.css           language learning's course: Learn's path, the lesson player, Today's next lesson
+ *                                    (LanguageLearn.jsx)  (most used: .lngc)
+ *   38-language-read.css             language learning's Read: Tatoeba's sentences at your level, the highlighted new words
+ *                                    (ReadView.jsx)  (most used: .lngr)
  */
 @import './styles/01-base.css';
 @import './styles/02-inventory-panels.css';
@@ -111,3 +115,5 @@
 @import './styles/34-golf.css';
 @import './styles/35-golf-live.css';
 @import './styles/36-language.css';
+@import './styles/37-language-course.css';
+@import './styles/38-language-read.css';

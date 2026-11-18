@@ -22,13 +22,18 @@ export function LanguagePanel({ id = null, onClose }) {
   const { changed, showToast } = useApp()
   const lists = useLanguageLists()
   const [lang, setLang] = useState(null)
+  const [courses, setCourses] = useState(null)
+  useEffect(() => { api.languageCourses().then(setCourses).catch(() => setCourses([])) }, [])
   useEffect(() => {
     if (id != null) api.languages().then((all) => setLang(all.find((l) => l.language_id === id) ?? null)).catch((e) => showToast(e.message))
   }, [id, showToast])
-  if (!lists || (id != null && !lang)) return <Loading title="Language" onClose={onClose} />
+  if (!lists || !courses || (id != null && !lang)) return <Loading title="Language" onClose={onClose} />
+  const courseFor = (name) => courses.find((c) => c.names.includes(String(name ?? '').trim().toLowerCase()))?.code ?? null
   const fields = [
     { name: 'name', label: 'Language', required: true, list: 'lng-names', placeholder: 'e.g. Spanish' },
     { name: 'voice', label: 'Voice (for listening)', placeholder: 'e.g. es-MX', hint: 'A language tag: es-ES Spain, es-MX Mexico, pt-PT, pt-BR... Filled in from the name.' },
+    ...(courses.length ? [{ name: 'course', label: 'Course (Learn)', type: 'select', options: courses.map((c) => [c.code, `${c.name} - ${c.units} units`]),
+      hint: 'A built-in course that teaches it lesson by lesson. Spanish picks its own.' }] : []),
     { name: 'level', label: 'Your level now', type: 'select', options: levelOptions(lists.levels) },
     { name: 'goal_level', label: 'Aiming for', type: 'select', options: levelOptions(lists.goal_levels) },
     { name: 'goal_date', label: 'By', type: 'date' },
@@ -40,7 +45,10 @@ export function LanguagePanel({ id = null, onClose }) {
     { name: 'why', label: 'Why you\'re learning it', type: 'textarea', placeholder: 'A trip, family, a job, the films...' },
   ]
   const onField = (name, value, setForm) => {
-    if (name === 'name') setForm((f) => (f.voice && f.voice !== voiceFor(lang?.name ?? '') ? f : { ...f, voice: voiceFor(value) ?? f.voice }))
+    if (name === 'name') {
+      setForm((f) => (f.voice && f.voice !== voiceFor(lang?.name ?? '') ? f : { ...f, voice: voiceFor(value) ?? f.voice }))
+      if (!lang) setForm((f) => (f.course && f.course !== courseFor(f.name) ? f : { ...f, course: courseFor(value) ?? '' }))
+    }
   }
   const save = async (data) => {
     const body = { ...data, active: data.active !== 'false', prior_input_hours: data.prior_input_hours ?? 0, started_on: data.started_on ?? undefined }

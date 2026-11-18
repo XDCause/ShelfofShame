@@ -1,0 +1,112 @@
+{
+  "unit": 19,
+  "title": "¿Qué hiciste?",
+  "cefr": "A2",
+  "goal": "Tell what you did and where you went with the common irregular preterites.",
+  "lessons": [
+    {
+      "id": "es-u19-l1",
+      "title": "I went, it was",
+      "notes": "**ser** and **ir** have the **same** preterite - one set of forms to learn for two verbs:\n**yo** fui · **tú** fuiste · **él / ella / usted** fue · **nosotros** fuimos · **ellos / ustedes** fueron\nContext tells them apart. With **a** + a place it's \"went\"; with a description it's \"was\":\n**Fui a la playa.** = I went to the beach.\n**Fue genial.** = It was great.\nNo accents on these: **fui**, **fue** are one syllable.",
+      "items": [
+        {"es": "fui", "en": "I went", "kind": "phrase", "accept_en": ["I was"]},
+        {"es": "fuiste", "en": "you went", "kind": "phrase", "accept_en": ["you were"]},
+        {"es": "fue", "en": "he / she went; it was", "kind": "phrase", "accept_en": ["it was", "he went", "she went", "he was", "she was", "you went"]},
+        {"es": "fuimos", "en": "we went", "kind": "phrase", "accept_en": ["we were"]},
+        {"es": "fueron", "en": "they went", "kind": "phrase", "accept_en": ["they were", "you went"]},
+        {"es": "genial", "en": "great", "kind": "word", "accept_en": ["brilliant", "awesome", "fantastic"]}
+      ],
+      "sentences": [
+        {"es": "Ayer fui a la playa con Luis.", "en": "Yesterday I went to the beach with Luis.", "focus": "fui", "accept_en": ["I went to the beach with Luis yesterday."]},
+        {"es": "¿Adónde fuiste el sábado?", "en": "Where did you go on Saturday?", "focus": "fuiste"},
+        {"es": "La fiesta fue genial.", "en": "The party was great.", "focus": "fue", "accept_en": ["The party was awesome.", "The party was brilliant."]},
+        {"es": "Fuimos a un concierto el viernes.", "en": "We went to a concert on Friday.", "focus": "Fuimos"},
+        {"es": "Mis padres fueron a México de vacaciones.", "en": "My parents went to Mexico on holiday.", "focus": "fueron", "accept_en": ["My parents went to Mexico on vacation."]},
+        {"es": "El concierto fue muy largo.", "en": "The concert was very long.", "focus": "concierto"},
+        {"es": "¿Cómo fueron las vacaciones?", "en": "How were the holidays?", "focus": "vacaciones", "accept_en": ["How was the holiday?", "How was your vacation?", "How were your holidays?"]},
+        {"es": "Fue un día muy bonito.", "en": "It was a really nice day.", "focus": "día", "accept_en": ["It was a very nice day.", "It was a very beautiful day."]}
+      ]
+    },
+    {
+      "id": "es-u19-l2",
+      "title": "What did you do?",
+      "notes": "**hacer** has its own stem in the preterite, **hic-**, and endings with no accents:\n**yo** hice · **tú** hiciste · **él / ella / usted** hizo · **nosotros** hicimos · **ellos / ustedes** hicieron\nNote **hizo** with a z (hico would sound like \"hiko\").\nThe big question: **¿Qué hiciste ayer?** = What did you do yesterday? To answer, use the verb for what you did, not hacer: **Fui al cine.**\nWeather in the past uses hacer too: **Hizo calor.** = It was hot.\n**No hice nada.** = I didn't do anything (Spanish happily doubles the negative).",
+      "items": [
+        {"es": "hice", "en": "I did", "kind": "phrase", "accept_en": ["I made"]},
+        {"es": "hiciste", "en": "you did", "kind": "phrase", "accept_en": ["you made"]},
+        {"es": "hizo", "en": "he / she did", "kind": "phrase", "accept_en": ["he did", "she did", "he made", "she made", "you did"]},
+        {"es": "hicimos", "en": "we did", "kind": "phrase", "accept_en": ["we made"]},
+        {"es": "hicieron", "en": "they did", "kind": "phrase", "accept_en": ["they made", "you did"]},
+        {"es": "¿qué hiciste?", "en": "what did you do?", "kind": "phrase"},
+        {"es": "no hice nada", "en": "I didn't do anything", "kind": "phrase", "accept_en": ["I did nothing"]},
+        {"es": "la tarea", "en": "the homework", "kind": "word", "gender": "f", "accept_en": ["the task"], "note": "Spain: los deberes."},
+        {"es": "la torta", "en": "the cake", "kind": "word", "gender": "f", "accept": ["el pastel"], "note": "Spain: la tarta. In Mexico una torta is a sandwich!"}
+      ],
+      "sentences": [
+        {"es": "¿Qué hiciste el fin de semana?", "en": "What did you do on the weekend?", "focus": "hiciste", "accept_en": ["What did you do at the weekend?", "What did you do over the weekend?"]},
+        {"es": "No hice nada, me quedé en casa.", "en": "I didn't do anything, I stayed at home.", "focus": "hice", "accept_en": ["I did nothing, I stayed home.", "I didn't do anything, I stayed home."]},
+        {"es": "Hice una torta para la fiesta.", "en": "I made a cake for the party.", "focus": "torta"},
+        {"es": "Ayer hizo mucho calor.", "en": "It was very hot yesterday.", "focus": "hizo", "accept_en": ["Yesterday it was very hot.", "It was really hot yesterday."]},
+        {"es": "Hicimos la tarea en la biblioteca.", "en": "We did the homework in the library.", "focus": "Hicimos", "accept_en": ["We did our homework in the library.", "We did our homework at the library."]},
+        {"es": "¿Qué hicieron ustedes anoche?", "en": "What did you all do last night?", "focus": "hicieron", "accept_en": ["What did you do last night?", "What did you guys do last night?"]},
+        {"es": "Mi hermano no hizo la cama.", "en": "My brother didn't make the bed.", "focus": "cama", "accept_en": ["My brother didn't make his bed."]},
+        {"es": "El sábado pasado hizo frío.", "en": "Last Saturday it was cold.", "focus": "frío", "accept_en": ["It was cold last Saturday."]}
+      ]
+    },
+    {
+      "id": "es-u19-l3",
+      "title": "I had, I was",
+      "notes": "Several common verbs share a pattern: an irregular stem plus the endings **-e, -iste, -o, -imos, -ieron**, with no accents.\n**tener** -> **tuv-**: tuve · tuviste · tuvo · tuvimos · tuvieron\n**estar** -> **estuv-**: estuve · estuviste · estuvo · estuvimos · estuvieron\n**poder** -> **pud-**: pude · pudiste · pudo · pudimos · pudieron\nLearn the **yo** form and the rest follows.\n**estar** in the preterite tells how long or where for a finished stretch: **Estuve dos semanas en Chile.**\n**no pude** means \"I couldn't (and didn't)\": **No pude ir.**",
+      "items": [
+        {"es": "tuve", "en": "I had", "kind": "phrase"},
+        {"es": "tuvo", "en": "he / she had", "kind": "phrase", "accept_en": ["he had", "she had", "you had"]},
+        {"es": "tuvimos", "en": "we had", "kind": "phrase"},
+        {"es": "estuve", "en": "I was", "kind": "phrase", "accept_en": ["I stayed"]},
+        {"es": "estuvo", "en": "he / she was", "kind": "phrase", "accept_en": ["he was", "she was", "it was", "you were"]},
+        {"es": "estuvieron", "en": "they were", "kind": "phrase", "accept_en": ["you were"]},
+        {"es": "pude", "en": "I could", "kind": "phrase", "accept_en": ["I was able to", "I managed to"]},
+        {"es": "pudiste", "en": "you could", "kind": "phrase", "accept_en": ["you were able to", "you managed to"]},
+        {"es": "la suerte", "en": "the luck", "kind": "word", "gender": "f", "accept_en": ["luck"]}
+      ],
+      "sentences": [
+        {"es": "Ayer tuve un problema con el carro.", "en": "Yesterday I had a problem with the car.", "focus": "tuve", "accept_en": ["I had a problem with the car yesterday.", "Yesterday I had trouble with the car."]},
+        {"es": "Mi hermana tuvo un bebé.", "en": "My sister had a baby.", "focus": "tuvo"},
+        {"es": "Tuvimos mucha suerte.", "en": "We were very lucky.", "focus": "suerte", "accept_en": ["We had a lot of luck.", "We were really lucky.", "We had lots of luck."]},
+        {"es": "Estuve dos semanas en Chile.", "en": "I was in Chile for two weeks.", "focus": "Estuve", "accept_en": ["I spent two weeks in Chile.", "I stayed in Chile for two weeks."]},
+        {"es": "¿Dónde estuvieron ustedes anoche?", "en": "Where were you all last night?", "focus": "estuvieron", "accept_en": ["Where were you last night?", "Where were you guys last night?"]},
+        {"es": "La cena estuvo muy rica.", "en": "Dinner was really delicious.", "focus": "estuvo", "accept_en": ["The dinner was very good.", "Dinner was very tasty.", "The dinner was delicious."]},
+        {"es": "No pude ir a la fiesta.", "en": "I couldn't go to the party.", "focus": "pude", "accept_en": ["I wasn't able to go to the party."]},
+        {"es": "¿Pudiste hablar con ella?", "en": "Were you able to talk to her?", "focus": "Pudiste", "accept_en": ["Could you talk to her?", "Did you manage to speak with her?", "Did you get to talk to her?"]},
+        {"es": "¿Qué problema tuviste?", "en": "What problem did you have?", "focus": "problema"}
+      ]
+    },
+    {
+      "id": "es-u19-l4",
+      "title": "Telling what happened",
+      "notes": "Three more irregulars you'll need to tell a story:\n**venir** -> **vin-**: vine · viniste · vino · vinimos · vinieron\n**decir** -> **dij-**: dije · dijiste · dijo · dijimos · **dijeron** (no i after j)\n**ver** is regular but short, with no accents: vi · viste · vio · vimos · vieron\n**pasar** means \"to happen\" (and \"to spend\" time): **¿Qué pasó?** = What happened?\nWhen you report speech, **que** links it: **Me dijo que está cansado.** = He told me (that) he's tired. In English you can drop \"that\"; in Spanish **que** stays.",
+      "items": [
+        {"es": "venir", "en": "to come", "kind": "verb", "note": "Present: vengo, vienes. Preterite: vine."},
+        {"es": "vino", "en": "he / she came", "kind": "phrase", "accept_en": ["he came", "she came", "you came"], "note": "Also el vino, the wine."},
+        {"es": "decir", "en": "to say", "kind": "verb", "accept_en": ["to tell"]},
+        {"es": "dije", "en": "I said", "kind": "phrase", "accept_en": ["I told"]},
+        {"es": "dijo", "en": "he / she said", "kind": "phrase", "accept_en": ["he said", "she said", "he told", "she told", "you said"]},
+        {"es": "vi", "en": "I saw", "kind": "phrase", "accept_en": ["I watched"]},
+        {"es": "vimos", "en": "we saw", "kind": "phrase", "accept_en": ["we watched"]},
+        {"es": "pasar", "en": "to happen", "kind": "verb", "accept_en": ["to spend (time)", "to pass"]},
+        {"es": "¿qué pasó?", "en": "what happened?", "kind": "phrase"},
+        {"es": "que", "en": "that", "kind": "word", "note": "No accent when it links: dijo que... With an accent it asks: ¿qué?"}
+      ],
+      "sentences": [
+        {"es": "¿Qué pasó anoche?", "en": "What happened last night?", "focus": "pasó"},
+        {"es": "Carlos no vino a la fiesta.", "en": "Carlos didn't come to the party.", "focus": "vino"},
+        {"es": "¿Por qué no viniste ayer?", "en": "Why didn't you come yesterday?", "focus": "viniste"},
+        {"es": "Ella me dijo que está cansada.", "en": "She told me that she's tired.", "focus": "dijo", "accept_en": ["She told me she's tired.", "She told me she is tired.", "She said she was tired."]},
+        {"es": "Le dije que no.", "en": "I told him no.", "focus": "dije", "accept_en": ["I told her no.", "I said no to him.", "I said no to her."]},
+        {"es": "Anoche vi una película muy buena.", "en": "Last night I saw a very good film.", "focus": "vi", "accept_en": ["Last night I watched a really good movie.", "I saw a very good film last night.", "Last night I watched a very good movie."]},
+        {"es": "Vimos a tu hermano en el parque.", "en": "We saw your brother in the park.", "focus": "Vimos", "accept_en": ["We saw your brother at the park."]},
+        {"es": "Pasamos el fin de semana en la playa.", "en": "We spent the weekend at the beach.", "focus": "Pasamos"},
+        {"es": "¿Qué te dijo el profesor?", "en": "What did the teacher tell you?", "focus": "dijo", "accept_en": ["What did the teacher say to you?"]}
+      ]
+    }
+  ]
+}

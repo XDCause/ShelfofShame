@@ -12,8 +12,8 @@ the scheduler in srs.py. No outside site is asked: pronunciation is the browser'
     GET / POST /language/resources, PATCH / DELETE /language/resources/{id}   books, shows, podcasts...
     GET  /language/languages/{id}/cando, PUT /language/languages/{id}/cando/{item}   the can-do checklist
 
-Minutes studied = the study log + time spent reviewing cards (each answer up to a minute), so the daily goal moves
-with reviews too. Input hours (Refold / Dreaming Spanish style: hours of understandable listening, watching and
+Minutes studied = the study log + time spent reviewing cards (each answer up to a minute) + the course's lessons
+(language_course.py), so the daily goal moves with reviews and lessons too. Input hours (Refold / Dreaming Spanish style: hours of understandable listening, watching and
 reading, plus tutor and class time - conversation counts, as their "crosstalk" does) add up toward MILESTONES; hours
 from before the app go on the language (prior_input_hours).
 """
@@ -104,6 +104,7 @@ class LanguageFields(BaseModel):
     prior_input_hours: float | None = Field(None, ge=0, le=20000)
     active: bool | None = None
     started_on: date | None = None
+    course: str | None = Field(None, pattern=r"^[a-z]{2,3}$")     # a built-in course (language_course.py), None = none
 
 
 class LanguageIn(LanguageFields):
@@ -116,7 +117,7 @@ class LanguagePatch(LanguageFields):
 
 INPUT_SQL = "'" + "', '".join(INPUT_ACTIVITIES) + "'"
 LANGUAGE_SELECT = f"""SELECT l.language_id, l.name, l.voice, l.level, l.goal_level, l.goal_date, l.why, l.daily_minutes,
-       l.new_per_day, l.prior_input_hours::float AS prior_input_hours, l.active, l.started_on,
+       l.new_per_day, l.prior_input_hours::float AS prior_input_hours, l.active, l.started_on, l.course,
        (SELECT count(*) FROM lang_cards c WHERE c.language_id = l.language_id)::int AS cards,
        (SELECT count(*) FROM lang_cards c WHERE c.language_id = l.language_id AND c.state = 'review'
             AND c.stability >= {MATURE_DAYS})::int AS words_known,
@@ -133,7 +134,11 @@ def list_languages():
 
 @router.post("/language/languages", status_code=201)
 def add_language(body: LanguageIn):
+    from .language_course import course_exists, course_for_name
     data = tidy_text({k: v for k, v in body.model_dump().items() if v is not None}, required=("name",))
+    if "course" not in body.model_fields_set:
+        data["course"] = course_for_name(data["name"])      # Spanish / Español: the Spanish course by itself
+    course_exists(data.get("course"))
     with db() as conn:
         if conn.execute("SELECT 1 FROM lang_languages WHERE lower(name) = lower(%s)", (data["name"],)).fetchone():
             raise HTTPException(409, "You're already learning that language.")
@@ -147,6 +152,9 @@ def update_language(language_id: int, body: LanguagePatch):
     for required in ("name", "daily_minutes", "new_per_day", "prior_input_hours", "active", "started_on"):
         if required in data and data[required] is None:
             raise HTTPException(422, f"{required.replace('_', ' ').capitalize()} can't be empty.")
+    if data.get("course") is not None:
+        from .language_course import course_exists
+        course_exists(data["course"])
     with db() as conn:
         found(conn.execute("SELECT 1 FROM lang_languages WHERE language_id = %s", (language_id,)).fetchone(), "Language")
         if "name" in data and conn.execute("SELECT 1 FROM lang_languages WHERE lower(name) = lower(%s) AND language_id <> %s",
@@ -168,7 +176,8 @@ def delete_language(language_id: int):
 # ---------------------------------------------------------------------------------------------
 # Minutes per day (the log + reviewing), the dashboard
 # ---------------------------------------------------------------------------------------------
-# One row per (day, language): minutes from the log and from reviews (each answer counts up to 60 s; none timed = 10 s).
+# One row per (day, language): minutes from the log, from reviews (each answer counts up to 60 s; none timed = 10 s) and
+# from the course's lessons (each up to an hour: language_course.py).
 MINUTES = """
 SELECT day, language_id, sum(m)::float AS minutes, sum(input)::float AS input FROM (
     SELECT studied_on AS day, language_id, minutes::numeric AS m,
@@ -177,6 +186,8 @@ SELECT day, language_id, sum(m)::float AS minutes, sum(input)::float AS input FR
   UNION ALL
     SELECT r.reviewed_at::date, c.language_id, least(COALESCE(r.seconds, 10), 60) / 60.0, 0
     FROM lang_reviews r JOIN lang_cards c USING (card_id)
+  UNION ALL
+    SELECT done_at::date, language_id, least(seconds, 3600) / 60.0, 0 FROM lang_lesson_runs
 ) x GROUP BY day, language_id""".format(input=INPUT_SQL)
 
 

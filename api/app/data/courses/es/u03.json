@@ -1,0 +1,131 @@
+{
+  "unit": 3,
+  "title": "Los números",
+  "cefr": "A1",
+  "goal": "Count to twenty, give your age and phone number, and say what there is with hay.",
+  "lessons": [
+    {
+      "id": "es-u03-l1",
+      "title": "Zero to ten",
+      "notes": "The first numbers are worth learning cold - everything else is built on them.\n**cero, uno, dos, tres, cuatro, cinco, seis, siete, ocho, nueve, diez**\nSum them with **y** (and) and **son** (are): **Dos y dos son cuatro** - 'two and two are four'.\nSay every vowel clearly: Spanish vowels are short and never fade into 'uh'. **Seis** rhymes with 'case', **nueve** is 'NWEH-veh'.",
+      "items": [
+        {"es": "cero", "en": "zero", "kind": "word", "accept_en": ["0", "nought"]},
+        {"es": "uno", "en": "one", "kind": "word", "accept_en": ["1"]},
+        {"es": "dos", "en": "two", "kind": "word", "accept_en": ["2"]},
+        {"es": "tres", "en": "three", "kind": "word", "accept_en": ["3"]},
+        {"es": "cuatro", "en": "four", "kind": "word", "accept_en": ["4"]},
+        {"es": "cinco", "en": "five", "kind": "word", "accept_en": ["5"]},
+        {"es": "seis", "en": "six", "kind": "word", "accept_en": ["6"]},
+        {"es": "siete", "en": "seven", "kind": "word", "accept_en": ["7"]},
+        {"es": "ocho", "en": "eight", "kind": "word", "accept_en": ["8"]},
+        {"es": "nueve", "en": "nine", "kind": "word", "accept_en": ["9"]},
+        {"es": "diez", "en": "ten", "kind": "word", "accept_en": ["10"]},
+        {"es": "el número", "en": "the number", "kind": "word", "gender": "m", "accept_en": ["number"]}
+      ],
+      "sentences": [
+        {"es": "Uno, dos, tres, cuatro.", "en": "One, two, three, four.", "focus": "tres", "accept_en": ["1, 2, 3, 4."]},
+        {"es": "Dos y dos son cuatro.", "en": "Two and two are four.", "focus": "cuatro", "accept_en": ["Two plus two is four.", "Two and two make four.", "Two plus two equals four."]},
+        {"es": "Cinco y cinco son diez.", "en": "Five and five are ten.", "focus": "diez", "accept_en": ["Five plus five is ten.", "Five and five make ten."]},
+        {"es": "Tres y cuatro son siete.", "en": "Three and four are seven.", "focus": "siete", "accept_en": ["Three plus four is seven.", "Three and four make seven."]},
+        {"es": "Seis y tres son nueve.", "en": "Six and three are nine.", "focus": "nueve", "accept_en": ["Six plus three is nine.", "Six and three make nine."]},
+        {"es": "Ocho y dos son diez.", "en": "Eight and two are ten.", "focus": "Ocho", "accept_en": ["Eight plus two is ten.", "Eight and two make ten."]},
+        {"es": "El número es seis.", "en": "The number is six.", "focus": "número"},
+        {"es": "Cero y cinco son cinco.", "en": "Zero and five are five.", "focus": "Cero", "accept_en": ["Zero plus five is five."]},
+        {"es": "Uno y uno son dos.", "en": "One and one are two.", "focus": "Uno", "accept_en": ["One plus one is two.", "One and one make two."]}
+      ]
+    },
+    {
+      "id": "es-u03-l2",
+      "title": "Eleven to twenty",
+      "notes": "**11-15** are one-off words to learn: **once, doce, trece, catorce, quince**.\nFrom **16** the pattern is 'ten and six' run together: **dieci + seis = dieciséis**, then **diecisiete, dieciocho, diecinueve**. (The z of diez turns to c, and dieciséis needs an accent to keep the stress on the end.)\nThen **veinte** (20).\nTake away with **menos** (minus, less): **Veinte menos cinco son quince.**",
+      "items": [
+        {"es": "once", "en": "eleven", "kind": "word", "accept_en": ["11"]},
+        {"es": "doce", "en": "twelve", "kind": "word", "accept_en": ["12"]},
+        {"es": "trece", "en": "thirteen", "kind": "word", "accept_en": ["13"]},
+        {"es": "catorce", "en": "fourteen", "kind": "word", "accept_en": ["14"]},
+        {"es": "quince", "en": "fifteen", "kind": "word", "accept_en": ["15"]},
+        {"es": "dieciséis", "en": "sixteen", "kind": "word", "accept_en": ["16"]},
+        {"es": "diecisiete", "en": "seventeen", "kind": "word", "accept_en": ["17"]},
+        {"es": "dieciocho", "en": "eighteen", "kind": "word", "accept_en": ["18"]},
+        {"es": "diecinueve", "en": "nineteen", "kind": "word", "accept_en": ["19"]},
+        {"es": "veinte", "en": "twenty", "kind": "word", "accept_en": ["20"]},
+        {"es": "menos", "en": "minus", "kind": "word", "accept_en": ["less"]}
+      ],
+      "sentences": [
+        {"es": "Diez y uno son once.", "en": "Ten and one are eleven.", "focus": "once", "accept_en": ["Ten plus one is eleven.", "Ten and one make eleven."]},
+        {"es": "Veinte menos cinco son quince.", "en": "Twenty minus five is fifteen.", "focus": "quince", "accept_en": ["Twenty minus five are fifteen.", "Twenty less five is fifteen."]},
+        {"es": "Doce y ocho son veinte.", "en": "Twelve and eight are twenty.", "focus": "veinte", "accept_en": ["Twelve plus eight is twenty.", "Twelve and eight make twenty."]},
+        {"es": "Trece, catorce, quince.", "en": "Thirteen, fourteen, fifteen.", "focus": "catorce", "accept_en": ["13, 14, 15."]},
+        {"es": "Diecinueve menos tres son dieciséis.", "en": "Nineteen minus three is sixteen.", "focus": "dieciséis", "accept_en": ["Nineteen minus three are sixteen."]},
+        {"es": "Nueve y nueve son dieciocho.", "en": "Nine and nine are eighteen.", "focus": "dieciocho", "accept_en": ["Nine plus nine is eighteen.", "Nine and nine make eighteen."]},
+        {"es": "Diez y siete son diecisiete.", "en": "Ten and seven are seventeen.", "focus": "diecisiete", "accept_en": ["Ten plus seven is seventeen.", "Ten and seven make seventeen."]},
+        {"es": "Catorce menos dos son doce.", "en": "Fourteen minus two is twelve.", "focus": "menos", "accept_en": ["Fourteen minus two are twelve."]},
+        {"es": "Diez y tres son trece.", "en": "Ten and three are thirteen.", "focus": "trece", "accept_en": ["Ten plus three is thirteen.", "Ten and three make thirteen."]},
+        {"es": "Veinte menos uno son diecinueve.", "en": "Twenty minus one is nineteen.", "focus": "diecinueve", "accept_en": ["Twenty minus one are nineteen."]}
+      ]
+    },
+    {
+      "id": "es-u03-l3",
+      "title": "How old are you?",
+      "notes": "In Spanish you don't 'be' an age, you **have** it: **Tengo treinta años** = 'I have thirty years'. Saying 'soy treinta' is a classic beginner slip.\nThe verb is **tener** (to have):\n**yo** tengo · **tú** tienes · **él / ella / usted** tiene\nThe question: **¿Cuántos años tienes?** (how many years do you have?) - or **¿Cuántos años tiene?** for usted.\nTwo tens to start with: **treinta** (30) and **cuarenta** (40). And watch the ñ: **años** is years; without the tilde it's a very different word.",
+      "items": [
+        {"es": "tener", "en": "to have", "kind": "verb"},
+        {"es": "tengo", "en": "I have", "kind": "phrase"},
+        {"es": "tienes", "en": "you have (informal)", "kind": "phrase", "accept_en": ["you have"]},
+        {"es": "tiene", "en": "he / she has, you have (formal)", "kind": "phrase", "accept_en": ["he has", "she has", "it has", "you have"]},
+        {"es": "¿cuántos años tienes?", "en": "how old are you?", "kind": "phrase", "accept": ["¿cuántos años tiene?"]},
+        {"es": "el año", "en": "the year", "kind": "word", "gender": "m", "accept_en": ["year"]},
+        {"es": "el niño", "en": "the boy", "kind": "word", "gender": "m", "accept_en": ["the child", "the kid", "boy"]},
+        {"es": "la niña", "en": "the girl", "kind": "word", "gender": "f", "accept_en": ["the child", "the kid", "girl"]},
+        {"es": "el perro", "en": "the dog", "kind": "word", "gender": "m", "accept_en": ["dog"]},
+        {"es": "el gato", "en": "the cat", "kind": "word", "gender": "m", "accept_en": ["cat"]},
+        {"es": "treinta", "en": "thirty", "kind": "word", "accept_en": ["30"]},
+        {"es": "cuarenta", "en": "forty", "kind": "word", "accept_en": ["40"]}
+      ],
+      "sentences": [
+        {"es": "¿Cuántos años tienes?", "en": "How old are you?", "focus": "años"},
+        {"es": "Tengo treinta años.", "en": "I'm thirty years old.", "focus": "Tengo", "accept_en": ["I'm thirty.", "I am thirty years old.", "I am 30."]},
+        {"es": "Ana tiene cuarenta años.", "en": "Ana is forty years old.", "focus": "cuarenta", "accept_en": ["Ana is forty.", "Ana is 40."]},
+        {"es": "El niño tiene ocho años.", "en": "The boy is eight years old.", "focus": "niño", "accept_en": ["The boy is eight.", "The child is eight."]},
+        {"es": "La niña tiene seis años.", "en": "The girl is six years old.", "focus": "niña", "accept_en": ["The girl is six."]},
+        {"es": "El perro tiene doce años.", "en": "The dog is twelve years old.", "focus": "perro", "accept_en": ["The dog is twelve."]},
+        {"es": "El gato tiene tres años.", "en": "The cat is three years old.", "focus": "gato", "accept_en": ["The cat is three."]},
+        {"es": "Y usted, ¿cuántos años tiene?", "en": "And you, how old are you?", "focus": "tiene", "accept_en": ["And how old are you?"]},
+        {"es": "Yo tengo cuarenta años, ¿y tú?", "en": "I'm forty, and you?", "focus": "cuarenta", "accept_en": ["I'm forty years old, and you?", "I am forty, what about you?"]},
+        {"es": "Carlos tiene treinta años.", "en": "Carlos is thirty.", "focus": "treinta", "accept_en": ["Carlos is thirty years old."]},
+        {"es": "¿Tienes diecinueve años?", "en": "Are you nineteen?", "focus": "Tienes", "accept_en": ["Are you nineteen years old?"]}
+      ]
+    },
+    {
+      "id": "es-u03-l4",
+      "title": "Phone numbers and hay",
+      "notes": "**Hay** (said 'eye') means both 'there is' and 'there are' - one word, never changes: **Hay un perro**, **Hay veinte estudiantes**. Ask how many with **¿Cuántos...?**: **¿Cuántos niños hay?**\nPhone numbers are usually read in pairs in Latin America (cero cuatro, doce...), but digit by digit is always understood.\n**Mi** = my, **tu** = your (no accent - **tú** with one is 'you'). Unit 7 has the rest.\n**El celular** is the mobile phone in Latin America; in Spain it's **el móvil**.\nPlurals preview: **los estudiantes**, **los niños** - 'the' becomes **los** and the noun adds -s. A boys-and-girls group is **niños** too.",
+      "items": [
+        {"es": "hay", "en": "there is / there are", "kind": "word", "accept_en": ["there is", "there are", "there's"]},
+        {"es": "¿cuántos?", "en": "how many?", "kind": "word", "accept": ["¿cuántas?"]},
+        {"es": "el teléfono", "en": "the phone", "kind": "word", "gender": "m", "accept_en": ["the telephone", "phone"]},
+        {"es": "el celular", "en": "the mobile phone", "kind": "word", "gender": "m", "accept": ["el móvil"], "accept_en": ["the mobile", "the cell phone", "the cellphone", "mobile"], "note": "Spain: el móvil."},
+        {"es": "¿cuál es tu número?", "en": "what's your number?", "kind": "phrase", "accept_en": ["what is your number?"]},
+        {"es": "mi", "en": "my", "kind": "word"},
+        {"es": "tu", "en": "your", "kind": "word", "note": "No accent - 'tú' with one is 'you'."},
+        {"es": "la clase", "en": "the class", "kind": "word", "gender": "f", "accept_en": ["the lesson", "class"]},
+        {"es": "en", "en": "in", "kind": "word", "accept_en": ["on", "at"]},
+        {"es": "los estudiantes", "en": "the students", "kind": "word", "gender": "m", "accept_en": ["students"]},
+        {"es": "los niños", "en": "the children", "kind": "word", "gender": "m", "accept_en": ["the kids", "the boys", "children", "kids"]}
+      ],
+      "sentences": [
+        {"es": "¿Cuál es tu número de teléfono?", "en": "What's your phone number?", "focus": "teléfono", "accept_en": ["What is your phone number?", "What's your telephone number?"]},
+        {"es": "Mi número es cero, cuatro, uno, ocho.", "en": "My number is zero, four, one, eight.", "focus": "Mi", "accept_en": ["My number is 0418."]},
+        {"es": "¿Cuál es tu número de celular?", "en": "What's your mobile number?", "focus": "celular", "accept_en": ["What is your mobile number?", "What's your cell phone number?"]},
+        {"es": "¿Cuántos estudiantes hay en la clase?", "en": "How many students are there in the class?", "focus": "hay", "accept_en": ["How many students are in the class?"]},
+        {"es": "Hay veinte estudiantes en la clase.", "en": "There are twenty students in the class.", "focus": "estudiantes"},
+        {"es": "¿Cuántos niños hay?", "en": "How many children are there?", "focus": "Cuántos", "accept_en": ["How many kids are there?"]},
+        {"es": "Hay dos niños en la clase.", "en": "There are two children in the class.", "focus": "clase", "accept_en": ["There are two kids in the class."]},
+        {"es": "¿Tienes mi número de teléfono?", "en": "Do you have my phone number?", "focus": "número", "accept_en": ["Have you got my phone number?"]},
+        {"es": "Ana es mi amiga.", "en": "Ana is my friend.", "focus": "mi"},
+        {"es": "Tu profesora es de España.", "en": "Your teacher is from Spain.", "focus": "Tu"},
+        {"es": "Hay quince niños en la clase.", "en": "There are fifteen children in the class.", "focus": "en", "accept_en": ["There are fifteen kids in the class."]}
+      ]
+    }
+  ]
+}

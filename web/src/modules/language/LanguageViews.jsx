@@ -7,6 +7,7 @@ import EmptyState from '../../core/EmptyState.jsx'
 import Stat from '../../core/Stat.jsx'
 import { minutesText, plainFront, plural } from './answers.js'
 import { useLanguageLists, useLanguages, useLanguageSummary } from './langParts.js'
+import { NextLesson } from './NextLesson.jsx'
 
 // Language learning's pages: Today (the dashboard), Cards, the Study log and Resources. (Review: ReviewView.jsx;
 // Progress: LanguageProgress.jsx.) Each page is about one language - the picker at the top switches, and remembers.
@@ -74,6 +75,7 @@ function Today({ lang }) {
   const next = l.milestones.next
   return (
     <>
+      <NextLesson lang={lang} />
       <div className="toolbar lng-toolbar">
         <Link className={`button ${toDo ? 'primary' : 'secondary'}`} to="/language/review">{toDo ? `Review ${plural(toDo, 'card')}` : 'Review'}</Link>
         <button type="button" className="secondary" onClick={() => openPanel('langstudy', { languageId: l.language_id })}>+ Log study</button>

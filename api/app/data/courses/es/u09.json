@@ -1,0 +1,136 @@
+{
+  "unit": 9,
+  "title": "Mi día",
+  "cefr": "A1",
+  "goal": "Say what you do on a normal day with regular -ar verbs, name the days of the week and say at what time.",
+  "lessons": [
+    {
+      "id": "es-u09-l1",
+      "title": "Hablar: the -ar pattern",
+      "notes": "Most Spanish verbs end in **-ar**, and almost all of them follow one pattern. Take off -ar and add an ending for the person:\n**yo** habl**o** · **tú** habl**as** · **él / ella / usted** habl**a** · **nosotros** habl**amos** · **ellos / ustedes** habl**an**\n(Spain: vosotros habl**áis**.)\nLearn this once and you can use hundreds of verbs: **trabajar → trabajo, trabajas...**, **estudiar → estudio, estudias...**\nThe ending already says who, so **Hablo inglés** needs no 'yo'. The present also covers 'I'm speaking' and 'I do speak'.",
+      "items": [
+        {"es": "hablar", "en": "to speak", "kind": "verb", "accept_en": ["to talk"]},
+        {"es": "hablo", "en": "I speak", "kind": "phrase", "accept_en": ["I talk", "I'm speaking"]},
+        {"es": "hablas", "en": "you speak", "kind": "phrase", "accept_en": ["you talk", "do you speak"]},
+        {"es": "habla", "en": "he / she speaks, you speak (formal)", "kind": "phrase", "accept_en": ["he speaks", "she speaks", "you speak", "speaks"]},
+        {"es": "hablamos", "en": "we speak", "kind": "phrase", "accept_en": ["we talk"]},
+        {"es": "hablan", "en": "they speak / you (plural) speak", "kind": "phrase", "accept_en": ["they speak", "you speak", "they talk"]},
+        {"es": "trabajar", "en": "to work", "kind": "verb"},
+        {"es": "trabajo", "en": "I work", "kind": "phrase", "accept_en": ["work", "the job"], "note": "Also a noun: el trabajo = work, the job."},
+        {"es": "estudiar", "en": "to study", "kind": "verb"},
+        {"es": "estudio", "en": "I study", "kind": "phrase", "accept_en": ["I'm studying"]},
+        {"es": "un poco", "en": "a little", "kind": "phrase", "accept_en": ["a bit", "a little bit"]},
+        {"es": "el inglés", "en": "English (the language)", "kind": "word", "gender": "m", "accept_en": ["English"]}
+      ],
+      "sentences": [
+        {"es": "Hablo inglés y un poco de español.", "en": "I speak English and a little Spanish.", "focus": "poco", "accept_en": ["I speak English and a bit of Spanish."]},
+        {"es": "¿Hablas español?", "en": "Do you speak Spanish?", "focus": "Hablas"},
+        {"es": "Ana habla inglés muy bien.", "en": "Ana speaks English very well.", "focus": "habla"},
+        {"es": "Nosotros hablamos con el profesor.", "en": "We're talking to the teacher.", "focus": "hablamos", "accept_en": ["We speak with the teacher.", "We talk with the teacher."]},
+        {"es": "Ellos hablan español en casa.", "en": "They speak Spanish at home.", "focus": "hablan"},
+        {"es": "Trabajo en una oficina.", "en": "I work in an office.", "focus": "Trabajo"},
+        {"es": "Estudio español.", "en": "I'm studying Spanish.", "focus": "Estudio", "accept_en": ["I study Spanish.", "I'm learning Spanish."]},
+        {"es": "Carlos trabaja en un banco.", "en": "Carlos works in a bank.", "focus": "trabaja", "accept_en": ["Carlos works at a bank."]},
+        {"es": "¿Dónde trabajas?", "en": "Where do you work?", "focus": "trabajas"},
+        {"es": "Mi hija estudia inglés.", "en": "My daughter is studying English.", "focus": "estudia", "accept_en": ["My daughter studies English."]},
+        {"es": "Mis padres no hablan inglés.", "en": "My parents don't speak English.", "focus": "inglés"}
+      ]
+    },
+    {
+      "id": "es-u09-l2",
+      "title": "More everyday verbs",
+      "notes": "Every verb here works exactly like hablar - no new endings to learn, just new stems:\n**escuchar** → escucho, escuchas, escucha, escuchamos, escuchan\n**Tomar** is to take, and also to have a drink: **Tomo un café.** (Spain uses tomar too, and **coger** for taking a bus - avoid coger in much of Latin America, where it's vulgar.)\n**Mirar** is to look at / watch: **Miramos la televisión.**\nTo say 'not', **no** goes right before the verb: **No cocino.**\n**Mucho** (a lot) after a verb: **Trabajo mucho.** **Tarde** = late; **en casa** = at home.",
+      "items": [
+        {"es": "escuchar", "en": "to listen to", "kind": "verb", "accept_en": ["to listen", "to hear"]},
+        {"es": "mirar", "en": "to look at", "kind": "verb", "accept_en": ["to watch", "to look"]},
+        {"es": "tomar", "en": "to take", "kind": "verb", "accept_en": ["to drink", "to have"]},
+        {"es": "comprar", "en": "to buy", "kind": "verb"},
+        {"es": "necesitar", "en": "to need", "kind": "verb"},
+        {"es": "caminar", "en": "to walk", "kind": "verb"},
+        {"es": "cocinar", "en": "to cook", "kind": "verb"},
+        {"es": "llegar", "en": "to arrive", "kind": "verb", "accept_en": ["to get to", "to get there"]},
+        {"es": "la música", "en": "the music", "kind": "word", "gender": "f", "accept_en": ["music"]},
+        {"es": "mucho", "en": "a lot", "kind": "word", "accept_en": ["much", "lots"]},
+        {"es": "en casa", "en": "at home", "kind": "phrase", "accept_en": ["home"]},
+        {"es": "tarde", "en": "late", "kind": "word", "note": "Also la tarde = the afternoon."}
+      ],
+      "sentences": [
+        {"es": "Escucho música en el carro.", "en": "I listen to music in the car.", "focus": "Escucho", "accept_en": ["I'm listening to music in the car."]},
+        {"es": "Miramos la televisión en la sala.", "en": "We watch TV in the living room.", "focus": "Miramos", "accept_en": ["We watch television in the lounge room.", "We're watching TV in the living room."]},
+        {"es": "Tomo un café con leche.", "en": "I have a white coffee.", "focus": "Tomo", "accept_en": ["I drink a coffee with milk.", "I'm having a white coffee.", "I have a coffee with milk."]},
+        {"es": "Necesito un bolígrafo.", "en": "I need a pen.", "focus": "Necesito"},
+        {"es": "Compramos pan y queso.", "en": "We buy bread and cheese.", "focus": "Compramos", "accept_en": ["We're buying bread and cheese."]},
+        {"es": "Mi madre cocina muy bien.", "en": "My mother cooks very well.", "focus": "cocina", "accept_en": ["My mum cooks very well.", "My mom is a very good cook."]},
+        {"es": "Camino mucho.", "en": "I walk a lot.", "focus": "Camino"},
+        {"es": "¿Necesitas algo?", "en": "Do you need anything?", "focus": "Necesitas", "accept_en": ["Do you need something?"]},
+        {"es": "Ellos trabajan mucho.", "en": "They work a lot.", "focus": "mucho", "accept_en": ["They work hard."]},
+        {"es": "Ana estudia en casa.", "en": "Ana studies at home.", "focus": "casa", "accept_en": ["Ana is studying at home."]},
+        {"es": "Hoy llego tarde.", "en": "Today I'm arriving late.", "focus": "llego", "accept_en": ["I'm late today.", "I arrive late today.", "I'll be late today."]},
+        {"es": "No escuchamos la música.", "en": "We don't listen to the music.", "focus": "música", "accept_en": ["We aren't listening to the music."]}
+      ]
+    },
+    {
+      "id": "es-u09-l3",
+      "title": "Days of the week",
+      "notes": "The days have no capital letter and are all masculine: **el lunes, el martes, el miércoles, el jueves, el viernes, el sábado, el domingo**. The Spanish week starts on Monday.\nThe article does the job of 'on': **el lunes** = on Monday; **los lunes** = on Mondays (every Monday). No word for 'on'!\nDays ending in -s don't change in the plural: el lunes → los lunes; sábado and domingo add -s.\n**Mañana** means tomorrow (and also morning - unit 11). **De lunes a viernes** = Monday to Friday.",
+      "items": [
+        {"es": "el lunes", "en": "Monday", "kind": "word", "gender": "m", "accept_en": ["on Monday"]},
+        {"es": "el martes", "en": "Tuesday", "kind": "word", "gender": "m", "accept_en": ["on Tuesday"]},
+        {"es": "el miércoles", "en": "Wednesday", "kind": "word", "gender": "m", "accept_en": ["on Wednesday"]},
+        {"es": "el jueves", "en": "Thursday", "kind": "word", "gender": "m", "accept_en": ["on Thursday"]},
+        {"es": "el viernes", "en": "Friday", "kind": "word", "gender": "m", "accept_en": ["on Friday"]},
+        {"es": "el sábado", "en": "Saturday", "kind": "word", "gender": "m", "accept_en": ["on Saturday"]},
+        {"es": "el domingo", "en": "Sunday", "kind": "word", "gender": "m", "accept_en": ["on Sunday"]},
+        {"es": "la semana", "en": "the week", "kind": "word", "gender": "f", "accept_en": ["week"]},
+        {"es": "el fin de semana", "en": "the weekend", "kind": "word", "gender": "m", "accept_en": ["weekend", "at the weekend", "on the weekend"]},
+        {"es": "mañana", "en": "tomorrow", "kind": "word"},
+        {"es": "¿qué día es hoy?", "en": "what day is it today?", "kind": "phrase", "accept_en": ["what day is it?", "what's the day today?"]},
+        {"es": "de lunes a viernes", "en": "Monday to Friday", "kind": "phrase", "accept_en": ["from Monday to Friday", "Monday through Friday"]}
+      ],
+      "sentences": [
+        {"es": "¿Qué día es hoy?", "en": "What day is it today?", "focus": "día", "accept_en": ["What day is it?"]},
+        {"es": "Hoy es lunes.", "en": "Today is Monday.", "focus": "lunes", "accept_en": ["It's Monday today."]},
+        {"es": "Mañana es sábado.", "en": "Tomorrow is Saturday.", "focus": "sábado", "accept_en": ["It's Saturday tomorrow."]},
+        {"es": "Trabajo de lunes a viernes.", "en": "I work Monday to Friday.", "focus": "viernes", "accept_en": ["I work from Monday to Friday."]},
+        {"es": "Los sábados camino en la playa.", "en": "On Saturdays I walk on the beach.", "focus": "sábados", "accept_en": ["I walk on the beach on Saturdays."]},
+        {"es": "El domingo cocino para mi familia.", "en": "On Sunday I cook for my family.", "focus": "domingo", "accept_en": ["I'm cooking for my family on Sunday."]},
+        {"es": "Estudio español los martes y los jueves.", "en": "I study Spanish on Tuesdays and Thursdays.", "focus": "martes", "accept_en": ["I study Spanish on Tuesday and Thursday."]},
+        {"es": "El fin de semana miro la televisión.", "en": "At the weekend I watch TV.", "focus": "fin", "accept_en": ["On the weekend I watch television.", "I watch TV at the weekend."]},
+        {"es": "¿Trabajas el miércoles?", "en": "Are you working on Wednesday?", "focus": "miércoles", "accept_en": ["Do you work on Wednesday?"]},
+        {"es": "La semana tiene siete días.", "en": "The week has seven days.", "focus": "semana", "accept_en": ["A week has seven days."]},
+        {"es": "Mañana es jueves.", "en": "Tomorrow is Thursday.", "focus": "jueves"}
+      ]
+    },
+    {
+      "id": "es-u09-l4",
+      "title": "At what time?",
+      "notes": "**¿A qué hora...?** asks at what time something happens. Answer with **a la una** (at one) or **a las** + number for the rest - 'las horas' is feminine plural: **a las dos, a las ocho**.\nAdd **y media** for half past and **en punto** for 'on the dot': **a las seis y media**, **a las nueve en punto**. (Unit 11 does telling the time in full.)\nHow often: **siempre** (always), **normalmente** (normally), **a veces** (sometimes), **nunca** (never), **todos los días** (every day). They usually go before the verb: **Nunca cocino.** **Temprano** = early.",
+      "items": [
+        {"es": "¿a qué hora?", "en": "at what time?", "kind": "phrase", "accept_en": ["what time?", "when?"]},
+        {"es": "a la una", "en": "at one o'clock", "kind": "phrase", "accept_en": ["at one", "at 1"]},
+        {"es": "a las", "en": "at (with times)", "kind": "phrase", "accept_en": ["at"], "note": "a las dos = at two"},
+        {"es": "y media", "en": "half past", "kind": "phrase", "accept_en": ["thirty", "and a half"]},
+        {"es": "en punto", "en": "o'clock sharp", "kind": "phrase", "accept_en": ["on the dot", "sharp", "o'clock"]},
+        {"es": "todos los días", "en": "every day", "kind": "phrase", "accept_en": ["daily"]},
+        {"es": "siempre", "en": "always", "kind": "word"},
+        {"es": "a veces", "en": "sometimes", "kind": "phrase", "accept_en": ["at times"]},
+        {"es": "nunca", "en": "never", "kind": "word"},
+        {"es": "normalmente", "en": "normally", "kind": "word", "accept_en": ["usually"]},
+        {"es": "temprano", "en": "early", "kind": "word"}
+      ],
+      "sentences": [
+        {"es": "¿A qué hora llegas?", "en": "What time do you arrive?", "focus": "hora", "accept_en": ["At what time do you arrive?", "What time are you arriving?", "What time do you get there?"]},
+        {"es": "Llego a las ocho.", "en": "I arrive at eight.", "focus": "las", "accept_en": ["I get there at eight.", "I arrive at eight o'clock."]},
+        {"es": "Trabajo todos los días.", "en": "I work every day.", "focus": "todos"},
+        {"es": "Siempre tomo un café a las siete.", "en": "I always have a coffee at seven.", "focus": "Siempre", "accept_en": ["I always drink a coffee at seven."]},
+        {"es": "A veces estudio en casa.", "en": "Sometimes I study at home.", "focus": "veces", "accept_en": ["I sometimes study at home."]},
+        {"es": "Nunca cocino los lunes.", "en": "I never cook on Mondays.", "focus": "Nunca"},
+        {"es": "La clase es a la una.", "en": "The class is at one.", "focus": "una", "accept_en": ["The class is at one o'clock.", "The lesson is at one."]},
+        {"es": "Llegamos a las nueve en punto.", "en": "We arrive at nine o'clock sharp.", "focus": "punto", "accept_en": ["We arrive at nine on the dot.", "We get there at nine sharp."]},
+        {"es": "Normalmente llego temprano.", "en": "I normally arrive early.", "focus": "temprano", "accept_en": ["Normally I arrive early.", "I usually get there early."]},
+        {"es": "La clase es a las seis y media.", "en": "The class is at half past six.", "focus": "media", "accept_en": ["The class is at six thirty.", "The lesson is at half past six."]},
+        {"es": "Normalmente camino a las siete.", "en": "I normally walk at seven.", "focus": "Normalmente", "accept_en": ["I usually walk at seven."]}
+      ]
+    }
+  ]
+}

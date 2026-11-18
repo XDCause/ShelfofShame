@@ -1,0 +1,35 @@
+/* ---------- Language learning > Read (modules/language/ReadView.jsx, 2026-11-18) ---------- */
+/* Tatoeba's sentences at your level: the level chips and the find box, a card a sentence (its new words highlighted -
+   tap one for its box: Add to deck, In other sentences), the English shown on a tap, the credit. The app's tokens only,
+   so dark mode follows. */
+.lngr-page { display: flex; flex-direction: column; gap: 12px; }
+.lngr-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 14px; }
+.lngr-find { display: flex; gap: 8px; align-items: center; flex: 1 1 220px; max-width: 360px; }
+.lngr-find-label { flex: 1; min-width: 0; }
+.lngr-find-label input { width: 100%; min-height: 36px; }
+.lngr-head { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.lngr-none { margin: 4px 0; }
+.lngr-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.lngr-sentence { padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.lngr-text { margin: 0; font-size: 1.2rem; line-height: 1.7; overflow-wrap: anywhere; }
+.lngr-word {
+  display: inline; padding: 0 3px; margin: 0; border: 0; border-radius: 4px; font: inherit; line-height: inherit;
+  color: var(--text); background: var(--low-bg); text-decoration: underline dotted var(--low); text-underline-offset: 4px;
+  cursor: pointer;
+}
+.lngr-word:hover, .lngr-word[aria-expanded='true'] { background: color-mix(in srgb, var(--low) 26%, transparent); }
+.lngr-word:focus-visible { outline: 2px solid var(--tint); outline-offset: 1px; }
+.lngr-wordbox {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 8px 10px; border-radius: var(--radius-sm);
+  background: var(--fill);
+}
+.lngr-wordbox strong { font-size: 1.05rem; margin-right: 4px; }
+.lngr-english { margin: 0; padding: 0 0 0 12px; list-style: none; border-left: 3px solid var(--tint); color: var(--text); }
+.lngr-english li + li { color: var(--muted); }
+.lngr-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.lngr-new { margin-left: auto; }
+.lngr-source { margin: 0; }
+.lngr-source a { color: var(--muted); }
+.lngr-more { align-self: center; min-width: 140px; }
+.lngr-credit { margin: 6px 0 0; text-align: center; }
+.lngr-credit a { color: inherit; text-decoration: underline; }

@@ -1,0 +1,114 @@
+{
+  "unit": 25,
+  "title": "Lo, la, le",
+  "cefr": "A2",
+  "goal": "Stop repeating nouns: use direct and indirect object pronouns, alone and together.",
+  "lessons": [
+    {
+      "id": "es-u25-l1",
+      "title": "It and them",
+      "notes": "A **direct object** is the thing the verb acts on: I buy **the shirt**. To avoid repeating it, Spanish uses **lo, la, los, las**, matching the noun's gender and number:\n**¿Compras la camisa? - Sí, la compro.** (Yes, I'm buying it.)\n**¿Tienes los boletos? - No, no los tengo.**\nThe pronoun goes **before** the conjugated verb (and after **no**). English puts \"it\" after the verb; Spanish puts it in front.\n**lo** also means \"it\" for an idea: **No lo sé.** (I don't know.) **Lo siento.** (I'm sorry - literally \"I feel it\".)\nThey work for people too: **lo veo** = I see him; **la conozco** = I know her.",
+      "items": [
+        {"es": "lo", "en": "it (masculine); him", "kind": "word", "accept_en": ["it", "him"]},
+        {"es": "la compro", "en": "I'll buy it", "kind": "phrase", "accept_en": ["I buy it", "I'm buying it", "I'll take it"]},
+        {"es": "no los tengo", "en": "I don't have them", "kind": "phrase", "accept_en": ["I haven't got them"]},
+        {"es": "¿las ves?", "en": "can you see them?", "kind": "phrase", "accept_en": ["do you see them?"]},
+        {"es": "no lo sé", "en": "I don't know", "kind": "phrase"},
+        {"es": "lo compro", "en": "I'll buy it", "kind": "phrase", "accept_en": ["I buy it", "I'm buying it"]},
+        {"es": "la conozco", "en": "I know her", "kind": "phrase"},
+        {"es": "las gafas", "en": "the glasses", "kind": "word", "gender": "f", "accept": ["los lentes", "los anteojos"], "accept_en": ["the spectacles"]},
+        {"es": "encontrar", "en": "to find", "kind": "verb", "note": "o -> ue: encuentro."}
+      ],
+      "sentences": [
+        {"es": "¿La camisa azul? Sí, la compro.", "en": "The blue shirt? Yes, I'll buy it.", "focus": "la", "accept_en": ["The blue shirt? Yes, I'm buying it.", "The blue shirt? Yes, I'll take it."]},
+        {"es": "Me gusta este suéter. Lo compro.", "en": "I like this jumper. I'll buy it.", "focus": "Lo", "accept_en": ["I like this sweater. I'll take it.", "I like this jumper. I'll take it."]},
+        {"es": "¿Tienes los boletos? - No, no los tengo.", "en": "Do you have the tickets? - No, I don't have them.", "focus": "los", "accept_en": ["Have you got the tickets? - No, I haven't got them."]},
+        {"es": "No encuentro mis gafas. ¿Las ves?", "en": "I can't find my glasses. Can you see them?", "focus": "Las", "accept_en": ["I can't find my glasses. Do you see them?"]},
+        {"es": "¿Dónde está el museo? - No lo sé.", "en": "Where is the museum? - I don't know.", "focus": "sé", "accept_en": ["Where's the museum? - I don't know."]},
+        {"es": "¿Conoces a Marta? - Sí, la conozco.", "en": "Do you know Marta? - Yes, I know her.", "focus": "conozco"},
+        {"es": "Veo a Carlos todos los días. Lo veo en el trabajo.", "en": "I see Carlos every day. I see him at work.", "focus": "veo"},
+        {"es": "¿Encontraste las llaves? - Sí, las encontré.", "en": "Did you find the keys? - Yes, I found them.", "focus": "encontré"},
+        {"es": "El pollo, lo cocino en el horno.", "en": "The chicken, I make it in the oven.", "accept_en": ["I make the chicken in the oven.", "I cook the chicken in the oven."], "focus": "lo"}
+      ]
+    },
+    {
+      "id": "es-u25-l2",
+      "title": "Me, you, us",
+      "notes": "For people in conversation the object pronouns are the ones you know from reflexive verbs:\n**me** (me) · **te** (you) · **nos** (us)\n**Mi mamá me llama todos los días.** = My mum calls me every day.\n**¿Te ayudo?** = Shall I help you?\n**Nos invitaron a la fiesta.** = They invited us to the party.\nSame position: before the conjugated verb.\nUseful verbs that take a person as object: **ayudar** (to help), **invitar** (to invite), **esperar** (to wait for - no \"for\" needed in Spanish), **llevar** (to take someone somewhere).\n**¿Me esperas?** = Will you wait for me?",
+      "items": [
+        {"es": "me", "en": "me", "kind": "word"},
+        {"es": "te", "en": "you", "kind": "word", "accept_en": ["to you"]},
+        {"es": "nos", "en": "us", "kind": "word", "accept_en": ["to us"]},
+        {"es": "ayudar", "en": "to help", "kind": "verb"},
+        {"es": "invitar", "en": "to invite", "kind": "verb", "accept_en": ["to treat"], "note": "Te invito = I invite you, and also: it's my treat."},
+        {"es": "esperar", "en": "to wait for", "kind": "verb", "accept_en": ["to wait", "to hope", "to expect"]},
+        {"es": "¿te ayudo?", "en": "shall I help you?", "kind": "phrase", "accept_en": ["can I help you?", "do you want help?"]},
+        {"es": "te invito", "en": "it's my treat", "kind": "phrase", "accept_en": ["I invite you", "my treat", "I'll get this"]},
+        {"es": "recoger", "en": "to pick up", "kind": "verb", "accept_en": ["to collect", "to fetch"], "note": "yo recojo (g -> j before o)."}
+      ],
+      "sentences": [
+        {"es": "Mi mamá me llama todos los domingos.", "en": "My mum calls me every Sunday.", "focus": "me", "accept_en": ["My mom calls me every Sunday.", "My mother rings me every Sunday."]},
+        {"es": "¿Te ayudo con la maleta?", "en": "Shall I help you with the suitcase?", "focus": "ayudo", "accept_en": ["Can I help you with the suitcase?", "Shall I help you with your suitcase?"]},
+        {"es": "Nos invitaron a una fiesta.", "en": "They invited us to a party.", "focus": "invitaron", "accept_en": ["We were invited to a party."]},
+        {"es": "Te espero en la estación.", "en": "I'll wait for you at the station.", "focus": "espero", "accept_en": ["I'm waiting for you at the station.", "I wait for you at the station."]},
+        {"es": "¿Me esperas cinco minutos?", "en": "Will you wait for me for five minutes?", "focus": "esperas", "accept_en": ["Can you wait five minutes for me?", "Will you wait five minutes for me?"]},
+        {"es": "No te entiendo. ¿Puedes hablar más despacio?", "en": "I don't understand you. Can you speak more slowly?", "focus": "te", "accept_en": ["I don't understand you. Can you speak slower?"]},
+        {"es": "Hoy te invito yo.", "en": "Today it's my treat.", "focus": "invito", "accept_en": ["Today I'm paying.", "This one's on me today.", "Today I'll get this."]},
+        {"es": "Mi papá nos recoge en el aeropuerto.", "en": "My dad is picking us up at the airport.", "focus": "recoge", "accept_en": ["My dad picks us up at the airport.", "My father is collecting us at the airport."]},
+        {"es": "¿Nos ayudas a cocinar?", "en": "Will you help us cook?", "focus": "Nos", "accept_en": ["Can you help us cook?", "Will you help us to cook?"]}
+      ]
+    },
+    {
+      "id": "es-u25-l3",
+      "title": "To him, to them: le, les",
+      "notes": "An **indirect object** is the person who **receives**: I give the book **to Ana**. Spanish uses:\n**me** · **te** · **le** (to him / her / you-usted) · **nos** · **les** (to them / you-ustedes)\nVerbs of giving and telling take them: **dar** (to give), **decir**, **escribir**, **mandar** (to send), **regalar** (to give as a present), **preguntar** (to ask).\n**Le doy el regalo.** = I give him / her the present.\nSpanish often says the person too, with **a**, even though **le** is there: **Le escribí a mi abuela.** It sounds natural, and it makes clear who **le** is.\n**dar** is irregular in yo: **doy**, and in the preterite: **di, diste, dio, dimos, dieron**.",
+      "items": [
+        {"es": "le", "en": "(to) him / her / you", "kind": "word", "accept_en": ["to him", "to her", "to you", "him", "her"]},
+        {"es": "les", "en": "(to) them / you all", "kind": "word", "accept_en": ["to them", "them", "to you"]},
+        {"es": "dar", "en": "to give", "kind": "verb", "note": "doy, das, da... Preterite: di, dio."},
+        {"es": "le doy", "en": "I give him / her", "kind": "phrase", "accept_en": ["I give him", "I give her", "I give you"]},
+        {"es": "mandar", "en": "to send", "kind": "verb", "accept": ["enviar"]},
+        {"es": "regalar", "en": "to give (as a present)", "kind": "verb", "accept_en": ["to give a present", "to give"]},
+        {"es": "preguntar", "en": "to ask", "kind": "verb", "note": "To ask a question. To ask for something: pedir."},
+        {"es": "prestar", "en": "to lend", "kind": "verb", "accept_en": ["to loan"]}
+      ],
+      "sentences": [
+        {"es": "Le doy el regalo a mi hermana.", "en": "I give the present to my sister.", "focus": "doy", "accept_en": ["I give my sister the present.", "I'm giving my sister the present.", "I give the gift to my sister."]},
+        {"es": "Le escribí un mensaje a mi abuela.", "en": "I wrote my grandmother a message.", "focus": "Le", "accept_en": ["I wrote a message to my grandmother.", "I sent my grandma a message."]},
+        {"es": "¿Les mandaste las fotos a tus padres?", "en": "Did you send the photos to your parents?", "focus": "mandaste", "accept_en": ["Did you send your parents the photos?"]},
+        {"es": "Para su cumpleaños le regalé un libro.", "en": "For his birthday I gave him a book.", "focus": "regalé", "accept_en": ["For her birthday I gave her a book.", "I gave him a book for his birthday."]},
+        {"es": "Voy a preguntarle al profesor.", "en": "I'm going to ask the teacher.", "focus": "preguntarle"},
+        {"es": "¿Me prestas tu bicicleta?", "en": "Will you lend me your bike?", "focus": "prestas", "accept_en": ["Can you lend me your bicycle?", "Can I borrow your bike?"]},
+        {"es": "El médico les dio pastillas.", "en": "The doctor gave them tablets.", "focus": "les", "accept_en": ["The doctor gave them pills.", "The doctor gave you tablets."]},
+        {"es": "Mis amigos me dieron una torta.", "en": "My friends gave me a cake.", "focus": "dieron"},
+        {"es": "¿Qué le dijiste a Pedro?", "en": "What did you say to Pedro?", "focus": "dijiste", "accept_en": ["What did you tell Pedro?"]}
+      ]
+    },
+    {
+      "id": "es-u25-l4",
+      "title": "Two pronouns: se lo",
+      "notes": "When you use both, the **person comes first**, the thing second: **me lo**, **te la**, **nos los**.\n**¿Me das el libro? - Sí, te lo doy.** (Yes, I'll give it to you.)\nOne trap: **le** or **les** before **lo / la / los / las** becomes **se** (\"le lo\" is too hard to say):\n**Le doy el regalo.** -> **Se lo doy.** (I give it to him / her.)\nWith an infinitive or **-ando** form, the pronouns can also go on the end, as one word (add an accent to keep the stress):\n**Te lo voy a dar.** = **Voy a dártelo.**\n**Estoy comprándola.** = **La estoy comprando.**",
+      "items": [
+        {"es": "te lo doy", "en": "I'll give it to you", "kind": "phrase", "accept_en": ["I give it to you"]},
+        {"es": "me lo das", "en": "you give it to me", "kind": "phrase", "accept_en": ["will you give it to me", "you'll give it to me"]},
+        {"es": "se lo doy", "en": "I give it to him / her", "kind": "phrase", "accept_en": ["I give it to him", "I give it to her", "I give it to you", "I give it to them"]},
+        {"es": "se lo dije", "en": "I told him / her", "kind": "phrase", "accept_en": ["I told him", "I told her", "I told them", "I told you"]},
+        {"es": "voy a comprarlo", "en": "I'm going to buy it", "kind": "phrase", "accept": ["lo voy a comprar"]},
+        {"es": "explicar", "en": "to explain", "kind": "verb", "note": "Preterite: expliqué."},
+        {"es": "mostrar", "en": "to show", "kind": "verb", "accept": ["enseñar"], "note": "o -> ue: muestro."},
+        {"es": "el secreto", "en": "the secret", "kind": "word", "gender": "m"}
+      ],
+      "sentences": [
+        {"es": "¿Me das la sal? - Sí, te la doy.", "en": "Will you pass me the salt? - Yes, here you are.", "focus": "doy", "accept_en": ["Can you give me the salt? - Yes, I'll give it to you.", "Will you give me the salt? - Yes, I'll give it to you."]},
+        {"es": "Es mi libro. ¿Me lo das?", "en": "It's my book. Will you give it to me?", "focus": "lo", "accept_en": ["It's my book. Can you give it to me?"]},
+        {"es": "El regalo para Ana: se lo doy mañana.", "en": "The present for Ana: I'll give it to her tomorrow.", "focus": "se", "accept_en": ["Ana's present: I'll give it to her tomorrow."]},
+        {"es": "Carlos no sabía la noticia, entonces se la dije.", "en": "Carlos didn't know the news, so I told him.", "focus": "dije", "accept_en": ["Carlos didn't know the news, so I told it to him."]},
+        {"es": "Me gusta ese abrigo. Voy a comprarlo.", "en": "I like that coat. I'm going to buy it.", "focus": "comprarlo", "accept": ["Me gusta ese abrigo. Lo voy a comprar."]},
+        {"es": "No entiendo. ¿Me lo explicas otra vez?", "en": "I don't understand. Will you explain it to me again?", "focus": "explicas", "accept_en": ["I don't understand. Can you explain it to me again?"]},
+        {"es": "Te voy a mostrar las fotos del viaje.", "en": "I'm going to show you the photos from the trip.", "focus": "mostrar", "accept": ["Voy a mostrarte las fotos del viaje."], "accept_en": ["I'll show you the photos from the trip.", "I'm going to show you the trip photos."]},
+        {"es": "Es un secreto. No se lo dije a nadie.", "en": "It's a secret. I didn't tell anyone.", "focus": "secreto", "accept_en": ["It's a secret. I didn't tell anybody.", "It's a secret. I told nobody."]},
+        {"es": "¿Las fotos? Se las mandé a mis padres.", "en": "The photos? I sent them to my parents.", "focus": "mandé"}
+      ]
+    }
+  ]
+}

@@ -3,12 +3,14 @@ import { LanguageTiles } from './HomeTiles.jsx'
 import { part } from '../lazy.js'
 
 // its pages and panels: loaded when first shown (modules/lazy.js)
+const LearnView = part(() => import('./LanguageLearn.jsx'), 'LearnView')
 const TodayView = part(() => import('./LanguageViews.jsx'), 'TodayView')
 const CardsView = part(() => import('./LanguageViews.jsx'), 'CardsView')
 const LogView = part(() => import('./LanguageViews.jsx'), 'LogView')
 const ResourcesView = part(() => import('./LanguageViews.jsx'), 'ResourcesView')
 const ProgressView = part(() => import('./LanguageProgress.jsx'), 'ProgressView')
 const ReviewView = part(() => import('./ReviewView.jsx'), 'ReviewView')
+const ReadView = part(() => import('./ReadView.jsx'), 'ReadView')
 const LanguagePanel = part(() => import('./LanguagePanels.jsx'), 'LanguagePanel')
 const CardPanel = part(() => import('./LanguagePanels.jsx'), 'CardPanel')
 const BulkPanel = part(() => import('./LanguagePanels.jsx'), 'BulkPanel')
@@ -19,7 +21,9 @@ const ResourcePanel = part(() => import('./LanguagePanels.jsx'), 'ResourcePanel'
 // language on FSRS spaced repetition (Anki's scheduler: api/app/srs.py) - flip, type the answer (accents forgiven but
 // noted), listen (the browser's own voice) and cloze sentences (Clozemaster); a study log with a streak and a daily
 // minutes goal (Duolingo); input hours toward Dreaming Spanish / Refold milestones; resources you're working through
-// (LingQ's library); tutor and class notes (italki); a CEFR can-do checklist (Busuu / Babbel's levels).
+// (LingQ's library); tutor and class notes (italki); a CEFR can-do checklist (Busuu / Babbel's levels). And Learn, the landing
+// page: a built-in course that teaches the language lesson by lesson (Duolingo's path: LanguageLearn.jsx, lessonMaker.js),
+// each finished lesson's words going into the deck. And Read: real sentences from Tatoeba at your level (ReadView.jsx).
 export default {
   id: 'language',
   name: 'Language learning',
@@ -32,8 +36,10 @@ export default {
   actions: [{ label: 'Review cards', Icon: LanguageIcon, run: (app) => app.navigate('/language/review') }],
   panels: { langlanguage: LanguagePanel, langcard: CardPanel, langbulk: BulkPanel, langstudy: StudyPanel, langresource: ResourcePanel },
   pages: [
+    { path: 'learn', label: 'Learn', Icon: BookIcon, render: () => <LearnView /> },
     { path: 'today', label: 'Today', Icon: TrophyIcon, render: () => <TodayView /> },
     { path: 'review', label: 'Review', Icon: LanguageIcon, render: () => <ReviewView /> },
+    { path: 'read', label: 'Read', Icon: BookIcon, render: () => <ReadView /> },
     { path: 'cards', label: 'Cards', Icon: GridIcon, render: () => <CardsView /> },
     { path: 'log', label: 'Study log', Icon: JournalIcon, render: () => <LogView /> },
     { path: 'resources', label: 'Resources', Icon: BookIcon, render: () => <ResourcesView /> },

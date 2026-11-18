@@ -727,6 +727,15 @@ export const api = {
   languageReview: (languageId) => request(`/language/review?language_id=${languageId}`),
   answerLanguageCard: (id, data) => request(`/language/cards/${id}/review`, send('POST', data)),
   undoLanguageAnswer: (reviewId) => request(`/language/reviews/${reviewId}/undo`, send('POST')),
+  // reading: Tatoeba's sentences at your level (language_sentences.py)
+  languageSentences: (params) => request(`/language/sentences?${query(params)}`),
+  seenLanguageSentence: (id, languageId) => request(`/language/sentences/${id}/seen`, send('POST', { language_id: languageId })),
+  addLanguageSentenceCard: (id, data) => request(`/language/sentences/${id}/card`, send('POST', data)),
+  // the built-in courses (language_course.py)
+  languageCourses: () => request('/language/courses'),
+  languageCourse: (languageId) => request(`/language/languages/${languageId}/course`),
+  languageLesson: (lessonId) => request(`/language/course/lessons/${enc(lessonId)}`),
+  finishLanguageLesson: (languageId, lessonId, data) => request(`/language/languages/${languageId}/lessons/${enc(lessonId)}/done`, send('POST', data)),
   chessAccount: () => request('/chess/account'),
   setChessAccount: (username) => request('/chess/account', send('PUT', { username })),
   syncChess: (full = false) => request(`/chess/sync${full ? '?full=true' : ''}`, send('POST')),

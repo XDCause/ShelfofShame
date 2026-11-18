@@ -29,7 +29,7 @@ router = APIRouter(prefix="/api", tags=["calendar"])
 HOBBY_KINDS = {"models": ("model",), "boardgames": ("game",), "volleyball": ("volleyball",), "videogames": ("videogame",),
                "chess": ("chess",), "reading": ("book",), "travel": ("trip",), "shooting": ("shoot",), "hiking": ("hike",),
                "gardening": ("planting", "gcontainer", "gspace"), "vinyl": ("record",), "sudoku": ("sudoku",), "golf": ("golfround", "golfpractice"),
-               "language": ("langstudy", "langreview"), "car": ()}
+               "language": ("langstudy", "langreview", "langlesson"), "car": ()}
 KIND_HOBBY = {k: h for h, kinds in HOBBY_KINDS.items() for k in kinds}
 
 

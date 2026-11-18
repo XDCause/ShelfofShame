@@ -1,0 +1,114 @@
+{
+  "unit": 20,
+  "title": "Antes",
+  "cefr": "A2",
+  "goal": "Talk about your childhood and what used to happen, with the imperfect.",
+  "lessons": [
+    {
+      "id": "es-u20-l1",
+      "title": "I used to play",
+      "notes": "The **imperfect** (imperfecto) looks at the past as a background or a habit: what you **used to** do, what was **going on**. It doesn't care when it started or ended.\nFor **-ar** verbs, drop -ar and add **-aba**:\n**yo** jugaba · **tú** jugabas · **él / ella / usted** jugaba · **nosotros** jugábamos · **ellos / ustedes** jugaban\n**yo** and **él** are the same form - add the pronoun or a name if it's unclear.\nOne English sentence, three choices: **jugaba** can be \"I used to play\", \"I was playing\" or just \"I played\" (as a habit).\n**de niño / de niña** = as a child.",
+      "items": [
+        {"es": "jugaba", "en": "I used to play", "kind": "phrase", "accept_en": ["I was playing", "I played", "he used to play", "she used to play"]},
+        {"es": "jugabas", "en": "you used to play", "kind": "phrase", "accept_en": ["you were playing", "you played"]},
+        {"es": "jugábamos", "en": "we used to play", "kind": "phrase", "accept_en": ["we were playing", "we played"]},
+        {"es": "jugaban", "en": "they used to play", "kind": "phrase", "accept_en": ["they were playing", "they played", "you used to play"]},
+        {"es": "de niño", "en": "as a child", "kind": "phrase", "accept": ["de niña", "de pequeño", "de pequeña"], "accept_en": ["as a kid", "when I was a child", "when I was little"]},
+        {"es": "el vecino", "en": "the neighbour", "kind": "word", "gender": "m", "accept": ["la vecina"], "accept_en": ["the neighbor"]}
+      ],
+      "sentences": [
+        {"es": "De niño jugaba al fútbol todos los días.", "en": "As a child I used to play football every day.", "focus": "jugaba", "accept_en": ["As a child I played football every day.", "As a kid I used to play soccer every day.", "When I was a child I played football every day."]},
+        {"es": "¿Jugabas con tus hermanos?", "en": "Did you use to play with your brothers?", "focus": "Jugabas", "accept_en": ["Did you play with your brothers?", "Did you use to play with your brothers and sisters?", "Used you to play with your siblings?"]},
+        {"es": "Jugábamos en la calle después de la escuela.", "en": "We used to play in the street after school.", "focus": "Jugábamos", "accept_en": ["We played in the street after school.", "We would play in the street after school."]},
+        {"es": "Mis primos jugaban en el parque.", "en": "My cousins used to play in the park.", "focus": "jugaban", "accept_en": ["My cousins played in the park.", "My cousins were playing in the park."]},
+        {"es": "Antes trabajaba en un banco.", "en": "I used to work in a bank.", "focus": "trabajaba", "accept_en": ["Before, I worked in a bank.", "I worked in a bank before.", "I used to work at a bank."]},
+        {"es": "Mi mamá cocinaba todos los días.", "en": "My mum used to cook every day.", "focus": "cocinaba", "accept_en": ["My mum cooked every day.", "My mom used to cook every day.", "My mother used to cook every day."]},
+        {"es": "De niña jugaba con mi bicicleta en la calle.", "en": "As a girl I used to play with my bike in the street.", "focus": "bicicleta", "accept_en": ["As a child I played with my bicycle in the street.", "As a girl I played with my bike in the street.", "When I was little I used to play with my bike in the street."]},
+        {"es": "Antes me levantaba tarde, ahora me levanto temprano.", "en": "I used to get up late, now I get up early.", "focus": "levantaba", "accept_en": ["Before, I got up late; now I get up early."]},
+        {"es": "Mis vecinos jugaban al fútbol con nosotros.", "en": "My neighbours used to play football with us.", "focus": "vecinos", "accept_en": ["My neighbors used to play soccer with us.", "My neighbours played football with us."]}
+      ]
+    },
+    {
+      "id": "es-u20-l2",
+      "title": "I used to have",
+      "notes": "**-er** and **-ir** verbs share one set of imperfect endings, all with an accent on the **í**:\n**yo** tenía · **tú** tenías · **él / ella / usted** tenía · **nosotros** teníamos · **ellos / ustedes** tenían\nNo stem changes and almost no irregulars: **quería**, **podía**, **vivía**, **comía**, **hacía**.\nThe imperfect is also for what you **had**, **wanted** or **could** over a stretch of time - states rather than events:\n**Tenía un perro.** = I had a dog (back then).\n**Quería ser médico.** = I wanted to be a doctor.\nWeather as background: **Hacía calor.** = It was hot.",
+      "items": [
+        {"es": "tenía", "en": "I had", "kind": "phrase", "accept_en": ["I used to have", "he had", "she had"]},
+        {"es": "teníamos", "en": "we had", "kind": "phrase", "accept_en": ["we used to have"]},
+        {"es": "vivía", "en": "I lived", "kind": "phrase", "accept_en": ["I used to live", "I was living", "he lived", "she lived"]},
+        {"es": "comía", "en": "I used to eat", "kind": "phrase", "accept_en": ["I ate", "I was eating", "he used to eat", "she used to eat"]},
+        {"es": "quería", "en": "I wanted", "kind": "phrase", "accept_en": ["I used to want", "he wanted", "she wanted", "I wanted to"]},
+        {"es": "podía", "en": "I could", "kind": "phrase", "accept_en": ["I was able to", "he could", "she could"]},
+        {"es": "hacía calor", "en": "it was hot", "kind": "phrase", "accept_en": ["it used to be hot", "it was warm"]},
+        {"es": "el barrio", "en": "the neighbourhood", "kind": "word", "gender": "m", "accept_en": ["the neighborhood", "the area"]},
+        {"es": "el pueblo", "en": "the town", "kind": "word", "gender": "m", "accept_en": ["the village", "the small town"]},
+        {"es": "el médico", "en": "the doctor", "kind": "word", "gender": "m", "accept": ["la médica", "el doctor", "la doctora"]}
+      ],
+      "sentences": [
+        {"es": "De niño tenía un perro blanco.", "en": "As a child I had a white dog.", "focus": "tenía", "accept_en": ["As a kid I had a white dog.", "When I was a child I had a white dog."]},
+        {"es": "Vivía en un pueblo pequeño.", "en": "I lived in a small town.", "focus": "pueblo", "accept_en": ["I used to live in a small town.", "I lived in a small village.", "I used to live in a little village."]},
+        {"es": "Teníamos una casa en el barrio.", "en": "We had a house in the neighbourhood.", "focus": "barrio", "accept_en": ["We used to have a house in the neighbourhood.", "We had a house in the neighborhood."]},
+        {"es": "Quería ser médico.", "en": "I wanted to be a doctor.", "focus": "médico", "accept_en": ["I used to want to be a doctor."]},
+        {"es": "Antes comía mucho pan.", "en": "I used to eat a lot of bread.", "focus": "comía", "accept_en": ["Before, I ate a lot of bread.", "I ate a lot of bread before."]},
+        {"es": "En mi pueblo siempre hacía calor.", "en": "In my town it was always hot.", "focus": "hacía", "accept_en": ["It was always hot in my town.", "In my village it was always hot."]},
+        {"es": "No podía dormir por la noche.", "en": "I couldn't sleep at night.", "focus": "podía", "accept_en": ["I wasn't able to sleep at night."]},
+        {"es": "Mis abuelos vivían cerca de la escuela.", "en": "My grandparents lived near the school.", "focus": "vivían", "accept_en": ["My grandparents used to live near the school.", "My grandparents lived close to the school."]},
+        {"es": "¿Qué querías ser de niño?", "en": "What did you want to be as a child?", "focus": "querías", "accept_en": ["What did you want to be when you were little?", "What did you want to be as a kid?"]}
+      ]
+    },
+    {
+      "id": "es-u20-l3",
+      "title": "It was, there was",
+      "notes": "Only three verbs are irregular in the imperfect:\n**ser**: era · eras · era · éramos · eran\n**ir**: iba · ibas · iba · íbamos · iban\n**ver**: veía · veías · veía · veíamos · veían\nAnd **hay** becomes **había** = there was / there were (one form for both, singular and plural):\n**Había un parque.** · **Había muchos niños.**\n**era** is for describing people, places and times in the past: **Era alto.** (He was tall.) **Eran las diez.** (It was ten o'clock.)\n**Cuando era niño...** (When I was a child...) is how many childhood stories begin.",
+      "items": [
+        {"es": "era", "en": "I was; it was", "kind": "phrase", "accept_en": ["it was", "he was", "she was", "I was", "I used to be"]},
+        {"es": "éramos", "en": "we were", "kind": "phrase", "accept_en": ["we used to be"]},
+        {"es": "eran", "en": "they were", "kind": "phrase", "accept_en": ["you were", "they used to be"]},
+        {"es": "cuando era niño", "en": "when I was a child", "kind": "phrase", "accept": ["cuando era niña", "cuando era pequeño", "cuando era pequeña"], "accept_en": ["when I was a kid", "when I was little", "when I was a boy"]},
+        {"es": "iba", "en": "I used to go", "kind": "phrase", "accept_en": ["I was going", "I went", "he used to go", "she used to go"]},
+        {"es": "íbamos", "en": "we used to go", "kind": "phrase", "accept_en": ["we went", "we were going"]},
+        {"es": "veía", "en": "I used to see", "kind": "phrase", "accept_en": ["I used to watch", "I saw", "I watched", "I was watching"]},
+        {"es": "había", "en": "there was / there were", "kind": "phrase", "accept_en": ["there was", "there were", "there used to be"]},
+        {"es": "los dibujos animados", "en": "cartoons", "kind": "word", "gender": "m", "accept_en": ["the cartoons"], "note": "Also las caricaturas in Mexico."},
+        {"es": "tímido", "en": "shy", "kind": "word", "accept_en": ["timid"]}
+      ],
+      "sentences": [
+        {"es": "Cuando era niño, era muy tímido.", "en": "When I was a child, I was very shy.", "focus": "tímido", "accept_en": ["When I was a kid, I was very shy.", "As a child I was very shy."]},
+        {"es": "Mi abuela era muy simpática.", "en": "My grandmother was very nice.", "focus": "era", "accept_en": ["My grandma was very nice.", "My grandmother was very friendly."]},
+        {"es": "Éramos cinco en mi familia.", "en": "There were five of us in my family.", "focus": "Éramos", "accept_en": ["We were five in my family."]},
+        {"es": "Los veranos eran muy largos.", "en": "The summers were very long.", "focus": "eran", "accept_en": ["Summers were very long."]},
+        {"es": "Los domingos íbamos a la playa.", "en": "On Sundays we used to go to the beach.", "focus": "íbamos", "accept_en": ["On Sundays we went to the beach.", "We used to go to the beach on Sundays."]},
+        {"es": "Iba a la escuela con mi hermano.", "en": "I used to go to school with my brother.", "focus": "Iba", "accept_en": ["I went to school with my brother.", "I would go to school with my brother."]},
+        {"es": "Veía dibujos animados todas las mañanas.", "en": "I used to watch cartoons every morning.", "focus": "Veía", "accept_en": ["I watched cartoons every morning."]},
+        {"es": "En mi barrio había un parque grande.", "en": "In my neighbourhood there was a big park.", "focus": "había", "accept_en": ["There was a big park in my neighbourhood.", "In my neighborhood there was a big park."]},
+        {"es": "Eran las diez de la noche.", "en": "It was ten o'clock at night.", "focus": "Eran", "accept_en": ["It was ten at night.", "It was 10 pm."]}
+      ]
+    },
+    {
+      "id": "es-u20-l4",
+      "title": "How often?",
+      "notes": "The imperfect loves words of **repetition**, because it describes habits:\n**siempre** (always) · **a menudo** (often) · **a veces** (sometimes) · **nunca** (never) · **cada** (each, every): **cada verano** · **todos los años** (every year)\n**soler** + infinitive = to usually do: **solía ir** = I used to go. It's o -> ue in the present (**suelo**), but the imperfect **solía** is the form you'll use most for the past.\n**mientras** (while) sets two actions side by side: **Mientras mi papá cocinaba, yo leía.**\nRule of thumb: if you could say \"used to\" or \"would\" in English, choose the imperfect.",
+      "items": [
+        {"es": "a menudo", "en": "often", "kind": "phrase", "accept_en": ["frequently"]},
+        {"es": "cada", "en": "each", "kind": "word", "accept_en": ["every"]},
+        {"es": "todos los años", "en": "every year", "kind": "phrase"},
+        {"es": "soler", "en": "to usually (do)", "kind": "verb", "accept_en": ["to be in the habit of", "to tend to"], "note": "o -> ue: suelo. Past: solía."},
+        {"es": "solía", "en": "I used to", "kind": "phrase", "accept_en": ["I would usually", "he used to", "she used to"]},
+        {"es": "mientras", "en": "while", "kind": "word", "accept_en": ["whilst"]},
+        {"es": "el juguete", "en": "the toy", "kind": "word", "gender": "m"},
+        {"es": "el árbol", "en": "the tree", "kind": "word", "gender": "m"}
+      ],
+      "sentences": [
+        {"es": "Íbamos a la playa a menudo.", "en": "We often went to the beach.", "focus": "menudo", "accept_en": ["We used to go to the beach often.", "We would often go to the beach."]},
+        {"es": "A veces jugaba con mis primos.", "en": "Sometimes I used to play with my cousins.", "focus": "veces", "accept_en": ["Sometimes I played with my cousins.", "I sometimes played with my cousins."]},
+        {"es": "Cada verano visitábamos a mis abuelos.", "en": "Every summer we used to visit my grandparents.", "focus": "Cada", "accept_en": ["Every summer we visited my grandparents.", "Each summer we visited my grandparents."]},
+        {"es": "Todos los años hacíamos una fiesta.", "en": "Every year we used to have a party.", "focus": "años", "accept_en": ["Every year we had a party.", "Every year we threw a party.", "Every year we would have a party."]},
+        {"es": "Solía leer antes de dormirme.", "en": "I used to read before falling asleep.", "focus": "Solía", "accept_en": ["I usually read before falling asleep.", "I used to read before I fell asleep."]},
+        {"es": "Mientras mi papá cocinaba, yo leía.", "en": "While my dad cooked, I read.", "focus": "Mientras", "accept_en": ["While my dad was cooking, I was reading.", "While my father cooked, I used to read."]},
+        {"es": "Mi juguete favorito era una bicicleta roja.", "en": "My favourite toy was a red bicycle.", "focus": "juguete", "accept_en": ["My favorite toy was a red bike.", "My favourite toy was a red bike."]},
+        {"es": "Había un árbol muy alto en el jardín.", "en": "There was a very tall tree in the garden.", "focus": "árbol", "accept_en": ["There was a really tall tree in the garden.", "In the garden there was a very tall tree."]},
+        {"es": "Nunca comía fruta de niño.", "en": "I never used to eat fruit as a child.", "focus": "Nunca", "accept_en": ["I never ate fruit as a child.", "As a kid I never ate fruit."]}
+      ]
+    }
+  ]
+}

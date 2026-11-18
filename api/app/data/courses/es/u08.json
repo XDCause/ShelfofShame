@@ -1,0 +1,134 @@
+{
+  "unit": 8,
+  "title": "El café",
+  "cefr": "A1",
+  "goal": "Order food and drink in a café or restaurant, ask for the bill and understand prices up to 100.",
+  "lessons": [
+    {
+      "id": "es-u08-l1",
+      "title": "Something to drink",
+      "notes": "To order, **quiero** (I want) is normal and not rude in Spanish - your **por favor** does the politeness. **Quisiera** (I would like) is a touch more polite, good with waiters and in shops.\n**Quiero un café, por favor. Quisiera un té.**\nAsk a friend **¿Quieres...?** (do you want...?).\n**Con** = with, **sin** = without: **un café con leche** (a white coffee), **un té sin azúcar**. **De** tells you what's inside: **un vaso de agua** (a glass of water), **una taza de té**.\nLatin America drinks **jugo**; Spain drinks **zumo**.",
+      "items": [
+        {"es": "quiero", "en": "I want", "kind": "phrase", "accept_en": ["I'd like", "I would like"]},
+        {"es": "quieres", "en": "you want", "kind": "phrase", "accept_en": ["do you want", "would you like"]},
+        {"es": "quisiera", "en": "I would like", "kind": "phrase", "accept_en": ["I'd like"], "note": "A little more polite than quiero."},
+        {"es": "el té", "en": "the tea", "kind": "word", "gender": "m", "accept_en": ["tea"], "note": "With an accent: 'te' without one means 'you' (te llamas)."},
+        {"es": "el jugo", "en": "the juice", "kind": "word", "gender": "m", "accept": ["el zumo"], "accept_en": ["juice"], "note": "Spain: el zumo."},
+        {"es": "la cerveza", "en": "the beer", "kind": "word", "gender": "f", "accept_en": ["beer"]},
+        {"es": "el vino", "en": "the wine", "kind": "word", "gender": "m", "accept_en": ["wine"]},
+        {"es": "la leche", "en": "the milk", "kind": "word", "gender": "f", "accept_en": ["milk"]},
+        {"es": "el azúcar", "en": "the sugar", "kind": "word", "gender": "m", "accept_en": ["sugar"]},
+        {"es": "sin", "en": "without", "kind": "word"},
+        {"es": "el vaso", "en": "the glass", "kind": "word", "gender": "m", "accept_en": ["glass", "the cup"]},
+        {"es": "la taza", "en": "the cup", "kind": "word", "gender": "f", "accept_en": ["cup", "the mug"]}
+      ],
+      "sentences": [
+        {"es": "Quiero un café con leche, por favor.", "en": "I'd like a white coffee, please.", "focus": "leche", "accept_en": ["I want a coffee with milk, please.", "I'd like a coffee with milk, please.", "A white coffee, please."]},
+        {"es": "Quisiera un té sin azúcar.", "en": "I would like a tea without sugar.", "focus": "sin", "accept_en": ["I'd like a tea with no sugar.", "I'd like tea without sugar."]},
+        {"es": "Un vaso de agua, por favor.", "en": "A glass of water, please.", "focus": "vaso"},
+        {"es": "¿Quieres una cerveza?", "en": "Do you want a beer?", "focus": "cerveza", "accept_en": ["Would you like a beer?"]},
+        {"es": "No, gracias. Quiero un jugo de naranja.", "en": "No, thanks. I'd like an orange juice.", "focus": "jugo", "accept": ["No, gracias. Quiero un zumo de naranja."], "accept_en": ["No, thank you. I want an orange juice."]},
+        {"es": "Una taza de té, por favor.", "en": "A cup of tea, please.", "focus": "taza"},
+        {"es": "Quiero un vino blanco, por favor.", "en": "I'd like a white wine, please.", "focus": "vino", "accept_en": ["I want a white wine, please.", "A white wine, please."]},
+        {"es": "El café está muy bueno.", "en": "The coffee is very good.", "focus": "café", "accept_en": ["The coffee is really good."]},
+        {"es": "¿Quieres azúcar?", "en": "Do you want sugar?", "focus": "Quieres", "accept_en": ["Would you like sugar?", "Do you take sugar?"]},
+        {"es": "Quisiera un vaso de vino.", "en": "I'd like a glass of wine.", "focus": "Quisiera", "accept": ["Quisiera una copa de vino."], "accept_en": ["I would like a glass of wine."]}
+      ]
+    },
+    {
+      "id": "es-u08-l2",
+      "title": "Something to eat",
+      "notes": "Spanish builds 'X sandwich' backwards with **de**: **un sándwich de jamón** (a ham sandwich), **una sopa de pollo** (chicken soup), **un jugo de naranja**. The main thing first, then 'of' what.\nFood that's good to eat right now is **está bueno / buena** (estar - it tastes good today): **La sopa está muy buena.** Ser bueno would mean it's healthy or good quality in general.\n**¿Algo más?** (anything else?) - you'll hear it after every order. **Algo** = something; **más** = more.",
+      "items": [
+        {"es": "el pan", "en": "the bread", "kind": "word", "gender": "m", "accept_en": ["bread"]},
+        {"es": "el queso", "en": "the cheese", "kind": "word", "gender": "m", "accept_en": ["cheese"]},
+        {"es": "el jamón", "en": "the ham", "kind": "word", "gender": "m", "accept_en": ["ham"]},
+        {"es": "el huevo", "en": "the egg", "kind": "word", "gender": "m", "accept_en": ["egg"]},
+        {"es": "la ensalada", "en": "the salad", "kind": "word", "gender": "f", "accept_en": ["salad"]},
+        {"es": "el pollo", "en": "the chicken", "kind": "word", "gender": "m", "accept_en": ["chicken"]},
+        {"es": "la sopa", "en": "the soup", "kind": "word", "gender": "f", "accept_en": ["soup"]},
+        {"es": "el sándwich", "en": "the sandwich", "kind": "word", "gender": "m", "accept": ["el sándwiche", "el bocadillo"], "accept_en": ["sandwich"], "note": "Spain: el bocadillo (on a roll)."},
+        {"es": "la fruta", "en": "the fruit", "kind": "word", "gender": "f", "accept_en": ["fruit"]},
+        {"es": "la comida", "en": "the food", "kind": "word", "gender": "f", "accept_en": ["food", "the meal", "lunch"]},
+        {"es": "el desayuno", "en": "the breakfast", "kind": "word", "gender": "m", "accept_en": ["breakfast"]},
+        {"es": "algo", "en": "something", "kind": "word", "accept_en": ["anything"], "note": "¿Algo más? = Anything else?"}
+      ],
+      "sentences": [
+        {"es": "Quisiera un sándwich de jamón y queso.", "en": "I'd like a ham and cheese sandwich.", "focus": "jamón", "accept_en": ["I would like a ham and cheese sandwich."]},
+        {"es": "¿Quieres algo más?", "en": "Do you want anything else?", "focus": "algo", "accept_en": ["Would you like anything else?", "Do you want something else?", "Anything else?"]},
+        {"es": "La sopa está muy buena.", "en": "The soup is very good.", "focus": "sopa", "accept_en": ["The soup is really good."]},
+        {"es": "Quiero una ensalada sin queso.", "en": "I'd like a salad without cheese.", "focus": "ensalada", "accept_en": ["I want a salad without cheese.", "I'd like a salad with no cheese."]},
+        {"es": "Pan con huevo, por favor.", "en": "Bread with egg, please.", "focus": "huevo", "accept_en": ["Egg on bread, please.", "Bread and egg, please."]},
+        {"es": "La comida aquí es muy buena.", "en": "The food here is very good.", "focus": "comida", "accept_en": ["The food is very good here."]},
+        {"es": "El desayuno está listo.", "en": "Breakfast is ready.", "focus": "desayuno", "accept_en": ["The breakfast is ready."]},
+        {"es": "¿Hay fruta?", "en": "Is there any fruit?", "focus": "fruta", "accept_en": ["Is there fruit?", "Do you have fruit?"]},
+        {"es": "Una sopa de pollo, por favor.", "en": "A chicken soup, please.", "focus": "pollo"},
+        {"es": "No quiero pan, gracias.", "en": "I don't want bread, thanks.", "focus": "pan", "accept_en": ["I don't want any bread, thank you."]}
+      ]
+    },
+    {
+      "id": "es-u08-l3",
+      "title": "At the restaurant",
+      "notes": "Some set phrases do most of the work:\n**Una mesa para dos, por favor.** (a table for two)\n**¿Me trae el menú?** - literally 'do you bring me the menu?', a polite request.\n**Para mí, el pollo.** (for me, the chicken)\n**La cuenta, por favor.** (the bill)\n**Para** = for. **Rico** describes tasty food: **¡Está muy rico!**\nWaiter: **el mesero / la mesera** in Mexico and much of Latin America, **el camarero / la camarera** in Spain. Spain also calls the menu **la carta**. Tipping is expected in Mexico (about 10-15%) and much less fixed elsewhere.",
+      "items": [
+        {"es": "la cuenta", "en": "the bill", "kind": "word", "gender": "f", "accept_en": ["the check", "bill"]},
+        {"es": "el menú", "en": "the menu", "kind": "word", "gender": "m", "accept": ["la carta"], "accept_en": ["menu"]},
+        {"es": "el mesero", "en": "the waiter", "kind": "word", "gender": "m", "accept": ["el camarero", "el mozo"], "accept_en": ["waiter"], "note": "Spain: el camarero. Argentina: el mozo."},
+        {"es": "la mesera", "en": "the waitress", "kind": "word", "gender": "f", "accept": ["la camarera", "la moza"], "accept_en": ["the waiter", "waitress"]},
+        {"es": "la propina", "en": "the tip", "kind": "word", "gender": "f", "accept_en": ["tip"]},
+        {"es": "para", "en": "for", "kind": "word"},
+        {"es": "para mí", "en": "for me", "kind": "phrase", "accept_en": ["I'll have"]},
+        {"es": "¿me trae...?", "en": "could you bring me...?", "kind": "phrase", "accept_en": ["can you bring me...?", "can I have...?", "could I have...?"]},
+        {"es": "en efectivo", "en": "in cash", "kind": "phrase", "accept_en": ["cash"]},
+        {"es": "¿cuánto es?", "en": "how much is it?", "kind": "phrase", "accept_en": ["how much is that?"]},
+        {"es": "rico", "en": "tasty", "kind": "word", "accept_en": ["delicious", "yummy", "rich"]},
+        {"es": "o", "en": "or", "kind": "word"}
+      ],
+      "sentences": [
+        {"es": "Una mesa para dos, por favor.", "en": "A table for two, please.", "focus": "para"},
+        {"es": "¿Me trae el menú, por favor?", "en": "Could you bring me the menu, please?", "focus": "menú", "accept_en": ["Can I have the menu, please?", "Can you bring me the menu, please?"]},
+        {"es": "Para mí, el pollo.", "en": "For me, the chicken.", "focus": "mí", "accept_en": ["I'll have the chicken."]},
+        {"es": "La cuenta, por favor.", "en": "The bill, please.", "focus": "cuenta", "accept_en": ["The check, please.", "Can I have the bill, please?"]},
+        {"es": "¿Cuánto es?", "en": "How much is it?", "focus": "Cuánto", "accept_en": ["How much is that?"]},
+        {"es": "¿Con tarjeta o en efectivo?", "en": "By card or in cash?", "focus": "efectivo", "accept_en": ["Card or cash?", "With card or cash?"]},
+        {"es": "El pollo está muy rico.", "en": "The chicken is very tasty.", "focus": "rico", "accept_en": ["The chicken is delicious.", "The chicken is really tasty."]},
+        {"es": "En México hay propina.", "en": "In Mexico there's a tip.", "focus": "propina", "accept_en": ["In Mexico you tip.", "In Mexico people leave a tip."]},
+        {"es": "La mesera es muy simpática.", "en": "The waitress is very nice.", "focus": "mesera", "accept_en": ["The waitress is very friendly."]},
+        {"es": "¿Me trae un vaso de agua?", "en": "Could you bring me a glass of water?", "focus": "trae", "accept_en": ["Can I have a glass of water?", "Can you bring me a glass of water?"]},
+        {"es": "El mesero está ocupado.", "en": "The waiter is busy.", "focus": "mesero"}
+      ]
+    },
+    {
+      "id": "es-u08-l4",
+      "title": "Numbers to 100 and prices",
+      "notes": "The tens: **treinta, cuarenta, cincuenta, sesenta, setenta, ochenta, noventa** - and **cien** (100).\n**21-29** are written as one word: **veintiuno, veintidós, veintitrés...** (veinte + y + uno run together); before a masculine noun uno drops its -o: **veintiún años**.\nFrom **31** you use **y** as a separate word: **treinta y cinco** (35), **noventa y nueve** (99).\nPrices: **¿Cuánto cuesta?** (how much does it cost?) - **Cuesta cinco dólares.** For several things: **cuestan**. Or simply **Son cincuenta pesos** (that's fifty pesos).",
+      "items": [
+        {"es": "veintiuno", "en": "twenty-one", "kind": "word", "accept": ["veintiún"], "accept_en": ["21"], "note": "veintiún before a masculine noun: veintiún años."},
+        {"es": "treinta y cinco", "en": "thirty-five", "kind": "phrase", "accept_en": ["35"]},
+        {"es": "cincuenta", "en": "fifty", "kind": "word", "accept_en": ["50"]},
+        {"es": "sesenta", "en": "sixty", "kind": "word", "accept_en": ["60"]},
+        {"es": "setenta", "en": "seventy", "kind": "word", "accept_en": ["70"]},
+        {"es": "ochenta", "en": "eighty", "kind": "word", "accept_en": ["80"]},
+        {"es": "noventa", "en": "ninety", "kind": "word", "accept_en": ["90"]},
+        {"es": "cien", "en": "a hundred", "kind": "word", "accept_en": ["one hundred", "100"]},
+        {"es": "el dólar", "en": "the dollar", "kind": "word", "gender": "m", "accept_en": ["dollar"]},
+        {"es": "el peso", "en": "the peso", "kind": "word", "gender": "m", "accept_en": ["peso", "the weight"]},
+        {"es": "¿cuánto cuesta?", "en": "how much does it cost?", "kind": "phrase", "accept_en": ["how much is it?", "how much is this?"]},
+        {"es": "cuesta", "en": "it costs", "kind": "phrase", "accept_en": ["costs"]}
+      ],
+      "sentences": [
+        {"es": "¿Cuánto cuesta el café?", "en": "How much is the coffee?", "focus": "cuesta", "accept_en": ["How much does the coffee cost?"]},
+        {"es": "Cuesta cinco dólares.", "en": "It costs five dollars.", "focus": "dólares", "accept_en": ["It's five dollars."]},
+        {"es": "La cuenta es de cincuenta dólares.", "en": "The bill is fifty dollars.", "focus": "cincuenta", "accept_en": ["The bill comes to fifty dollars."]},
+        {"es": "El sándwich cuesta sesenta pesos.", "en": "The sandwich costs sixty pesos.", "focus": "sesenta", "accept_en": ["The sandwich is sixty pesos."]},
+        {"es": "Son noventa pesos, por favor.", "en": "That's ninety pesos, please.", "focus": "noventa", "accept_en": ["It's ninety pesos, please."]},
+        {"es": "Tengo cien dólares.", "en": "I have a hundred dollars.", "focus": "cien", "accept_en": ["I've got a hundred dollars.", "I have one hundred dollars."]},
+        {"es": "Mi abuelo tiene ochenta años.", "en": "My grandfather is eighty.", "focus": "ochenta", "accept_en": ["My grandfather is eighty years old.", "My grandpa is eighty."]},
+        {"es": "El vino cuesta treinta y cinco dólares.", "en": "The wine costs thirty-five dollars.", "focus": "cinco", "accept_en": ["The wine is thirty-five dollars."]},
+        {"es": "Mi abuela tiene setenta y dos años.", "en": "My grandmother is seventy-two.", "focus": "setenta", "accept_en": ["My grandmother is seventy-two years old.", "My grandma is seventy-two."]},
+        {"es": "Veinte y uno son veintiuno.", "en": "Twenty and one are twenty-one.", "focus": "veintiuno", "accept_en": ["Twenty plus one is twenty-one.", "Twenty and one make twenty-one."]},
+        {"es": "El queso cuesta veinte pesos.", "en": "The cheese costs twenty pesos.", "focus": "pesos", "accept_en": ["The cheese is twenty pesos."]}
+      ]
+    }
+  ]
+}

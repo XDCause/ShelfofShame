@@ -1534,6 +1534,149 @@ def language(page):
     shot(page, "d73_language_progress", full=False)
 
 
+@step("Language learning's course: a Spanish language follows it, Learn's path, the first lesson start to finish (notes, introduce, match, pick, type, listening skipped, word order, gap, translate - all right), the finish screen, its cards in the deck, Today's next lesson")
+def language_course(page):
+    name = f"Spanish {MARK}"
+    page.goto(BASE + "/language/today")
+    page.get_by_role("button", name="+ Add a language").first.click()
+    d = drawer(page)
+    d.get_by_label(re.compile(r"^Language")).fill(name)
+    d.get_by_label(re.compile(r"^Voice")).fill("es-MX")
+    d.get_by_label(re.compile(r"^Course")).select_option("es")
+    d.get_by_role("button", name="Add", exact=True).click()
+    expect(d).to_have_count(0)
+    lang = next(x for x in get_json("/api/language/languages") if x["name"] == name)
+    assert lang["course"] == "es", lang
+
+    # Learn: the path, the first lesson next
+    page.locator(".section-tabs").get_by_role("link", name="Learn").click()
+    expect(page.locator(".lngc-head")).to_contain_text("Spanish course")
+    path = get_json(f"/api/language/languages/{lang['language_id']}/course")
+    first = path["next"]
+    assert first["id"] == "es-u01-l1" and path["done"] == 0, path
+    expect(page.locator(".lngc-step.next")).to_contain_text(first["title"])
+    shot(page, "d74_language_learn", full=False)
+    page.locator(".lngc-continue").click()
+
+    # the lesson: its notes, then every exercise answered right (the answers from its content)
+    lesson = get_json(f"/api/language/course/lessons/{first['id']}")
+    expect(page.locator(".lngc-notes h2")).to_have_text(lesson["title"])
+    page.get_by_role("button", name="Start the lesson").click()
+    items_es = {i["es"]: i for i in lesson["items"]}
+    items_en = {i["en"]: i for i in lesson["items"]}
+    by_en = {s["en"]: s for s in lesson["sentences"]}
+    by_es = {s["es"]: s for s in lesson["sentences"]}
+    tidy = lambda t: re.sub(r"[.,!?;:\"»)”…]+$", "", re.sub(r"^[¿¡\"«(“]+", "", t))
+    seen = set()
+    for _ in range(120):
+        page.locator(".lngc-ex, .lngc-finish").first.wait_for()
+        if page.locator(".lngc-finish").count():
+            break
+        card = page.locator(".lngc-ex")
+        kind, key = card.get_attribute("data-kind"), card.get_attribute("data-key")
+        seen.add(kind)
+        if kind == "introduce":
+            assert card.locator(".lngc-big").inner_text() in items_es
+            card.get_by_role("button", name="Continue").click()
+        elif kind == "listen":
+            card.get_by_role("button", name="Can't listen now").click()       # (no sound in the test browser)
+        else:
+            if kind == "match":
+                cols = card.locator(".lngc-col")
+                for b in cols.nth(0).get_by_role("button").all():
+                    es = b.inner_text()
+                    b.click()
+                    cols.nth(1).get_by_role("button", name=items_es[es]["en"], exact=True).click()
+            elif kind == "pick":
+                item = items_es[card.locator(".lngc-big").inner_text()]
+                card.get_by_role("group", name="Options").get_by_role("button", name=item["en"], exact=True).click()
+                card.get_by_role("button", name="Check").click()
+            elif kind == "type":
+                item = items_en[card.locator(".lngc-big").inner_text()]
+                card.get_by_label(re.compile("^In ")).fill(item["es"])
+                page.keyboard.press("Enter")                                  # (keys: Enter checks)
+            elif kind == "order":
+                s = by_en[card.locator(".lngc-prompt").inner_text()]
+                bank = card.get_by_role("group", name="Words")
+                for word in [tidy(t) for t in s["es"].split()]:
+                    if word:
+                        bank.get_by_role("button", name=re.compile(f"^{re.escape(word)}$", re.I)).first.click()
+                card.get_by_role("button", name="Check").click()
+            elif kind == "gap":
+                s = by_en[card.locator(".lngc-meaning").inner_text()]
+                card.get_by_role("group", name="Options").get_by_role("button", name=s["gap"], exact=True).click()
+                card.get_by_role("button", name="Check").click()
+            elif kind == "translate":
+                s = by_es[card.locator(".lngc-sentence").inner_text()]
+                card.get_by_label("In English").fill(s["en"])
+                card.get_by_role("button", name="Check").click()
+            else:
+                raise AssertionError(f"an exercise the walk-through doesn't know: {kind}")
+            expect(page.locator(".lngc-feedback.right")).to_be_visible()
+            if kind == "gap":
+                shot(page, "d75_language_lesson", full=False)
+            page.keyboard.press("Enter")                                      # (and Enter continues)
+        page.locator(f".lngc-ex:not([data-key='{key}']), .lngc-finish").first.wait_for()
+    assert {"introduce", "match", "pick", "type", "order", "gap", "translate"} <= seen, seen
+
+    # the finish screen: 100%, the lesson's words and sentences in the deck
+    fin = page.locator(".lngc-finish")
+    expect(fin).to_contain_text("Lesson done")
+    expect(fin.locator(".lngc-figures")).to_contain_text("100%")
+    cards = get_json(f"/api/language/cards?language_id={lang['language_id']}")
+    assert len(cards) == len(lesson["items"]) + len(lesson["sentences"]), len(cards)
+    expect(fin.locator(".lngc-figures")).to_contain_text(str(len(cards)))
+    shot(page, "d76_language_lesson_done", full=False)
+    path = get_json(f"/api/language/languages/{lang['language_id']}/course")
+    assert path["done"] == 1 and path["units"][0]["lessons"][0]["best"] == 100, path["units"][0]["lessons"][0]
+    expect(fin.get_by_role("link", name=re.compile("^Next lesson"))).to_be_visible()
+    fin.get_by_role("link", name="Back to the course").click()
+    expect(page.locator(".lngc-step.done").first).to_contain_text(lesson["title"])
+    page.locator(".section-tabs").get_by_role("link", name="Today").click()
+    expect(page.locator(".lngc-today")).to_contain_text(path["next"]["title"])
+
+
+@step("Language learning: Read - Tatoeba's sentences (Any): the English shown, the Tatoeba link, a new word's box, into the deck as a cloze, the word in other sentences (just the empty state when none are loaded)")
+def language_read(page):
+    langs = get_json("/api/language/languages")
+    lang = next((x for x in langs if get_json(f"/api/language/sentences?language_id={x['language_id']}&level=any&limit=1")["total"]), None)
+    page.goto(BASE + "/language/read")
+    if lang is None:                       # (dev's data has no sentences loaded, or no Spanish: load-tatoeba.ps1)
+        expect(page.locator(".empty-state")).to_be_visible()
+        return
+    picker = page.get_by_role("group", name="Language")
+    if picker.count():                     # (the language step's own language is the one remembered)
+        picker.get_by_role("button", name=re.compile("^" + re.escape(lang["name"]))).click()
+    page.get_by_role("group", name="Which sentences").get_by_role("button", name="Any").click()
+    first = page.locator(".lngr-sentence").first
+    expect(first).to_be_visible()
+    expect(first.locator(".lngr-source a")).to_have_attribute("href", re.compile(r"^https://tatoeba\.org/en/sentences/show/\d+$"))
+    first.get_by_role("button", name="Show the English").click()
+    expect(first.locator(".lngr-english li").first).to_be_visible()
+    expect(page.locator(".lngr-credit")).to_contain_text("CC BY 2.0 FR")
+    shot(page, "d74_language_read", full=False)
+
+    # a new word (the first highlighted on the page): its box, Add to deck - a cloze card on it, and it's known at once
+    sentence = page.locator(".lngr-sentence", has=page.locator(".lngr-word")).first
+    word = sentence.locator(".lngr-word").first
+    text = word.inner_text()
+    word.click()
+    box = sentence.locator(".lngr-wordbox")
+    expect(box).to_contain_text(text)
+    box.get_by_role("button", name="Add to deck").click()
+    expect(box).to_have_count(0)                                    # (known now: no longer highlighted, its box gone)
+    cards = get_json(f"/api/language/cards?language_id={lang['language_id']}&tag=tatoeba")
+    assert any("{{" + text + "}}" in c["front"] and c["kind"] == "cloze" for c in cards), [c["front"] for c in cards[:5]]
+
+    # the word in other sentences (the find box)
+    page.get_by_placeholder("Find a word").fill(text)
+    page.get_by_role("button", name="Find", exact=True).click()
+    expect(page.locator(".lngr-head")).to_contain_text("Sentences with")
+    expect(page.locator(".lngr-sentence").first).to_be_visible()
+    page.get_by_role("button", name="Back to your level").click()
+    expect(page.get_by_role("group", name="Which sentences").get_by_role("button", name="Any")).to_have_attribute("aria-pressed", "true")
+
+
 @step("Golf: find a course (stand-in OpenStreetMap), a tee's rating, play two holes on the phone page, finish, the scorecard; stats, bag, practice")
 def golf(page):
     go(page, "Golf")

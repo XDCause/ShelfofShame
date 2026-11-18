@@ -1224,3 +1224,30 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
    in our own words; Progress charts and the cards you keep forgetting. Home: cards to review and this week's study;
    quick action Review cards; activity, calendar, goals (minutes, input hours, reviews, words) and two CSV exports.
    Tables in A09_language.sql (which also lets calendar events belong to golf and language).
+
+5zl. **Language learning teaches: a built-in Spanish course (Learn)** (2026-11-18, the user: "it should also teach you the
+   language"; they chose built-in lessons + Tatoeba sentences, Spanish). Written by subagents side by side: two course
+   writers (A1 units 1-15, A2 units 16-30) from a shared format and outline (api/app/data/courses/README.md), a course
+   engine, and Tatoeba (5zm). The course is plain JSON written for the app (courses/es/u01-u30.json: units with a goal
+   and a CEFR level, lessons of notes, items and sentences - Latin American Spanish, Spain's forms in notes and
+   accepted). language_course.py reads and checks it once at start-up (a unit with a mistake is left out with a
+   warning; test_language_course.py fails on any real file that breaks the README's rules). Learn is the hobby's
+   landing tab: the course path (units, lessons as steps, Continue). A lesson (/language/learn?lesson=...) shows its
+   notes first (**bold** and line breaks, as text, never HTML), then exercises made in the browser from the content
+   (lessonMaker.js, seeded): introduce, match, pick the meaning, type it, listen, word order with tiles, fill the gap,
+   translate; accents, typos, a missing article count as "almost"; mistakes come back at the end. A finished lesson
+   (lang_lesson_runs, A10) puts its items into the deck as word cards and its sentences as cloze cards
+   (lang_cards.lesson_id); its time counts as study minutes; feed / calendar (langlesson), a goal (language_lessons),
+   Today's "Next lesson" card. A language named Spanish / Español picks the course by itself.
+
+5zm. **Language learning: Read - real sentences at your level (Tatoeba)** (2026-11-18). Spanish sentences with their
+   English from Tatoeba (tatoeba.org, CC BY 2.0 FR), read "i+1": Just right = every word but one is in your deck (cards'
+   fronts and cloze answers - lessons count, since they add cards), Easy = all of them, Any = a random set; find a word
+   in other sentences; the English on a tap (marks it read), the browser's voice, each new word highlighted (tap: Add to
+   deck - a cloze on that word, the Tatoeba link in its notes). Words compared by langwords.py (lower case, accents off,
+   ñ kept; no stemming), shared by the API and the loader; names and numbers aren't words to know. load-tatoeba.ps1
+   downloads three per-language export files once (~33 MB, data/tatoeba, git-ignored; -Refresh for new ones), picks
+   the sentences in a throwaway container with no network (scripts/tatoeba_filter.py: 3-20 words, a direct English
+   translation, the 200,000 with the commonest words) and loads them into a copy (A11: lang_sentences,
+   lang_sentence_words, lang_sentence_seen - no usernames, no audio). Run it in prod after the promote. Credited on the
+   page and per sentence; a one-off download, not a live source (no weekly site check).

@@ -1,0 +1,132 @@
+{
+  "unit": 13,
+  "title": "La ciudad",
+  "cefr": "A1",
+  "goal": "Name places in town, say where you're going with ir a, and ask for and follow directions.",
+  "lessons": [
+    {
+      "id": "es-u13-l1",
+      "title": "Around town",
+      "notes": "Many town words are close to English - **el restaurante, el hospital, la farmacia, el parque** - but watch the false friend **la biblioteca**: it's the library (a bookshop is la librería).\nCompound names are built with **de**, main word first: **la estación de tren** (train station), **la parada de autobús** (bus stop).\nTo find something: **¿Dónde está la farmacia?** (a specific one) or **¿Hay una farmacia cerca?** (is there one nearby?). Hay + un / una for 'is there a...?', está for 'where is the...?'.\n**El cajero automático** (or just **el cajero**) is the ATM.",
+      "items": [
+        {"es": "el restaurante", "en": "the restaurant", "kind": "word", "gender": "m", "accept_en": ["restaurant"]},
+        {"es": "la farmacia", "en": "the pharmacy", "kind": "word", "gender": "f", "accept_en": ["the chemist", "pharmacy", "chemist"]},
+        {"es": "el hospital", "en": "the hospital", "kind": "word", "gender": "m", "accept_en": ["hospital"]},
+        {"es": "la estación de tren", "en": "the train station", "kind": "word", "gender": "f", "accept": ["la estación"], "accept_en": ["the railway station", "the station", "train station"]},
+        {"es": "el parque", "en": "the park", "kind": "word", "gender": "m", "accept_en": ["park"]},
+        {"es": "la iglesia", "en": "the church", "kind": "word", "gender": "f", "accept_en": ["church"]},
+        {"es": "la biblioteca", "en": "the library", "kind": "word", "gender": "f", "accept_en": ["library"], "note": "Not a bookshop (la librería)."},
+        {"es": "el mercado", "en": "the market", "kind": "word", "gender": "m", "accept_en": ["market"]},
+        {"es": "la parada de autobús", "en": "the bus stop", "kind": "word", "gender": "f", "accept": ["la parada"], "accept_en": ["bus stop", "the stop"]},
+        {"es": "el centro", "en": "the centre", "kind": "word", "gender": "m", "accept_en": ["the city centre", "the center", "downtown", "the CBD", "town"]},
+        {"es": "la escuela", "en": "the school", "kind": "word", "gender": "f", "accept": ["el colegio"], "accept_en": ["school"]},
+        {"es": "el cajero automático", "en": "the ATM", "kind": "word", "gender": "m", "accept": ["el cajero"], "accept_en": ["the cash machine", "ATM", "the cashpoint"]}
+      ],
+      "sentences": [
+        {"es": "¿Dónde está la farmacia?", "en": "Where is the pharmacy?", "focus": "farmacia", "accept_en": ["Where's the chemist?", "Where's the pharmacy?"]},
+        {"es": "El hospital está lejos.", "en": "The hospital is far away.", "focus": "hospital", "accept_en": ["The hospital is far."]},
+        {"es": "Hay un parque cerca de mi casa.", "en": "There's a park near my house.", "focus": "parque", "accept_en": ["There is a park near my home.", "There's a park close to my house."]},
+        {"es": "La biblioteca está en el centro.", "en": "The library is in the centre.", "focus": "biblioteca", "accept_en": ["The library is in the city centre.", "The library is downtown.", "The library is in town."]},
+        {"es": "¿Hay un cajero automático cerca?", "en": "Is there an ATM nearby?", "focus": "cajero", "accept_en": ["Is there a cash machine near here?", "Is there an ATM close by?"]},
+        {"es": "La parada de autobús está allí.", "en": "The bus stop is over there.", "focus": "parada", "accept_en": ["The bus stop is there."]},
+        {"es": "El mercado está abierto los sábados.", "en": "The market is open on Saturdays.", "focus": "mercado"},
+        {"es": "La estación de tren está cerca del hotel.", "en": "The train station is near the hotel.", "focus": "estación", "accept_en": ["The railway station is near the hotel.", "The station is close to the hotel."]},
+        {"es": "Mis hijos estudian en la escuela.", "en": "My children study at school.", "focus": "escuela", "accept_en": ["My kids study at the school."]},
+        {"es": "El restaurante está cerrado hoy.", "en": "The restaurant is closed today.", "focus": "restaurante"},
+        {"es": "La iglesia es muy grande y bonita.", "en": "The church is very big and pretty.", "focus": "iglesia", "accept_en": ["The church is very big and beautiful.", "The church is very large and pretty."]}
+      ]
+    },
+    {
+      "id": "es-u13-l2",
+      "title": "Going places: ir a",
+      "notes": "**Ir** (to go) is irregular - learn it as it is:\n**yo** voy · **tú** vas · **él / ella / usted** va · **nosotros** vamos · **ellos / ustedes** van\n(Spain: vosotros **vais**.)\nWhere to? **a** (to): **Voy a la playa.** And **a + el** always squeezes into **al**: **Voy al parque** (never 'a el'). A la, a los, a las stay apart.\nAsk **¿Adónde vas?** (where are you going to?). How you get there: **en** + transport (**en autobús, en tren, en carro**), but **a pie** (on foot). **¡Vamos!** on its own = let's go!",
+      "items": [
+        {"es": "ir", "en": "to go", "kind": "verb"},
+        {"es": "voy", "en": "I go", "kind": "phrase", "accept_en": ["I'm going"]},
+        {"es": "vas", "en": "you go", "kind": "phrase", "accept_en": ["you're going", "are you going"]},
+        {"es": "va", "en": "he / she goes, you go (formal)", "kind": "phrase", "accept_en": ["he goes", "she goes", "goes", "is going"]},
+        {"es": "vamos", "en": "we go", "kind": "phrase", "accept_en": ["let's go", "we're going"]},
+        {"es": "van", "en": "they go / you (plural) go", "kind": "phrase", "accept_en": ["they go", "they're going", "you go"]},
+        {"es": "a", "en": "to", "kind": "word", "accept_en": ["at"]},
+        {"es": "al", "en": "to the", "kind": "word", "note": "a + el = al"},
+        {"es": "¿adónde?", "en": "where to?", "kind": "word", "accept": ["¿a dónde?"], "accept_en": ["where?"]},
+        {"es": "a pie", "en": "on foot", "kind": "phrase", "accept_en": ["walking"]},
+        {"es": "en autobús", "en": "by bus", "kind": "phrase", "accept": ["en camión", "en colectivo", "en bus"], "accept_en": ["on the bus"]},
+        {"es": "en tren", "en": "by train", "kind": "phrase", "accept_en": ["on the train"]}
+      ],
+      "sentences": [
+        {"es": "Voy al supermercado.", "en": "I'm going to the supermarket.", "focus": "al", "accept_en": ["I go to the supermarket."]},
+        {"es": "¿Adónde vas?", "en": "Where are you going?", "focus": "Adónde", "accept_en": ["Where are you going to?", "Where do you go?"]},
+        {"es": "Vamos a la playa.", "en": "We're going to the beach.", "focus": "Vamos", "accept_en": ["Let's go to the beach.", "We go to the beach."]},
+        {"es": "Ana va al trabajo en autobús.", "en": "Ana goes to work by bus.", "focus": "autobús", "accept_en": ["Ana takes the bus to work."]},
+        {"es": "Mis padres van a México.", "en": "My parents are going to Mexico.", "focus": "van", "accept_en": ["My parents go to Mexico."]},
+        {"es": "Voy a pie al parque.", "en": "I walk to the park.", "focus": "pie", "accept_en": ["I go to the park on foot.", "I'm walking to the park."]},
+        {"es": "¿Vas en tren o en carro?", "en": "Are you going by train or by car?", "focus": "tren", "accept_en": ["Do you go by train or by car?"]},
+        {"es": "Los domingos vamos al mercado.", "en": "On Sundays we go to the market.", "focus": "mercado", "accept_en": ["We go to the market on Sundays."]},
+        {"es": "Voy a la farmacia.", "en": "I'm going to the pharmacy.", "focus": "Voy", "accept_en": ["I'm going to the chemist.", "I go to the pharmacy."]},
+        {"es": "Ellos van al cine.", "en": "They're going to the cinema.", "focus": "cine", "accept_en": ["They go to the movies.", "They're going to the movies."]},
+        {"es": "Después del trabajo voy al gimnasio.", "en": "After work I go to the gym.", "focus": "gimnasio", "accept_en": ["After work I'm going to the gym."]},
+        {"es": "¿Quieres ir al parque?", "en": "Do you want to go to the park?", "focus": "ir", "accept_en": ["Would you like to go to the park?"]}
+      ]
+    },
+    {
+      "id": "es-u13-l3",
+      "title": "Directions",
+      "notes": "Asking: **Perdón, ¿cómo llego a la estación?** (how do I get to the station?)\nThe answers you'll hear most:\n**Sigue todo derecho** - keep going straight ahead (Spain: **todo recto**)\n**Dobla a la derecha / a la izquierda** - turn right / left (Spain: **gira**)\n**Está en la esquina** - it's on the corner\n**dos cuadras** - two blocks (Spain: **manzanas**)\nSigue and dobla are friendly commands (tú) - you only need to understand them for now; unit 29 teaches commands. To a stranger people say **siga** and **doble**.\nPlace words: **al lado de** (next to), **enfrente de** (opposite), **detrás de** (behind), **entre** (between). De + el = **del**: al lado **del** banco.",
+      "items": [
+        {"es": "a la derecha", "en": "on the right", "kind": "phrase", "accept_en": ["to the right", "right"]},
+        {"es": "a la izquierda", "en": "on the left", "kind": "phrase", "accept_en": ["to the left", "left"]},
+        {"es": "todo derecho", "en": "straight ahead", "kind": "phrase", "accept": ["todo recto", "derecho"], "accept_en": ["straight on"], "note": "Spain: todo recto."},
+        {"es": "sigue", "en": "keep going", "kind": "phrase", "accept": ["siga"], "accept_en": ["go", "continue", "carry on"]},
+        {"es": "dobla", "en": "turn", "kind": "phrase", "accept": ["doble", "gira", "gire"]},
+        {"es": "la esquina", "en": "the corner", "kind": "word", "gender": "f", "accept_en": ["corner"]},
+        {"es": "la cuadra", "en": "the block", "kind": "word", "gender": "f", "accept": ["la manzana"], "accept_en": ["block", "the city block"], "note": "Spain: la manzana."},
+        {"es": "al lado de", "en": "next to", "kind": "phrase", "accept_en": ["beside"]},
+        {"es": "enfrente de", "en": "opposite", "kind": "phrase", "accept": ["frente a"], "accept_en": ["across from", "in front of", "facing"]},
+        {"es": "detrás de", "en": "behind", "kind": "phrase", "accept_en": ["at the back of"]},
+        {"es": "entre", "en": "between", "kind": "word", "accept_en": ["among"]},
+        {"es": "¿cómo llego a...?", "en": "how do I get to...?", "kind": "phrase", "accept_en": ["how do I get to?"]}
+      ],
+      "sentences": [
+        {"es": "Perdón, ¿cómo llego a la estación?", "en": "Excuse me, how do I get to the station?", "focus": "llego", "accept_en": ["Sorry, how do I get to the station?"]},
+        {"es": "Sigue todo derecho dos cuadras.", "en": "Keep going straight ahead for two blocks.", "focus": "derecho", "accept": ["Sigue todo recto dos manzanas."], "accept_en": ["Go straight on for two blocks.", "Keep going straight for two blocks."]},
+        {"es": "Dobla a la izquierda en la esquina.", "en": "Turn left at the corner.", "focus": "izquierda"},
+        {"es": "El banco está a la derecha.", "en": "The bank is on the right.", "focus": "derecha"},
+        {"es": "La farmacia está al lado de la iglesia.", "en": "The pharmacy is next to the church.", "focus": "lado", "accept_en": ["The chemist is next to the church.", "The pharmacy is beside the church."]},
+        {"es": "El parque está enfrente de la escuela.", "en": "The park is opposite the school.", "focus": "enfrente", "accept_en": ["The park is across from the school."]},
+        {"es": "El carro está detrás de la casa.", "en": "The car is behind the house.", "focus": "detrás"},
+        {"es": "La tienda está entre el banco y la farmacia.", "en": "The shop is between the bank and the pharmacy.", "focus": "entre", "accept_en": ["The store is between the bank and the chemist."]},
+        {"es": "Está en la esquina.", "en": "It's on the corner.", "focus": "esquina", "accept_en": ["It is on the corner.", "It's at the corner."]},
+        {"es": "Dobla a la derecha y sigue una cuadra.", "en": "Turn right and keep going for one block.", "focus": "Dobla", "accept_en": ["Turn right and go one block.", "Turn right and continue for a block."]}
+      ]
+    },
+    {
+      "id": "es-u13-l4",
+      "title": "Getting around",
+      "notes": "**Tomar** is the everyday verb for catching transport: **Tomo el metro. Tomamos un taxi.** (Spain says **coger**, but avoid that word in much of Latin America, where it's vulgar.)\nA ticket is **el boleto** in most of Latin America and **el billete** in Spain. **De ida** is one-way, **de ida y vuelta** return.\nLost? **Estoy perdido / perdida** - it matches you, like cansado. **¿Está lejos?** (is it far?) - **No, está cerca, a cinco minutos** (five minutes away).\nNo 'a' for nationality-style words: **Somos turistas** (we're tourists).",
+      "items": [
+        {"es": "el boleto", "en": "the ticket", "kind": "word", "gender": "m", "accept": ["el billete", "el pasaje"], "accept_en": ["ticket"], "note": "Spain: el billete."},
+        {"es": "el taxi", "en": "the taxi", "kind": "word", "gender": "m", "accept_en": ["the cab", "taxi"]},
+        {"es": "el metro", "en": "the metro", "kind": "word", "gender": "m", "accept_en": ["the subway", "the underground", "the tube", "metro"]},
+        {"es": "la bicicleta", "en": "the bicycle", "kind": "word", "gender": "f", "accept": ["la bici"], "accept_en": ["the bike", "bike", "bicycle"]},
+        {"es": "el aeropuerto", "en": "the airport", "kind": "word", "gender": "m", "accept_en": ["airport"]},
+        {"es": "perdido", "en": "lost", "kind": "word"},
+        {"es": "¿está lejos?", "en": "is it far?", "kind": "phrase", "accept_en": ["is it far away?"]},
+        {"es": "ida y vuelta", "en": "return", "kind": "phrase", "accept_en": ["round trip", "there and back"]},
+        {"es": "el turista", "en": "the tourist (male)", "kind": "word", "gender": "m", "accept_en": ["the tourist", "tourist"], "note": "la turista for a woman."}
+      ],
+      "sentences": [
+        {"es": "Perdón, estoy perdido.", "en": "Excuse me, I'm lost.", "focus": "perdido", "accept_en": ["Sorry, I'm lost.", "Excuse me, I am lost."]},
+        {"es": "¿Está lejos el aeropuerto?", "en": "Is the airport far?", "focus": "aeropuerto", "accept_en": ["Is the airport far away?"]},
+        {"es": "Un boleto de ida y vuelta, por favor.", "en": "A return ticket, please.", "focus": "boleto", "accept": ["Un billete de ida y vuelta, por favor."], "accept_en": ["A round-trip ticket, please."]},
+        {"es": "Tomo el metro al trabajo.", "en": "I take the metro to work.", "focus": "metro", "accept_en": ["I catch the subway to work.", "I take the underground to work."]},
+        {"es": "Voy al aeropuerto en taxi.", "en": "I'm going to the airport by taxi.", "focus": "taxi", "accept_en": ["I go to the airport by taxi.", "I'm taking a taxi to the airport."]},
+        {"es": "Voy en bicicleta a la escuela.", "en": "I go to school by bike.", "focus": "bicicleta", "accept_en": ["I ride my bike to school.", "I cycle to school."]},
+        {"es": "¿Dónde compro un boleto?", "en": "Where do I buy a ticket?", "focus": "compro", "accept_en": ["Where can I buy a ticket?"]},
+        {"es": "No, está cerca, a cinco minutos.", "en": "No, it's close, five minutes away.", "focus": "minutos", "accept_en": ["No, it's near, five minutes away."]},
+        {"es": "Somos turistas de Australia.", "en": "We're tourists from Australia.", "focus": "turistas", "accept_en": ["We are tourists from Australia.", "We're Australian tourists."]},
+        {"es": "Ana está perdida en el centro.", "en": "Ana is lost in the centre.", "focus": "perdida", "accept_en": ["Ana is lost in town.", "Ana is lost downtown."]}
+      ]
+    }
+  ]
+}

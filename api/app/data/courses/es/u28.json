@@ -1,0 +1,114 @@
+{
+  "unit": 28,
+  "title": "Mañana",
+  "cefr": "A2",
+  "goal": "Talk about plans and make predictions with the future tense, and say what will happen if...",
+  "lessons": [
+    {
+      "id": "es-u28-l1",
+      "title": "I will speak",
+      "notes": "The future tense is one of the easiest: keep the **whole infinitive** and add the endings (the same for -ar, -er and -ir):\n**yo** hablaré · **tú** hablarás · **él / ella / usted** hablará · **nosotros** hablaremos · **ellos / ustedes** hablarán\n**comeré**, **viviré**, **iré** (from ir), **seré**, **estaré**.\nAll but the **nosotros** form have an accent.\nYou already know **ir a** + infinitive for plans (**voy a viajar**). In everyday speech that's more common; the future (**viajaré**) sounds a little more certain or formal, and it's the natural choice for predictions and promises.",
+      "items": [
+        {"es": "hablaré", "en": "I will speak", "kind": "phrase", "accept_en": ["I'll speak", "I'll talk", "I will talk"]},
+        {"es": "hablarás", "en": "you will speak", "kind": "phrase", "accept_en": ["you'll speak", "you'll talk"]},
+        {"es": "viajará", "en": "he / she will travel", "kind": "phrase", "accept_en": ["he will travel", "she will travel", "he'll travel", "she'll travel", "you will travel"]},
+        {"es": "viviremos", "en": "we will live", "kind": "phrase", "accept_en": ["we'll live"]},
+        {"es": "estarán", "en": "they will be", "kind": "phrase", "accept_en": ["they'll be", "you will be"]},
+        {"es": "iré", "en": "I will go", "kind": "phrase", "accept_en": ["I'll go"]},
+        {"es": "seré", "en": "I will be", "kind": "phrase", "accept_en": ["I'll be"]},
+        {"es": "la semana que viene", "en": "next week", "kind": "phrase", "accept": ["la próxima semana"]},
+        {"es": "pasado mañana", "en": "the day after tomorrow", "kind": "phrase"},
+        {"es": "prometer", "en": "to promise", "kind": "verb"},
+        {"es": "el jefe", "en": "the boss", "kind": "word", "gender": "m", "accept": ["la jefa"]}
+      ],
+      "sentences": [
+        {"es": "Mañana hablaré con mi jefe.", "en": "Tomorrow I'll speak with my boss.", "focus": "hablaré", "accept_en": ["I'll talk to my boss tomorrow.", "Tomorrow I will speak to my boss."]},
+        {"es": "¿Hablarás con ella esta noche?", "en": "Will you talk to her tonight?", "focus": "Hablarás", "accept_en": ["Will you speak with her tonight?"]},
+        {"es": "Mi hija viajará a Chile el próximo año.", "en": "My daughter will travel to Chile next year.", "focus": "próximo", "accept_en": ["Next year my daughter will travel to Chile.", "My daughter will go to Chile next year."]},
+        {"es": "Un día viviremos en la playa.", "en": "One day we'll live by the beach.", "focus": "viviremos", "accept_en": ["Someday we will live at the beach.", "One day we'll live at the beach."]},
+        {"es": "Mis padres estarán aquí la semana que viene.", "en": "My parents will be here next week.", "focus": "estarán"},
+        {"es": "Pasado mañana iré al médico.", "en": "The day after tomorrow I'll go to the doctor.", "focus": "iré", "accept_en": ["I'll go to the doctor the day after tomorrow.", "The day after tomorrow I'll see the doctor."]},
+        {"es": "Te prometo que seré puntual.", "en": "I promise you I'll be on time.", "focus": "seré", "accept_en": ["I promise I'll be on time.", "I promise you that I will be punctual."]},
+        {"es": "¿Qué comerás mañana?", "en": "What will you eat tomorrow?", "focus": "comerás"},
+        {"es": "El concierto será el sábado.", "en": "The concert will be on Saturday.", "focus": "será", "accept_en": ["The concert is on Saturday."]}
+      ]
+    },
+    {
+      "id": "es-u28-l2",
+      "title": "Irregular futures",
+      "notes": "A dozen verbs use a shortened stem, but the endings stay the same (-é, -ás, -á, -emos, -án):\n**tener -> tendr-**: tendré · **poner -> pondr-** · **salir -> saldr-** · **venir -> vendr-**\n**poder -> podr-**: podré · **saber -> sabr-** · **querer -> querr-** · **haber -> habr-**\n**hacer -> har-**: haré · **decir -> dir-**: diré\n**habrá** = there will be (the future of **hay**).\nTip: these are the same verbs that were irregular in the preterite, so they'll start to look familiar.",
+      "items": [
+        {"es": "tendré", "en": "I will have", "kind": "phrase", "accept_en": ["I'll have"]},
+        {"es": "haré", "en": "I will do", "kind": "phrase", "accept_en": ["I'll do", "I'll make", "I will make"]},
+        {"es": "podré", "en": "I will be able to", "kind": "phrase", "accept_en": ["I'll be able to", "I can"]},
+        {"es": "saldremos", "en": "we will leave", "kind": "phrase", "accept_en": ["we'll leave", "we'll go out", "we will go out"]},
+        {"es": "vendrán", "en": "they will come", "kind": "phrase", "accept_en": ["they'll come", "you will come"]},
+        {"es": "dirá", "en": "he / she will say", "kind": "phrase", "accept_en": ["he will say", "she will say", "he'll say", "she'll say", "will say"]},
+        {"es": "sabrás", "en": "you will know", "kind": "phrase", "accept_en": ["you'll know", "you'll find out"]},
+        {"es": "habrá", "en": "there will be", "kind": "phrase", "accept_en": ["there'll be"]},
+        {"es": "pondré", "en": "I will put", "kind": "phrase", "accept_en": ["I'll put", "I'll put on", "I will wear"]}
+      ],
+      "sentences": [
+        {"es": "El próximo año tendré más tiempo.", "en": "Next year I'll have more time.", "focus": "tendré", "accept_en": ["I'll have more time next year.", "Next year I will have more time."]},
+        {"es": "Mañana haré la tarea, te lo prometo.", "en": "I'll do the homework tomorrow, I promise.", "focus": "haré", "accept_en": ["Tomorrow I'll do the homework, I promise you.", "I'll do my homework tomorrow, I promise."]},
+        {"es": "No podré ir a tu fiesta.", "en": "I won't be able to go to your party.", "focus": "podré", "accept_en": ["I won't be able to come to your party.", "I can't go to your party."]},
+        {"es": "Saldremos a las seis de la mañana.", "en": "We'll leave at six in the morning.", "focus": "Saldremos", "accept_en": ["We will leave at six in the morning.", "We'll set off at six in the morning."]},
+        {"es": "Mis primos vendrán en diciembre.", "en": "My cousins will come in December.", "focus": "vendrán", "accept_en": ["My cousins are coming in December."]},
+        {"es": "¿Qué dirá tu mamá?", "en": "What will your mum say?", "focus": "dirá", "accept_en": ["What will your mom say?", "What's your mum going to say?"]},
+        {"es": "Mañana sabrás la verdad.", "en": "Tomorrow you'll know the truth.", "focus": "sabrás", "accept_en": ["You'll know the truth tomorrow.", "Tomorrow you'll find out the truth."]},
+        {"es": "¿Habrá mucha gente en la playa?", "en": "Will there be a lot of people at the beach?", "focus": "Habrá", "accept_en": ["Will there be many people at the beach?", "Will the beach be crowded?"]},
+        {"es": "Pondré el abrigo en la maleta.", "en": "I'll put the coat in the suitcase.", "focus": "Pondré", "accept_en": ["I will put the coat in the suitcase.", "I'll pack the coat in the suitcase."]}
+      ]
+    },
+    {
+      "id": "es-u28-l3",
+      "title": "Predictions",
+      "notes": "The future is perfect for **predictions**. Soften them with:\n**creo que** (I think that) · **seguro que** (surely, I bet) · **quizás / tal vez** (perhaps) · **probablemente** (probably)\n**Creo que lloverá mañana.** = I think it'll rain tomorrow.\n**Seguro que ganará el partido.** = I'm sure he'll win the game.\nThe future can also guess about the **present**: **¿Dónde estará Luis?** = I wonder where Luis is. **Estará en casa.** = He's probably at home.\nWeather futures: **lloverá**, **hará calor**, **hará sol**.",
+      "items": [
+        {"es": "creo que", "en": "I think that", "kind": "phrase", "accept_en": ["I think", "I believe"]},
+        {"es": "seguro que", "en": "I'm sure", "kind": "phrase", "accept_en": ["surely", "I bet", "for sure"]},
+        {"es": "probablemente", "en": "probably", "kind": "word"},
+        {"es": "lloverá", "en": "it will rain", "kind": "phrase", "accept_en": ["it'll rain"]},
+        {"es": "ganar", "en": "to win", "kind": "verb", "accept_en": ["to earn"], "note": "Also to earn money."},
+        {"es": "el futuro", "en": "the future", "kind": "word", "gender": "m"},
+        {"es": "cambiar", "en": "to change", "kind": "verb"}
+      ],
+      "sentences": [
+        {"es": "Creo que lloverá mañana.", "en": "I think it'll rain tomorrow.", "focus": "lloverá", "accept_en": ["I think it will rain tomorrow."]},
+        {"es": "Seguro que tu equipo ganará el partido.", "en": "I'm sure your team will win the match.", "focus": "ganará", "accept_en": ["Your team will surely win the game.", "I bet your team will win the match."]},
+        {"es": "Quizás iremos a la playa el domingo.", "en": "Perhaps we'll go to the beach on Sunday.", "focus": "Quizás", "accept_en": ["Maybe we'll go to the beach on Sunday."]},
+        {"es": "Probablemente llegaré tarde.", "en": "I'll probably arrive late.", "focus": "Probablemente", "accept_en": ["I'll probably be late.", "Probably I'll arrive late."]},
+        {"es": "En el futuro todo será diferente.", "en": "In the future everything will be different.", "focus": "futuro"},
+        {"es": "La ciudad cambiará mucho.", "en": "The city will change a lot.", "focus": "cambiará"},
+        {"es": "¿Dónde estará Luis? - Estará en casa.", "en": "I wonder where Luis is. - He's probably at home.", "focus": "estará", "accept_en": ["Where can Luis be? - He must be at home.", "Where could Luis be? - He'll be at home."]},
+        {"es": "Creo que mañana hará mucho calor.", "en": "I think it'll be very hot tomorrow.", "focus": "Creo", "accept_en": ["I think tomorrow will be very hot.", "I think it will be really hot tomorrow."]}
+      ]
+    },
+    {
+      "id": "es-u28-l4",
+      "title": "If it rains...",
+      "notes": "For real possibilities: **si** + **present**, then the **future** (or ir a, or the present):\n**Si llueve, me quedaré en casa.** = If it rains, I'll stay at home.\n**Si tengo tiempo, te llamo.** = If I have time, I'll call you.\nJust like English, the **si** part never uses the future: not \"si lloverá\".\nYou can swap the halves: **Te llamo si tengo tiempo.** (no comma then).\nCareful with the accent: **si** = if; **sí** = yes.\n**cuando** for the future works differently - you'll meet it at B1. For now, use **si**.",
+      "items": [
+        {"es": "si", "en": "if", "kind": "word", "note": "No accent. Sí (with accent) = yes."},
+        {"es": "si llueve", "en": "if it rains", "kind": "phrase"},
+        {"es": "si tengo tiempo", "en": "if I have time", "kind": "phrase"},
+        {"es": "si puedo", "en": "if I can", "kind": "phrase"},
+        {"es": "me quedaré", "en": "I'll stay", "kind": "phrase", "accept_en": ["I will stay"]},
+        {"es": "la lotería", "en": "the lottery", "kind": "word", "gender": "f"},
+        {"es": "ahorrar", "en": "to save (money)", "kind": "verb", "accept_en": ["to save"]},
+        {"es": "llamar", "en": "to call", "kind": "verb", "accept_en": ["to phone", "to ring"]}
+      ],
+      "sentences": [
+        {"es": "Si llueve, me quedaré en casa.", "en": "If it rains, I'll stay at home.", "focus": "llueve", "accept_en": ["If it rains, I'll stay home.", "If it rains I will stay at home."]},
+        {"es": "Si tengo tiempo, te llamo.", "en": "If I have time, I'll call you.", "focus": "Si", "accept_en": ["If I have time, I'll ring you.", "If I've got time, I'll call you."]},
+        {"es": "Te ayudo si puedo.", "en": "I'll help you if I can.", "focus": "puedo"},
+        {"es": "Si ganas la lotería, ¿qué harás?", "en": "If you win the lottery, what will you do?", "focus": "lotería"},
+        {"es": "Si ahorro dinero, viajaré a España.", "en": "If I save money, I'll travel to Spain.", "focus": "ahorro", "accept_en": ["If I save money, I'll go to Spain.", "If I save money I will travel to Spain."]},
+        {"es": "Si no te sientes bien, llama al médico.", "en": "If you don't feel well, call the doctor.", "focus": "sientes", "accept_en": ["If you're not feeling well, call the doctor."]},
+        {"es": "Si hace sol, iremos a la playa.", "en": "If it's sunny, we'll go to the beach.", "focus": "iremos", "accept_en": ["If it is sunny, we will go to the beach."]},
+        {"es": "Si sales tarde, perderás el autobús.", "en": "If you leave late, you'll miss the bus.", "focus": "perderás", "accept_en": ["If you leave late, you will miss the bus."]},
+        {"es": "Si quieres, te llamo mañana.", "en": "If you want, I'll call you tomorrow.", "focus": "quieres", "accept_en": ["If you like, I'll call you tomorrow.", "I'll ring you tomorrow if you want."]}
+      ]
+    }
+  ]
+}

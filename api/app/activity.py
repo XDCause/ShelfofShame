@@ -23,6 +23,7 @@
     golf        a round finished: course, strokes, competition; a practice session  (golf_rounds, golf_practice)
     langstudy   language study logged: the activity, minutes, with whom             (lang_study)
     langreview  a day's flashcard reviews in a language: how many, % remembered     (lang_reviews; ref = the language)
+    langlesson  a course lesson finished: unit, score, mistakes, cards it added     (lang_lesson_runs)
 
 Each item: {at, day, kind, ref, verb, title, detail, photo_url}; the photo (if any) is the
 product's, the game's or the gear's. Newest first. Part of the core: Home shows the latest, and
@@ -264,6 +265,13 @@ WITH feed AS (
            NULL, NULL, NULL
     FROM lang_reviews r JOIN lang_cards c USING (card_id) JOIN lang_languages l USING (language_id)
     GROUP BY c.language_id, r.reviewed_at::date
+  UNION ALL
+    SELECT r.done_at, 'langlesson', r.run_id, 'Finished', l.name || ' lesson: ' || r.title,
+           concat_ws(' · ', 'unit ' || r.unit, r.score || '%%',
+                     CASE WHEN r.mistakes > 0 THEN r.mistakes || CASE WHEN r.mistakes = 1 THEN ' mistake' ELSE ' mistakes' END END,
+                     CASE WHEN r.cards_added > 0 THEN r.cards_added || ' new cards' END),
+           NULL, NULL, NULL
+    FROM lang_lesson_runs r JOIN lang_languages l USING (language_id)
 )
 SELECT f.at, (f.at AT TIME ZONE current_setting('TimeZone'))::date AS day,
        f.kind, f.ref, f.verb, f.title, NULLIF(f.detail, '') AS detail,

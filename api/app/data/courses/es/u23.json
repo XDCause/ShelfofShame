@@ -1,0 +1,110 @@
+{
+  "unit": 23,
+  "title": "Viajar",
+  "cefr": "A2",
+  "goal": "Get through the airport, check into a hotel, get around, and start telling por from para.",
+  "lessons": [
+    {
+      "id": "es-u23-l1",
+      "title": "At the airport",
+      "notes": "Airport words, Latin American style:\n**el boleto** is a ticket (Spain: **el billete**; also **el pasaje** in much of South America).\n**la salida** is both departure and the way out; **la llegada** is arrival (from **llegar**).\nWhen you check in your bag, you'll hear **documentar** in Mexico and **facturar** in Spain - both fine to recognise.\n**¿A qué hora sale el vuelo?** = What time does the flight leave? **salir** is the verb for planes, trains and buses leaving.",
+      "items": [
+        {"es": "el avión", "en": "the plane", "kind": "word", "gender": "m", "accept_en": ["the aeroplane", "the airplane"]},
+        {"es": "el vuelo", "en": "the flight", "kind": "word", "gender": "m"},
+        {"es": "el pasaporte", "en": "the passport", "kind": "word", "gender": "m"},
+        {"es": "la maleta", "en": "the suitcase", "kind": "word", "gender": "f", "accept_en": ["the bag", "the case"]},
+        {"es": "la salida", "en": "the departure", "kind": "word", "gender": "f", "accept_en": ["the exit", "the way out"]},
+        {"es": "la llegada", "en": "the arrival", "kind": "word", "gender": "f"},
+        {"es": "el viaje", "en": "the trip", "kind": "word", "gender": "m", "accept_en": ["the journey", "the travel"]},
+        {"es": "¡buen viaje!", "en": "have a good trip!", "kind": "phrase", "accept_en": ["bon voyage!", "have a nice trip!"]}
+      ],
+      "sentences": [
+        {"es": "¿A qué hora sale el vuelo?", "en": "What time does the flight leave?", "focus": "vuelo", "accept_en": ["What time does the flight depart?"]},
+        {"es": "Necesito el pasaporte y el boleto.", "en": "I need my passport and ticket.", "focus": "pasaporte", "accept_en": ["I need the passport and the ticket.", "I need my passport and my ticket."]},
+        {"es": "Mi maleta es muy grande.", "en": "My suitcase is very big.", "focus": "maleta"},
+        {"es": "Llegamos al aeropuerto a las seis.", "en": "We arrived at the airport at six.", "focus": "aeropuerto", "accept_en": ["We get to the airport at six.", "We arrive at the airport at six."]},
+        {"es": "El avión llega una hora tarde.", "en": "The plane is arriving an hour late.", "focus": "avión", "accept_en": ["The plane arrives an hour late.", "The plane is an hour late.", "The plane is one hour late."]},
+        {"es": "¿Dónde está la salida?", "en": "Where is the exit?", "focus": "salida", "accept_en": ["Where's the way out?", "Where is the departure?"]},
+        {"es": "La llegada es a las diez de la noche.", "en": "The arrival is at ten at night.", "focus": "llegada", "accept_en": ["We arrive at ten at night.", "Arrival is at 10 pm."]},
+        {"es": "¿Cómo fue el viaje?", "en": "How was the trip?", "focus": "viaje", "accept_en": ["How was the journey?", "How was your trip?"]},
+        {"es": "¡Buen viaje! ¡Hasta pronto!", "en": "Have a good trip! See you soon!", "focus": "Buen", "accept_en": ["Have a nice trip! See you soon!"]}
+      ]
+    },
+    {
+      "id": "es-u23-l2",
+      "title": "At the hotel",
+      "notes": "Checking in: **Tengo una reservación a nombre de...** = I have a booking under the name... (Spain: **una reserva**).\nRooms: **una habitación sencilla** (single; Spain: **individual**) or **doble**.\nThe lift is **el elevador** in much of Latin America and **el ascensor** in Spain and the Southern Cone - you'll hear both.\n**¿Está incluido el desayuno?** = Is breakfast included? **incluido** agrees: **la cena está incluida**.\nAsk politely with **¿Me puede...?** (Can you... for me?): **¿Me puede dar la llave?**",
+      "items": [
+        {"es": "la reservación", "en": "the booking", "kind": "word", "gender": "f", "accept": ["la reserva"], "accept_en": ["the reservation"], "note": "Spain: la reserva."},
+        {"es": "reservar", "en": "to book", "kind": "verb", "accept_en": ["to reserve"]},
+        {"es": "doble", "en": "double", "kind": "word"},
+        {"es": "sencilla", "en": "single (room)", "kind": "word", "accept": ["individual"], "accept_en": ["single", "simple"]},
+        {"es": "incluido", "en": "included", "kind": "word"},
+        {"es": "el elevador", "en": "the lift", "kind": "word", "gender": "m", "accept": ["el ascensor"], "accept_en": ["the elevator"]},
+        {"es": "a nombre de", "en": "under the name of", "kind": "phrase", "accept_en": ["in the name of"]},
+        {"es": "¿me puede dar...?", "en": "can you give me...?", "kind": "phrase", "accept_en": ["could you give me...?"]},
+        {"es": "el piso", "en": "the floor", "kind": "word", "gender": "m", "accept_en": ["the storey"], "note": "In Spain also a flat (apartment)."}
+      ],
+      "sentences": [
+        {"es": "Tengo una reservación a nombre de Pérez.", "en": "I have a booking under the name Pérez.", "focus": "reservación", "accept_en": ["I have a reservation in the name of Pérez.", "I've got a booking under Pérez."]},
+        {"es": "Quisiera una habitación doble, por favor.", "en": "I'd like a double room, please.", "focus": "doble"},
+        {"es": "Reservé una habitación sencilla para dos noches.", "en": "I booked a single room for two nights.", "focus": "sencilla", "accept_en": ["I reserved a single room for two nights.", "I've booked a single room for two nights."]},
+        {"es": "¿Está incluido el desayuno?", "en": "Is breakfast included?", "focus": "incluido", "accept_en": ["Is the breakfast included?"]},
+        {"es": "¿Me puede dar la llave, por favor?", "en": "Can you give me the key, please?", "focus": "llave", "accept_en": ["Could you give me the key, please?", "Can I have the key, please?"]},
+        {"es": "La habitación está en el piso cinco.", "en": "The room is on floor five.", "focus": "piso", "accept_en": ["The room is on the fifth floor."]},
+        {"es": "El elevador está a la derecha.", "en": "The lift is on the right.", "focus": "elevador", "accept_en": ["The elevator is on the right.", "The lift is to the right."]},
+        {"es": "Quiero reservar una mesa para cuatro.", "en": "I want to book a table for four.", "focus": "reservar", "accept_en": ["I'd like to book a table for four.", "I want to reserve a table for four."]}
+      ]
+    },
+    {
+      "id": "es-u23-l3",
+      "title": "Getting around",
+      "notes": "In Latin America you **tomar** a bus or train: **tomar el autobús**. Spain says **coger el autobús** - avoid coger in much of Latin America, where it's rude!\nThe bus has many names: **el autobús** is understood everywhere; you'll also hear **el camión** (Mexico), **la micro** (Chile), **el colectivo** (Argentina).\nTickets: **de ida** (one way), **de ida y vuelta** (return).\nGetting lost: **perderse** (e -> ie): **Me perdí.** = I got lost.\nTo ask the way: **¿Cómo llego a...?** = How do I get to...?",
+      "items": [
+        {"es": "el tren", "en": "the train", "kind": "word", "gender": "m"},
+        {"es": "el autobús", "en": "the bus", "kind": "word", "gender": "m", "accept": ["el bus", "el camión"]},
+        {"es": "la estación", "en": "the station", "kind": "word", "gender": "f"},
+        {"es": "de ida y vuelta", "en": "return", "kind": "phrase", "accept_en": ["round trip", "return ticket"]},
+        {"es": "de ida", "en": "one way", "kind": "phrase", "accept_en": ["single", "one-way"]},
+        {"es": "perderse", "en": "to get lost", "kind": "verb", "note": "e -> ie: me pierdo. Preterite: me perdí."},
+        {"es": "me perdí", "en": "I got lost", "kind": "phrase"}
+      ],
+      "sentences": [
+        {"es": "Tomamos el tren a las ocho.", "en": "We take the train at eight.", "focus": "tren", "accept_en": ["We took the train at eight.", "We catch the train at eight."]},
+        {"es": "¿Dónde está la estación de autobuses?", "en": "Where is the bus station?", "focus": "estación", "accept_en": ["Where's the bus station?"]},
+        {"es": "Un boleto de ida y vuelta, por favor.", "en": "A return ticket, please.", "focus": "vuelta", "accept_en": ["A round-trip ticket, please.", "One return ticket, please."]},
+        {"es": "Solo quiero un boleto de ida.", "en": "I only want a one-way ticket.", "focus": "ida", "accept_en": ["I just want a one-way ticket.", "I only want a single ticket."]},
+        {"es": "Ayer me perdí en el centro.", "en": "Yesterday I got lost in the city centre.", "focus": "perdí", "accept_en": ["I got lost in the centre yesterday.", "Yesterday I got lost downtown.", "Yesterday I got lost in the centre."]},
+        {"es": "Perdón, ¿cómo llego al museo?", "en": "Excuse me, how do I get to the museum?", "focus": "llego", "accept_en": ["Sorry, how do I get to the museum?"]},
+        {"es": "Sin mapa, siempre me pierdo.", "en": "Without a map, I always get lost.", "focus": "mapa", "accept_en": ["I always get lost without a map."]},
+        {"es": "Tomamos un taxi porque llovía.", "en": "We took a taxi because it was raining.", "focus": "taxi", "accept_en": ["We took a cab because it was raining.", "We got a taxi because it was raining."]},
+        {"es": "El autobús llegó muy tarde.", "en": "The bus arrived very late.", "focus": "autobús", "accept_en": ["The bus came very late.", "The bus was very late."]}
+      ]
+    },
+    {
+      "id": "es-u23-l4",
+      "title": "Por or para?",
+      "notes": "Both often mean \"for\", but they look in different directions.\n**para** points **forward**, to a goal:\n- purpose: **para** + infinitive = in order to: **Estudio para viajar.**\n- destination: **El tren para Lima.**\n- recipient: **Es para ti.** (It's for you.)\n- deadline: **para el lunes**\n**por** looks at the **route or the cause**:\n- through / around: **Caminamos por la ciudad.**\n- because of / thanks for: **Gracias por todo.**\n- by means of: **por teléfono**\n- exchange: **Pagué cien dólares por el boleto.**\n- time of day: **por la mañana**\nRule of thumb: goal -> **para**; reason, route, swap -> **por**.",
+      "items": [
+        {"es": "por", "en": "for (a reason)", "kind": "word", "accept_en": ["for", "through", "around", "by", "because of"]},
+        {"es": "gracias por todo", "en": "thanks for everything", "kind": "phrase", "accept_en": ["thank you for everything"]},
+        {"es": "por teléfono", "en": "by phone", "kind": "phrase", "accept_en": ["on the phone", "over the phone"]},
+        {"es": "por aquí", "en": "around here", "kind": "phrase", "accept_en": ["this way", "near here"]},
+        {"es": "para ti", "en": "for you", "kind": "phrase"},
+        {"es": "el regalo", "en": "the present", "kind": "word", "gender": "m", "accept_en": ["the gift"]},
+        {"es": "de vacaciones", "en": "on holiday", "kind": "phrase", "accept_en": ["on vacation"]}
+      ],
+      "sentences": [
+        {"es": "Estudio español para viajar por Sudamérica.", "en": "I'm studying Spanish to travel around South America.", "focus": "para", "accept_en": ["I study Spanish to travel around South America.", "I study Spanish in order to travel through South America."]},
+        {"es": "Este regalo es para ti.", "en": "This present is for you.", "focus": "regalo", "accept_en": ["This gift is for you."]},
+        {"es": "Gracias por todo.", "en": "Thanks for everything.", "focus": "todo", "accept_en": ["Thank you for everything."]},
+        {"es": "Reservé el hotel por teléfono.", "en": "I booked the hotel by phone.", "focus": "teléfono", "accept_en": ["I booked the hotel over the phone.", "I reserved the hotel by phone."]},
+        {"es": "¿Hay una farmacia por aquí?", "en": "Is there a chemist around here?", "focus": "aquí", "accept_en": ["Is there a pharmacy near here?", "Is there a chemist near here?", "Is there a pharmacy around here?"]},
+        {"es": "Pagué cincuenta dólares por la habitación.", "en": "I paid fifty dollars for the room.", "focus": "por"},
+        {"es": "Necesito el boleto para el lunes.", "en": "I need the ticket by Monday.", "focus": "para", "accept_en": ["I need the ticket for Monday."]},
+        {"es": "Caminamos por la playa por la tarde.", "en": "We walked along the beach in the afternoon.", "focus": "Caminamos", "accept_en": ["We walk along the beach in the afternoon.", "We walked on the beach in the afternoon.", "We walked along the beach in the evening."]},
+        {"es": "El año pasado fuimos de vacaciones a otro país.", "en": "Last year we went on holiday to another country.", "focus": "país", "accept_en": ["Last year we went on vacation to another country.", "Last year we went to another country on holiday."]}
+      ]
+    }
+  ]
+}

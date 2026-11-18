@@ -76,6 +76,8 @@ SOURCES = {
                        "SELECT day, input / 60.0 AS amount FROM (" + language_minutes + ") m WHERE input > 0"),
     "language_reviews": ("Language cards reviewed", "cards", "language", "sum",
                          "SELECT reviewed_at::date AS day, 1 AS amount FROM lang_reviews"),
+    "language_lessons": ("Language lessons finished (each lesson once)", "lessons", "language", "sum",
+                         "SELECT min(done_at)::date AS day, 1 AS amount FROM lang_lesson_runs GROUP BY language_id, lesson_id"),
     "language_words": ("Language words learned (cards that reached review)", "words", "language", "sum",
                        "SELECT learned_on AS day, 1 AS amount FROM lang_cards WHERE learned_on IS NOT NULL"),
     "sudokus_hard": ("Hard or harder sudokus solved", "puzzles", "sudoku", "sum",

@@ -1,0 +1,127 @@
+{
+  "unit": 11,
+  "title": "La hora",
+  "cefr": "A1",
+  "goal": "Tell the time, say when in the day things happen and describe your daily routine.",
+  "lessons": [
+    {
+      "id": "es-u11-l1",
+      "title": "What time is it?",
+      "notes": "**¿Qué hora es?** For one o'clock it's singular: **Es la una**. For every other hour it's plural: **Son las dos, son las tres...** (las horas, feminine plural).\nAdd minutes with **y** up to half past, and take them away with **menos** after it:\n**Son las cuatro y cuarto** (4:15) · **Son las cuatro y media** (4:30) · **Son las cinco menos cuarto** (4:45 - 'five minus a quarter')\n**Son las ocho y diez** (8:10) · **Son las nueve menos veinte** (8:40)\nTimetables use the 24-hour clock (las 18:30 = las dieciocho treinta). Politely asking a stranger: **¿Tiene hora?**",
+      "items": [
+        {"es": "¿qué hora es?", "en": "what time is it?", "kind": "phrase", "accept_en": ["what's the time?"]},
+        {"es": "es la una", "en": "it's one o'clock", "kind": "phrase", "accept_en": ["it is one o'clock", "it's one"]},
+        {"es": "son las", "en": "it's (with hours from two)", "kind": "phrase", "accept_en": ["it's", "it is"], "note": "son las dos = it's two o'clock"},
+        {"es": "y cuarto", "en": "quarter past", "kind": "phrase", "accept_en": ["fifteen", "a quarter past"]},
+        {"es": "menos cuarto", "en": "quarter to", "kind": "phrase", "accept_en": ["a quarter to"]},
+        {"es": "el mediodía", "en": "midday", "kind": "word", "gender": "m", "accept_en": ["noon", "the middle of the day"]},
+        {"es": "la medianoche", "en": "midnight", "kind": "word", "gender": "f"},
+        {"es": "el minuto", "en": "the minute", "kind": "word", "gender": "m", "accept_en": ["minute"]},
+        {"es": "la hora", "en": "the hour", "kind": "word", "gender": "f", "accept_en": ["the time", "hour"]},
+        {"es": "¿tienes hora?", "en": "have you got the time?", "kind": "phrase", "accept": ["¿tiene hora?"], "accept_en": ["do you have the time?", "do you know the time?"]},
+        {"es": "casi", "en": "almost", "kind": "word", "accept_en": ["nearly"]}
+      ],
+      "sentences": [
+        {"es": "¿Qué hora es?", "en": "What time is it?", "focus": "hora", "accept_en": ["What's the time?"]},
+        {"es": "Es la una y cuarto.", "en": "It's quarter past one.", "focus": "cuarto", "accept_en": ["It's a quarter past one.", "It's one fifteen.", "It is quarter past one."]},
+        {"es": "Son las tres menos cuarto.", "en": "It's quarter to three.", "focus": "menos", "accept_en": ["It's a quarter to three.", "It's two forty-five."]},
+        {"es": "Son las ocho en punto.", "en": "It's eight o'clock sharp.", "focus": "Son", "accept_en": ["It's eight o'clock.", "It's exactly eight o'clock."]},
+        {"es": "Es mediodía.", "en": "It's midday.", "focus": "mediodía", "accept_en": ["It's noon.", "It is midday."]},
+        {"es": "Son casi las doce.", "en": "It's almost twelve.", "focus": "casi", "accept_en": ["It's nearly twelve.", "It's almost twelve o'clock."]},
+        {"es": "Es medianoche.", "en": "It's midnight.", "focus": "medianoche", "accept_en": ["It is midnight."]},
+        {"es": "Son las diez y veinte.", "en": "It's twenty past ten.", "focus": "veinte", "accept_en": ["It's ten twenty."]},
+        {"es": "Perdón, ¿tienes hora?", "en": "Excuse me, have you got the time?", "focus": "tienes", "accept_en": ["Excuse me, do you have the time?", "Sorry, do you know the time?"]},
+        {"es": "Son las cinco y media.", "en": "It's half past five.", "focus": "media", "accept_en": ["It's five thirty."]},
+        {"es": "El carro llega en diez minutos.", "en": "The car arrives in ten minutes.", "focus": "minutos", "accept_en": ["The car is arriving in ten minutes.", "The car will be here in ten minutes."]}
+      ]
+    },
+    {
+      "id": "es-u11-l2",
+      "title": "Morning, afternoon, night",
+      "notes": "**La mañana** (the morning) and **mañana** (tomorrow) are the same word - the article tells you which. 'Tomorrow morning' is **mañana por la mañana**.\nParts of the day:\n**por la mañana / por la tarde / por la noche** = in the morning / afternoon / at night (when, in general)\n**de la mañana / de la tarde / de la noche** = with a clock time: **a las siete de la mañana** (7 am), **a las diez de la noche** (10 pm)\nMuch of Latin America also says **en la mañana**. **Antes** = before, earlier; **después** = after, afterwards.",
+      "items": [
+        {"es": "la mañana", "en": "the morning", "kind": "word", "gender": "f", "accept_en": ["morning"]},
+        {"es": "la tarde", "en": "the afternoon", "kind": "word", "gender": "f", "accept_en": ["the evening", "afternoon"]},
+        {"es": "por la mañana", "en": "in the morning", "kind": "phrase", "accept": ["en la mañana"]},
+        {"es": "por la tarde", "en": "in the afternoon", "kind": "phrase", "accept": ["en la tarde"], "accept_en": ["in the evening"]},
+        {"es": "por la noche", "en": "at night", "kind": "phrase", "accept": ["en la noche"], "accept_en": ["in the evening"]},
+        {"es": "de la mañana", "en": "in the morning (am)", "kind": "phrase", "accept_en": ["am", "in the morning", "a.m."]},
+        {"es": "de la tarde", "en": "in the afternoon (pm)", "kind": "phrase", "accept_en": ["pm", "in the afternoon", "in the evening", "p.m."]},
+        {"es": "de la noche", "en": "at night (pm)", "kind": "phrase", "accept_en": ["pm", "at night", "in the evening", "p.m."]},
+        {"es": "antes", "en": "before", "kind": "word", "accept_en": ["earlier", "beforehand", "first"]},
+        {"es": "después", "en": "after", "kind": "word", "accept_en": ["afterwards", "later", "then"]}
+      ],
+      "sentences": [
+        {"es": "Trabajo por la mañana.", "en": "I work in the morning.", "focus": "mañana", "accept": ["Trabajo en la mañana."], "accept_en": ["I work in the mornings."]},
+        {"es": "Estudio español por la noche.", "en": "I study Spanish at night.", "focus": "noche", "accept": ["Estudio español en la noche."], "accept_en": ["I study Spanish in the evening."]},
+        {"es": "La clase es a las seis de la tarde.", "en": "The class is at six in the evening.", "focus": "tarde", "accept_en": ["The class is at 6 pm.", "The lesson is at six in the evening."]},
+        {"es": "Llego a las siete de la mañana.", "en": "I arrive at seven in the morning.", "focus": "siete", "accept_en": ["I arrive at 7 am.", "I get there at seven in the morning."]},
+        {"es": "Por la tarde camino en la playa.", "en": "In the afternoon I walk on the beach.", "focus": "Por", "accept_en": ["I walk on the beach in the afternoon."]},
+        {"es": "Después, cocino.", "en": "Afterwards, I cook.", "focus": "Después", "accept_en": ["After that, I cook.", "Then I cook."]},
+        {"es": "Antes, tomo un café.", "en": "First, I have a coffee.", "focus": "Antes", "accept_en": ["Before that, I have a coffee.", "Beforehand, I drink a coffee."]},
+        {"es": "Son las diez de la noche.", "en": "It's ten at night.", "focus": "diez", "accept_en": ["It's 10 pm.", "It's ten in the evening."]},
+        {"es": "Mañana por la mañana trabajo.", "en": "Tomorrow morning I'm working.", "focus": "Mañana", "accept_en": ["I work tomorrow morning.", "I'm working tomorrow morning."]},
+        {"es": "La mañana es tranquila.", "en": "The morning is quiet.", "focus": "tranquila", "accept_en": ["The morning is calm.", "Mornings are quiet."]}
+      ]
+    },
+    {
+      "id": "es-u11-l3",
+      "title": "Meals and the working day",
+      "notes": "Each meal has a noun and a matching -ar verb:\n**el desayuno → desayunar** (breakfast / to have breakfast)\n**el almuerzo → almorzar** (lunch / to have lunch)\n**la cena → cenar** (dinner / to have dinner)\nSo you don't 'have' a meal in Spanish, you 'breakfast' and 'dine': **Desayuno a las siete. Cenamos a las ocho.**\nAlmorzar changes o → **ue** when stressed: **almuerzo, almuerzas** (more in unit 15). In Spain and Mexico **la comida** is the big midday meal.\n**Salir** (to go out, leave) is regular except **salgo** (I leave): **Salgo de casa a las ocho.**",
+      "items": [
+        {"es": "desayunar", "en": "to have breakfast", "kind": "verb", "accept_en": ["to eat breakfast"]},
+        {"es": "almorzar", "en": "to have lunch", "kind": "verb", "accept_en": ["to eat lunch"], "note": "o → ue: almuerzo, almuerzas, almuerza."},
+        {"es": "cenar", "en": "to have dinner", "kind": "verb", "accept_en": ["to eat dinner", "to have tea", "to have supper"]},
+        {"es": "el almuerzo", "en": "the lunch", "kind": "word", "gender": "m", "accept_en": ["lunch"]},
+        {"es": "la cena", "en": "the dinner", "kind": "word", "gender": "f", "accept_en": ["dinner", "tea", "supper"]},
+        {"es": "salir", "en": "to go out", "kind": "verb", "accept_en": ["to leave", "to get out"]},
+        {"es": "salgo", "en": "I leave", "kind": "phrase", "accept_en": ["I go out", "I'm leaving"]},
+        {"es": "regresar", "en": "to come back", "kind": "verb", "accept": ["volver"], "accept_en": ["to return", "to go back", "to get back"]},
+        {"es": "terminar", "en": "to finish", "kind": "verb", "accept_en": ["to end"]},
+        {"es": "el trabajo", "en": "the work", "kind": "word", "gender": "m", "accept_en": ["the job", "work", "job"]}
+      ],
+      "sentences": [
+        {"es": "Desayuno a las siete.", "en": "I have breakfast at seven.", "focus": "Desayuno", "accept_en": ["I eat breakfast at seven."]},
+        {"es": "Salgo de casa a las ocho.", "en": "I leave home at eight.", "focus": "Salgo", "accept_en": ["I leave the house at eight."]},
+        {"es": "Almuerzo en la oficina.", "en": "I have lunch in the office.", "focus": "Almuerzo", "accept_en": ["I eat lunch at the office."]},
+        {"es": "Termino el trabajo a las cinco.", "en": "I finish work at five.", "focus": "Termino", "accept_en": ["I finish my work at five."]},
+        {"es": "Regreso a casa por la tarde.", "en": "I come back home in the afternoon.", "focus": "Regreso", "accept_en": ["I go back home in the afternoon.", "I get home in the evening."]},
+        {"es": "Cenamos a las ocho de la noche.", "en": "We have dinner at eight at night.", "focus": "Cenamos", "accept_en": ["We have dinner at 8 pm.", "We eat dinner at eight in the evening."]},
+        {"es": "La cena está lista.", "en": "Dinner is ready.", "focus": "cena", "accept_en": ["The dinner is ready."]},
+        {"es": "El almuerzo es a la una.", "en": "Lunch is at one.", "focus": "almuerzo", "accept_en": ["Lunch is at one o'clock."]},
+        {"es": "Hoy no salgo, estoy cansado.", "en": "I'm not going out today, I'm tired.", "focus": "salgo", "accept_en": ["I'm not going out today, I am tired."]},
+        {"es": "Mi trabajo es interesante.", "en": "My job is interesting.", "focus": "trabajo", "accept_en": ["My work is interesting."]},
+        {"es": "¿A qué hora desayunas?", "en": "What time do you have breakfast?", "focus": "desayunas", "accept_en": ["When do you have breakfast?"]}
+      ]
+    },
+    {
+      "id": "es-u11-l4",
+      "title": "A typical day",
+      "notes": "To tell your day as a story, line it up with sequence words: **primero** (first), **luego** / **después** (then, after that), **más tarde** (later), **por último** (finally).\n**Primero desayuno, luego trabajo y por último ceno con mi familia.**\n**Ver** (to see, to watch) is regular except **veo** (I see): veo, ves, ve, vemos, ven. Latin America uses **ver** more than mirar for watching TV: **Veo una serie.** A person you see takes a little **a**: **Veo a Ana** (more in unit 14).\n**Luego** is also in **hasta luego** - 'until later'.",
+      "items": [
+        {"es": "primero", "en": "first", "kind": "word", "accept_en": ["firstly", "first of all"]},
+        {"es": "luego", "en": "then", "kind": "word", "accept_en": ["later", "next", "afterwards"]},
+        {"es": "más tarde", "en": "later", "kind": "phrase", "accept_en": ["later on"]},
+        {"es": "por último", "en": "finally", "kind": "phrase", "accept_en": ["lastly", "last of all"]},
+        {"es": "la rutina", "en": "the routine", "kind": "word", "gender": "f", "accept_en": ["routine"]},
+        {"es": "el gimnasio", "en": "the gym", "kind": "word", "gender": "m", "accept_en": ["gym"]},
+        {"es": "ver", "en": "to see", "kind": "verb", "accept_en": ["to watch"]},
+        {"es": "veo", "en": "I see", "kind": "phrase", "accept_en": ["I watch", "I'm watching"]},
+        {"es": "la película", "en": "the film", "kind": "word", "gender": "f", "accept_en": ["the movie", "film", "movie"]},
+        {"es": "la serie", "en": "the series", "kind": "word", "gender": "f", "accept_en": ["the TV series", "the show", "series"]}
+      ],
+      "sentences": [
+        {"es": "Primero desayuno, luego trabajo.", "en": "First I have breakfast, then I work.", "focus": "Primero", "accept_en": ["First I eat breakfast, then I work."]},
+        {"es": "Más tarde veo una serie.", "en": "Later I watch a series.", "focus": "veo", "accept_en": ["Later on I watch a show.", "Later I watch a TV series."]},
+        {"es": "Por último, ceno con mi familia.", "en": "Finally, I have dinner with my family.", "focus": "último", "accept_en": ["Lastly, I have dinner with my family."]},
+        {"es": "Mi rutina es muy aburrida.", "en": "My routine is very boring.", "focus": "rutina"},
+        {"es": "Después del trabajo, estoy en el gimnasio.", "en": "After work, I'm at the gym.", "focus": "gimnasio", "accept_en": ["After work I am at the gym.", "After work, I'm in the gym."]},
+        {"es": "Veo una película por la noche.", "en": "I watch a film at night.", "focus": "película", "accept_en": ["I watch a movie in the evening.", "I'm watching a movie tonight."]},
+        {"es": "Normalmente veo la televisión con mi esposa.", "en": "I normally watch TV with my wife.", "focus": "Normalmente", "accept_en": ["I usually watch television with my wife."]},
+        {"es": "¿Ves series en español?", "en": "Do you watch series in Spanish?", "focus": "series", "accept_en": ["Do you watch shows in Spanish?"]},
+        {"es": "Luego tomo un café con Ana.", "en": "Then I have a coffee with Ana.", "focus": "Luego", "accept_en": ["Later I have a coffee with Ana."]},
+        {"es": "Primero estudio y más tarde veo a mis amigos.", "en": "First I study and later I see my friends.", "focus": "tarde"}
+      ]
+    }
+  ]
+}

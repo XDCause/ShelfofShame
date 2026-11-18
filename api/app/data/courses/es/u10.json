@@ -1,0 +1,130 @@
+{
+  "unit": 10,
+  "title": "Comer y vivir",
+  "cefr": "A1",
+  "goal": "Use regular -er and -ir verbs, ask all the basic questions and answer no.",
+  "lessons": [
+    {
+      "id": "es-u10-l1",
+      "title": "Comer: the -er pattern",
+      "notes": "Verbs ending in **-er** work like -ar verbs, but with **e** where -ar has **a**:\n**yo** com**o** · **tú** com**es** · **él / ella / usted** com**e** · **nosotros** com**emos** · **ellos / ustedes** com**en**\n(Spain: vosotros com**éis**.)\nThe **yo** form still ends in **-o**, like hablo.\n**Beber, leer, aprender** all follow it: **bebo, lees, aprendemos**. (Many Latin Americans say **tomar** for drinking, as in unit 9.)\nCareful: **como** (I eat) has no accent; **¿cómo?** (how?) does.",
+      "items": [
+        {"es": "comer", "en": "to eat", "kind": "verb", "accept_en": ["to have lunch"]},
+        {"es": "como", "en": "I eat", "kind": "phrase", "accept_en": ["I'm eating"]},
+        {"es": "comes", "en": "you eat", "kind": "phrase", "accept_en": ["do you eat"]},
+        {"es": "come", "en": "he / she eats, you eat (formal)", "kind": "phrase", "accept_en": ["he eats", "she eats", "you eat", "eats"]},
+        {"es": "comemos", "en": "we eat", "kind": "phrase", "accept_en": ["we're eating"]},
+        {"es": "comen", "en": "they eat / you (plural) eat", "kind": "phrase", "accept_en": ["they eat", "you eat"]},
+        {"es": "beber", "en": "to drink", "kind": "verb"},
+        {"es": "leer", "en": "to read", "kind": "verb"},
+        {"es": "aprender", "en": "to learn", "kind": "verb"},
+        {"es": "la carne", "en": "the meat", "kind": "word", "gender": "f", "accept_en": ["meat", "the beef"]},
+        {"es": "el pescado", "en": "the fish", "kind": "word", "gender": "m", "accept_en": ["fish"], "note": "Fish as food; a live fish is el pez."},
+        {"es": "las verduras", "en": "the vegetables", "kind": "word", "gender": "f", "accept_en": ["vegetables", "the veggies", "veggies", "greens"]}
+      ],
+      "sentences": [
+        {"es": "Como pan con queso.", "en": "I eat bread with cheese.", "focus": "Como", "accept_en": ["I'm eating bread with cheese.", "I eat bread and cheese."]},
+        {"es": "¿Comes carne?", "en": "Do you eat meat?", "focus": "Comes"},
+        {"es": "No como carne, como pescado.", "en": "I don't eat meat, I eat fish.", "focus": "pescado"},
+        {"es": "Mi hermano come mucho.", "en": "My brother eats a lot.", "focus": "come"},
+        {"es": "Comemos en casa los domingos.", "en": "We eat at home on Sundays.", "focus": "Comemos"},
+        {"es": "Ellos comen verduras todos los días.", "en": "They eat vegetables every day.", "focus": "verduras", "accept_en": ["They eat veggies every day."]},
+        {"es": "Bebo mucha agua.", "en": "I drink a lot of water.", "focus": "Bebo", "accept_en": ["I drink lots of water."]},
+        {"es": "Leo un libro en la cama.", "en": "I read a book in bed.", "focus": "Leo", "accept_en": ["I'm reading a book in bed."]},
+        {"es": "Aprendo español.", "en": "I'm learning Spanish.", "focus": "Aprendo", "accept_en": ["I learn Spanish."]},
+        {"es": "Los niños aprenden inglés en la clase.", "en": "The children learn English in class.", "focus": "aprenden", "accept_en": ["The kids learn English in the class."]},
+        {"es": "¿Qué comen ustedes?", "en": "What are you eating?", "focus": "comen", "accept_en": ["What do you eat?", "What are you all eating?"]}
+      ]
+    },
+    {
+      "id": "es-u10-l2",
+      "title": "Vivir: the -ir pattern",
+      "notes": "**-ir** verbs are almost twins of -er verbs. Only **nosotros** is different:\n**yo** viv**o** · **tú** viv**es** · **él / ella / usted** viv**e** · **nosotros** viv**imos** · **ellos / ustedes** viv**en**\n(com**emos** but viv**imos**; Spain: vosotros viv**ís**.)\n**Escribir, abrir, recibir** go the same way: **escribo, abres, recibimos**.\nSo now all three regular patterns: **-o, -as / -es, -a / -e, -amos / -emos / -imos, -an / -en**.\nTo ask where someone lives: **¿Dónde vives?** - **Vivo en Brisbane.**",
+      "items": [
+        {"es": "vivir", "en": "to live", "kind": "verb"},
+        {"es": "vivo", "en": "I live", "kind": "phrase"},
+        {"es": "vives", "en": "you live", "kind": "phrase", "accept_en": ["do you live"]},
+        {"es": "vive", "en": "he / she lives, you live (formal)", "kind": "phrase", "accept_en": ["he lives", "she lives", "you live", "lives"]},
+        {"es": "vivimos", "en": "we live", "kind": "phrase"},
+        {"es": "viven", "en": "they live / you (plural) live", "kind": "phrase", "accept_en": ["they live", "you live"]},
+        {"es": "escribir", "en": "to write", "kind": "verb"},
+        {"es": "abrir", "en": "to open", "kind": "verb"},
+        {"es": "recibir", "en": "to receive", "kind": "verb", "accept_en": ["to get"]},
+        {"es": "el mensaje", "en": "the message", "kind": "word", "gender": "m", "accept_en": ["message", "the text"]},
+        {"es": "el correo", "en": "the email", "kind": "word", "gender": "m", "accept": ["el correo electrónico", "el email"], "accept_en": ["the mail", "email", "the post"]}
+      ],
+      "sentences": [
+        {"es": "¿Dónde vives?", "en": "Where do you live?", "focus": "vives"},
+        {"es": "Vivo en Brisbane.", "en": "I live in Brisbane.", "focus": "Vivo"},
+        {"es": "Mis padres viven en Sídney.", "en": "My parents live in Sydney.", "focus": "viven"},
+        {"es": "Vivimos en un apartamento pequeño.", "en": "We live in a small apartment.", "focus": "Vivimos", "accept_en": ["We live in a small flat.", "We live in a small unit."]},
+        {"es": "Ana vive cerca de la playa.", "en": "Ana lives near the beach.", "focus": "vive", "accept_en": ["Ana lives close to the beach."]},
+        {"es": "Escribo un mensaje para Ana.", "en": "I'm writing a message for Ana.", "focus": "mensaje", "accept_en": ["I write a message for Ana.", "I'm writing Ana a message."]},
+        {"es": "¿Abres la ventana, por favor?", "en": "Can you open the window, please?", "focus": "Abres", "accept_en": ["Will you open the window, please?", "Could you open the window, please?"]},
+        {"es": "Recibo muchos correos.", "en": "I get a lot of emails.", "focus": "correos", "accept_en": ["I receive a lot of emails.", "I get lots of emails."]},
+        {"es": "Escribimos en español.", "en": "We write in Spanish.", "focus": "Escribimos", "accept_en": ["We're writing in Spanish."]},
+        {"es": "La tienda abre a las nueve.", "en": "The shop opens at nine.", "focus": "abre", "accept_en": ["The store opens at nine."]},
+        {"es": "¿Recibes mis mensajes?", "en": "Are you getting my messages?", "focus": "Recibes", "accept_en": ["Do you get my messages?", "Do you receive my messages?"]}
+      ]
+    },
+    {
+      "id": "es-u10-l3",
+      "title": "Asking questions",
+      "notes": "Question words always carry an accent and usually come first: **¿qué?** (what?), **¿quién? / ¿quiénes?** (who?), **¿dónde?**, **¿cuándo?** (when?), **¿cómo?**, **¿por qué?** (why?), **¿cuál?** (which? / what?), **¿cuánto?** (how much?).\n**¿Cuánto?** matches what it counts: **¿cuánto dinero?**, **¿cuánta agua?**, **¿cuántos libros?**\n**¿Por qué?** is two words with an accent; the answer **porque** (because) is one word with none.\n**¿Qué es...?** asks for a definition; **¿Cuál es...?** picks one from many: **¿Cuál es tu número?**",
+      "items": [
+        {"es": "¿cuándo?", "en": "when?", "kind": "word"},
+        {"es": "¿por qué?", "en": "why?", "kind": "phrase"},
+        {"es": "porque", "en": "because", "kind": "word"},
+        {"es": "¿cuál?", "en": "which?", "kind": "word", "accept_en": ["what?", "which one?"]},
+        {"es": "¿quiénes?", "en": "who? (plural)", "kind": "word", "accept_en": ["who?"]},
+        {"es": "¿cuánto?", "en": "how much?", "kind": "word"},
+        {"es": "¿cuánta?", "en": "how much? (feminine)", "kind": "word", "accept_en": ["how much?"]},
+        {"es": "¿cómo?", "en": "how?", "kind": "word", "accept_en": ["pardon?", "sorry?", "what?"], "note": "Also 'pardon?' when you didn't catch something."},
+        {"es": "comprendo", "en": "I understand", "kind": "phrase", "accept": ["entiendo"], "accept_en": ["I see"]}
+      ],
+      "sentences": [
+        {"es": "¿Cuándo comes?", "en": "When do you eat?", "focus": "Cuándo"},
+        {"es": "¿Por qué estudias español?", "en": "Why are you studying Spanish?", "focus": "qué", "accept_en": ["Why do you study Spanish?", "Why are you learning Spanish?"]},
+        {"es": "Porque mi esposa es mexicana.", "en": "Because my wife is Mexican.", "focus": "Porque"},
+        {"es": "¿Cuál es tu libro?", "en": "Which is your book?", "focus": "Cuál", "accept_en": ["Which one is your book?", "Which book is yours?"]},
+        {"es": "¿Quiénes son ellos?", "en": "Who are they?", "focus": "Quiénes"},
+        {"es": "¿Cuánto cuesta el libro?", "en": "How much is the book?", "focus": "Cuánto", "accept_en": ["How much does the book cost?"]},
+        {"es": "¿Cuánta agua bebes?", "en": "How much water do you drink?", "focus": "Cuánta"},
+        {"es": "¿Qué lees?", "en": "What are you reading?", "focus": "lees", "accept_en": ["What do you read?"]},
+        {"es": "¿Cómo se llama tu profesora?", "en": "What's your teacher's name?", "focus": "Cómo", "accept_en": ["What is your teacher called?", "What is your teacher's name?"]},
+        {"es": "¿Cuándo llega Carlos?", "en": "When is Carlos arriving?", "focus": "llega", "accept_en": ["When does Carlos arrive?", "When does Carlos get here?"]},
+        {"es": "¿Cómo? No comprendo.", "en": "Pardon? I don't understand.", "focus": "comprendo", "accept_en": ["Sorry? I don't understand.", "What? I don't understand."]}
+      ]
+    },
+    {
+      "id": "es-u10-l4",
+      "title": "Saying no",
+      "notes": "Spanish happily stacks negatives - it's correct, not a mistake: **No como nada** (I don't eat anything, literally 'I don't eat nothing'). **No hay nadie** (there's nobody there).\nIf the negative word comes first, drop the **no**: **Nunca bebo cerveza** = **No bebo nunca cerveza**.\nPairs: **algo / nada** (something / nothing), **alguien / nadie** (someone / nobody), **siempre / nunca**.\nTag a statement with **¿verdad?** or **¿no?** to check it: **Vives en Brisbane, ¿verdad?** **No sé** = I don't know. **¡Claro!** = of course.",
+      "items": [
+        {"es": "nada", "en": "nothing", "kind": "word", "accept_en": ["anything"]},
+        {"es": "nadie", "en": "nobody", "kind": "word", "accept_en": ["no one", "anybody", "anyone"]},
+        {"es": "alguien", "en": "somebody", "kind": "word", "accept_en": ["someone", "anyone", "anybody"]},
+        {"es": "¿verdad?", "en": "right?", "kind": "word", "accept_en": ["isn't it?", "don't you?", "true?"]},
+        {"es": "claro", "en": "of course", "kind": "word", "accept_en": ["sure", "clear"]},
+        {"es": "¡claro que sí!", "en": "of course!", "kind": "phrase", "accept_en": ["sure!", "definitely!", "of course I do!"]},
+        {"es": "¡claro que no!", "en": "of course not!", "kind": "phrase", "accept_en": ["definitely not!"]},
+        {"es": "todo", "en": "everything", "kind": "word", "accept_en": ["all"]},
+        {"es": "no sé", "en": "I don't know", "kind": "phrase", "accept_en": ["dunno", "I do not know"]}
+      ],
+      "sentences": [
+        {"es": "No como nada.", "en": "I don't eat anything.", "focus": "nada", "accept_en": ["I'm not eating anything.", "I eat nothing."]},
+        {"es": "No hay nadie en la casa.", "en": "There's nobody in the house.", "focus": "nadie", "accept_en": ["There is no one in the house.", "There isn't anybody at home."]},
+        {"es": "¿Hay alguien aquí?", "en": "Is anybody here?", "focus": "alguien", "accept_en": ["Is there someone here?", "Is anyone here?"]},
+        {"es": "Vives en Brisbane, ¿verdad?", "en": "You live in Brisbane, right?", "focus": "verdad", "accept_en": ["You live in Brisbane, don't you?"]},
+        {"es": "¡Claro que sí!", "en": "Of course!", "focus": "Claro", "accept_en": ["Sure!", "Of course I do!"]},
+        {"es": "No sé.", "en": "I don't know.", "focus": "sé", "accept_en": ["Dunno."]},
+        {"es": "Nunca bebo cerveza.", "en": "I never drink beer.", "focus": "Nunca"},
+        {"es": "No sé nada.", "en": "I don't know anything.", "focus": "nada", "accept_en": ["I know nothing."]},
+        {"es": "Todo está bien.", "en": "Everything is fine.", "focus": "Todo", "accept_en": ["Everything's OK.", "All is well."]},
+        {"es": "Claro, no hay problema.", "en": "Sure, no problem.", "focus": "problema", "accept_en": ["Of course, no problem.", "Of course, there's no problem."]},
+        {"es": "¿Hablas inglés? ¡Claro que no!", "en": "Do you speak English? Of course not!", "focus": "no"},
+        {"es": "Ahora comprendo todo.", "en": "Now I understand everything.", "focus": "comprendo", "accept_en": ["I understand everything now."]}
+      ]
+    }
+  ]
+}

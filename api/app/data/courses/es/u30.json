@@ -1,0 +1,115 @@
+{
+  "unit": 30,
+  "title": "Mi vida",
+  "cefr": "A2",
+  "goal": "Talk about your life across past, present and future, give opinions and link your ideas.",
+  "lessons": [
+    {
+      "id": "es-u30-l1",
+      "title": "In my opinion",
+      "notes": "To give an opinion:\n**creo que** · **pienso que** (I think that) · **me parece que** (it seems to me) · **en mi opinión** · **para mí** (for me)\n**Creo que es una buena idea.** = I think it's a good idea.\nTo agree or disagree: **estoy de acuerdo** (I agree) · **no estoy de acuerdo** · **tienes razón** (you're right).\nAsk for someone's view: **¿Qué piensas?** · **¿Qué te parece?** (What do you think of it?)\nOne tip for later: **no creo que** is followed by a different verb form (the subjunctive, at B1). For now, say **creo que no** = I don't think so.",
+      "items": [
+        {"es": "pienso que", "en": "I think that", "kind": "phrase", "accept": ["creo que"], "accept_en": ["I think"]},
+        {"es": "me parece que", "en": "it seems to me that", "kind": "phrase", "accept_en": ["I think that", "it seems to me"]},
+        {"es": "en mi opinión", "en": "in my opinion", "kind": "phrase"},
+        {"es": "estar de acuerdo", "en": "to agree", "kind": "phrase", "accept_en": ["to be in agreement"]},
+        {"es": "tener razón", "en": "to be right", "kind": "phrase"},
+        {"es": "¿qué te parece?", "en": "what do you think?", "kind": "phrase", "accept_en": ["what do you think of it?", "how does it seem to you?"]},
+        {"es": "creo que no", "en": "I don't think so", "kind": "phrase", "accept_en": ["I think not"]},
+        {"es": "la idea", "en": "the idea", "kind": "word", "gender": "f"}
+      ],
+      "sentences": [
+        {"es": "Pienso que el español es muy interesante.", "en": "I think Spanish is very interesting.", "focus": "Pienso", "accept_en": ["I think that Spanish is very interesting.", "I think Spanish is really interesting."]},
+        {"es": "Me parece que va a llover.", "en": "It looks like it's going to rain.", "focus": "parece", "accept_en": ["It seems to me that it's going to rain.", "I think it's going to rain."]},
+        {"es": "En mi opinión, la vida en el pueblo es mejor.", "en": "In my opinion, life in the town is better.", "focus": "opinión", "accept_en": ["In my opinion, village life is better.", "In my opinion life in a small town is better."]},
+        {"es": "Para mí, el mejor plato es el pescado.", "en": "For me, the best dish is the fish.", "focus": "mí", "accept_en": ["To me, the best dish is the fish."]},
+        {"es": "Estoy de acuerdo con Ana.", "en": "I agree with Ana.", "focus": "acuerdo"},
+        {"es": "Tienes razón, es muy caro.", "en": "You're right, it's very expensive.", "focus": "razón", "accept_en": ["You are right, it's really expensive."]},
+        {"es": "Vamos a la playa. ¿Qué te parece?", "en": "Let's go to the beach. What do you think?", "focus": "parece", "accept_en": ["Let's go to the beach. How does that sound?", "We're going to the beach. What do you think?"]},
+        {"es": "¿Lloverá mañana? - Creo que no.", "en": "Will it rain tomorrow? - I don't think so.", "focus": "Creo"},
+        {"es": "Es una idea buenísima.", "en": "It's a really good idea.", "focus": "idea", "accept_en": ["It's a great idea.", "That's a really good idea."]},
+        {"es": "¿Qué piensas de mi nuevo trabajo?", "en": "What do you think of my new job?", "focus": "piensas", "accept_en": ["What do you think about my new job?"]}
+      ]
+    },
+    {
+      "id": "es-u30-l2",
+      "title": "Linking ideas",
+      "notes": "Linking words turn short sentences into real speech:\n**además** (also, besides) · **aunque** (although) · **sin embargo** (however) · **así que** (so) · **porque** (because) · **o sea** (I mean)\n**Me gusta mi trabajo, aunque es difícil.**\n**Estaba cansado; sin embargo, fui a la fiesta.**\n**Llovía, así que nos quedamos en casa.**\n**porque** answers \"why\" in the middle of a sentence; to start with the reason, use **como**: **Como llovía, nos quedamos en casa.**\nDon't confuse **por qué** (why? - two words, accent) with **porque** (because).",
+      "items": [
+        {"es": "además", "en": "besides", "kind": "word", "accept_en": ["also", "moreover", "as well", "furthermore"]},
+        {"es": "aunque", "en": "although", "kind": "word", "accept_en": ["even though", "though"]},
+        {"es": "sin embargo", "en": "however", "kind": "phrase", "accept_en": ["nevertheless", "but"]},
+        {"es": "así que", "en": "so", "kind": "phrase", "accept_en": ["therefore"]},
+        {"es": "ya que", "en": "since", "kind": "phrase", "accept_en": ["as", "because", "seeing that"], "note": "Gives a reason the listener already knows. Como (at the start) works the same way."},
+        {"es": "o sea", "en": "I mean", "kind": "phrase", "accept_en": ["in other words", "that is"]},
+        {"es": "útil", "en": "useful", "kind": "word"}
+      ],
+      "sentences": [
+        {"es": "Me gusta mi trabajo, aunque es difícil.", "en": "I like my job, although it's hard.", "focus": "aunque", "accept_en": ["I like my job, even though it's difficult.", "I like my work, although it's difficult."]},
+        {"es": "Estaba cansado; sin embargo, fui a la fiesta.", "en": "I was tired; however, I went to the party.", "focus": "embargo", "accept_en": ["I was tired, but I went to the party anyway."]},
+        {"es": "Llovía, así que nos quedamos en casa.", "en": "It was raining, so we stayed at home.", "focus": "así", "accept_en": ["It was raining, so we stayed home."]},
+        {"es": "Como no tenía dinero, no compré nada.", "en": "As I didn't have any money, I didn't buy anything.", "focus": "Como", "accept_en": ["Since I had no money, I didn't buy anything.", "Because I didn't have money, I bought nothing."]},
+        {"es": "El hotel es barato y, además, está cerca de la playa.", "en": "The hotel is cheap and, besides, it's close to the beach.", "focus": "además", "accept_en": ["The hotel is cheap and it's also near the beach."]},
+        {"es": "Llego tarde, o sea, a las diez.", "en": "I'll be late, I mean, at ten.", "focus": "sea", "accept_en": ["I'm arriving late, I mean, at ten.", "I'll arrive late, that is, at ten."]},
+        {"es": "¿Quieres venir conmigo al cine?", "en": "Do you want to come to the cinema with me?", "focus": "conmigo", "accept_en": ["Do you want to come to the movies with me?", "Would you like to come to the cinema with me?"]},
+        {"es": "Estudio español porque es muy útil.", "en": "I study Spanish because it's very useful.", "focus": "útil", "accept_en": ["I'm studying Spanish because it's really useful."]},
+        {"es": "Quiero hablar contigo.", "en": "I want to talk with you.", "focus": "contigo", "accept_en": ["I want to speak to you.", "I want to talk to you."]},
+        {"es": "Ya que estás aquí, ¿me ayudas?", "en": "Since you're here, will you help me?", "focus": "ya", "accept_en": ["As you're here, can you help me?", "Since you're here, can you help me?"]}
+      ]
+    },
+    {
+      "id": "es-u30-l3",
+      "title": "My story",
+      "notes": "Telling your life story brings all the tenses together:\n**Preterite** for events: **Nací en Brisbane.** (I was born) **Me mudé a Sídney en 2015.** (I moved)\n**Imperfect** for background: **De niño vivía cerca del mar.**\n**Present perfect** for experience up to now: **He vivido en tres países.**\n**Present** for now: **Ahora trabajo en un hospital.**\n**hace** + time + **que** + present = how long something has been going on: **Hace cinco años que vivo aquí.** = I've lived here for five years.\n**desde** works too: **Vivo aquí desde 2020.**\n**nacer** (to be born) is regular in the preterite: **nací, naciste, nació**.",
+      "items": [
+        {"es": "nacer", "en": "to be born", "kind": "verb"},
+        {"es": "nací", "en": "I was born", "kind": "phrase"},
+        {"es": "crecer", "en": "to grow up", "kind": "verb", "accept_en": ["to grow"]},
+        {"es": "mudarse", "en": "to move (house)", "kind": "verb", "accept_en": ["to move", "to move house"]},
+        {"es": "me mudé", "en": "I moved", "kind": "phrase", "accept_en": ["I moved house"]},
+        {"es": "hace cinco años que", "en": "for five years", "kind": "phrase", "accept_en": ["it's been five years since", "five years ago"]},
+        {"es": "el mar", "en": "the sea", "kind": "word", "gender": "m", "accept_en": ["the ocean"]},
+        {"es": "jubilarse", "en": "to retire", "kind": "verb"},
+        {"es": "casarse", "en": "to get married", "kind": "verb", "accept_en": ["to marry"]},
+        {"es": "actualmente", "en": "currently", "kind": "word", "accept_en": ["at the moment", "nowadays", "now"], "note": "False friend: it doesn't mean \"actually\"."}
+      ],
+      "sentences": [
+        {"es": "Nací en Brisbane, pero crecí en un pueblo pequeño.", "en": "I was born in Brisbane, but I grew up in a small town.", "focus": "Nací", "accept_en": ["I was born in Brisbane but grew up in a small town.", "I was born in Brisbane, but I grew up in a little village."]},
+        {"es": "De niño vivía cerca del mar.", "en": "As a child I lived near the sea.", "focus": "mar", "accept_en": ["As a kid I lived near the sea.", "When I was a child I used to live near the ocean."]},
+        {"es": "Me mudé a Sídney cuando tenía veinte años.", "en": "I moved to Sydney when I was twenty.", "focus": "mudé", "accept_en": ["I moved to Sydney when I was twenty years old."]},
+        {"es": "Hace cinco años que vivo aquí.", "en": "I've lived here for five years.", "focus": "Hace", "accept_en": ["I have been living here for five years.", "I've been living here for five years."]},
+        {"es": "Mis padres se casaron en 1985.", "en": "My parents got married in 1985.", "focus": "casaron", "accept_en": ["My parents married in 1985."]},
+        {"es": "He vivido en tres países diferentes.", "en": "I've lived in three different countries.", "focus": "vivido", "accept_en": ["I have lived in three different countries."]},
+        {"es": "Actualmente trabajo en un hospital.", "en": "Currently I work in a hospital.", "focus": "Actualmente", "accept_en": ["At the moment I work in a hospital.", "I currently work at a hospital."]},
+        {"es": "Mi papá se jubiló el año pasado.", "en": "My dad retired last year.", "focus": "jubiló", "accept_en": ["My father retired last year."]},
+        {"es": "¿Dónde naciste?", "en": "Where were you born?", "focus": "naciste"}
+      ]
+    },
+    {
+      "id": "es-u30-l4",
+      "title": "Hopes and plans",
+      "notes": "To talk about the future in a softer way:\n**me gustaría** + infinitive = I would like to: **Me gustaría vivir en Chile.**\n**espero** + infinitive = I hope to: **Espero viajar el año que viene.**\n**tener ganas de** + infinitive = to feel like / look forward to: **Tengo ganas de verte.**\n**pienso** + infinitive = I'm planning to: **Pienso estudiar más.**\nAnd of course **voy a** + infinitive and the future: **Algún día hablaré español muy bien.**\n**el sueño** is both a dream and sleepiness: **tengo sueño** = I'm sleepy.",
+      "items": [
+        {"es": "espero", "en": "I hope", "kind": "phrase", "accept_en": ["I hope to", "I expect"]},
+        {"es": "tener ganas de", "en": "to feel like", "kind": "phrase", "accept_en": ["to look forward to", "to want to"]},
+        {"es": "el sueño", "en": "the dream", "kind": "word", "gender": "m", "accept_en": ["sleep", "sleepiness"]},
+        {"es": "algún día", "en": "some day", "kind": "phrase", "accept_en": ["one day", "someday"]},
+        {"es": "mejorar", "en": "to improve", "kind": "verb", "accept_en": ["to get better"]},
+        {"es": "el idioma", "en": "the language", "kind": "word", "gender": "m", "note": "Masculine although it ends in -a."},
+        {"es": "practicar", "en": "to practise", "kind": "verb", "accept_en": ["to practice"], "note": "Preterite: practiqué."}
+      ],
+      "sentences": [
+        {"es": "Me gustaría vivir un año en Chile.", "en": "I'd like to live in Chile for a year.", "focus": "gustaría", "accept_en": ["I would like to live in Chile for a year.", "I'd like to live a year in Chile."]},
+        {"es": "Espero viajar a Sudamérica el año que viene.", "en": "I hope to travel to South America next year.", "focus": "Espero", "accept_en": ["I hope to go to South America next year."]},
+        {"es": "Tengo muchas ganas de verte.", "en": "I'm really looking forward to seeing you.", "focus": "ganas", "accept_en": ["I really want to see you.", "I can't wait to see you."]},
+        {"es": "Mi sueño es tener una casa cerca del mar.", "en": "My dream is to have a house near the sea.", "focus": "sueño", "accept_en": ["My dream is to have a house by the sea."]},
+        {"es": "Algún día hablaré español muy bien.", "en": "One day I'll speak Spanish very well.", "focus": "Algún", "accept_en": ["Someday I will speak Spanish really well.", "Some day I'll speak Spanish very well."]},
+        {"es": "Quiero mejorar mi español este año.", "en": "I want to improve my Spanish this year.", "focus": "mejorar"},
+        {"es": "El español es el idioma más útil para mí.", "en": "Spanish is the most useful language for me.", "focus": "idioma"},
+        {"es": "Practico todos los días con una amiga de Colombia.", "en": "I practise every day with a friend from Colombia.", "focus": "Practico", "accept_en": ["I practice every day with a friend from Colombia.", "I practise every day with a Colombian friend."]},
+        {"es": "Pienso aprender otro idioma después.", "en": "I'm planning to learn another language afterwards.", "focus": "aprender", "accept_en": ["I plan to learn another language later.", "I'm thinking of learning another language afterwards."]},
+        {"es": "Tengo sueño, me voy a acostar.", "en": "I'm sleepy, I'm going to bed.", "focus": "sueño", "accept_en": ["I'm tired, I'm going to bed.", "I'm sleepy, I'm going to go to bed."]}
+      ]
+    }
+  ]
+}

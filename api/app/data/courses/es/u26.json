@@ -1,0 +1,115 @@
+{
+  "unit": 26,
+  "title": "He viajado",
+  "cefr": "A2",
+  "goal": "Talk about experiences and what you have or haven't done yet, with the present perfect.",
+  "lessons": [
+    {
+      "id": "es-u26-l1",
+      "title": "I have spoken",
+      "notes": "The **present perfect** works much like English \"I have done\": **haber** + a **participle**.\n**haber** (only used as a helper here):\n**yo** he · **tú** has · **él / ella / usted** ha · **nosotros** hemos · **ellos / ustedes** han\nThe participle: **-ar -> -ado**, **-er / -ir -> -ido**: hablado, comido, vivido.\n**He comido.** = I have eaten.\nThe participle never changes (no -a, no -s) after haber, and nothing goes between **he** and it: **no** and pronouns go in front: **No lo he visto.** = I haven't seen it.\n**Spain vs Latin America:** in Spain, things done **today** go in the present perfect: **Hoy he trabajado mucho.** Most of Latin America uses the preterite there: **Hoy trabajé mucho.** Both are right; you'll be understood either way.",
+      "items": [
+        {"es": "haber", "en": "to have (helper verb)", "kind": "verb", "accept_en": ["to have"], "note": "he, has, ha, hemos, han + participle."},
+        {"es": "he hablado", "en": "I have spoken", "kind": "phrase", "accept_en": ["I've spoken", "I have talked", "I spoke"]},
+        {"es": "has comido", "en": "you have eaten", "kind": "phrase", "accept_en": ["you've eaten", "you ate"]},
+        {"es": "ha llegado", "en": "he / she has arrived", "kind": "phrase", "accept_en": ["he has arrived", "she has arrived", "it has arrived", "has arrived"]},
+        {"es": "hemos vivido", "en": "we have lived", "kind": "phrase", "accept_en": ["we've lived"]},
+        {"es": "han trabajado", "en": "they have worked", "kind": "phrase", "accept_en": ["they've worked", "you have worked"]},
+        {"es": "he estado", "en": "I have been", "kind": "phrase", "accept_en": ["I've been"]},
+        {"es": "este año", "en": "this year", "kind": "phrase"},
+        {"es": "esta semana", "en": "this week", "kind": "phrase"}
+      ],
+      "sentences": [
+        {"es": "He hablado con el médico esta semana.", "en": "I've spoken with the doctor this week.", "focus": "hablado", "accept_en": ["I have spoken to the doctor this week.", "I spoke with the doctor this week.", "I've talked to the doctor this week."]},
+        {"es": "¿Has comido? - Sí, he comido pollo.", "en": "Have you eaten? - Yes, I've had chicken.", "focus": "comido", "accept_en": ["Have you eaten? - Yes, I've eaten chicken.", "Did you eat? - Yes, I had chicken."]},
+        {"es": "Carlos ha llegado hoy de Chile.", "en": "Carlos has arrived from Chile today.", "focus": "llegado", "accept_en": ["Carlos arrived from Chile today.", "Carlos has arrived today from Chile."]},
+        {"es": "Hemos vivido aquí diez años.", "en": "We've lived here for ten years.", "focus": "Hemos", "accept_en": ["We have lived here for ten years.", "We've lived here ten years."]},
+        {"es": "Mis padres han trabajado mucho este año.", "en": "My parents have worked a lot this year.", "focus": "han", "accept_en": ["My parents worked a lot this year."]},
+        {"es": "Esta semana he estado muy ocupado.", "en": "This week I've been very busy.", "focus": "estado", "accept_en": ["I've been very busy this week.", "I have been very busy this week.", "This week I was very busy."]},
+        {"es": "Hoy no he comido nada.", "en": "I haven't eaten anything today.", "focus": "nada", "accept_en": ["Today I haven't eaten anything.", "I didn't eat anything today.", "I have eaten nothing today."]},
+        {"es": "Ana ha estado enferma toda la semana.", "en": "Ana has been sick all week.", "focus": "ha", "accept_en": ["Ana has been ill all week.", "Ana was sick all week."]}
+      ]
+    },
+    {
+      "id": "es-u26-l2",
+      "title": "Irregular participles",
+      "notes": "A handful of common verbs have irregular participles. They're worth learning as words:\n**hacer** -> **hecho** (done, made) · **ver** -> **visto** (seen) · **decir** -> **dicho** (said)\n**escribir** -> **escrito** · **poner** -> **puesto** (put) · **volver** -> **vuelto** (come back)\n**abrir** -> **abierto** (opened) · **romper** -> **roto** (broken) · **morir** -> **muerto** (died)\n**¿Qué has hecho hoy?** = What have you done today?\nVerbs ending in vowel + -er / -ir add an accent: **leído**, **oído**, **traído**.\nYou can also use a participle as an adjective, and then it agrees: **la ventana está abierta**, **los vasos están rotos**.",
+      "items": [
+        {"es": "hecho", "en": "done", "kind": "word", "accept_en": ["made"]},
+        {"es": "visto", "en": "seen", "kind": "word", "accept_en": ["watched"]},
+        {"es": "dicho", "en": "said", "kind": "word", "accept_en": ["told"]},
+        {"es": "escrito", "en": "written", "kind": "word"},
+        {"es": "puesto", "en": "put", "kind": "word", "accept_en": ["placed", "put on"]},
+        {"es": "vuelto", "en": "come back", "kind": "word", "accept_en": ["returned", "gone back"]},
+        {"es": "romper", "en": "to break", "kind": "verb", "note": "Participle: roto."},
+        {"es": "roto", "en": "broken", "kind": "word"},
+        {"es": "leído", "en": "read", "kind": "word"}
+      ],
+      "sentences": [
+        {"es": "¿Qué has hecho hoy?", "en": "What have you done today?", "focus": "hecho", "accept_en": ["What did you do today?"]},
+        {"es": "¿Has visto mis gafas?", "en": "Have you seen my glasses?", "focus": "visto", "accept_en": ["Did you see my glasses?"]},
+        {"es": "Me ha dicho que no puede venir.", "en": "He's told me he can't come.", "focus": "dicho", "accept_en": ["She's told me she can't come.", "He told me that he can't come.", "She has told me that she can't come."]},
+        {"es": "He escrito tres mensajes a Luis.", "en": "I've written three messages to Luis.", "focus": "escrito", "accept_en": ["I have written Luis three messages.", "I wrote three messages to Luis."]},
+        {"es": "¿Dónde has puesto las llaves?", "en": "Where have you put the keys?", "focus": "puesto", "accept_en": ["Where did you put the keys?"]},
+        {"es": "Mi hermano ha vuelto de México.", "en": "My brother has come back from Mexico.", "focus": "vuelto", "accept_en": ["My brother has returned from Mexico.", "My brother came back from Mexico."]},
+        {"es": "¿Quién ha abierto la ventana?", "en": "Who has opened the window?", "focus": "abierto", "accept_en": ["Who opened the window?"]},
+        {"es": "El niño ha roto un vaso.", "en": "The boy has broken a glass.", "focus": "roto", "accept_en": ["The child has broken a glass.", "The boy broke a glass."]},
+        {"es": "He leído ese libro dos veces.", "en": "I've read that book twice.", "focus": "leído", "accept_en": ["I have read that book twice.", "I've read that book two times."]},
+        {"es": "Rompí mis gafas ayer.", "en": "I broke my glasses yesterday.", "focus": "Rompí"}
+      ]
+    },
+    {
+      "id": "es-u26-l3",
+      "title": "Already, not yet",
+      "notes": "The present perfect goes with time words that reach up to **now**:\n**ya** (already) · **todavía no** (not yet) · **todavía** (still) · **nunca** (never) · **alguna vez** (ever)\n**¿Ya has comido?** = Have you eaten yet / already?\n**Todavía no he terminado.** = I haven't finished yet.\nIn Latin America people often use the preterite with **ya**: **¿Ya comiste?** - it's just as correct.\n**todavía** without **no** means \"still\": **Todavía vivo en el mismo barrio.**\n**acabar de** + infinitive = to have just done: **Acabo de llegar.** = I've just arrived.",
+      "items": [
+        {"es": "ya", "en": "already", "kind": "word", "accept_en": ["yet", "now"]},
+        {"es": "todavía no", "en": "not yet", "kind": "phrase", "accept": ["aún no"], "accept_en": ["still not"]},
+        {"es": "todavía", "en": "still", "kind": "word", "accept": ["aún"], "accept_en": ["yet"]},
+        {"es": "acabar de", "en": "to have just", "kind": "phrase", "accept_en": ["just"]},
+        {"es": "acabo de llegar", "en": "I've just arrived", "kind": "phrase", "accept_en": ["I have just arrived", "I just arrived", "I just got here"]},
+        {"es": "mismo", "en": "same", "kind": "word", "accept_en": ["the same"]},
+        {"es": "contestar", "en": "to answer", "kind": "verb", "accept": ["responder"], "accept_en": ["to reply"]}
+      ],
+      "sentences": [
+        {"es": "¿Ya has comido? - Sí, ya he comido.", "en": "Have you eaten yet? - Yes, I've already eaten.", "focus": "Ya", "accept_en": ["Have you already eaten? - Yes, I've already eaten.", "Did you eat yet? - Yes, I already ate."]},
+        {"es": "Todavía no he terminado la tarea.", "en": "I haven't finished the homework yet.", "focus": "Todavía", "accept_en": ["I still haven't finished my homework.", "I haven't finished my homework yet."]},
+        {"es": "¿Ya contestaste el correo de Marta?", "en": "Have you answered Marta's email yet?", "focus": "contestaste", "accept_en": ["Did you answer Marta's email yet?", "Have you already replied to Marta's email?"]},
+        {"es": "Todavía vivo en el mismo barrio.", "en": "I still live in the same neighbourhood.", "focus": "mismo", "accept_en": ["I still live in the same neighborhood.", "I still live in the same area."]},
+        {"es": "Acabo de llegar a casa.", "en": "I've just got home.", "focus": "Acabo", "accept_en": ["I have just arrived home.", "I just got home.", "I've just arrived home."]},
+        {"es": "El tren acaba de salir.", "en": "The train has just left.", "focus": "acaba", "accept_en": ["The train just left."]},
+        {"es": "¿Todavía estás en la oficina?", "en": "Are you still at the office?", "focus": "estás", "accept_en": ["Are you still in the office?"]},
+        {"es": "Mi hijo todavía no ha vuelto.", "en": "My son hasn't come back yet.", "focus": "vuelto", "accept_en": ["My son still hasn't come back.", "My son hasn't returned yet."]},
+        {"es": "Ya he contestado todas las preguntas.", "en": "I've already answered all the questions.", "focus": "contestado", "accept_en": ["I have already answered all the questions."]}
+      ]
+    },
+    {
+      "id": "es-u26-l4",
+      "title": "Have you ever...?",
+      "notes": "Life experiences - things you have or haven't done at some point - use the present perfect everywhere:\n**¿Alguna vez has estado en Chile?** = Have you ever been to Chile?\n**Nunca he probado el mate.** = I've never tried mate.\n**He estado en México dos veces.** = I've been to Mexico twice.\n**ir** -> **ido**, **ser** -> **sido**: **He ido a Lima.** (I've been to Lima.)\nIn English \"been to\" is about places; in Spanish say **he estado en** or **he ido a**.\n**muchas veces** = many times; **varias veces** = several times.",
+      "items": [
+        {"es": "alguna vez", "en": "ever", "kind": "phrase", "accept_en": ["at some point", "once"]},
+        {"es": "nunca he", "en": "I've never", "kind": "phrase", "accept_en": ["I have never"]},
+        {"es": "ido", "en": "gone", "kind": "word", "accept_en": ["been"]},
+        {"es": "sido", "en": "been", "kind": "word"},
+        {"es": "probado", "en": "tried", "kind": "word", "accept_en": ["tasted"]},
+        {"es": "muchas veces", "en": "many times", "kind": "phrase", "accept_en": ["lots of times", "often"]},
+        {"es": "varias veces", "en": "several times", "kind": "phrase"},
+        {"es": "subir", "en": "to go up", "kind": "verb", "accept_en": ["to climb", "to get on"]},
+        {"es": "el extranjero", "en": "abroad", "kind": "word", "gender": "m", "accept_en": ["overseas", "the foreigner"], "note": "en el extranjero = abroad; also a foreigner."},
+        {"es": "la nieve", "en": "the snow", "kind": "word", "gender": "f", "accept_en": ["snow"]}
+      ],
+      "sentences": [
+        {"es": "¿Alguna vez has estado en Chile?", "en": "Have you ever been to Chile?", "focus": "Alguna", "accept_en": ["Have you ever been in Chile?"]},
+        {"es": "Nunca he probado la comida peruana.", "en": "I've never tried Peruvian food.", "focus": "probado", "accept_en": ["I have never tried Peruvian food.", "I've never tasted Peruvian food."]},
+        {"es": "He ido a México muchas veces.", "en": "I've been to Mexico many times.", "focus": "ido", "accept_en": ["I have been to Mexico many times.", "I've gone to Mexico lots of times."]},
+        {"es": "Ha sido un año muy difícil.", "en": "It's been a very hard year.", "focus": "sido", "accept_en": ["It has been a very difficult year.", "It's been a really difficult year."]},
+        {"es": "Hemos subido esa montaña varias veces.", "en": "We've climbed that mountain several times.", "focus": "subido", "accept_en": ["We have climbed that mountain several times.", "We've been up that mountain several times."]},
+        {"es": "¿Has vivido alguna vez en el extranjero?", "en": "Have you ever lived abroad?", "focus": "extranjero", "accept_en": ["Have you ever lived overseas?"]},
+        {"es": "Nunca he visto la nieve.", "en": "I've never seen snow.", "focus": "Nunca", "accept_en": ["I have never seen snow.", "I've never seen the snow."]},
+        {"es": "Mi abuela nunca ha subido a un avión.", "en": "My grandmother has never been on a plane.", "focus": "subido", "accept_en": ["My grandma has never got on a plane.", "My grandmother has never flown."]},
+        {"es": "¿Cuántas veces has ido a la playa este año?", "en": "How many times have you been to the beach this year?", "focus": "veces", "accept_en": ["How many times have you gone to the beach this year?"]}
+      ]
+    }
+  ]
+}

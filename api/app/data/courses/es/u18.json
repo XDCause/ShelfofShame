@@ -1,0 +1,118 @@
+{
+  "unit": 18,
+  "title": "Ayer",
+  "cefr": "A2",
+  "goal": "Say what you did yesterday and last week with the preterite of regular verbs.",
+  "lessons": [
+    {
+      "id": "es-u18-l1",
+      "title": "Yesterday I worked",
+      "notes": "The **preterite** (pretérito) tells finished actions in the past: what you did yesterday, last week, in 2019. For **-ar** verbs, drop -ar and add:\n**yo** hablé · **tú** hablaste · **él / ella / usted** habló · **nosotros** hablamos · **ellos / ustedes** hablaron\nThe accents matter: **hablo** = I speak, **habló** = he spoke. Say the stress where the accent is.\n**hablamos** is both \"we speak\" and \"we spoke\": the time word tells you which - **ayer hablamos** (we spoke yesterday).\nReflexives work the same: **me levanté**, **se duchó**.",
+      "items": [
+        {"es": "ayer", "en": "yesterday", "kind": "word"},
+        {"es": "anoche", "en": "last night", "kind": "word"},
+        {"es": "hablé", "en": "I spoke", "kind": "phrase", "accept_en": ["I talked", "I have spoken"]},
+        {"es": "hablaste", "en": "you spoke", "kind": "phrase", "accept_en": ["you talked"]},
+        {"es": "habló", "en": "he / she spoke", "kind": "phrase", "accept_en": ["he spoke", "she spoke", "you spoke", "he talked", "she talked"]},
+        {"es": "hablaron", "en": "they spoke", "kind": "phrase", "accept_en": ["they talked", "you spoke"]},
+        {"es": "trabajé", "en": "I worked", "kind": "phrase"},
+        {"es": "me levanté", "en": "I got up", "kind": "phrase"}
+      ],
+      "sentences": [
+        {"es": "Ayer hablé con mi madre.", "en": "Yesterday I spoke with my mother.", "focus": "hablé", "accept_en": ["Yesterday I talked to my mother.", "I spoke to my mother yesterday.", "I talked with my mum yesterday."]},
+        {"es": "¿Hablaste con Carlos anoche?", "en": "Did you speak with Carlos last night?", "focus": "Hablaste", "accept_en": ["Did you talk to Carlos last night?", "Did you speak to Carlos last night?"]},
+        {"es": "Ana habló con su papá.", "en": "Ana spoke with her dad.", "focus": "habló", "accept_en": ["Ana talked to her dad.", "Ana spoke to her dad.", "Ana talked with her father."]},
+        {"es": "Anoche hablamos mucho.", "en": "Last night we talked a lot.", "focus": "hablamos", "accept_en": ["We talked a lot last night.", "Last night we spoke a lot."]},
+        {"es": "Mis padres hablaron con Ana.", "en": "My parents spoke with Ana.", "focus": "hablaron", "accept_en": ["My parents talked to Ana.", "My parents spoke to Ana."]},
+        {"es": "Ayer trabajé diez horas.", "en": "Yesterday I worked ten hours.", "focus": "trabajé", "accept_en": ["I worked ten hours yesterday."]},
+        {"es": "Me levanté a las siete.", "en": "I got up at seven.", "focus": "levanté"},
+        {"es": "Anoche cocinamos pasta en casa.", "en": "Last night we cooked pasta at home.", "focus": "Anoche", "accept_en": ["We cooked pasta at home last night."]},
+        {"es": "Mis amigos bailaron toda la noche.", "en": "My friends danced all night.", "focus": "bailaron", "accept_en": ["My friends danced all night long."]},
+        {"es": "¿Cocinaste tú la cena?", "en": "Did you cook dinner?", "focus": "Cocinaste", "accept_en": ["Did you cook the dinner?", "Was it you who cooked dinner?"]},
+        {"es": "Mi hermano se duchó y se acostó.", "en": "My brother had a shower and went to bed.", "focus": "acostó", "accept_en": ["My brother showered and went to bed."]}
+      ]
+    },
+    {
+      "id": "es-u18-l2",
+      "title": "Yesterday I ate",
+      "notes": "**-er** and **-ir** verbs share one set of preterite endings:\n**yo** comí · **tú** comiste · **él / ella / usted** comió · **nosotros** comimos · **ellos / ustedes** comieron\n**yo** viví · **tú** viviste · **él** vivió · **nosotros** vivimos · **ellos** vivieron\nAgain the accent on the last syllable is the past: **como** (I eat) vs **comió** (he ate).\nStem changes in the present (**vuelvo**, **entiendo**) disappear here: **volví** (I came back), **entendí** (I understood). That makes the preterite easier than it looks.",
+      "items": [
+        {"es": "comí", "en": "I ate", "kind": "phrase", "accept_en": ["I had", "I have eaten"]},
+        {"es": "comiste", "en": "you ate", "kind": "phrase"},
+        {"es": "comió", "en": "he / she ate", "kind": "phrase", "accept_en": ["he ate", "she ate", "you ate"]},
+        {"es": "comieron", "en": "they ate", "kind": "phrase", "accept_en": ["you ate"]},
+        {"es": "salí", "en": "I went out", "kind": "phrase", "accept_en": ["I left"]},
+        {"es": "volví", "en": "I came back", "kind": "phrase", "accept_en": ["I returned", "I went back", "I got back"]},
+        {"es": "entender", "en": "to understand", "kind": "verb", "note": "Present: entiendo. Preterite: entendí."},
+        {"es": "vivieron", "en": "they lived", "kind": "phrase", "accept_en": ["you lived"]},
+        {"es": "escribí", "en": "I wrote", "kind": "phrase"},
+        {"es": "la pregunta", "en": "the question", "kind": "word", "gender": "f"}
+      ],
+      "sentences": [
+        {"es": "Ayer comí en un restaurante mexicano.", "en": "Yesterday I ate at a Mexican restaurant.", "focus": "comí", "accept_en": ["I ate at a Mexican restaurant yesterday.", "Yesterday I had lunch at a Mexican restaurant."]},
+        {"es": "¿Qué comiste anoche?", "en": "What did you eat last night?", "focus": "comiste"},
+        {"es": "Sofía comió mucho en el restaurante.", "en": "Sofía ate a lot at the restaurant.", "focus": "comió"},
+        {"es": "Anoche salí con mis amigos.", "en": "Last night I went out with my friends.", "focus": "salí", "accept_en": ["I went out with my friends last night."]},
+        {"es": "Volví a casa muy tarde.", "en": "I came back home very late.", "focus": "Volví", "accept_en": ["I got home very late.", "I went back home very late.", "I returned home very late."]},
+        {"es": "No entendí la pregunta.", "en": "I didn't understand the question.", "focus": "entendí"},
+        {"es": "Mis abuelos vivieron en Chile.", "en": "My grandparents lived in Chile.", "focus": "vivieron"},
+        {"es": "Le escribí un mensaje a Pedro.", "en": "I wrote Pedro a message.", "focus": "escribí", "accept_en": ["I wrote a message to Pedro.", "I sent Pedro a message."]},
+        {"es": "Los niños comieron y salieron al parque.", "en": "The children ate and went out to the park.", "focus": "comieron", "accept_en": ["The kids ate and went out to the park."]}
+      ]
+    },
+    {
+      "id": "es-u18-l3",
+      "title": "Last week",
+      "notes": "Time words that go with the preterite - they mark a finished moment:\n**ayer** · **anteayer** (the day before yesterday) · **anoche**\n**la semana pasada** · **el mes pasado** · **el año pasado** · **el sábado pasado**\n**pasado / pasada** agrees with the noun.\n**hace** + time = **ago**, and it goes in front: **hace dos días** (two days ago), **hace un año** (a year ago).\n**una vez** = once, **dos veces** = twice.\nAll of these usually go at the start or the end: **La semana pasada compré un carro.**",
+      "items": [
+        {"es": "anteayer", "en": "the day before yesterday", "kind": "word"},
+        {"es": "la semana pasada", "en": "last week", "kind": "phrase"},
+        {"es": "el mes pasado", "en": "last month", "kind": "phrase"},
+        {"es": "el año pasado", "en": "last year", "kind": "phrase"},
+        {"es": "el sábado pasado", "en": "last Saturday", "kind": "phrase"},
+        {"es": "hace dos días", "en": "two days ago", "kind": "phrase"},
+        {"es": "hace un año", "en": "a year ago", "kind": "phrase", "accept_en": ["one year ago"]},
+        {"es": "una vez", "en": "once", "kind": "phrase", "accept_en": ["one time"]}
+      ],
+      "sentences": [
+        {"es": "La semana pasada visité a mi abuela.", "en": "Last week I visited my grandmother.", "focus": "pasada", "accept_en": ["I visited my grandmother last week.", "Last week I visited my grandma."]},
+        {"es": "El mes pasado compré una computadora.", "en": "Last month I bought a computer.", "focus": "mes", "accept_en": ["I bought a computer last month."]},
+        {"es": "El año pasado viajamos a Perú.", "en": "Last year we travelled to Peru.", "focus": "año", "accept_en": ["Last year we traveled to Peru.", "We travelled to Peru last year.", "Last year we went to Peru."]},
+        {"es": "Anteayer terminé el libro.", "en": "The day before yesterday I finished the book.", "focus": "Anteayer", "accept_en": ["I finished the book the day before yesterday."]},
+        {"es": "Hablé con ella hace dos días.", "en": "I spoke with her two days ago.", "focus": "hace", "accept_en": ["I talked to her two days ago.", "I spoke to her two days ago."]},
+        {"es": "Hace un año viví en México.", "en": "A year ago I lived in Mexico.", "focus": "Hace", "accept_en": ["I lived in Mexico a year ago."]},
+        {"es": "El sábado pasado salimos a bailar.", "en": "Last Saturday we went out dancing.", "focus": "sábado", "accept_en": ["We went out dancing last Saturday.", "Last Saturday we went out to dance."]},
+        {"es": "Visité el museo una vez.", "en": "I visited the museum once.", "focus": "vez", "accept_en": ["I've visited the museum once.", "I went to the museum once."]},
+        {"es": "¿Terminaste el trabajo ayer?", "en": "Did you finish the work yesterday?", "focus": "Terminaste", "accept_en": ["Did you finish the job yesterday?", "Did you finish work yesterday?"]}
+      ]
+    },
+    {
+      "id": "es-u18-l4",
+      "title": "Spelling changes",
+      "notes": "A few verbs change their spelling in the **yo** form only, to keep the sound:\n**llegar** -> **llegué** (keeps the hard g) · **jugar** -> **jugué** · **pagar** -> **pagué**\n**buscar** -> **busqué** (keeps the k sound) · **tocar** -> **toqué**\n**empezar** -> **empecé** (z becomes c before e)\nThe other persons are regular: **llegaste, llegó, llegamos, llegaron**.\nVerbs like **leer** put a **y** between vowels: **leyó**, **leyeron** (and **leíste** with an accent).\n**empezar** changes e -> ie in the present (**empiezo**) but not in the preterite.",
+      "items": [
+        {"es": "llegué", "en": "I arrived", "kind": "phrase", "accept_en": ["I got there", "I got here"]},
+        {"es": "jugué", "en": "I played", "kind": "phrase"},
+        {"es": "pagué", "en": "I paid", "kind": "phrase"},
+        {"es": "buscar", "en": "to look for", "kind": "verb", "accept_en": ["to search for", "to search"]},
+        {"es": "busqué", "en": "I looked for", "kind": "phrase", "accept_en": ["I searched for", "I searched"]},
+        {"es": "empecé", "en": "I started", "kind": "phrase", "accept_en": ["I began"]},
+        {"es": "leyó", "en": "he / she read", "kind": "phrase", "accept_en": ["he read", "she read", "you read"]},
+        {"es": "leyeron", "en": "they read", "kind": "phrase", "accept_en": ["you read"]},
+        {"es": "las llaves", "en": "the keys", "kind": "word", "gender": "f"}
+      ],
+      "sentences": [
+        {"es": "Llegué al trabajo a las nueve.", "en": "I arrived at work at nine.", "focus": "Llegué", "accept_en": ["I got to work at nine."]},
+        {"es": "¿A qué hora llegaste anoche?", "en": "What time did you arrive last night?", "focus": "llegaste", "accept_en": ["What time did you get home last night?", "What time did you get in last night?"]},
+        {"es": "El sábado jugué al fútbol con mi hijo.", "en": "On Saturday I played football with my son.", "focus": "jugué", "accept_en": ["On Saturday I played soccer with my son.", "I played football with my son on Saturday."]},
+        {"es": "Pagué la cena con tarjeta.", "en": "I paid for dinner by card.", "focus": "Pagué", "accept_en": ["I paid for the dinner by card.", "I paid for dinner with a card."]},
+        {"es": "Busqué mis llaves toda la mañana.", "en": "I looked for my keys all morning.", "focus": "Busqué", "accept_en": ["I searched for my keys all morning."]},
+        {"es": "Empecé a estudiar español el año pasado.", "en": "I started studying Spanish last year.", "focus": "Empecé", "accept_en": ["I started to study Spanish last year.", "I began studying Spanish last year.", "Last year I started learning Spanish."]},
+        {"es": "Mi papá leyó tu mensaje.", "en": "My dad read your message.", "focus": "leyó", "accept_en": ["My father read your message."]},
+        {"es": "Los niños leyeron un libro en la biblioteca.", "en": "The children read a book in the library.", "focus": "leyeron", "accept_en": ["The kids read a book in the library.", "The children read a book at the library."]},
+        {"es": "La película empieza a las ocho.", "en": "The film starts at eight.", "focus": "empieza", "accept_en": ["The movie starts at eight.", "The film begins at eight."]},
+        {"es": "¿Qué buscaste en la tienda?", "en": "What did you look for in the shop?", "focus": "buscaste", "accept_en": ["What were you looking for in the shop?", "What did you look for in the store?"]}
+      ]
+    }
+  ]
+}

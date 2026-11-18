@@ -1,0 +1,118 @@
+{
+  "unit": 16,
+  "title": "Me levanto",
+  "cefr": "A2",
+  "goal": "Describe your daily routine from waking up to going to bed, using reflexive verbs.",
+  "lessons": [
+    {
+      "id": "es-u16-l1",
+      "title": "Getting up",
+      "notes": "Some Spanish verbs come with **se** on the end of the infinitive: **levantarse** (to get up), **ducharse** (to have a shower). They're **reflexive**: you do the action to yourself - literally \"to raise oneself\".\nThe **se** moves to the front and changes with the person:\n**yo me** levanto · **tú te** levantas · **él / ella / usted se** levanta · **nosotros nos** levantamos · **ellos / ustedes se** levantan\nThe verb itself is a normal -ar verb. You already know one: **me llamo** (I call myself) comes from **llamarse**.\n**despertarse** (to wake up) also changes e -> ie, like querer: **me despierto**.",
+      "items": [
+        {"es": "levantarse", "en": "to get up", "kind": "verb"},
+        {"es": "despertarse", "en": "to wake up", "kind": "verb", "note": "e -> ie: me despierto, te despiertas."},
+        {"es": "ducharse", "en": "to have a shower", "kind": "verb", "accept_en": ["to shower", "to take a shower"]},
+        {"es": "me levanto", "en": "I get up", "kind": "phrase"},
+        {"es": "te levantas", "en": "you get up", "kind": "phrase"},
+        {"es": "se levanta", "en": "he / she gets up", "kind": "phrase", "accept_en": ["he gets up", "she gets up", "you get up"]},
+        {"es": "nos levantamos", "en": "we get up", "kind": "phrase"},
+        {"es": "me despierto", "en": "I wake up", "kind": "phrase"},
+        {"es": "el despertador", "en": "the alarm clock", "kind": "word", "gender": "m"}
+      ],
+      "sentences": [
+        {"es": "Me levanto a las seis y media.", "en": "I get up at half past six.", "focus": "levanto", "accept_en": ["I get up at six thirty."]},
+        {"es": "¿A qué hora te levantas?", "en": "What time do you get up?", "focus": "levantas"},
+        {"es": "Mi hermana se levanta muy temprano.", "en": "My sister gets up very early.", "focus": "temprano"},
+        {"es": "Los sábados nos levantamos tarde.", "en": "On Saturdays we get up late.", "focus": "nos"},
+        {"es": "Me despierto con el despertador.", "en": "I wake up with the alarm clock.", "focus": "despertador", "accept_en": ["I wake up with the alarm.", "I wake up to the alarm clock.", "I wake up to the alarm."]},
+        {"es": "Carlos se ducha por la mañana.", "en": "Carlos has a shower in the morning.", "focus": "ducha", "accept_en": ["Carlos showers in the morning.", "Carlos takes a shower in the morning."]},
+        {"es": "¿Te duchas por la noche?", "en": "Do you have a shower at night?", "focus": "duchas", "accept_en": ["Do you shower at night?", "Do you take a shower at night?", "Do you shower in the evening?"]},
+        {"es": "Mis padres se despiertan a las cinco.", "en": "My parents wake up at five.", "focus": "despiertan"}
+      ]
+    },
+    {
+      "id": "es-u16-l2",
+      "title": "Getting ready",
+      "notes": "More reflexive verbs for getting ready. With body parts, Spanish uses **el / la / los**, not \"my\": the **me** already says whose they are.\n**Me lavo las manos.** = I wash my hands.\n**Se cepilla los dientes.** = He brushes his teeth.\n**vestirse** (to get dressed) changes e -> i: **me visto, te vistes, se viste, nos vestimos, se visten**.\nWithout **se**, the same verbs act on someone or something else: **lavo el carro** (I wash the car), **me lavo** (I wash myself).",
+      "items": [
+        {"es": "lavarse", "en": "to wash (yourself)", "kind": "verb", "accept_en": ["to wash oneself", "to wash"]},
+        {"es": "vestirse", "en": "to get dressed", "kind": "verb", "note": "e -> i: me visto, te vistes."},
+        {"es": "cepillarse los dientes", "en": "to brush your teeth", "kind": "phrase", "accept": ["lavarse los dientes"], "accept_en": ["to brush one's teeth"]},
+        {"es": "peinarse", "en": "to comb your hair", "kind": "verb", "accept_en": ["to comb one's hair", "to brush your hair"]},
+        {"es": "afeitarse", "en": "to shave", "kind": "verb"},
+        {"es": "los dientes", "en": "the teeth", "kind": "word", "gender": "m"},
+        {"es": "las manos", "en": "the hands", "kind": "word", "gender": "f", "note": "la mano is feminine although it ends in -o."},
+        {"es": "la cara", "en": "the face", "kind": "word", "gender": "f"},
+        {"es": "el pelo", "en": "the hair", "kind": "word", "gender": "m"},
+        {"es": "rápido", "en": "quickly", "kind": "word", "accept_en": ["fast"]},
+        {"es": "largo", "en": "long", "kind": "word", "note": "False friend: it doesn't mean large (that's grande)."}
+      ],
+      "sentences": [
+        {"es": "Me lavo la cara con agua fría.", "en": "I wash my face with cold water.", "focus": "lavo"},
+        {"es": "Los niños se cepillan los dientes.", "en": "The children brush their teeth.", "focus": "dientes"},
+        {"es": "Mi papá se afeita todos los días.", "en": "My dad shaves every day.", "focus": "afeita"},
+        {"es": "Me visto rápido porque es tarde.", "en": "I get dressed quickly because it's late.", "focus": "visto", "accept_en": ["I get dressed fast because it's late."]},
+        {"es": "¿Te lavas las manos y la cara?", "en": "Do you wash your hands and face?", "focus": "manos", "accept_en": ["Do you wash your hands and your face?"]},
+        {"es": "Ana se peina el pelo largo.", "en": "Ana combs her long hair.", "focus": "pelo", "accept_en": ["Ana brushes her long hair."]},
+        {"es": "Nos vestimos y desayunamos.", "en": "We get dressed and have breakfast.", "focus": "vestimos"},
+        {"es": "Mi hermano se ducha muy rápido.", "en": "My brother has a very quick shower.", "accept_en": ["My brother showers very quickly.", "My brother has a shower very quickly."], "focus": "rápido"}
+      ]
+    },
+    {
+      "id": "es-u16-l3",
+      "title": "First, then, finally",
+      "notes": "To tell your routine in order, use these linking words:\n**primero** (first) · **luego / después** (then, afterwards) · **por último** (finally)\n**antes de** and **después de** take an **infinitive** - the -ar / -er / -ir form - where English uses -ing:\n**después de comer** = after eating\nWith a reflexive verb the pronoun goes on the end and changes with the person: **antes de acostarme** (before I go to bed), **después de ducharte** (after you shower).\n**acostarse** (to go to bed) changes o -> ue: **me acuesto**. So does **dormirse** (to fall asleep): **me duermo**.",
+      "items": [
+        {"es": "acostarse", "en": "to go to bed", "kind": "verb", "note": "o -> ue: me acuesto, te acuestas."},
+        {"es": "dormirse", "en": "to fall asleep", "kind": "verb", "note": "o -> ue: me duermo."},
+        {"es": "me acuesto", "en": "I go to bed", "kind": "phrase"},
+        {"es": "antes de", "en": "before", "kind": "phrase"},
+        {"es": "después de", "en": "after", "kind": "phrase"},
+        {"es": "ponerse", "en": "to put on", "kind": "verb", "note": "ponerse la ropa = to put your clothes on. Yo: me pongo."},
+        {"es": "quitarse", "en": "to take off", "kind": "verb", "accept_en": ["to remove"]},
+        {"es": "secarse", "en": "to dry yourself", "kind": "verb", "accept_en": ["to dry oneself", "to dry off", "to dry"]},
+        {"es": "la toalla", "en": "the towel", "kind": "word", "gender": "f"}
+      ],
+      "sentences": [
+        {"es": "Primero me ducho, luego me visto.", "en": "First I shower, then I get dressed.", "focus": "Primero", "accept_en": ["First I have a shower, then I get dressed."]},
+        {"es": "Me acuesto a las once.", "en": "I go to bed at eleven.", "focus": "acuesto"},
+        {"es": "¿A qué hora te acuestas?", "en": "What time do you go to bed?", "focus": "acuestas"},
+        {"es": "Leo un libro antes de dormirme.", "en": "I read a book before falling asleep.", "focus": "antes", "accept_en": ["I read a book before I fall asleep.", "I read a book before going to sleep."]},
+        {"es": "Después de cenar, mi familia mira la televisión.", "en": "After dinner, my family watches television.", "focus": "Después", "accept_en": ["After having dinner, my family watches TV.", "After dinner, my family watches TV."]},
+        {"es": "Me lavo los dientes después de desayunar.", "en": "I brush my teeth after breakfast.", "focus": "después", "accept_en": ["I brush my teeth after having breakfast.", "I clean my teeth after breakfast."]},
+        {"es": "Por último, me acuesto y leo.", "en": "Finally, I go to bed and read.", "focus": "último", "accept_en": ["Lastly, I go to bed and read."]},
+        {"es": "Los niños se duermen muy rápido.", "en": "The children fall asleep very quickly.", "focus": "duermen"},
+        {"es": "Trabajo y luego voy al parque.", "en": "I work and then I go to the park.", "focus": "luego"},
+        {"es": "Después de ducharme, me seco con la toalla.", "en": "After showering, I dry myself with the towel.", "focus": "toalla", "accept_en": ["After my shower, I dry myself with the towel.", "After I shower, I dry off with the towel."]},
+        {"es": "Me pongo el reloj antes de salir.", "en": "I put my watch on before going out.", "focus": "pongo", "accept_en": ["I put on my watch before I go out.", "I put my watch on before leaving."]},
+        {"es": "Por la noche me quito el reloj.", "en": "At night I take my watch off.", "focus": "quito", "accept_en": ["I take off my watch at night.", "In the evening I take my watch off."]}
+      ]
+    },
+    {
+      "id": "es-u16-l4",
+      "title": "Weekends and feelings",
+      "notes": "Many feelings and changes are reflexive in Spanish:\n**divertirse** (to have fun) · **aburrirse** (to get bored) · **sentirse** (to feel) · **quedarse** (to stay) · **irse** (to leave, go away)\n**divertirse** and **sentirse** change e -> ie: **me divierto, me siento**.\nWith **ir a**, **querer** or **poder** + infinitive, the pronoun can go in front or on the end - both are right:\n**Me voy a quedar en casa.** = **Voy a quedarme en casa.**\n**¿Te quieres ir?** = **¿Quieres irte?**\nCareful: **me siento** is also \"I sit down\" (sentarse). Context makes it clear.",
+      "items": [
+        {"es": "divertirse", "en": "to have fun", "kind": "verb", "note": "e -> ie: me divierto.", "accept_en": ["to have a good time", "to enjoy yourself"]},
+        {"es": "aburrirse", "en": "to get bored", "kind": "verb"},
+        {"es": "sentirse", "en": "to feel", "kind": "verb", "note": "e -> ie: me siento bien."},
+        {"es": "quedarse", "en": "to stay", "kind": "verb", "accept_en": ["to remain"]},
+        {"es": "irse", "en": "to leave", "kind": "verb", "accept_en": ["to go away", "to go"]},
+        {"es": "me siento", "en": "I feel", "kind": "phrase"},
+        {"es": "me voy", "en": "I'm leaving", "kind": "phrase", "accept_en": ["I'm off", "I'm going", "I leave"]},
+        {"es": "relajarse", "en": "to relax", "kind": "verb"}
+      ],
+      "sentences": [
+        {"es": "Los domingos me quedo en casa.", "en": "On Sundays I stay at home.", "focus": "quedo", "accept_en": ["On Sundays I stay home."]},
+        {"es": "Nos divertimos mucho en la playa.", "en": "We have a lot of fun at the beach.", "focus": "divertimos", "accept_en": ["We have lots of fun at the beach.", "We have a great time at the beach."]},
+        {"es": "¿Te aburres en el trabajo?", "en": "Do you get bored at work?", "focus": "aburres"},
+        {"es": "Hoy no me siento bien.", "en": "I don't feel well today.", "focus": "siento", "accept_en": ["Today I don't feel well.", "I'm not feeling well today."]},
+        {"es": "Es tarde, me voy.", "en": "It's late, I'm leaving.", "focus": "voy", "accept_en": ["It's late, I'm off.", "It's late, I'm going."]},
+        {"es": "Voy a quedarme en casa el sábado.", "en": "I'm going to stay at home on Saturday.", "focus": "quedarme", "accept": ["Me voy a quedar en casa el sábado."], "accept_en": ["I'm going to stay home on Saturday."]},
+        {"es": "Quiero relajarme el fin de semana.", "en": "I want to relax on the weekend.", "accept_en": ["I want to relax at the weekend."], "focus": "relajarme"},
+        {"es": "Mis amigos se van a las diez.", "en": "My friends leave at ten.", "focus": "van", "accept_en": ["My friends are leaving at ten.", "My friends go at ten."]},
+        {"es": "Los niños nunca se aburren en el parque.", "en": "The children never get bored at the park.", "focus": "aburren", "accept_en": ["The kids never get bored in the park.", "The children never get bored in the park."]}
+      ]
+    }
+  ]
+}

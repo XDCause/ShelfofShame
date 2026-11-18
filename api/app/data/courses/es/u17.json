@@ -1,0 +1,113 @@
+{
+  "unit": 17,
+  "title": "De compras",
+  "cefr": "A2",
+  "goal": "Shop for clothes: name what you want, ask for a size and a price, and point things out.",
+  "lessons": [
+    {
+      "id": "es-u17-l1",
+      "title": "Clothes",
+      "notes": "Clothes words are nouns like any other, so learn each with its article. To say what someone is wearing, use **llevar** (literally \"to carry\"): **Llevo una camiseta azul.** = I'm wearing a blue T-shirt.\nRemember: colours come **after** the noun and agree with it: **una falda negra**, **unos zapatos negros**.\nSome clothes are plural in Spanish, just as in English: **los pantalones** (trousers / pants), **los jeans**. In Spain jeans are **los vaqueros** and a jumper is **el jersey**.",
+      "items": [
+        {"es": "la ropa", "en": "the clothes", "kind": "word", "gender": "f", "note": "Singular in Spanish: la ropa es nueva.", "accept_en": ["clothes", "the clothing"]},
+        {"es": "la camisa", "en": "the shirt", "kind": "word", "gender": "f"},
+        {"es": "la camiseta", "en": "the T-shirt", "kind": "word", "gender": "f", "accept_en": ["the t-shirt", "the tee shirt"]},
+        {"es": "los pantalones", "en": "the trousers", "kind": "word", "gender": "m", "accept_en": ["the pants"]},
+        {"es": "la falda", "en": "the skirt", "kind": "word", "gender": "f"},
+        {"es": "el vestido", "en": "the dress", "kind": "word", "gender": "m"},
+        {"es": "los zapatos", "en": "the shoes", "kind": "word", "gender": "m"},
+        {"es": "la chaqueta", "en": "the jacket", "kind": "word", "gender": "f", "accept": ["la chamarra"], "note": "In Mexico often la chamarra."},
+        {"es": "el suéter", "en": "the jumper", "kind": "word", "gender": "m", "accept_en": ["the sweater", "the pullover"], "note": "Spain: el jersey."},
+        {"es": "llevar", "en": "to wear", "kind": "verb", "accept_en": ["to carry"], "note": "Also \"to carry, to take\"."}
+      ],
+      "sentences": [
+        {"es": "Hoy llevo una camiseta blanca.", "en": "Today I'm wearing a white T-shirt.", "focus": "llevo", "accept_en": ["I'm wearing a white T-shirt today.", "Today I wear a white T-shirt."]},
+        {"es": "Ana lleva un vestido rojo muy bonito.", "en": "Ana is wearing a very pretty red dress.", "focus": "vestido", "accept_en": ["Ana is wearing a very nice red dress.", "Ana wears a very pretty red dress."]},
+        {"es": "Necesito unos zapatos nuevos.", "en": "I need some new shoes.", "focus": "zapatos", "accept_en": ["I need new shoes."]},
+        {"es": "¿Dónde está mi chaqueta negra?", "en": "Where is my black jacket?", "focus": "chaqueta"},
+        {"es": "En el trabajo llevo camisa y pantalones.", "en": "At work I wear a shirt and trousers.", "focus": "pantalones", "accept_en": ["At work I wear a shirt and pants."]},
+        {"es": "Mi hermana nunca lleva falda.", "en": "My sister never wears a skirt.", "focus": "falda"},
+        {"es": "En invierno llevo un suéter.", "en": "In winter I wear a jumper.", "focus": "suéter", "accept_en": ["In winter I wear a sweater.", "In the winter I wear a jumper."]},
+        {"es": "Toda mi ropa está en la cama.", "en": "All my clothes are on the bed.", "focus": "ropa"}
+      ]
+    },
+    {
+      "id": "es-u17-l2",
+      "title": "In the shop",
+      "notes": "**costar** (to cost) changes o -> ue, and you mostly need two forms:\n**¿Cuánto cuesta?** (one thing) · **¿Cuánto cuestan?** (more than one)\n**La talla** is the size of clothes; for shoes say **el número**: **¿Tiene el número 40?**\n**probarse** (to try on) is reflexive and also o -> ue: **¿Puedo probarme la camisa?**\nTo pay: **pagar con tarjeta** (by card) or **en efectivo** (in cash). The shop assistant is **el dependiente / la dependienta**.",
+      "items": [
+        {"es": "costar", "en": "to cost", "kind": "verb", "note": "o -> ue: cuesta, cuestan."},
+        {"es": "¿cuánto cuestan?", "en": "how much are they?", "kind": "phrase", "accept_en": ["how much do they cost?"]},
+        {"es": "la talla", "en": "the size", "kind": "word", "gender": "f", "note": "For clothes. For shoes: el número."},
+        {"es": "probarse", "en": "to try on", "kind": "verb", "note": "o -> ue: me pruebo."},
+        {"es": "con tarjeta", "en": "by card", "kind": "phrase", "accept_en": ["with a card", "with card"]},
+        {"es": "mediano", "en": "medium", "kind": "word", "accept_en": ["medium-sized"]}
+      ],
+      "sentences": [
+        {"es": "¿Cuánto cuesta la chaqueta azul?", "en": "How much is the blue jacket?", "focus": "cuesta", "accept_en": ["How much does the blue jacket cost?"]},
+        {"es": "¿Cuánto cuestan los zapatos negros?", "en": "How much are the black shoes?", "focus": "cuestan", "accept_en": ["How much do the black shoes cost?"]},
+        {"es": "¿Tiene la camisa en talla mediana?", "en": "Do you have the shirt in a medium?", "focus": "talla", "accept_en": ["Do you have the shirt in medium?", "Do you have the shirt in a medium size?"]},
+        {"es": "¿Puedo probarme el vestido verde?", "en": "Can I try on the green dress?", "focus": "probarme", "accept_en": ["May I try on the green dress?", "Can I try the green dress on?"]},
+        {"es": "La falda es bonita, pero muy cara.", "en": "The skirt is pretty, but very expensive.", "focus": "cara", "accept_en": ["The skirt is nice, but very expensive."]},
+        {"es": "Quiero comprar unos pantalones baratos.", "en": "I want to buy some cheap trousers.", "focus": "baratos", "accept_en": ["I want to buy some cheap pants.", "I want to buy cheap trousers.", "I want to buy cheap pants."]},
+        {"es": "¿Puedo pagar con tarjeta?", "en": "Can I pay by card?", "focus": "tarjeta", "accept_en": ["Can I pay with a card?", "May I pay by card?"]},
+        {"es": "No, en efectivo, por favor.", "en": "No, in cash, please.", "focus": "efectivo", "accept_en": ["No, cash, please."]},
+        {"es": "La camiseta cuesta quince dólares.", "en": "The T-shirt costs fifteen dollars.", "focus": "camiseta", "accept_en": ["The T-shirt is fifteen dollars."]}
+      ]
+    },
+    {
+      "id": "es-u17-l3",
+      "title": "This, that, that over there",
+      "notes": "Spanish points at things at three distances:\n**este** (this - near me) · **ese** (that - near you) · **aquel** (that over there - far from both of us)\nEach one agrees with the noun:\n**este** suéter · **esta** falda · **estos** zapatos · **estas** camisas\n**ese** vestido · **esa** chaqueta · **esos** pantalones · **esas** faldas\n**aquel** carro · **aquella** tienda · **aquellos** zapatos · **aquellas** camisetas\nWithout a noun they mean \"this one, that one\": **Quiero este.** (Older books write éste with an accent; today it's optional and usually left off.)\nTip: in everyday talk **ese** often does the job of **aquel** too.",
+      "items": [
+        {"es": "este", "en": "this", "kind": "word", "accept_en": ["this one"], "note": "este / esta / estos / estas"},
+        {"es": "esta", "en": "this (feminine)", "kind": "word", "accept_en": ["this", "this one"]},
+        {"es": "estos", "en": "these", "kind": "word", "accept_en": ["these ones"]},
+        {"es": "estas", "en": "these (feminine)", "kind": "word", "accept_en": ["these", "these ones"], "note": "Careful: estás (you are) has an accent."},
+        {"es": "ese", "en": "that", "kind": "word", "accept_en": ["that one"], "note": "ese / esa / esos / esas"},
+        {"es": "esa", "en": "that (feminine)", "kind": "word", "accept_en": ["that", "that one"]},
+        {"es": "esos", "en": "those", "kind": "word", "accept_en": ["those ones"]},
+        {"es": "aquel", "en": "that (over there)", "kind": "word", "accept_en": ["that", "that one over there"], "note": "aquel / aquella / aquellos / aquellas"},
+        {"es": "aquella", "en": "that (feminine, over there)", "kind": "word", "accept_en": ["that", "that one over there"]}
+      ],
+      "sentences": [
+        {"es": "Este suéter es muy barato.", "en": "This jumper is very cheap.", "focus": "Este", "accept_en": ["This sweater is very cheap."]},
+        {"es": "¿Cuánto cuesta esta falda?", "en": "How much is this skirt?", "focus": "esta", "accept_en": ["How much does this skirt cost?"]},
+        {"es": "Estos zapatos son de mi hermano.", "en": "These shoes are my brother's.", "focus": "Estos", "accept_en": ["These shoes belong to my brother."]},
+        {"es": "¿Te gustan estas camisas?", "en": "Do you like these shirts?", "focus": "estas"},
+        {"es": "Me gusta ese vestido.", "en": "I like that dress.", "focus": "ese"},
+        {"es": "Esa chaqueta es muy cara.", "en": "That jacket is very expensive.", "focus": "Esa"},
+        {"es": "¿Puedo probarme esos pantalones?", "en": "Can I try on those trousers?", "focus": "esos", "accept_en": ["Can I try those trousers on?", "Can I try on those pants?", "May I try on those trousers?"]},
+        {"es": "Aquel carro rojo es de mi papá.", "en": "That red car over there is my dad's.", "focus": "Aquel", "accept_en": ["That red car is my dad's.", "That red car belongs to my dad."]},
+        {"es": "Vamos a aquella tienda.", "en": "Let's go to that shop over there.", "focus": "aquella", "accept_en": ["We're going to that shop over there.", "Let's go to that shop.", "Let's go to that store over there."]},
+        {"es": "No quiero este, quiero ese.", "en": "I don't want this one, I want that one.", "focus": "ese"}
+      ]
+    },
+    {
+      "id": "es-u17-l4",
+      "title": "Does it fit?",
+      "notes": "To say how clothes fit, Spanish uses **quedar** like **gustar**: the thing is the subject, the person is **me / te / le**.\n**Me queda bien.** = It fits me well / It suits me.\n**Te quedan grandes.** = They're too big for you (plural thing -> quedan).\n**¿Cómo me queda?** = How does it look on me?\nFor shades, add **claro** (light) or **oscuro** (dark) after the colour, and these don't change: **una camisa azul claro**.\n**le** works for él, ella and usted: **Le queda pequeño.** = It's too small for him / her / you.",
+      "items": [
+        {"es": "quedar", "en": "to fit", "kind": "verb", "accept_en": ["to suit"], "note": "Works like gustar: me queda, me quedan."},
+        {"es": "me queda bien", "en": "it fits me", "kind": "phrase", "accept_en": ["it suits me", "it fits me well", "it looks good on me"]},
+        {"es": "me quedan grandes", "en": "they're too big for me", "kind": "phrase", "accept_en": ["they're big on me", "they are too big for me"]},
+        {"es": "azul claro", "en": "light blue", "kind": "phrase", "accept": ["celeste"], "accept_en": ["pale blue"]},
+        {"es": "oscuro", "en": "dark", "kind": "word"},
+        {"es": "el abrigo", "en": "the coat", "kind": "word", "gender": "m", "accept_en": ["the overcoat"]},
+        {"es": "los calcetines", "en": "the socks", "kind": "word", "gender": "m"},
+        {"es": "el sombrero", "en": "the hat", "kind": "word", "gender": "m"}
+      ],
+      "sentences": [
+        {"es": "Esta camisa me queda bien.", "en": "This shirt fits me well.", "focus": "queda", "accept_en": ["This shirt fits me.", "This shirt suits me.", "This shirt looks good on me."]},
+        {"es": "Estos zapatos me quedan grandes.", "en": "These shoes are too big for me.", "focus": "quedan", "accept_en": ["These shoes are big on me."]},
+        {"es": "¿Cómo me queda el abrigo?", "en": "How does the coat look on me?", "focus": "abrigo", "accept_en": ["How does the coat fit me?", "How does the coat fit?"]},
+        {"es": "Te queda muy bien ese color.", "en": "That colour really suits you.", "focus": "color", "accept_en": ["That colour looks very good on you.", "That color suits you very well."]},
+        {"es": "Quiero un suéter azul oscuro.", "en": "I want a dark blue jumper.", "focus": "oscuro", "accept_en": ["I want a dark blue sweater.", "I'd like a dark blue jumper."]},
+        {"es": "Me gusta más la camisa verde claro.", "en": "I like the light green shirt better.", "focus": "claro", "accept_en": ["I prefer the light green shirt.", "I like the light green shirt more."]},
+        {"es": "Al señor le queda pequeño el sombrero.", "en": "The hat is too small for the man.", "focus": "sombrero", "accept_en": ["The hat is too small for the gentleman.", "The hat is small on the man."]},
+        {"es": "Necesito calcetines para el invierno.", "en": "I need socks for the winter.", "focus": "calcetines", "accept_en": ["I need socks for winter."]},
+        {"es": "¿De qué color es tu abrigo nuevo?", "en": "What colour is your new coat?", "focus": "color", "accept_en": ["What color is your new coat?"]}
+      ]
+    }
+  ]
+}

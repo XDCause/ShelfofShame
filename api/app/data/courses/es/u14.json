@@ -1,0 +1,134 @@
+{
+  "unit": 14,
+  "title": "Ir a...",
+  "cefr": "A1",
+  "goal": "Talk about plans with ir a + infinitive, and give dates with months and seasons.",
+  "lessons": [
+    {
+      "id": "es-u14-l1",
+      "title": "What are you going to do?",
+      "notes": "The easiest way to talk about the future is exactly like English 'going to': **ir + a + infinitive**.\n**Voy a cocinar** (I'm going to cook) · **¿Vas a venir?** · **Vamos a viajar a México.**\nOnly ir changes; the second verb stays in the -ar / -er / -ir form.\n**Hacer** (to do, to make) is the key verb for plans: **¿Qué vas a hacer?** (what are you going to do?).\nTime words: **esta noche** (tonight), **esta tarde** (this afternoon), **este fin de semana**, **la próxima semana** (next week), **pronto** (soon). **Vamos a comer** can also mean 'let's eat!'.",
+      "items": [
+        {"es": "voy a", "en": "I'm going to", "kind": "phrase", "accept_en": ["I am going to", "I will"]},
+        {"es": "vas a", "en": "you're going to", "kind": "phrase", "accept_en": ["you are going to", "are you going to"]},
+        {"es": "va a", "en": "he / she is going to", "kind": "phrase", "accept_en": ["he's going to", "she's going to", "is going to"]},
+        {"es": "vamos a", "en": "we're going to", "kind": "phrase", "accept_en": ["we are going to", "let's"]},
+        {"es": "van a", "en": "they're going to", "kind": "phrase", "accept_en": ["they are going to", "you're going to"]},
+        {"es": "hacer", "en": "to do", "kind": "verb", "accept_en": ["to make"]},
+        {"es": "¿qué vas a hacer?", "en": "what are you going to do?", "kind": "phrase", "accept_en": ["what are you doing?", "what will you do?"]},
+        {"es": "esta noche", "en": "tonight", "kind": "phrase", "accept_en": ["this evening"]},
+        {"es": "esta tarde", "en": "this afternoon", "kind": "phrase", "accept_en": ["this evening"]},
+        {"es": "este fin de semana", "en": "this weekend", "kind": "phrase"},
+        {"es": "la próxima semana", "en": "next week", "kind": "phrase", "accept": ["la semana que viene"]},
+        {"es": "pronto", "en": "soon", "kind": "word"}
+      ],
+      "sentences": [
+        {"es": "Voy a cocinar esta noche.", "en": "I'm going to cook tonight.", "focus": "cocinar", "accept_en": ["I am going to cook tonight.", "I'm cooking tonight."]},
+        {"es": "¿Qué vas a hacer este fin de semana?", "en": "What are you going to do this weekend?", "focus": "hacer", "accept_en": ["What are you doing this weekend?"]},
+        {"es": "Vamos a viajar a México.", "en": "We're going to travel to Mexico.", "focus": "viajar", "accept_en": ["We are going to travel to Mexico.", "We're going to Mexico."]},
+        {"es": "Ana va a estudiar esta tarde.", "en": "Ana is going to study this afternoon.", "focus": "va", "accept_en": ["Ana's going to study this afternoon."]},
+        {"es": "Mis padres van a llegar pronto.", "en": "My parents are going to arrive soon.", "focus": "pronto", "accept_en": ["My parents will arrive soon.", "My parents are arriving soon."]},
+        {"es": "La próxima semana voy a trabajar mucho.", "en": "Next week I'm going to work a lot.", "focus": "próxima", "accept_en": ["I'm going to work a lot next week."]},
+        {"es": "¡Vamos a comer!", "en": "Let's eat!", "focus": "comer", "accept_en": ["We're going to eat!"]},
+        {"es": "No voy a beber cerveza.", "en": "I'm not going to drink beer.", "focus": "beber", "accept_en": ["I am not going to drink beer.", "I won't drink beer."]},
+        {"es": "Van a ver una película esta noche.", "en": "They're going to watch a film tonight.", "focus": "noche", "accept_en": ["They are going to see a movie tonight.", "They're going to watch a movie tonight."]},
+        {"es": "¿Quieres ir al cine esta tarde?", "en": "Do you want to go to the cinema this afternoon?", "focus": "ir", "accept_en": ["Do you want to go to the movies this afternoon?", "Would you like to go to the cinema this afternoon?"]}
+      ]
+    },
+    {
+      "id": "es-u14-l2",
+      "title": "Weekend plans",
+      "notes": "**¿Tienes planes para el sábado?** (got plans for Saturday?) - **No, nada especial.**\nWhen you visit or see a **person**, Spanish adds a little **a** before them - the 'personal a': **Voy a visitar a mis abuelos.** Not for places: **Voy a visitar México.**\n**El cumpleaños** (birthday) is literally 'completes-years'; it's the same in the plural: los cumpleaños.\nA barbecue: **la barbacoa** is understood everywhere; Argentines have an **asado** and Mexicans **carne asada**.\n**El partido** = the match, the game. **Pasear** = to go for a walk / stroll (**pasear al perro**).",
+      "items": [
+        {"es": "la fiesta", "en": "the party", "kind": "word", "gender": "f", "accept_en": ["party", "the celebration"]},
+        {"es": "el cumpleaños", "en": "the birthday", "kind": "word", "gender": "m", "accept_en": ["birthday", "the birthday party"]},
+        {"es": "visitar", "en": "to visit", "kind": "verb"},
+        {"es": "descansar", "en": "to rest", "kind": "verb", "accept_en": ["to relax"]},
+        {"es": "pasear", "en": "to go for a walk", "kind": "verb", "accept_en": ["to stroll", "to walk"]},
+        {"es": "el concierto", "en": "the concert", "kind": "word", "gender": "m", "accept_en": ["concert", "the gig"]},
+        {"es": "el partido", "en": "the match", "kind": "word", "gender": "m", "accept_en": ["the game", "match", "game"]},
+        {"es": "la barbacoa", "en": "the barbecue", "kind": "word", "gender": "f", "accept": ["el asado"], "accept_en": ["the BBQ", "barbecue", "the barbie"]},
+        {"es": "el plan", "en": "the plan", "kind": "word", "gender": "m", "accept_en": ["plan"]},
+        {"es": "¿tienes planes?", "en": "do you have any plans?", "kind": "phrase", "accept_en": ["have you got plans?", "got any plans?", "do you have plans?"]},
+        {"es": "nada especial", "en": "nothing special", "kind": "phrase", "accept_en": ["nothing much"]}
+      ],
+      "sentences": [
+        {"es": "¿Tienes planes para el sábado?", "en": "Do you have any plans for Saturday?", "focus": "planes", "accept_en": ["Have you got plans for Saturday?", "Got any plans for Saturday?"]},
+        {"es": "Voy a visitar a mis abuelos.", "en": "I'm going to visit my grandparents.", "focus": "visitar"},
+        {"es": "El domingo vamos a descansar.", "en": "On Sunday we're going to rest.", "focus": "descansar", "accept_en": ["We're going to relax on Sunday."]},
+        {"es": "Vamos a hacer una barbacoa.", "en": "We're going to have a barbecue.", "focus": "barbacoa", "accept_en": ["We're going to do a barbecue.", "Let's have a barbie."]},
+        {"es": "Mi cumpleaños es el viernes.", "en": "My birthday is on Friday.", "focus": "cumpleaños"},
+        {"es": "Hay una fiesta en la casa de Ana.", "en": "There's a party at Ana's house.", "focus": "fiesta", "accept_en": ["There is a party at Ana's place."]},
+        {"es": "Vamos a ver el partido en la televisión.", "en": "We're going to watch the match on TV.", "focus": "partido", "accept_en": ["We're going to watch the game on television."]},
+        {"es": "No tengo planes, nada especial.", "en": "I don't have any plans, nothing special.", "focus": "especial", "accept_en": ["I have no plans, nothing special."]},
+        {"es": "Voy a pasear con el perro.", "en": "I'm going to walk the dog.", "focus": "pasear", "accept_en": ["I'm going for a walk with the dog."]},
+        {"es": "El concierto es esta noche.", "en": "The concert is tonight.", "focus": "concierto"},
+        {"es": "Es un buen plan.", "en": "It's a good plan.", "focus": "plan", "accept_en": ["That's a good plan."]}
+      ]
+    },
+    {
+      "id": "es-u14-l3",
+      "title": "The months",
+      "notes": "Months are written without a capital letter: **enero, febrero, marzo, abril, mayo, junio, julio, agosto, septiembre, octubre, noviembre, diciembre**.\n'In March' = **en marzo**.\nDates use plain numbers, with **el** and **de**: **el cinco de mayo** (the 5th of May) - no 'fifth'. The first of the month is often **el primero** in Latin America (**el primero de abril**), **el uno** in Spain.\nThe day comes before the month, as in Australia: 5/5 = el cinco de mayo. Setiembre is also spelt **setiembre** in some countries.",
+      "items": [
+        {"es": "enero", "en": "January", "kind": "word"},
+        {"es": "febrero", "en": "February", "kind": "word"},
+        {"es": "marzo", "en": "March", "kind": "word"},
+        {"es": "abril", "en": "April", "kind": "word"},
+        {"es": "mayo", "en": "May", "kind": "word"},
+        {"es": "junio", "en": "June", "kind": "word"},
+        {"es": "julio", "en": "July", "kind": "word"},
+        {"es": "agosto", "en": "August", "kind": "word"},
+        {"es": "septiembre", "en": "September", "kind": "word", "accept": ["setiembre"]},
+        {"es": "octubre", "en": "October", "kind": "word"},
+        {"es": "noviembre", "en": "November", "kind": "word"},
+        {"es": "diciembre", "en": "December", "kind": "word"}
+      ],
+      "sentences": [
+        {"es": "Mi cumpleaños es en marzo.", "en": "My birthday is in March.", "focus": "marzo"},
+        {"es": "En enero voy a la playa.", "en": "In January I go to the beach.", "focus": "enero", "accept_en": ["I'm going to the beach in January."]},
+        {"es": "Vamos a México en julio.", "en": "We're going to Mexico in July.", "focus": "julio", "accept_en": ["We go to Mexico in July."]},
+        {"es": "Febrero tiene veintiocho días.", "en": "February has twenty-eight days.", "focus": "Febrero"},
+        {"es": "Hoy es el cinco de mayo.", "en": "Today is the fifth of May.", "focus": "mayo", "accept_en": ["Today is May the fifth.", "It's the 5th of May today."]},
+        {"es": "En abril voy a visitar a mi familia.", "en": "In April I'm going to visit my family.", "focus": "abril"},
+        {"es": "Las clases terminan en noviembre.", "en": "Classes finish in November.", "focus": "noviembre", "accept_en": ["The classes end in November."]},
+        {"es": "El concierto es el diez de octubre.", "en": "The concert is on the tenth of October.", "focus": "octubre", "accept_en": ["The concert is on October the tenth.", "The concert is on 10 October."]},
+        {"es": "Mi hija va a llegar en agosto.", "en": "My daughter is going to arrive in August.", "focus": "agosto", "accept_en": ["My daughter will arrive in August."]},
+        {"es": "El tres de septiembre es su cumpleaños.", "en": "The third of September is her birthday.", "focus": "septiembre", "accept_en": ["His birthday is on the third of September.", "Her birthday is on 3 September."]},
+        {"es": "En junio hay muchos partidos.", "en": "In June there are a lot of matches.", "focus": "junio", "accept_en": ["There are lots of games in June."]},
+        {"es": "Me gusta mucho diciembre.", "en": "I really like December.", "focus": "diciembre", "accept_en": ["I like December a lot."]}
+      ]
+    },
+    {
+      "id": "es-u14-l4",
+      "title": "Seasons and dates",
+      "notes": "The seasons: **la primavera** (spring), **el verano** (summer), **el otoño** (autumn), **el invierno** (winter). 'In summer' = **en verano** or **en el verano**.\nFrom Australia remember they're upside down for half the Spanish-speaking world: in Mexico and Spain **la Navidad** (Christmas) is in winter; in Argentina and Chile, as here, it's in summer.\nAsking the date: **¿Qué fecha es hoy?** - **Hoy es el primero de abril.** Birthdays: **¿Cuándo es tu cumpleaños?**\n**El próximo año** (or **el año que viene**) = next year. **Las vacaciones** is always plural: holidays.",
+      "items": [
+        {"es": "la primavera", "en": "spring", "kind": "word", "gender": "f", "accept_en": ["the spring"]},
+        {"es": "el verano", "en": "summer", "kind": "word", "gender": "m", "accept_en": ["the summer"]},
+        {"es": "el otoño", "en": "autumn", "kind": "word", "gender": "m", "accept_en": ["the autumn", "fall", "the fall"]},
+        {"es": "el invierno", "en": "winter", "kind": "word", "gender": "m", "accept_en": ["the winter"]},
+        {"es": "el mes", "en": "the month", "kind": "word", "gender": "m", "accept_en": ["month"]},
+        {"es": "la fecha", "en": "the date", "kind": "word", "gender": "f", "accept_en": ["date"]},
+        {"es": "¿qué fecha es hoy?", "en": "what's the date today?", "kind": "phrase", "accept_en": ["what is today's date?", "what's the date?", "what's today's date?"]},
+        {"es": "¿cuándo es tu cumpleaños?", "en": "when is your birthday?", "kind": "phrase", "accept_en": ["when's your birthday?"]},
+        {"es": "la Navidad", "en": "Christmas", "kind": "word", "gender": "f", "accept_en": ["the Christmas"]},
+        {"es": "las vacaciones", "en": "the holidays", "kind": "word", "gender": "f", "accept_en": ["holidays", "the vacation", "vacation"]},
+        {"es": "el próximo año", "en": "next year", "kind": "phrase", "accept": ["el año que viene"]}
+      ],
+      "sentences": [
+        {"es": "En Australia, la Navidad es en verano.", "en": "In Australia, Christmas is in summer.", "focus": "Navidad", "accept_en": ["In Australia Christmas is in the summer."]},
+        {"es": "El invierno es en junio, julio y agosto.", "en": "Winter is in June, July and August.", "focus": "invierno"},
+        {"es": "¿Qué fecha es hoy?", "en": "What's the date today?", "focus": "fecha", "accept_en": ["What is today's date?", "What's the date?"]},
+        {"es": "Hoy es el primero de abril.", "en": "Today is the first of April.", "focus": "primero", "accept_en": ["Today is April the first.", "It's the 1st of April today."]},
+        {"es": "¿Cuándo es tu cumpleaños?", "en": "When is your birthday?", "focus": "Cuándo", "accept_en": ["When's your birthday?"]},
+        {"es": "El próximo año voy a viajar a España.", "en": "Next year I'm going to travel to Spain.", "focus": "próximo", "accept_en": ["I'm going to travel to Spain next year."]},
+        {"es": "En las vacaciones vamos a la playa.", "en": "In the holidays we go to the beach.", "focus": "vacaciones", "accept_en": ["We go to the beach in the holidays.", "During the holidays we're going to the beach."]},
+        {"es": "Me gusta mucho el otoño.", "en": "I really like autumn.", "focus": "otoño", "accept_en": ["I like autumn a lot.", "I really like fall."]},
+        {"es": "La primavera en Brisbane es muy bonita.", "en": "Spring in Brisbane is very nice.", "focus": "primavera", "accept_en": ["Spring in Brisbane is very beautiful."]},
+        {"es": "Diciembre es mi mes favorito.", "en": "December is my favourite month.", "focus": "mes", "accept_en": ["December is my favorite month."]},
+        {"es": "En verano vamos a nadar mucho.", "en": "In summer we're going to swim a lot.", "focus": "verano", "accept_en": ["We're going to swim a lot in summer."]}
+      ]
+    }
+  ]
+}

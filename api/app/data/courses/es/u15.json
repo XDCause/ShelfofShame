@@ -1,0 +1,139 @@
+{
+  "unit": 15,
+  "title": "El tiempo",
+  "cefr": "A1",
+  "goal": "Talk about the weather, use querer and poder (stem-changing verbs), and make, accept and turn down invitations.",
+  "lessons": [
+    {
+      "id": "es-u15-l1",
+      "title": "What's the weather like?",
+      "notes": "Spanish 'makes' most weather with **hacer**: **hace calor** (it's hot - literally 'it makes heat'), **hace frío**, **hace sol**, **hace viento**. Ask **¿Qué tiempo hace?**\nBecause calor, frío and sol are nouns, 'very' is **mucho**, not muy: **Hace mucho calor.**\nRain and snow have their own verbs: **llueve** (it's raining / it rains, from llover) and **nieva** (it snows). Clouds use estar: **Está nublado.**\n**El tiempo** means both 'the weather' and 'time' - context tells you which.",
+      "items": [
+        {"es": "¿qué tiempo hace?", "en": "what's the weather like?", "kind": "phrase", "accept_en": ["how's the weather?", "what is the weather like?"]},
+        {"es": "hace calor", "en": "it's hot", "kind": "phrase", "accept_en": ["it is hot", "it's warm"]},
+        {"es": "hace frío", "en": "it's cold", "kind": "phrase", "accept_en": ["it is cold"]},
+        {"es": "hace sol", "en": "it's sunny", "kind": "phrase", "accept_en": ["it is sunny", "the sun is out"]},
+        {"es": "hace viento", "en": "it's windy", "kind": "phrase", "accept_en": ["it is windy"]},
+        {"es": "hace buen tiempo", "en": "the weather is good", "kind": "phrase", "accept_en": ["it's nice weather", "the weather's nice", "it's a nice day"]},
+        {"es": "hace mal tiempo", "en": "the weather is bad", "kind": "phrase", "accept_en": ["it's bad weather", "the weather's bad"]},
+        {"es": "llover", "en": "to rain", "kind": "verb"},
+        {"es": "llueve", "en": "it's raining", "kind": "phrase", "accept_en": ["it rains", "it is raining"]},
+        {"es": "nieva", "en": "it's snowing", "kind": "phrase", "accept_en": ["it snows", "it is snowing"]},
+        {"es": "está nublado", "en": "it's cloudy", "kind": "phrase", "accept_en": ["it is cloudy", "it's overcast"]},
+        {"es": "la lluvia", "en": "the rain", "kind": "word", "gender": "f", "accept_en": ["rain"]}
+      ],
+      "sentences": [
+        {"es": "¿Qué tiempo hace hoy?", "en": "What's the weather like today?", "focus": "tiempo", "accept_en": ["How's the weather today?"]},
+        {"es": "Hoy hace calor.", "en": "It's hot today.", "focus": "calor", "accept_en": ["Today it's hot.", "It's warm today."]},
+        {"es": "En invierno hace frío.", "en": "It's cold in winter.", "focus": "frío", "accept_en": ["In winter it's cold.", "In winter it is cold."]},
+        {"es": "Llueve mucho en febrero.", "en": "It rains a lot in February.", "focus": "Llueve"},
+        {"es": "Nunca nieva en Brisbane.", "en": "It never snows in Brisbane.", "focus": "nieva"},
+        {"es": "Hoy está nublado.", "en": "It's cloudy today.", "focus": "nublado", "accept_en": ["Today it's cloudy.", "It's overcast today."]},
+        {"es": "Hace sol, vamos a la playa.", "en": "It's sunny, let's go to the beach.", "focus": "sol", "accept_en": ["It's sunny, we're going to the beach."]},
+        {"es": "Hace buen tiempo en primavera.", "en": "The weather is good in spring.", "focus": "buen", "accept_en": ["It's nice weather in spring.", "The weather's nice in spring."]},
+        {"es": "Hace viento y está nublado.", "en": "It's windy and cloudy.", "focus": "viento", "accept_en": ["It is windy and it is cloudy.", "It's windy and overcast."]},
+        {"es": "No me gusta la lluvia.", "en": "I don't like the rain.", "focus": "lluvia", "accept_en": ["I don't like rain."]},
+        {"es": "Hace mal tiempo, voy a ver una película.", "en": "The weather is bad, I'm going to watch a film.", "focus": "mal", "accept_en": ["The weather's bad, I'm going to watch a movie."]},
+        {"es": "Mañana va a llover.", "en": "It's going to rain tomorrow.", "focus": "llover", "accept_en": ["Tomorrow it's going to rain.", "It will rain tomorrow."]}
+      ]
+    },
+    {
+      "id": "es-u15-l2",
+      "title": "Querer and other e → ie verbs",
+      "notes": "Some verbs change their stem when it's stressed. In **querer** (to want) the **e** becomes **ie** - in every form except nosotros (and vosotros):\n**quiero · quieres · quiere** · queremos · **quieren**\nDraw a line round the changing forms in a table and it looks like a boot, so these are called 'boot verbs'. The endings stay regular.\nSame pattern: **pensar** (pienso), **empezar** (empieza), **cerrar** (cierra), **preferir** (prefiero, prefieres).\n**Querer + infinitive** = want to: **¿Quieres ir a la playa?** **Pienso que...** = I think that...",
+      "items": [
+        {"es": "querer", "en": "to want", "kind": "verb", "accept_en": ["to love"]},
+        {"es": "quiere", "en": "he / she wants, you want (formal)", "kind": "phrase", "accept_en": ["he wants", "she wants", "wants", "you want"]},
+        {"es": "queremos", "en": "we want", "kind": "phrase"},
+        {"es": "quieren", "en": "they want / you (plural) want", "kind": "phrase", "accept_en": ["they want", "you want"]},
+        {"es": "pensar", "en": "to think", "kind": "verb"},
+        {"es": "pienso", "en": "I think", "kind": "phrase"},
+        {"es": "empezar", "en": "to start", "kind": "verb", "accept": ["comenzar"], "accept_en": ["to begin"]},
+        {"es": "empieza", "en": "it starts", "kind": "phrase", "accept_en": ["it begins", "starts", "begins"]},
+        {"es": "cerrar", "en": "to close", "kind": "verb", "accept_en": ["to shut"]},
+        {"es": "cierra", "en": "it closes", "kind": "phrase", "accept_en": ["closes", "it shuts", "shuts"]},
+        {"es": "preferir", "en": "to prefer", "kind": "verb"},
+        {"es": "prefieres", "en": "you prefer", "kind": "phrase", "accept_en": ["do you prefer", "would you rather"]}
+      ],
+      "sentences": [
+        {"es": "¿Quieres ir a la playa?", "en": "Do you want to go to the beach?", "focus": "Quieres", "accept_en": ["Would you like to go to the beach?"]},
+        {"es": "Queremos comer en un restaurante.", "en": "We want to eat in a restaurant.", "focus": "Queremos", "accept_en": ["We want to eat at a restaurant."]},
+        {"es": "Ana quiere un café.", "en": "Ana wants a coffee.", "focus": "quiere"},
+        {"es": "Mis hijos quieren un perro.", "en": "My children want a dog.", "focus": "quieren", "accept_en": ["My kids want a dog."]},
+        {"es": "Pienso que va a llover.", "en": "I think it's going to rain.", "focus": "Pienso", "accept_en": ["I think that it's going to rain.", "I think it will rain."]},
+        {"es": "La clase empieza a las nueve.", "en": "The class starts at nine.", "focus": "empieza", "accept_en": ["The class begins at nine.", "The lesson starts at nine."]},
+        {"es": "La tienda cierra a las seis.", "en": "The shop closes at six.", "focus": "cierra", "accept_en": ["The store closes at six."]},
+        {"es": "¿Prefieres té o café?", "en": "Do you prefer tea or coffee?", "focus": "Prefieres", "accept_en": ["Would you rather have tea or coffee?", "Tea or coffee?"]},
+        {"es": "Prefiero el verano.", "en": "I prefer summer.", "focus": "verano", "accept_en": ["I prefer the summer."]},
+        {"es": "No quiero salir, hace frío.", "en": "I don't want to go out, it's cold.", "focus": "quiero"},
+        {"es": "¿Qué piensas hacer el sábado?", "en": "What are you thinking of doing on Saturday?", "focus": "piensas", "accept_en": ["What do you plan to do on Saturday?", "What are you planning to do on Saturday?"]}
+      ]
+    },
+    {
+      "id": "es-u15-l3",
+      "title": "Poder and other o → ue verbs",
+      "notes": "The other big boot pattern turns **o** into **ue**. **Poder** (can, to be able to):\n**puedo · puedes · puede** · podemos · **pueden**\nPoder is followed straight by an infinitive: **¿Puedo pagar con tarjeta?** (can I pay by card?) **No puedo ir** (I can't go).\nSame pattern: **volver** (to come back: vuelvo), **dormir** (to sleep: duermo), and almorzar and jugar from earlier units.\nThe phrase every learner needs: **¿Puedes hablar más despacio, por favor?** (can you speak more slowly?) - with a stranger, **¿Puede...?**",
+      "items": [
+        {"es": "poder", "en": "to be able to", "kind": "verb", "accept_en": ["can"]},
+        {"es": "puedo", "en": "I can", "kind": "phrase", "accept_en": ["can I", "I'm able to"]},
+        {"es": "puedes", "en": "you can", "kind": "phrase", "accept_en": ["can you"]},
+        {"es": "puede", "en": "he / she can, you can (formal)", "kind": "phrase", "accept_en": ["he can", "she can", "can", "you can"]},
+        {"es": "podemos", "en": "we can", "kind": "phrase", "accept_en": ["can we"]},
+        {"es": "pueden", "en": "they can / you (plural) can", "kind": "phrase", "accept_en": ["they can", "you can"]},
+        {"es": "volver", "en": "to come back", "kind": "verb", "accept": ["regresar"], "accept_en": ["to return", "to go back", "to get back"]},
+        {"es": "vuelvo", "en": "I come back", "kind": "phrase", "accept_en": ["I return", "I'll be back", "I get back"]},
+        {"es": "dormir", "en": "to sleep", "kind": "verb"},
+        {"es": "duermo", "en": "I sleep", "kind": "phrase"},
+        {"es": "despacio", "en": "slowly", "kind": "word", "accept_en": ["slow"]},
+        {"es": "pagar", "en": "to pay", "kind": "verb", "accept_en": ["to pay for"]}
+      ],
+      "sentences": [
+        {"es": "¿Puedes hablar más despacio, por favor?", "en": "Can you speak more slowly, please?", "focus": "despacio", "accept": ["¿Puede hablar más despacio, por favor?"], "accept_en": ["Could you speak more slowly, please?", "Can you talk slower, please?"]},
+        {"es": "¿Puedo pagar con tarjeta?", "en": "Can I pay by card?", "focus": "pagar", "accept_en": ["Can I pay with a card?", "Can I pay by credit card?"]},
+        {"es": "No puedo ir, estoy enfermo.", "en": "I can't go, I'm sick.", "focus": "puedo", "accept_en": ["I can't go, I'm ill.", "I cannot go, I am sick."]},
+        {"es": "Ana no puede salir hoy.", "en": "Ana can't go out today.", "focus": "puede", "accept_en": ["Ana cannot go out today."]},
+        {"es": "Podemos ir al cine mañana.", "en": "We can go to the cinema tomorrow.", "focus": "Podemos", "accept_en": ["We can go to the movies tomorrow."]},
+        {"es": "Ellos pueden llegar tarde.", "en": "They might arrive late.", "focus": "pueden", "accept_en": ["They can arrive late.", "They may be late."]},
+        {"es": "Vuelvo a casa a las seis.", "en": "I come back home at six.", "focus": "Vuelvo", "accept_en": ["I get home at six.", "I'll be back home at six.", "I go back home at six."]},
+        {"es": "Duermo ocho horas.", "en": "I sleep eight hours.", "focus": "Duermo", "accept_en": ["I sleep for eight hours."]},
+        {"es": "Los niños duermen mucho.", "en": "The children sleep a lot.", "focus": "duermen", "accept_en": ["The kids sleep a lot."]},
+        {"es": "¿A qué hora vuelves?", "en": "What time are you coming back?", "focus": "vuelves", "accept_en": ["What time do you get back?", "When are you coming back?"]},
+        {"es": "¿Puedes cerrar la puerta?", "en": "Can you close the door?", "focus": "Puedes", "accept_en": ["Could you shut the door?"]},
+        {"es": "No puedo dormir, hace mucho calor.", "en": "I can't sleep, it's very hot.", "focus": "dormir", "accept_en": ["I can't sleep, it's too hot.", "I can't sleep, it's really hot."]}
+      ]
+    },
+    {
+      "id": "es-u15-l4",
+      "title": "Invitations",
+      "notes": "To invite: **¿Quieres...?** (do you want to...?) or the softer **¿Te gustaría...?** (would you like to...?). **¿Qué tal si...?** = how about...? - **¿Qué tal si vamos al cine?**\nTo accept: **¡Claro!**, **¡Qué buena idea!**, **¡Perfecto!**, **Me gustaría mucho.** To fix a time: **De acuerdo** (OK, agreed - Spain says **vale**).\nTo say no nicely: **Lo siento, no puedo**, then offer **otro día** or **la próxima vez**. **Quizás** = maybe.\n'With me' and 'with you' are single words: **conmigo, contigo** (never 'con mí').",
+      "items": [
+        {"es": "¿te gustaría...?", "en": "would you like to...?", "kind": "phrase", "accept_en": ["would you like...?", "do you want to...?"]},
+        {"es": "me gustaría", "en": "I would like", "kind": "phrase", "accept_en": ["I'd like", "I'd love to", "I would like to"]},
+        {"es": "conmigo", "en": "with me", "kind": "word"},
+        {"es": "contigo", "en": "with you", "kind": "word"},
+        {"es": "¡qué buena idea!", "en": "what a good idea!", "kind": "phrase", "accept_en": ["good idea!", "what a great idea!", "great idea!"]},
+        {"es": "otro día", "en": "another day", "kind": "phrase", "accept_en": ["some other day"]},
+        {"es": "de acuerdo", "en": "OK", "kind": "phrase", "accept": ["vale"], "accept_en": ["agreed", "all right", "okay", "fine"], "note": "Spain: vale."},
+        {"es": "¿vienes?", "en": "are you coming?", "kind": "phrase", "accept_en": ["will you come?", "do you come?"], "note": "From venir (to come): vengo, vienes, viene."},
+        {"es": "la próxima vez", "en": "next time", "kind": "phrase", "accept_en": ["the next time"]},
+        {"es": "¡perfecto!", "en": "perfect!", "kind": "word", "accept_en": ["great!", "excellent!"]},
+        {"es": "quizás", "en": "maybe", "kind": "word", "accept": ["quizá", "tal vez"], "accept_en": ["perhaps"]},
+        {"es": "¿qué tal si...?", "en": "how about...?", "kind": "phrase", "accept_en": ["what if...?", "why don't we...?", "what about...?"]}
+      ],
+      "sentences": [
+        {"es": "¿Te gustaría cenar conmigo el sábado?", "en": "Would you like to have dinner with me on Saturday?", "focus": "conmigo", "accept_en": ["Would you like to have dinner with me on Saturday?"]},
+        {"es": "Me gustaría mucho, gracias.", "en": "I'd like that a lot, thanks.", "focus": "gustaría", "accept_en": ["I'd love to, thanks.", "I would like that very much, thank you."]},
+        {"es": "¡Qué buena idea!", "en": "What a good idea!", "focus": "idea", "accept_en": ["Good idea!", "What a great idea!"]},
+        {"es": "Lo siento, no puedo. ¿Otro día?", "en": "Sorry, I can't. Another day?", "focus": "Otro", "accept_en": ["I'm sorry, I can't. Some other day?"]},
+        {"es": "¿Vienes a la fiesta?", "en": "Are you coming to the party?", "focus": "Vienes", "accept_en": ["Will you come to the party?"]},
+        {"es": "Sí, voy contigo.", "en": "Yes, I'll go with you.", "focus": "contigo", "accept_en": ["Yes, I'm going with you.", "Yes, I'm coming with you."]},
+        {"es": "De acuerdo, nos vemos a las ocho.", "en": "OK, see you at eight.", "focus": "acuerdo", "accept": ["Vale, nos vemos a las ocho."], "accept_en": ["All right, see you at eight.", "Agreed, see you at eight."]},
+        {"es": "Quizás la próxima vez.", "en": "Maybe next time.", "focus": "vez", "accept_en": ["Perhaps next time."]},
+        {"es": "Hace buen tiempo, ¿quieres ir a la playa?", "en": "The weather's nice, do you want to go to the beach?", "focus": "playa", "accept_en": ["It's nice weather, do you want to go to the beach?"]},
+        {"es": "¡Perfecto! ¿A qué hora?", "en": "Perfect! What time?", "focus": "Perfecto", "accept_en": ["Great! At what time?"]},
+        {"es": "¿Qué tal si vamos al cine?", "en": "How about going to the cinema?", "focus": "si", "accept_en": ["How about we go to the movies?", "Why don't we go to the cinema?"]},
+        {"es": "Quizás, pero no puedo hoy.", "en": "Maybe, but I can't today.", "focus": "Quizás", "accept_en": ["Perhaps, but I can't today."]}
+      ]
+    }
+  ]
+}

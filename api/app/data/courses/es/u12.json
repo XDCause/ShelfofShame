@@ -1,0 +1,131 @@
+{
+  "unit": 12,
+  "title": "Me gusta",
+  "cefr": "A1",
+  "goal": "Say what you like and don't like, talk about hobbies and agree or disagree with también and tampoco.",
+  "lessons": [
+    {
+      "id": "es-u12-l1",
+      "title": "I like it",
+      "notes": "Spanish says 'it pleases me' rather than 'I like it'. **Me gusta el café** = coffee pleases me. So the verb matches the **thing** liked, not the person:\n**Me gusta** el chocolate (one thing) · **Me gustan** los perros (several things)\nThe person is shown by the little word in front: **me** (me), **te** (you), **le** (him, her, you-formal), **nos** (us), **les** (them, you all).\nFor activities use the infinitive, always with gusta: **Me gusta cocinar. Nos gusta ver películas.**\nThe thing liked takes 'the': **Me gusta el fútbol** (English: 'I like football').",
+      "items": [
+        {"es": "me gusta", "en": "I like", "kind": "phrase", "accept_en": ["I like it"]},
+        {"es": "me gustan", "en": "I like (plural things)", "kind": "phrase", "accept_en": ["I like", "I like them"]},
+        {"es": "te gusta", "en": "you like", "kind": "phrase", "accept_en": ["do you like"]},
+        {"es": "te gustan", "en": "you like (plural things)", "kind": "phrase", "accept_en": ["you like", "do you like"]},
+        {"es": "le gusta", "en": "he / she likes, you like (formal)", "kind": "phrase", "accept_en": ["he likes", "she likes", "you like"]},
+        {"es": "nos gusta", "en": "we like", "kind": "phrase"},
+        {"es": "les gusta", "en": "they like / you (plural) like", "kind": "phrase", "accept_en": ["they like", "you like"]},
+        {"es": "no me gusta", "en": "I don't like", "kind": "phrase", "accept_en": ["I don't like it", "I do not like"]},
+        {"es": "el chocolate", "en": "the chocolate", "kind": "word", "gender": "m", "accept_en": ["chocolate"]},
+        {"es": "el fútbol", "en": "football", "kind": "word", "gender": "m", "accept_en": ["soccer", "the football"], "note": "Means soccer. Aussie rules is el fútbol australiano."},
+        {"es": "el deporte", "en": "the sport", "kind": "word", "gender": "m", "accept_en": ["sport"]},
+        {"es": "el animal", "en": "the animal", "kind": "word", "gender": "m", "accept_en": ["animal"]}
+      ],
+      "sentences": [
+        {"es": "Me gusta el café.", "en": "I like coffee.", "focus": "gusta"},
+        {"es": "No me gusta la cerveza.", "en": "I don't like beer.", "focus": "No"},
+        {"es": "Me gustan los perros.", "en": "I like dogs.", "focus": "gustan"},
+        {"es": "¿Te gusta el chocolate?", "en": "Do you like chocolate?", "focus": "chocolate"},
+        {"es": "Le gusta mucho el fútbol.", "en": "He really likes football.", "focus": "fútbol", "accept_en": ["She likes football a lot.", "He likes soccer a lot.", "She really likes football."]},
+        {"es": "Nos gusta la playa.", "en": "We like the beach.", "focus": "Nos"},
+        {"es": "Les gustan los animales.", "en": "They like animals.", "focus": "animales"},
+        {"es": "Me gusta mucho el deporte.", "en": "I like sport a lot.", "focus": "deporte", "accept_en": ["I really like sport.", "I like sports a lot."]},
+        {"es": "¿Te gustan las verduras?", "en": "Do you like vegetables?", "focus": "Te"},
+        {"es": "Me gusta ver películas.", "en": "I like watching films.", "focus": "ver", "accept_en": ["I like to watch movies.", "I like watching movies.", "I like to watch films."]},
+        {"es": "Les gusta cocinar.", "en": "They like cooking.", "focus": "Les", "accept_en": ["They like to cook."]}
+      ]
+    },
+    {
+      "id": "es-u12-l2",
+      "title": "Hobbies",
+      "notes": "Most hobby verbs are regular -ar verbs - **nadar, bailar, cantar, viajar, pintar, dibujar** - so you already know their forms: **nado, bailas, cantamos**.\nTwo verbs for 'play': **jugar** for games and sports (**jugar fútbol**, **jugar videojuegos**) and **tocar** for instruments (**tocar la guitarra**). Spain and Argentina put **al** in: jugar **al** fútbol.\nJugar changes u → **ue** when stressed: **juego, juegas, juega, jugamos, juegan**.\n**El tiempo libre** = free time: **En mi tiempo libre, pinto.**",
+      "items": [
+        {"es": "nadar", "en": "to swim", "kind": "verb"},
+        {"es": "bailar", "en": "to dance", "kind": "verb"},
+        {"es": "cantar", "en": "to sing", "kind": "verb"},
+        {"es": "viajar", "en": "to travel", "kind": "verb"},
+        {"es": "pintar", "en": "to paint", "kind": "verb"},
+        {"es": "dibujar", "en": "to draw", "kind": "verb", "accept_en": ["to sketch"]},
+        {"es": "jugar", "en": "to play (games, sport)", "kind": "verb", "accept_en": ["to play"], "note": "u → ue: juego, juegas, juega."},
+        {"es": "tocar", "en": "to play (an instrument)", "kind": "verb", "accept_en": ["to play", "to touch"]},
+        {"es": "el tenis", "en": "tennis", "kind": "word", "gender": "m", "accept_en": ["the tennis"]},
+        {"es": "los videojuegos", "en": "video games", "kind": "word", "gender": "m", "accept_en": ["the video games", "computer games", "games"]},
+        {"es": "la guitarra", "en": "the guitar", "kind": "word", "gender": "f", "accept_en": ["guitar"]},
+        {"es": "el tiempo libre", "en": "free time", "kind": "word", "gender": "m", "accept_en": ["spare time", "the free time", "leisure time"]}
+      ],
+      "sentences": [
+        {"es": "Me gusta nadar en la playa.", "en": "I like swimming at the beach.", "focus": "nadar", "accept_en": ["I like to swim at the beach.", "I like swimming in the sea."]},
+        {"es": "Me gusta mucho viajar.", "en": "I really like travelling.", "focus": "viajar", "accept_en": ["I like to travel a lot.", "I really like to travel.", "I like traveling a lot."]},
+        {"es": "¿Te gusta bailar?", "en": "Do you like dancing?", "focus": "bailar", "accept_en": ["Do you like to dance?"]},
+        {"es": "Nos gusta cantar en el carro.", "en": "We like singing in the car.", "focus": "cantar", "accept_en": ["We like to sing in the car."]},
+        {"es": "Le gusta tocar la guitarra.", "en": "She likes playing the guitar.", "focus": "tocar", "accept_en": ["He likes playing the guitar.", "She likes to play guitar.", "He likes to play the guitar."]},
+        {"es": "Me gusta jugar tenis.", "en": "I like playing tennis.", "focus": "jugar", "accept": ["Me gusta jugar al tenis."], "accept_en": ["I like to play tennis."]},
+        {"es": "En mi tiempo libre, pinto y dibujo.", "en": "In my free time, I paint and draw.", "focus": "libre", "accept_en": ["In my spare time, I paint and draw."]},
+        {"es": "Mi hijo juega videojuegos todos los días.", "en": "My son plays video games every day.", "focus": "juega", "accept": ["Mi hijo juega a los videojuegos todos los días."]},
+        {"es": "Ana baila muy bien.", "en": "Ana dances very well.", "focus": "baila"},
+        {"es": "Viajamos mucho con nuestros hijos.", "en": "We travel a lot with our children.", "focus": "Viajamos", "accept_en": ["We travel a lot with our kids."]}
+      ]
+    },
+    {
+      "id": "es-u12-l3",
+      "title": "Me too, me neither",
+      "notes": "To agree with a like, use **a mí** (to me): **Me gusta el chocolate. - A mí también.** (me too)\nAgreeing with a dislike needs **tampoco** (neither): **No me gusta el fútbol. - A mí tampoco.**\nTo disagree: **A mí sí** (well, I do) or **A mí no** (I don't).\nWith ordinary verbs it's **yo**: **Hablo inglés. - Yo también. / No bebo café. - Yo tampoco.**\n**¿Y a ti?** asks back: and you? (ti has no accent).\n**Me encanta** works like gusta but stronger - 'I love it': **Me encantan los perros.**",
+      "items": [
+        {"es": "tampoco", "en": "neither", "kind": "word", "accept_en": ["either", "not either"]},
+        {"es": "a mí", "en": "to me", "kind": "phrase", "accept_en": ["me", "for me"]},
+        {"es": "a mí también", "en": "me too", "kind": "phrase", "accept_en": ["so do I", "I do too"]},
+        {"es": "a mí tampoco", "en": "me neither", "kind": "phrase", "accept_en": ["neither do I", "me either", "nor do I"]},
+        {"es": "a mí sí", "en": "I do", "kind": "phrase", "accept_en": ["well, I do", "I do!"]},
+        {"es": "a mí no", "en": "I don't", "kind": "phrase", "accept_en": ["not me", "well, I don't"]},
+        {"es": "¿y a ti?", "en": "and you?", "kind": "phrase", "accept_en": ["what about you?", "how about you?", "and do you?"]},
+        {"es": "yo también", "en": "me too", "kind": "phrase", "accept_en": ["so do I", "I do too", "so am I"]},
+        {"es": "yo tampoco", "en": "me neither", "kind": "phrase", "accept_en": ["neither do I", "me either", "nor do I"]},
+        {"es": "me encanta", "en": "I love", "kind": "phrase", "accept_en": ["I love it", "I really like"]},
+        {"es": "me encantan", "en": "I love (plural things)", "kind": "phrase", "accept_en": ["I love", "I love them"]}
+      ],
+      "sentences": [
+        {"es": "Me gusta el chocolate, ¿y a ti?", "en": "I like chocolate, and you?", "focus": "ti", "accept_en": ["I like chocolate, what about you?", "I like chocolate, do you?"]},
+        {"es": "A mí también.", "en": "Me too.", "focus": "también", "accept_en": ["So do I."]},
+        {"es": "No me gusta el fútbol. A mí tampoco.", "en": "I don't like football. Me neither.", "focus": "tampoco", "accept_en": ["I don't like soccer. Me neither.", "I don't like football. Neither do I."]},
+        {"es": "A mí sí.", "en": "I do.", "focus": "sí", "accept_en": ["Well, I do."]},
+        {"es": "No bebo café. Yo tampoco.", "en": "I don't drink coffee. Me neither.", "focus": "Yo", "accept_en": ["I don't drink coffee. Neither do I."]},
+        {"es": "Hablo inglés. Yo también.", "en": "I speak English. Me too.", "focus": "inglés", "accept_en": ["I speak English. So do I."]},
+        {"es": "Me encanta viajar.", "en": "I love travelling.", "focus": "encanta", "accept_en": ["I love to travel.", "I love traveling."]},
+        {"es": "Me encantan los perros.", "en": "I love dogs.", "focus": "encantan"},
+        {"es": "A mí no me gusta bailar.", "en": "I don't like dancing.", "focus": "mí", "accept_en": ["I don't like to dance.", "Me, I don't like dancing."]},
+        {"es": "A mí me encanta la música.", "en": "I love music.", "focus": "música", "accept_en": ["Me, I love music."]},
+        {"es": "Me gustan los gatos. A mí no.", "en": "I like cats. I don't.", "focus": "gatos", "accept_en": ["I like cats. Not me."]}
+      ]
+    },
+    {
+      "id": "es-u12-l4",
+      "title": "Favourites",
+      "notes": "**Favorito** is an adjective, so it matches: **mi libro favorito**, **mi película favorita**, **mis canciones favoritas**. Ask: **¿Cuál es tu película favorita?** - 'cuál', not 'qué', because you're picking one from many.\n**Prefiero** = I prefer (from preferir, an e → ie verb you'll meet properly in unit 15): **Prefiero la montaña.**\n**El pasatiempo** is a hobby (Spain often says **la afición**).\n**El cine** is both the cinema and film as an art; **el arte** is art.",
+      "items": [
+        {"es": "favorito", "en": "favourite", "kind": "word", "accept_en": ["favorite"]},
+        {"es": "la canción", "en": "the song", "kind": "word", "gender": "f", "accept_en": ["song"]},
+        {"es": "el equipo", "en": "the team", "kind": "word", "gender": "m", "accept_en": ["team", "the equipment"]},
+        {"es": "el pasatiempo", "en": "the hobby", "kind": "word", "gender": "m", "accept": ["la afición", "el hobby"], "accept_en": ["hobby", "the pastime"]},
+        {"es": "el cine", "en": "the cinema", "kind": "word", "gender": "m", "accept_en": ["the movies", "cinema", "the pictures"]},
+        {"es": "el museo", "en": "the museum", "kind": "word", "gender": "m", "accept_en": ["museum", "the gallery"]},
+        {"es": "el arte", "en": "art", "kind": "word", "gender": "m", "accept_en": ["the art"]},
+        {"es": "la naturaleza", "en": "nature", "kind": "word", "gender": "f", "accept_en": ["the nature", "the outdoors"]},
+        {"es": "la montaña", "en": "the mountain", "kind": "word", "gender": "f", "accept_en": ["the mountains", "mountain"]},
+        {"es": "prefiero", "en": "I prefer", "kind": "phrase", "accept_en": ["I'd rather"]}
+      ],
+      "sentences": [
+        {"es": "¿Cuál es tu película favorita?", "en": "What's your favourite film?", "focus": "favorita", "accept_en": ["What is your favorite movie?", "What's your favourite movie?"]},
+        {"es": "Mi pasatiempo favorito es pintar.", "en": "My favourite hobby is painting.", "focus": "pasatiempo", "accept_en": ["My favorite hobby is painting."]},
+        {"es": "Me gusta el cine pero prefiero el teatro.", "en": "I like the cinema but I prefer the theatre.", "focus": "cine", "accept_en": ["I like movies but I prefer the theater."]},
+        {"es": "Prefiero la montaña.", "en": "I prefer the mountains.", "focus": "montaña", "accept_en": ["I prefer the mountain."]},
+        {"es": "Me encantan los museos de arte.", "en": "I love art museums.", "focus": "museos", "accept_en": ["I love art galleries."]},
+        {"es": "Mi equipo favorito es de Brisbane.", "en": "My favourite team is from Brisbane.", "focus": "equipo", "accept_en": ["My favorite team is from Brisbane."]},
+        {"es": "La canción es muy bonita.", "en": "The song is very pretty.", "focus": "canción", "accept_en": ["The song is very beautiful.", "The song is really nice."]},
+        {"es": "Me gusta mucho la naturaleza.", "en": "I really like nature.", "focus": "naturaleza", "accept_en": ["I like nature a lot."]},
+        {"es": "El arte es mi pasatiempo.", "en": "Art is my hobby.", "focus": "arte"},
+        {"es": "Prefiero el café, no el té.", "en": "I prefer coffee, not tea.", "focus": "Prefiero"}
+      ]
+    }
+  ]
+}

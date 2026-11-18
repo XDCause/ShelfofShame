@@ -1,0 +1,132 @@
+{
+  "unit": 4,
+  "title": "Las cosas",
+  "cefr": "A1",
+  "goal": "Name everyday things with the right 'the' and 'a', in the singular and the plural.",
+  "lessons": [
+    {
+      "id": "es-u04-l1",
+      "title": "The and a",
+      "notes": "Every Spanish noun is masculine or feminine - it's grammar, not meaning (a table isn't female!). The little words in front show which:\n**el** libro (the book) · **un** libro (a book) - masculine\n**la** mesa (the table) · **una** mesa (a table) - feminine\nA good first clue: nouns ending in **-o** are usually masculine, in **-a** usually feminine. Always learn a noun together with its el or la, as one chunk.\n**Un / una** also means 'one': **un libro** is 'a book' or 'one book'.",
+      "items": [
+        {"es": "el", "en": "the (masculine)", "kind": "word", "accept_en": ["the"]},
+        {"es": "la", "en": "the (feminine)", "kind": "word", "accept_en": ["the"]},
+        {"es": "un", "en": "a (masculine)", "kind": "word", "accept_en": ["a", "an", "one"]},
+        {"es": "una", "en": "a (feminine)", "kind": "word", "accept_en": ["a", "an", "one"]},
+        {"es": "el libro", "en": "the book", "kind": "word", "gender": "m", "accept_en": ["book"]},
+        {"es": "la mesa", "en": "the table", "kind": "word", "gender": "f", "accept_en": ["table"]},
+        {"es": "la silla", "en": "the chair", "kind": "word", "gender": "f", "accept_en": ["chair"]},
+        {"es": "el bolígrafo", "en": "the pen", "kind": "word", "gender": "m", "accept": ["la pluma", "el boli"], "accept_en": ["the ballpoint", "pen"], "note": "Mexico often says la pluma; Spain says el boli."},
+        {"es": "la puerta", "en": "the door", "kind": "word", "gender": "f", "accept_en": ["door"]},
+        {"es": "la ventana", "en": "the window", "kind": "word", "gender": "f", "accept_en": ["window"]},
+        {"es": "el cuaderno", "en": "the notebook", "kind": "word", "gender": "m", "accept_en": ["notebook", "the exercise book"]},
+        {"es": "la llave", "en": "the key", "kind": "word", "gender": "f", "accept_en": ["key"], "note": "Ends in -e: just learn it with la."}
+      ],
+      "sentences": [
+        {"es": "Es un libro.", "en": "It's a book.", "focus": "un", "accept_en": ["It is a book."]},
+        {"es": "Es una mesa.", "en": "It's a table.", "focus": "una", "accept_en": ["It is a table."]},
+        {"es": "Hay una silla en la clase.", "en": "There is a chair in the class.", "focus": "silla", "accept_en": ["There's a chair in the class.", "There's a chair in the classroom."]},
+        {"es": "Hay un libro en la mesa.", "en": "There is a book on the table.", "focus": "mesa", "accept_en": ["There's a book on the table."]},
+        {"es": "Tengo un bolígrafo.", "en": "I have a pen.", "focus": "bolígrafo", "accept_en": ["I've got a pen."]},
+        {"es": "¿Tienes un cuaderno?", "en": "Do you have a notebook?", "focus": "cuaderno", "accept_en": ["Have you got a notebook?"]},
+        {"es": "La llave es de Ana.", "en": "The key is Ana's.", "focus": "llave", "accept_en": ["The key belongs to Ana."]},
+        {"es": "Hay una ventana y una puerta.", "en": "There is a window and a door.", "focus": "ventana", "accept_en": ["There's a window and a door."]},
+        {"es": "El cuaderno es de Carlos.", "en": "The notebook is Carlos's.", "focus": "El", "accept_en": ["The notebook belongs to Carlos."]},
+        {"es": "¿Hay una llave en la puerta?", "en": "Is there a key in the door?", "focus": "puerta"},
+        {"es": "Tengo el libro de la profesora.", "en": "I have the teacher's book.", "focus": "la", "accept_en": ["I've got the teacher's book."]}
+      ]
+    },
+    {
+      "id": "es-u04-l2",
+      "title": "Tricky genders",
+      "notes": "The -o / -a rule has famous exceptions:\n**la mano** (the hand) is feminine - an old Latin word that kept its gender.\n**el día** (the day) and **el mapa** are masculine despite the -a.\nWords ending in **-ma** from Greek are masculine: **el problema**, **el programa**.\n**La foto** is short for la fotografía, so it stays feminine.\nOther endings give clues: **-ción** and **-dad** are feminine (**la televisión**, **la ciudad**); most other consonants lean masculine (**el hotel**). **-e** can go either way (**el café**, **la noche**, **la calle**): learn it with its article.",
+      "items": [
+        {"es": "la mano", "en": "the hand", "kind": "word", "gender": "f", "accept_en": ["hand"], "note": "Feminine, despite the -o."},
+        {"es": "el día", "en": "the day", "kind": "word", "gender": "m", "accept_en": ["day"], "note": "Masculine, despite the -a."},
+        {"es": "el mapa", "en": "the map", "kind": "word", "gender": "m", "accept_en": ["map"]},
+        {"es": "el problema", "en": "the problem", "kind": "word", "gender": "m", "accept_en": ["problem"]},
+        {"es": "la foto", "en": "the photo", "kind": "word", "gender": "f", "accept_en": ["the picture", "the photograph", "photo"]},
+        {"es": "la noche", "en": "the night", "kind": "word", "gender": "f", "accept_en": ["the evening", "night"]},
+        {"es": "la televisión", "en": "the television", "kind": "word", "gender": "f", "accept": ["la tele"], "accept_en": ["the TV", "TV", "television"]},
+        {"es": "la ciudad", "en": "the city", "kind": "word", "gender": "f", "accept_en": ["the town", "city"]},
+        {"es": "el café", "en": "the coffee", "kind": "word", "gender": "m", "accept_en": ["the café", "coffee", "the cafe"]},
+        {"es": "el hotel", "en": "the hotel", "kind": "word", "gender": "m", "accept_en": ["hotel"], "note": "The h is silent: 'oh-TEL'."},
+        {"es": "la calle", "en": "the street", "kind": "word", "gender": "f", "accept_en": ["street", "the road"]}
+      ],
+      "sentences": [
+        {"es": "No hay problema.", "en": "There's no problem.", "focus": "problema", "accept_en": ["No problem.", "There is no problem."]},
+        {"es": "Tengo un mapa de la ciudad.", "en": "I have a map of the city.", "focus": "mapa", "accept_en": ["I've got a map of the city.", "I have a city map."]},
+        {"es": "Hay un hotel en la calle.", "en": "There is a hotel on the street.", "focus": "calle", "accept_en": ["There's a hotel in the street.", "There's a hotel on the street."]},
+        {"es": "Hay una foto en la mesa.", "en": "There is a photo on the table.", "focus": "foto", "accept_en": ["There's a photo on the table.", "There's a picture on the table."]},
+        {"es": "Buenos días. Un café, por favor.", "en": "Good morning. A coffee, please.", "focus": "café", "accept_en": ["Good morning. One coffee, please."]},
+        {"es": "Tengo un libro en la mano.", "en": "I have a book in my hand.", "focus": "mano", "accept_en": ["I've got a book in my hand.", "I have a book in the hand."]},
+        {"es": "¿Tienes una foto de la ciudad?", "en": "Do you have a photo of the city?", "focus": "ciudad", "accept_en": ["Have you got a photo of the city?"]},
+        {"es": "Tengo una foto de la ciudad de noche.", "en": "I have a photo of the city at night.", "focus": "noche", "accept_en": ["I've got a photo of the city at night."]},
+        {"es": "Tengo un día y una noche en la ciudad.", "en": "I have a day and a night in the city.", "focus": "día", "accept_en": ["I've got a day and a night in the city."]},
+        {"es": "Hay una televisión en el hotel.", "en": "There is a TV in the hotel.", "focus": "televisión", "accept_en": ["There's a television in the hotel."]}
+      ]
+    },
+    {
+      "id": "es-u04-l3",
+      "title": "Plurals",
+      "notes": "To make a plural:\nEnding in a vowel: add **-s** - libro → **libros**, mesa → **mesas**, café → **cafés**.\nEnding in a consonant: add **-es** - hotel → **hoteles**, ciudad → **ciudades**.\nA final **z** becomes **c**: el lápiz → **los lápices**.\nThe little words change too: el → **los**, la → **las**, un → **unos**, una → **unas** (unos / unas = some).\nA group of mixed genders is masculine: **los niños** can be boys, or boys and girls.",
+      "items": [
+        {"es": "los", "en": "the (masculine plural)", "kind": "word", "accept_en": ["the"]},
+        {"es": "las", "en": "the (feminine plural)", "kind": "word", "accept_en": ["the"]},
+        {"es": "unos", "en": "some (masculine)", "kind": "word", "accept_en": ["some", "a few"]},
+        {"es": "unas", "en": "some (feminine)", "kind": "word", "accept_en": ["some", "a few"]},
+        {"es": "los libros", "en": "the books", "kind": "word", "gender": "m", "accept_en": ["books"]},
+        {"es": "las mesas", "en": "the tables", "kind": "word", "gender": "f", "accept_en": ["tables"]},
+        {"es": "el lápiz", "en": "the pencil", "kind": "word", "gender": "m", "accept_en": ["pencil"]},
+        {"es": "los lápices", "en": "the pencils", "kind": "word", "gender": "m", "accept_en": ["pencils"], "note": "z becomes c before -es."},
+        {"es": "las ciudades", "en": "the cities", "kind": "word", "gender": "f", "accept_en": ["cities", "the towns"]},
+        {"es": "los hoteles", "en": "the hotels", "kind": "word", "gender": "m", "accept_en": ["hotels"]},
+        {"es": "las fotos", "en": "the photos", "kind": "word", "gender": "f", "accept_en": ["photos", "the pictures"]}
+      ],
+      "sentences": [
+        {"es": "Hay dos libros en la mesa.", "en": "There are two books on the table.", "focus": "libros"},
+        {"es": "Tengo tres lápices.", "en": "I have three pencils.", "focus": "lápices", "accept_en": ["I've got three pencils."]},
+        {"es": "Hay unos hoteles en la calle.", "en": "There are some hotels on the street.", "focus": "unos", "accept_en": ["There are a few hotels on the street.", "There are some hotels in the street."]},
+        {"es": "Las fotos son de Ana.", "en": "The photos are Ana's.", "focus": "Las", "accept_en": ["The pictures are Ana's.", "The photos belong to Ana."]},
+        {"es": "Los estudiantes son de México.", "en": "The students are from Mexico.", "focus": "Los"},
+        {"es": "Hay cuatro sillas y dos mesas.", "en": "There are four chairs and two tables.", "focus": "mesas"},
+        {"es": "Tengo unas fotos de las ciudades.", "en": "I have some photos of the cities.", "focus": "unas", "accept_en": ["I've got some photos of the cities."]},
+        {"es": "¿Tienes un lápiz?", "en": "Do you have a pencil?", "focus": "lápiz", "accept_en": ["Have you got a pencil?"]},
+        {"es": "Hay tres hoteles en la ciudad.", "en": "There are three hotels in the city.", "focus": "hoteles", "accept_en": ["There are three hotels in town."]},
+        {"es": "Hay dos ventanas y tres puertas.", "en": "There are two windows and three doors.", "focus": "ventanas"}
+      ]
+    },
+    {
+      "id": "es-u04-l4",
+      "title": "Everyday things",
+      "notes": "**¿Qué es esto?** (what's this?) is the most useful question for building vocabulary - point and ask.\n**El agua** (water) is feminine but takes **el**: a feminine word starting with a stressed 'a' sound uses el in the singular, just to avoid 'la agua' running together. It's still feminine: **el agua fría**, and **las aguas** in the plural.\nRegional words: Latin America says **la computadora**, Spain **el ordenador**; glasses are **los lentes** in much of Latin America and **las gafas** in Spain. Some things are plural in Spanish just as in English: **los lentes**.",
+      "items": [
+        {"es": "¿qué?", "en": "what?", "kind": "word"},
+        {"es": "esto", "en": "this", "kind": "word", "accept_en": ["this thing"]},
+        {"es": "la mochila", "en": "the backpack", "kind": "word", "gender": "f", "accept_en": ["the rucksack", "the school bag", "backpack", "the bag"]},
+        {"es": "la botella", "en": "the bottle", "kind": "word", "gender": "f", "accept_en": ["bottle"]},
+        {"es": "el agua", "en": "the water", "kind": "word", "gender": "f", "accept_en": ["water"], "note": "Feminine, but 'el agua' in the singular."},
+        {"es": "la computadora", "en": "the computer", "kind": "word", "gender": "f", "accept": ["el computador", "el ordenador"], "accept_en": ["computer", "the laptop"], "note": "Spain: el ordenador."},
+        {"es": "el reloj", "en": "the watch", "kind": "word", "gender": "m", "accept_en": ["the clock", "watch", "clock"]},
+        {"es": "la cartera", "en": "the wallet", "kind": "word", "gender": "f", "accept_en": ["the purse", "wallet", "purse"]},
+        {"es": "los lentes", "en": "the glasses", "kind": "word", "gender": "m", "accept": ["las gafas", "los anteojos"], "accept_en": ["glasses", "the spectacles"], "note": "Spain: las gafas."},
+        {"es": "el papel", "en": "the paper", "kind": "word", "gender": "m", "accept_en": ["paper"]},
+        {"es": "la tarjeta", "en": "the card", "kind": "word", "gender": "f", "accept_en": ["card", "the credit card", "the bank card"]}
+      ],
+      "sentences": [
+        {"es": "¿Qué es esto?", "en": "What's this?", "focus": "esto", "accept_en": ["What is this?"]},
+        {"es": "Es una botella de agua.", "en": "It's a bottle of water.", "focus": "botella", "accept_en": ["It is a bottle of water.", "It's a water bottle."]},
+        {"es": "La computadora es de Ana.", "en": "The computer is Ana's.", "focus": "computadora", "accept_en": ["The computer belongs to Ana."]},
+        {"es": "¿Tienes mi cartera?", "en": "Do you have my wallet?", "focus": "cartera", "accept_en": ["Have you got my wallet?", "Do you have my purse?"]},
+        {"es": "Hay dos relojes en la mesa.", "en": "There are two watches on the table.", "focus": "relojes", "accept_en": ["There are two clocks on the table."]},
+        {"es": "¿Hay papel?", "en": "Is there any paper?", "focus": "papel", "accept_en": ["Is there paper?"]},
+        {"es": "No tengo la tarjeta.", "en": "I don't have the card.", "focus": "tarjeta", "accept_en": ["I haven't got the card."]},
+        {"es": "Los lentes son de Carlos.", "en": "The glasses are Carlos's.", "focus": "lentes", "accept_en": ["The glasses belong to Carlos."]},
+        {"es": "Tengo la computadora en la mochila.", "en": "I have the computer in the backpack.", "focus": "mochila", "accept_en": ["I've got the computer in my backpack.", "I have the computer in my bag."]},
+        {"es": "¿Qué hay en la mochila?", "en": "What is there in the backpack?", "focus": "Qué", "accept_en": ["What's in the backpack?", "What's in the bag?"]},
+        {"es": "Tengo un reloj de México.", "en": "I have a watch from Mexico.", "focus": "reloj", "accept_en": ["I've got a watch from Mexico."]},
+        {"es": "Hay agua en la botella.", "en": "There is water in the bottle.", "focus": "agua", "accept_en": ["There's water in the bottle."]}
+      ]
+    }
+  ]
+}

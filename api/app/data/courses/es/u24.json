@@ -1,0 +1,115 @@
+{
+  "unit": 24,
+  "title": "La comida",
+  "cefr": "A2",
+  "goal": "Talk about food in detail, follow and give a simple recipe, and use the impersonal se.",
+  "lessons": [
+    {
+      "id": "es-u24-l1",
+      "title": "At the market",
+      "notes": "More food words for shopping and cooking. Some differ across the Spanish-speaking world:\n**los frijoles** (beans) are **las judías** or **las alubias** in Spain and **los porotos** in Chile and Argentina.\n**la papa** (potato) is **la patata** in Spain.\nUncountable foods go without an article after **comer, comprar, necesitar**: **Compro pollo y arroz.** With **gustar** they take one: **Me gusta el arroz.**\nAmounts: **un kilo de**, **medio kilo de** (half a kilo).",
+      "items": [
+        {"es": "el arroz", "en": "the rice", "kind": "word", "gender": "m", "accept_en": ["rice"]},
+        {"es": "los frijoles", "en": "the beans", "kind": "word", "gender": "m", "accept": ["las judías", "los porotos"]},
+        {"es": "la papa", "en": "the potato", "kind": "word", "gender": "f", "accept": ["la patata"], "note": "Spain: la patata."},
+        {"es": "el tomate", "en": "the tomato", "kind": "word", "gender": "m"},
+        {"es": "la cebolla", "en": "the onion", "kind": "word", "gender": "f"},
+        {"es": "un kilo de", "en": "a kilo of", "kind": "phrase", "accept_en": ["one kilo of"]},
+        {"es": "el ajo", "en": "the garlic", "kind": "word", "gender": "m", "accept_en": ["garlic"]}
+      ],
+      "sentences": [
+        {"es": "Quisiera un kilo de tomates, por favor.", "en": "I'd like a kilo of tomatoes, please.", "focus": "kilo"},
+        {"es": "No como carne, pero como pescado.", "en": "I don't eat meat, but I eat fish.", "focus": "carne"},
+        {"es": "Hoy cenamos pollo con arroz.", "en": "Today we're having chicken with rice for dinner.", "focus": "pollo", "accept_en": ["Tonight we're having chicken and rice.", "Today we have chicken with rice for dinner."]},
+        {"es": "En México comemos muchos frijoles.", "en": "In Mexico we eat a lot of beans.", "focus": "frijoles", "accept_en": ["In Mexico we eat lots of beans."]},
+        {"es": "Hay que comer más verduras.", "en": "You have to eat more vegetables.", "focus": "verduras", "accept_en": ["We need to eat more vegetables.", "One should eat more vegetables."]},
+        {"es": "Necesito papas, cebollas y ajo.", "en": "I need potatoes, onions and garlic.", "focus": "ajo"},
+        {"es": "¿Cuánto cuesta el kilo de papas?", "en": "How much is a kilo of potatoes?", "focus": "papas", "accept_en": ["How much does a kilo of potatoes cost?"]},
+        {"es": "Para el desayuno como dos huevos.", "en": "For breakfast I eat two eggs.", "focus": "huevos", "accept_en": ["I have two eggs for breakfast."]}
+      ]
+    },
+    {
+      "id": "es-u24-l2",
+      "title": "In the kitchen",
+      "notes": "Cooking verbs are mostly regular -ar verbs:\n**cortar** (to cut) · **mezclar** (to mix) · **agregar** (to add; Spain: **añadir**) · **lavar** (to wash)\nTwo with stem changes: **calentar** (to heat, e -> ie: **caliento**) and **freír** (to fry, e -> i: **frío** - same spelling as \"cold\"!). **hervir** (to boil) is e -> ie: **hierve**.\nThings you cook with: **la olla** (pot), **la sartén** (frying pan - feminine), **el horno** (oven).\nRemember **lavar** without **se** is washing something else: **Lavo las verduras.**",
+      "items": [
+        {"es": "cortar", "en": "to cut", "kind": "verb", "accept_en": ["to chop", "to slice"]},
+        {"es": "mezclar", "en": "to mix", "kind": "verb", "accept_en": ["to stir", "to combine"]},
+        {"es": "agregar", "en": "to add", "kind": "verb", "accept": ["añadir"], "note": "Spain: añadir. Preterite: agregué."},
+        {"es": "calentar", "en": "to heat", "kind": "verb", "accept_en": ["to warm up", "to heat up"], "note": "e -> ie: caliento."},
+        {"es": "freír", "en": "to fry", "kind": "verb", "note": "e -> i: frío, fríes, fríe."},
+        {"es": "hervir", "en": "to boil", "kind": "verb", "note": "e -> ie: hierve."},
+        {"es": "lavar", "en": "to wash", "kind": "verb"},
+        {"es": "la olla", "en": "the pot", "kind": "word", "gender": "f", "accept_en": ["the saucepan"]},
+        {"es": "la sartén", "en": "the frying pan", "kind": "word", "gender": "f", "accept_en": ["the pan", "the skillet"]},
+        {"es": "el horno", "en": "the oven", "kind": "word", "gender": "m"},
+        {"es": "un poco de", "en": "a little", "kind": "phrase", "accept_en": ["a bit of", "some", "a little bit of"]}
+      ],
+      "sentences": [
+        {"es": "Corto la cebolla y el tomate.", "en": "I cut the onion and the tomato.", "focus": "Corto", "accept_en": ["I chop the onion and the tomato.", "I'm cutting the onion and the tomato."]},
+        {"es": "Mezclo los huevos con la leche.", "en": "I mix the eggs with the milk.", "focus": "Mezclo"},
+        {"es": "Agrego un poco de agua.", "en": "I add a little water.", "focus": "Agrego", "accept_en": ["I add a bit of water.", "I add some water."]},
+        {"es": "Mi mamá calienta la sopa en la olla.", "en": "My mum heats the soup in the pot.", "focus": "calienta", "accept_en": ["My mom heats up the soup in the pot.", "My mother heats the soup in the saucepan."]},
+        {"es": "Frío las papas en la sartén.", "en": "I fry the potatoes in the frying pan.", "focus": "sartén", "accept_en": ["I fry the potatoes in the pan."]},
+        {"es": "El agua hierve en la olla.", "en": "The water is boiling in the pot.", "focus": "hierve", "accept_en": ["The water boils in the pot.", "The water's boiling in the pot."]},
+        {"es": "Lava bien las verduras.", "en": "He washes the vegetables well.", "focus": "Lava", "accept_en": ["She washes the vegetables well.", "Wash the vegetables well."]},
+        {"es": "El pollo está en el horno.", "en": "The chicken is in the oven.", "focus": "horno"},
+        {"es": "¿Calentaste el horno?", "en": "Did you heat the oven?", "focus": "Calentaste", "accept_en": ["Did you heat up the oven?", "Did you preheat the oven?", "Have you heated the oven?"]}
+      ]
+    },
+    {
+      "id": "es-u24-l3",
+      "title": "How it's done: se",
+      "notes": "Recipes and signs often don't say who does the action. Spanish uses **se** + the verb in the **él** or **ellos** form - the **impersonal se**:\n**Se corta la cebolla.** = The onion is cut / You cut the onion.\n**Se cortan las papas.** = The potatoes are cut (plural thing -> plural verb).\n**Aquí se habla español.** = Spanish is spoken here.\n**¿Cómo se dice...?** = How do you say...?\nIt's like English \"you\" or \"one\" in general statements. Look at what follows: one thing -> **se corta**; several -> **se cortan**.",
+      "items": [
+        {"es": "se corta", "en": "it's cut", "kind": "phrase", "accept_en": ["you cut", "is cut", "one cuts"]},
+        {"es": "se agregan", "en": "they're added", "kind": "phrase", "accept": ["se añaden"], "accept_en": ["you add", "are added"]},
+        {"es": "se habla", "en": "is spoken", "kind": "phrase", "accept_en": ["people speak", "they speak"]},
+        {"es": "¿cómo se dice...?", "en": "how do you say...?", "kind": "phrase"},
+        {"es": "servir", "en": "to serve", "kind": "verb", "note": "e -> i: sirvo. Se sirve = it's served."},
+        {"es": "la sal", "en": "the salt", "kind": "word", "gender": "f", "accept_en": ["salt"]},
+        {"es": "la pimienta", "en": "the pepper", "kind": "word", "gender": "f", "accept_en": ["pepper"], "note": "The spice. The vegetable is el pimiento / el chile."},
+        {"es": "el aceite", "en": "the oil", "kind": "word", "gender": "m", "accept_en": ["oil"]},
+        {"es": "la cucharada", "en": "the spoonful", "kind": "word", "gender": "f", "accept_en": ["the tablespoon", "the tablespoonful"]}
+      ],
+      "sentences": [
+        {"es": "Primero se corta la cebolla.", "en": "First you cut the onion.", "focus": "corta", "accept_en": ["First the onion is cut.", "First, cut the onion."]},
+        {"es": "Luego se agregan los tomates.", "en": "Then you add the tomatoes.", "focus": "agregan", "accept_en": ["Then the tomatoes are added.", "Then add the tomatoes."]},
+        {"es": "Se calienta el aceite en la sartén.", "en": "You heat the oil in the frying pan.", "focus": "aceite", "accept_en": ["The oil is heated in the frying pan.", "Heat the oil in the pan."]},
+        {"es": "Se agrega sal y pimienta.", "en": "You add salt and pepper.", "focus": "pimienta", "accept_en": ["Salt and pepper are added.", "Add salt and pepper."]},
+        {"es": "Se sirve con arroz.", "en": "It's served with rice.", "focus": "sirve", "accept_en": ["You serve it with rice.", "Serve with rice."]},
+        {"es": "Aquí se habla español.", "en": "Spanish is spoken here.", "focus": "habla", "accept_en": ["Here we speak Spanish.", "They speak Spanish here."]},
+        {"es": "¿Cómo se dice \"oven\" en español?", "en": "How do you say \"oven\" in Spanish?", "focus": "dice"},
+        {"es": "Se mezclan dos cucharadas de azúcar con la leche.", "en": "You mix two spoonfuls of sugar with the milk.", "focus": "cucharadas", "accept_en": ["Two spoonfuls of sugar are mixed with the milk.", "Mix two tablespoons of sugar with the milk."]},
+        {"es": "No se necesita mucha sal.", "en": "You don't need much salt.", "focus": "sal", "accept_en": ["Not much salt is needed.", "It doesn't need much salt."]}
+      ]
+    },
+    {
+      "id": "es-u24-l4",
+      "title": "How does it taste?",
+      "notes": "Hunger and thirst use **tener**: **tengo hambre** (I'm hungry), **tengo sed** (I'm thirsty).\nTo say how food tastes, use **estar** for this dish right now and **ser** for food in general:\n**La sopa está rica.** = The soup is (tastes) delicious.\n**El chocolate es dulce.** = Chocolate is sweet.\n**probar** (o -> ue) without **se** means to taste or try food: **¿Quieres probar?** Compare **probarse** = to try on clothes.\nAnd remember **la receta**: a recipe in the kitchen, a prescription at the doctor's.",
+      "items": [
+        {"es": "tener hambre", "en": "to be hungry", "kind": "phrase", "accept_en": ["to have hunger"]},
+        {"es": "tener sed", "en": "to be thirsty", "kind": "phrase"},
+        {"es": "probar", "en": "to taste", "kind": "verb", "accept_en": ["to try"], "note": "o -> ue: pruebo. With food; probarse is for clothes."},
+        {"es": "delicioso", "en": "delicious", "kind": "word", "accept": ["rico", "sabroso"], "accept_en": ["tasty"]},
+        {"es": "picante", "en": "spicy", "kind": "word", "accept_en": ["hot (spicy)"]},
+        {"es": "dulce", "en": "sweet", "kind": "word"},
+        {"es": "salado", "en": "salty", "kind": "word", "accept_en": ["savoury", "too salty"]},
+        {"es": "el plato", "en": "the dish", "kind": "word", "gender": "m", "accept_en": ["the plate", "the course"]},
+        {"es": "demasiado", "en": "too", "kind": "word", "accept_en": ["too much", "too many"], "note": "demasiado dulce = too sweet; demasiada sal = too much salt."}
+      ],
+      "sentences": [
+        {"es": "Tengo mucha hambre. ¿Comemos?", "en": "I'm very hungry. Shall we eat?", "focus": "hambre", "accept_en": ["I'm really hungry. Shall we eat?", "I'm starving. Shall we eat?"]},
+        {"es": "¿Tienes sed? Hay agua en la mesa.", "en": "Are you thirsty? There's water on the table.", "focus": "sed"},
+        {"es": "¿Quieres probar la sopa?", "en": "Do you want to taste the soup?", "focus": "probar", "accept_en": ["Do you want to try the soup?", "Would you like to try the soup?"]},
+        {"es": "La comida está deliciosa.", "en": "The food is delicious.", "focus": "deliciosa", "accept_en": ["The meal is delicious."]},
+        {"es": "Este plato es muy picante.", "en": "This dish is very spicy.", "focus": "picante", "accept_en": ["This dish is really hot."]},
+        {"es": "El chocolate es demasiado dulce para mí.", "en": "Chocolate is too sweet for me.", "focus": "dulce", "accept_en": ["The chocolate is too sweet for me."]},
+        {"es": "La sopa está muy salada.", "en": "The soup is very salty.", "focus": "salada", "accept_en": ["The soup is too salty."]},
+        {"es": "Mi abuela tiene una receta de pollo muy buena.", "en": "My grandmother has a very good chicken recipe.", "focus": "receta", "accept_en": ["My grandma has a really good chicken recipe."]},
+        {"es": "Probé un plato típico de Perú.", "en": "I tried a typical dish from Peru.", "focus": "plato", "accept_en": ["I tasted a typical Peruvian dish.", "I tried a typical Peruvian dish."]}
+      ]
+    }
+  ]
+}

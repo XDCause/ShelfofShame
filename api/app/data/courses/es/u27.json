@@ -1,0 +1,111 @@
+{
+  "unit": 27,
+  "title": "Comparar",
+  "cefr": "A2",
+  "goal": "Compare people, places and things: more, less, as... as, the most, better and worse.",
+  "lessons": [
+    {
+      "id": "es-u27-l1",
+      "title": "More than, less than",
+      "notes": "Spanish has no \"-er\" ending: put **más** (more) or **menos** (less) in front of the adjective and **que** after it.\n**Sídney es más grande que Brisbane.** = Sydney is bigger than Brisbane.\n**El tren es menos caro que el avión.** = The train is less expensive than the plane.\nThe adjective still agrees with what it describes: **Mi hermana es más alta que yo.**\nAfter **que**, use **yo** and **tú**, not mí / ti: **más alto que tú**.\nIt works with nouns and verbs too: **Tengo más tiempo que tú.** · **Trabajas más que yo.**",
+      "items": [
+        {"es": "más... que", "en": "more... than", "kind": "phrase", "accept": ["más que"], "accept_en": ["more than", "-er than"]},
+        {"es": "menos... que", "en": "less... than", "kind": "phrase", "accept": ["menos que"], "accept_en": ["less than", "fewer than"]},
+        {"es": "más grande", "en": "bigger", "kind": "phrase", "accept_en": ["larger"]},
+        {"es": "lento", "en": "slow", "kind": "word"},
+        {"es": "cómodo", "en": "comfortable", "kind": "word"},
+        {"es": "ruidoso", "en": "noisy", "kind": "word", "accept_en": ["loud"]},
+        {"es": "pesado", "en": "heavy", "kind": "word", "accept_en": ["boring (person)", "annoying"]},
+        {"es": "la vida", "en": "the life", "kind": "word", "gender": "f", "accept_en": ["life"]}
+      ],
+      "sentences": [
+        {"es": "Sídney es más grande que Brisbane.", "en": "Sydney is bigger than Brisbane.", "focus": "más", "accept_en": ["Sydney is larger than Brisbane."]},
+        {"es": "El tren es menos caro que el avión.", "en": "The train is less expensive than the plane.", "focus": "menos", "accept_en": ["The train is cheaper than the plane."]},
+        {"es": "Mi hermana es más alta que yo.", "en": "My sister is taller than me.", "focus": "alta", "accept_en": ["My sister is taller than I am."]},
+        {"es": "El autobús es más lento que el tren.", "en": "The bus is slower than the train.", "focus": "lento"},
+        {"es": "Mi computadora nueva es más rápida.", "en": "My new computer is faster.", "focus": "rápida", "accept_en": ["My new computer is quicker."]},
+        {"es": "Este sofá es más cómodo que la cama.", "en": "This sofa is more comfortable than the bed.", "focus": "cómodo", "accept_en": ["This couch is more comfortable than the bed."]},
+        {"es": "La ciudad es más ruidosa que el pueblo.", "en": "The city is noisier than the town.", "focus": "ruidosa", "accept_en": ["The city is louder than the town.", "The city is noisier than the village."]},
+        {"es": "Esta maleta es menos pesada que esa.", "en": "This suitcase is less heavy than that one.", "focus": "pesada", "accept_en": ["This suitcase is lighter than that one.", "This case is less heavy than that one."]},
+        {"es": "La vida en el pueblo es más tranquila.", "en": "Life in the town is quieter.", "focus": "vida", "accept_en": ["Life in the village is calmer.", "Life in the town is more peaceful.", "Life in the village is quieter."]},
+        {"es": "Trabajas más que yo.", "en": "You work more than me.", "focus": "que", "accept_en": ["You work more than I do."]}
+      ]
+    },
+    {
+      "id": "es-u27-l2",
+      "title": "As... as",
+      "notes": "To say two things are equal:\n**tan** + adjective + **como** = as... as: **Ana es tan alta como Luis.**\n**tanto / tanta / tantos / tantas** + noun + **como** = as much / as many... as - it agrees with the noun:\n**No tengo tanto dinero como tú.** · **Hay tantas personas como ayer.**\nWith a verb, just **tanto como**: **No como tanto como antes.**\nOther ways to compare: **igual que** (the same as), **el mismo / la misma** (the same), **diferente de** (different from).\nA polite way to soften: **no tan... como** = not as... as: **No es tan difícil como parece.**",
+      "items": [
+        {"es": "tan... como", "en": "as... as", "kind": "phrase", "accept": ["tan como"]},
+        {"es": "tanto como", "en": "as much as", "kind": "phrase", "accept_en": ["as many as"]},
+        {"es": "tantos", "en": "as many", "kind": "word", "accept": ["tantas"], "accept_en": ["so many"]},
+        {"es": "igual que", "en": "the same as", "kind": "phrase", "accept_en": ["just like", "like"]},
+        {"es": "diferente", "en": "different", "kind": "word", "accept": ["distinto"]},
+        {"es": "el dinero", "en": "the money", "kind": "word", "gender": "m", "accept_en": ["money"]},
+        {"es": "parecido", "en": "similar", "kind": "word", "accept_en": ["alike"]}
+      ],
+      "sentences": [
+        {"es": "Ana es tan alta como su padre.", "en": "Ana is as tall as her father.", "focus": "tan", "accept_en": ["Ana is as tall as her dad."]},
+        {"es": "El español no es tan difícil como parece.", "en": "Spanish isn't as hard as it seems.", "focus": "como", "accept_en": ["Spanish is not as difficult as it seems.", "Spanish isn't as hard as it looks."]},
+        {"es": "No tengo tanto dinero como tú.", "en": "I don't have as much money as you.", "focus": "dinero", "accept_en": ["I haven't got as much money as you.", "I don't have as much money as you do."]},
+        {"es": "Hoy no hay tantas personas como ayer.", "en": "Today there aren't as many people as yesterday.", "focus": "tantas", "accept_en": ["There aren't as many people today as yesterday."]},
+        {"es": "Ya no como tanto como antes.", "en": "I don't eat as much as I used to.", "focus": "tanto", "accept_en": ["I no longer eat as much as before.", "I don't eat as much as before any more."]},
+        {"es": "Este celular es igual que ese.", "en": "This phone is the same as that one.", "focus": "igual", "accept_en": ["This mobile is the same as that one.", "This phone is just like that one."]},
+        {"es": "Mi hermano y yo somos muy diferentes.", "en": "My brother and I are very different.", "focus": "diferentes"},
+        {"es": "Las dos camisas son muy parecidas.", "en": "The two shirts are very similar.", "focus": "parecidas", "accept_en": ["Both shirts are very similar."]},
+        {"es": "Es una persona muy simpática.", "en": "He's a very nice person.", "focus": "persona", "accept_en": ["She's a very nice person.", "He is a very friendly person."]}
+      ]
+    },
+    {
+      "id": "es-u27-l3",
+      "title": "The most",
+      "notes": "For \"the most / the -est\", put **el / la / los / las** before **más** or **menos**, and use **de** (not \"in\") for the group:\n**Es el carro más rápido del mundo.** = It's the fastest car in the world.\n**Ana es la más alta de la clase.** = Ana is the tallest in the class.\nThe noun goes between the article and **más**: **la ciudad más bonita**.\nFor \"really, extremely\" add **-ísimo** to the adjective (drop a final vowel): **caro -> carísimo**, **bueno -> buenísimo**, **rico -> riquísimo** (c -> qu). It agrees: **una película buenísima**.",
+      "items": [
+        {"es": "el más", "en": "the most", "kind": "phrase", "accept": ["la más", "los más", "las más"], "accept_en": ["the -est"]},
+        {"es": "el menos", "en": "the least", "kind": "phrase", "accept": ["la menos", "los menos", "las menos"]},
+        {"es": "del mundo", "en": "in the world", "kind": "phrase", "accept_en": ["of the world"]},
+        {"es": "el mundo", "en": "the world", "kind": "word", "gender": "m"},
+        {"es": "carísimo", "en": "really expensive", "kind": "word", "accept_en": ["very expensive", "extremely expensive"]},
+        {"es": "buenísimo", "en": "really good", "kind": "word", "accept_en": ["very good", "excellent", "great"]},
+        {"es": "riquísimo", "en": "really delicious", "kind": "word", "accept_en": ["very tasty", "delicious"]},
+        {"es": "famoso", "en": "famous", "kind": "word"},
+        {"es": "el edificio", "en": "the building", "kind": "word", "gender": "m"}
+      ],
+      "sentences": [
+        {"es": "Es el edificio más alto de la ciudad.", "en": "It's the tallest building in the city.", "focus": "edificio", "accept_en": ["It is the tallest building in the city."]},
+        {"es": "Ana es la más joven de la familia.", "en": "Ana is the youngest in the family.", "focus": "más", "accept_en": ["Ana is the youngest of the family."]},
+        {"es": "¿Cuál es el país más grande del mundo?", "en": "What's the biggest country in the world?", "focus": "mundo", "accept_en": ["Which is the largest country in the world?", "What is the biggest country in the world?"]},
+        {"es": "Este es el restaurante menos caro del barrio.", "en": "This is the least expensive restaurant in the neighbourhood.", "focus": "menos", "accept_en": ["This is the cheapest restaurant in the neighbourhood.", "This is the least expensive restaurant in the neighborhood."]},
+        {"es": "El hotel es bonito, pero carísimo.", "en": "The hotel is nice, but really expensive.", "focus": "carísimo", "accept_en": ["The hotel is pretty, but extremely expensive.", "The hotel is nice but very expensive."]},
+        {"es": "La película fue buenísima.", "en": "The film was really good.", "focus": "buenísima", "accept_en": ["The movie was really good.", "The film was excellent.", "The movie was great."]},
+        {"es": "¡Esta sopa está riquísima!", "en": "This soup is really delicious!", "focus": "riquísima", "accept_en": ["This soup is delicious!", "This soup is so tasty!"]},
+        {"es": "Es el museo más famoso del país.", "en": "It's the most famous museum in the country.", "focus": "famoso"}
+      ]
+    },
+    {
+      "id": "es-u27-l4",
+      "title": "Better, worse, older",
+      "notes": "Four comparisons are irregular - no **más**:\n**bueno -> mejor** (better) · **malo -> peor** (worse)\n**mayor** (older; also bigger, more important) · **menor** (younger; smaller)\n**el / la mejor** = the best · **el / la peor** = the worst\n**mejor / peor** don't change for gender: **la mejor película**, **los mejores amigos** (only plural -es).\nFor ages, **mayor / menor** sound more natural than más viejo: **mi hermano mayor** (my older brother).\nWith numbers, \"more than\" is **más de**, not más que: **Hay más de cien personas.**\n**el de / la de** = the one of: **El clima de Brisbane es mejor que el de Melbourne.**",
+      "items": [
+        {"es": "peor", "en": "worse", "kind": "word"},
+        {"es": "el mejor", "en": "the best", "kind": "phrase", "accept": ["la mejor", "los mejores", "las mejores"]},
+        {"es": "el peor", "en": "the worst", "kind": "phrase", "accept": ["la peor", "los peores", "las peores"]},
+        {"es": "mi hermano mayor", "en": "my older brother", "kind": "phrase", "accept_en": ["my big brother", "my elder brother"]},
+        {"es": "mi hermana menor", "en": "my younger sister", "kind": "phrase", "accept_en": ["my little sister"]},
+        {"es": "más de", "en": "more than (a number)", "kind": "phrase", "accept_en": ["more than", "over"]},
+        {"es": "el clima", "en": "the climate", "kind": "word", "gender": "m", "accept_en": ["the weather"], "note": "Masculine although it ends in -a."}
+      ],
+      "sentences": [
+        {"es": "Este café es mejor que el otro.", "en": "This coffee is better than the other one.", "focus": "mejor"},
+        {"es": "El tráfico hoy es peor que ayer.", "en": "The traffic today is worse than yesterday.", "focus": "peor", "accept_en": ["Traffic today is worse than yesterday."]},
+        {"es": "Es la mejor película del año.", "en": "It's the best film of the year.", "focus": "mejor", "accept_en": ["It's the best movie of the year."]},
+        {"es": "Fue el peor día de mi vida.", "en": "It was the worst day of my life.", "focus": "peor"},
+        {"es": "Mi hermano mayor vive en Melbourne.", "en": "My older brother lives in Melbourne.", "focus": "mayor", "accept_en": ["My big brother lives in Melbourne."]},
+        {"es": "Mi hermana menor tiene doce años.", "en": "My younger sister is twelve.", "focus": "menor", "accept_en": ["My little sister is twelve years old.", "My younger sister is twelve years old."]},
+        {"es": "En el concierto había más de cien personas.", "en": "There were more than a hundred people at the concert.", "focus": "de", "accept_en": ["There were over a hundred people at the concert.", "There were more than one hundred people at the concert."]},
+        {"es": "Nuestro equipo es el mejor de la ciudad.", "en": "Our team is the best in the city.", "focus": "equipo"},
+        {"es": "El clima de Brisbane es mejor que el de Melbourne.", "en": "Brisbane's climate is better than Melbourne's.", "focus": "clima", "accept_en": ["The weather in Brisbane is better than in Melbourne.", "Brisbane's weather is better than Melbourne's."]}
+      ]
+    }
+  ]
+}

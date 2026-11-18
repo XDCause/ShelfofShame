@@ -1,0 +1,133 @@
+{
+  "unit": 5,
+  "title": "¿Cómo es?",
+  "cefr": "A1",
+  "goal": "Describe things and people: size, age, colour and character, with ser.",
+  "lessons": [
+    {
+      "id": "es-u05-l1",
+      "title": "Big and small",
+      "notes": "Adjectives usually come **after** the noun: **un libro nuevo** (a new book), **una casa grande** - the reverse of English.\nThey match the noun in gender and number, like nationalities did:\n**-o** words have four forms: nuevo, nueva, nuevos, nuevas.\n**-e** and most consonant endings have two: grande, grandes.\n**El libro es pequeño. La mesa es pequeña. Los libros son pequeños.**\nA few common ones can go first and then lose the -o: **un buen día**, **un mal día**. **Muy** (very) goes before: **muy bonito**.",
+      "items": [
+        {"es": "grande", "en": "big", "kind": "word", "accept_en": ["large"]},
+        {"es": "pequeño", "en": "small", "kind": "word", "accept_en": ["little"]},
+        {"es": "nuevo", "en": "new", "kind": "word"},
+        {"es": "viejo", "en": "old", "kind": "word", "note": "For people, 'mayor' is more polite (lesson 3)."},
+        {"es": "bueno", "en": "good", "kind": "word", "note": "Before a masculine noun: buen (un buen libro)."},
+        {"es": "malo", "en": "bad", "kind": "word", "note": "Before a masculine noun: mal (un mal día)."},
+        {"es": "bonito", "en": "pretty", "kind": "word", "accept_en": ["nice", "lovely", "beautiful"]},
+        {"es": "feo", "en": "ugly", "kind": "word"},
+        {"es": "alto", "en": "tall", "kind": "word", "accept_en": ["high"]},
+        {"es": "bajo", "en": "short", "kind": "word", "accept_en": ["low"], "note": "Short in height."}
+      ],
+      "sentences": [
+        {"es": "Es un libro nuevo.", "en": "It's a new book.", "focus": "nuevo", "accept_en": ["It is a new book."]},
+        {"es": "La mesa es pequeña.", "en": "The table is small.", "focus": "pequeña", "accept_en": ["The table is little."]},
+        {"es": "Tengo un celular viejo.", "en": "I have an old phone.", "focus": "viejo", "accept_en": ["I've got an old mobile.", "I have an old mobile."]},
+        {"es": "La ciudad es muy bonita.", "en": "The city is very pretty.", "focus": "bonita", "accept_en": ["The city is very beautiful.", "The city is really nice."]},
+        {"es": "Carlos no es alto, es bajo.", "en": "Carlos isn't tall, he's short.", "focus": "bajo", "accept_en": ["Carlos is not tall, he is short."]},
+        {"es": "Es una computadora muy buena.", "en": "It's a very good computer.", "focus": "buena", "accept_en": ["It is a very good computer."]},
+        {"es": "Los hoteles son grandes.", "en": "The hotels are big.", "focus": "grandes", "accept_en": ["The hotels are large."]},
+        {"es": "No es feo, es bonito.", "en": "It isn't ugly, it's pretty.", "focus": "feo", "accept_en": ["It's not ugly, it's nice.", "He isn't ugly, he's good-looking."]},
+        {"es": "Es un problema muy grande.", "en": "It's a very big problem.", "focus": "grande", "accept_en": ["It is a very big problem.", "It's a really big problem."]},
+        {"es": "Es un mal día.", "en": "It's a bad day.", "focus": "mal", "accept_en": ["It is a bad day."]},
+        {"es": "El café es muy malo.", "en": "The coffee is very bad.", "focus": "malo", "accept_en": ["The coffee is really bad."]},
+        {"es": "El perro es pequeño y el gato es viejo.", "en": "The dog is small and the cat is old.", "focus": "pequeño"}
+      ]
+    },
+    {
+      "id": "es-u05-l2",
+      "title": "Colours",
+      "notes": "Colours are adjectives, so they go after the noun and match it: **un carro rojo**, **una mochila roja**, **dos mochilas rojas**.\nColours ending in -e or a consonant only add -s / -es: **verde → verdes**, **azul → azules**, **gris → grises**.\n**Naranja** and **rosa** are also the names of things (an orange, a rose), so many people don't change them at all: **unas mochilas naranja**.\nAsk **¿De qué color es?** - literally 'of what colour is it?'. Brown is **marrón** in many places, **café** in Mexico and Central America.",
+      "items": [
+        {"es": "rojo", "en": "red", "kind": "word"},
+        {"es": "azul", "en": "blue", "kind": "word"},
+        {"es": "verde", "en": "green", "kind": "word"},
+        {"es": "amarillo", "en": "yellow", "kind": "word"},
+        {"es": "negro", "en": "black", "kind": "word"},
+        {"es": "blanco", "en": "white", "kind": "word"},
+        {"es": "gris", "en": "grey", "kind": "word", "accept_en": ["gray"]},
+        {"es": "marrón", "en": "brown", "kind": "word", "accept": ["café"], "note": "Mexico: café."},
+        {"es": "rosa", "en": "pink", "kind": "word", "accept": ["rosado"]},
+        {"es": "naranja", "en": "orange", "kind": "word", "accept": ["anaranjado"]},
+        {"es": "el color", "en": "the colour", "kind": "word", "gender": "m", "accept_en": ["the color", "colour", "color"]},
+        {"es": "¿de qué color es?", "en": "what colour is it?", "kind": "phrase", "accept_en": ["what color is it?"]}
+      ],
+      "sentences": [
+        {"es": "¿De qué color es la mochila?", "en": "What colour is the backpack?", "focus": "color", "accept_en": ["What color is the backpack?", "What colour is the bag?"]},
+        {"es": "La mochila es azul.", "en": "The backpack is blue.", "focus": "azul", "accept_en": ["The bag is blue."]},
+        {"es": "Tengo un celular negro.", "en": "I have a black phone.", "focus": "negro", "accept_en": ["I've got a black mobile.", "I have a black mobile."]},
+        {"es": "La puerta es verde.", "en": "The door is green.", "focus": "verde"},
+        {"es": "Las sillas son blancas.", "en": "The chairs are white.", "focus": "blancas"},
+        {"es": "Es una botella amarilla.", "en": "It's a yellow bottle.", "focus": "amarilla", "accept_en": ["It is a yellow bottle."]},
+        {"es": "El gato es gris.", "en": "The cat is grey.", "focus": "gris", "accept_en": ["The cat is gray."]},
+        {"es": "Los lápices son rojos y azules.", "en": "The pencils are red and blue.", "focus": "rojos"},
+        {"es": "El reloj es marrón.", "en": "The watch is brown.", "focus": "marrón", "accept": ["El reloj es café."], "accept_en": ["The clock is brown."]},
+        {"es": "La cartera es rosa.", "en": "The wallet is pink.", "focus": "rosa", "accept": ["La cartera es rosada."], "accept_en": ["The purse is pink."]},
+        {"es": "Mi color favorito es el naranja.", "en": "My favourite colour is orange.", "focus": "naranja", "accept_en": ["My favorite color is orange."]}
+      ]
+    },
+    {
+      "id": "es-u05-l3",
+      "title": "What are people like?",
+      "notes": "**¿Cómo es Ana?** asks what Ana is like - her looks or her character. Answer with **ser**, because it's about who she is: **Es simpática.**\n**Simpático** is a false friend: it means nice, friendly, easy to like - not 'sympathetic'.\nWords ending in -e or a consonant don't change for a woman: **Ana es inteligente**, **Carlos es joven**. In the plural, **joven → jóvenes** (an accent keeps the stress where it was).\nFor older people **mayor** is kinder than viejo. Link two ideas with **y** (and) or **pero** (but): **Es serio pero simpático.**",
+      "items": [
+        {"es": "¿cómo es?", "en": "what is he / she / it like?", "kind": "phrase", "accept_en": ["what's he like?", "what's she like?", "what's it like?", "what is it like?"]},
+        {"es": "simpático", "en": "nice", "kind": "word", "accept_en": ["friendly", "likeable", "kind"], "note": "Not 'sympathetic'!"},
+        {"es": "inteligente", "en": "intelligent", "kind": "word", "accept_en": ["smart", "clever"]},
+        {"es": "joven", "en": "young", "kind": "word"},
+        {"es": "mayor", "en": "older", "kind": "word", "accept_en": ["elderly", "old"], "note": "Polite for older people."},
+        {"es": "divertido", "en": "fun", "kind": "word", "accept_en": ["funny", "amusing", "entertaining"]},
+        {"es": "serio", "en": "serious", "kind": "word"},
+        {"es": "guapo", "en": "good-looking", "kind": "word", "accept_en": ["handsome", "beautiful", "attractive", "pretty"]},
+        {"es": "el hombre", "en": "the man", "kind": "word", "gender": "m", "accept_en": ["man"]},
+        {"es": "la mujer", "en": "the woman", "kind": "word", "gender": "f", "accept_en": ["woman", "the wife"]},
+        {"es": "la persona", "en": "the person", "kind": "word", "gender": "f", "accept_en": ["person"], "note": "Always feminine, even for a man."},
+        {"es": "pero", "en": "but", "kind": "word"}
+      ],
+      "sentences": [
+        {"es": "¿Cómo es Ana?", "en": "What is Ana like?", "focus": "Cómo", "accept_en": ["What's Ana like?"]},
+        {"es": "Ana es simpática y muy inteligente.", "en": "Ana is nice and very intelligent.", "focus": "simpática", "accept_en": ["Ana is friendly and very smart.", "Ana is nice and very smart."]},
+        {"es": "El profesor es joven.", "en": "The teacher is young.", "focus": "joven"},
+        {"es": "La señora es mayor pero muy divertida.", "en": "The lady is older but very funny.", "focus": "pero", "accept_en": ["The woman is elderly but very fun.", "The lady is old but a lot of fun."]},
+        {"es": "Carlos es serio pero simpático.", "en": "Carlos is serious but nice.", "focus": "serio", "accept_en": ["Carlos is serious but friendly."]},
+        {"es": "Es una persona muy buena.", "en": "He's a very good person.", "focus": "persona", "accept_en": ["She's a very good person.", "He is a very good person.", "She is a very good person."]},
+        {"es": "El hombre es alto y guapo.", "en": "The man is tall and handsome.", "focus": "hombre", "accept_en": ["The man is tall and good-looking."]},
+        {"es": "La mujer es de Colombia.", "en": "The woman is from Colombia.", "focus": "mujer"},
+        {"es": "Los estudiantes son jóvenes.", "en": "The students are young.", "focus": "jóvenes"},
+        {"es": "Tú eres muy divertido.", "en": "You're very funny.", "focus": "divertido", "accept_en": ["You are very funny.", "You're a lot of fun."]},
+        {"es": "Mi amiga es guapa y simpática.", "en": "My friend is pretty and nice.", "focus": "guapa", "accept_en": ["My friend is beautiful and friendly.", "My friend is good-looking and nice."]}
+      ]
+    },
+    {
+      "id": "es-u05-l4",
+      "title": "Describing places and things",
+      "notes": "Use **ser** to say what something is like - its lasting qualities: **La casa es grande. El hotel es caro.**\nA question can simply flip the order: **¿Es caro el hotel?** (is the hotel expensive?) - or just raise your voice: **¿El hotel es caro?**\nLatin America says **el carro** (or el auto); Spain says **el coche**.\nThe name of a language is masculine and has no capital: **el español**, **el inglés**. 'Spanish is easy' = **El español es fácil.**",
+      "items": [
+        {"es": "la casa", "en": "the house", "kind": "word", "gender": "f", "accept_en": ["the home", "house", "home"]},
+        {"es": "el carro", "en": "the car", "kind": "word", "gender": "m", "accept": ["el auto", "el coche"], "accept_en": ["car"], "note": "Spain: el coche. Argentina, Chile: el auto."},
+        {"es": "la playa", "en": "the beach", "kind": "word", "gender": "f", "accept_en": ["beach"]},
+        {"es": "el país", "en": "the country", "kind": "word", "gender": "m", "accept_en": ["country"]},
+        {"es": "caro", "en": "expensive", "kind": "word", "accept_en": ["dear"]},
+        {"es": "barato", "en": "cheap", "kind": "word", "accept_en": ["inexpensive"]},
+        {"es": "fácil", "en": "easy", "kind": "word"},
+        {"es": "difícil", "en": "difficult", "kind": "word", "accept_en": ["hard"]},
+        {"es": "interesante", "en": "interesting", "kind": "word"},
+        {"es": "el español", "en": "Spanish (the language)", "kind": "word", "gender": "m", "accept_en": ["Spanish", "the Spanish language"]}
+      ],
+      "sentences": [
+        {"es": "La casa es grande y bonita.", "en": "The house is big and pretty.", "focus": "casa", "accept_en": ["The house is large and beautiful.", "The house is big and nice."]},
+        {"es": "El carro es nuevo pero barato.", "en": "The car is new but cheap.", "focus": "barato", "accept_en": ["The car is new but inexpensive."]},
+        {"es": "Australia es un país muy grande.", "en": "Australia is a very big country.", "focus": "país", "accept_en": ["Australia is a very large country."]},
+        {"es": "La playa es muy bonita.", "en": "The beach is very pretty.", "focus": "playa", "accept_en": ["The beach is very beautiful.", "The beach is really nice."]},
+        {"es": "El español es fácil.", "en": "Spanish is easy.", "focus": "fácil"},
+        {"es": "No es difícil.", "en": "It isn't difficult.", "focus": "difícil", "accept_en": ["It's not difficult.", "It's not hard."]},
+        {"es": "¿Es caro el hotel?", "en": "Is the hotel expensive?", "focus": "caro"},
+        {"es": "El libro es interesante.", "en": "The book is interesting.", "focus": "interesante"},
+        {"es": "Es un carro rojo muy caro.", "en": "It's a very expensive red car.", "focus": "carro", "accept_en": ["It is a very expensive red car."]},
+        {"es": "México es un país interesante.", "en": "Mexico is an interesting country.", "focus": "interesante"},
+        {"es": "El español no es difícil, es divertido.", "en": "Spanish isn't hard, it's fun.", "focus": "español", "accept_en": ["Spanish is not difficult, it is fun."]}
+      ]
+    }
+  ]
+}

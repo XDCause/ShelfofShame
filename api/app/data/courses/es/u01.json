@@ -1,0 +1,125 @@
+{
+  "unit": 1,
+  "title": "Hola",
+  "cefr": "A1",
+  "goal": "Greet people, say goodbye, give your name and say where you're from.",
+  "lessons": [
+    {
+      "id": "es-u01-l1",
+      "title": "Greetings",
+      "notes": "Spanish greetings change with the time of day: **buenos días** until about midday, **buenas tardes** in the afternoon and early evening, **buenas noches** once it's dark (it means both 'good evening' and 'good night'). **Hola** works any time.\nA question is written with an upside-down mark at the start too: **¿Cómo estás?** The opening mark warns you a question is coming, so you can raise your voice in time.\nTo answer: **bien** (well), **muy bien** (very well), **más o menos** (so-so) or **mal** (bad). Then bounce it back with **¿y tú?** (and you?).\nHola, ¿cómo estás? - Muy bien, gracias. ¿Y tú?",
+      "items": [
+        {"es": "hola", "en": "hello", "kind": "word", "accept_en": ["hi", "hey"], "note": "The h is silent: 'OH-la'."},
+        {"es": "buenos días", "en": "good morning", "kind": "phrase", "accept": ["buen día"], "note": "Until about midday."},
+        {"es": "buenas tardes", "en": "good afternoon", "kind": "phrase", "accept_en": ["good evening"], "note": "From midday until it gets dark."},
+        {"es": "buenas noches", "en": "good evening", "kind": "phrase", "accept_en": ["good night"], "note": "Once it's dark - hello or goodbye."},
+        {"es": "¿cómo estás?", "en": "how are you?", "kind": "phrase", "accept_en": ["how are you doing?", "how's it going?"]},
+        {"es": "bien", "en": "well", "kind": "word", "accept_en": ["good", "fine"]},
+        {"es": "muy bien", "en": "very well", "kind": "phrase", "accept_en": ["very good", "really well", "great"]},
+        {"es": "más o menos", "en": "so-so", "kind": "phrase", "accept_en": ["more or less", "not bad", "OK"]},
+        {"es": "mal", "en": "bad", "kind": "word", "accept_en": ["badly", "not well", "not good"]},
+        {"es": "gracias", "en": "thank you", "kind": "word", "accept_en": ["thanks"]},
+        {"es": "y", "en": "and", "kind": "word", "note": "Sounds like the 'ee' in 'see'."},
+        {"es": "¿y tú?", "en": "and you?", "kind": "phrase", "accept_en": ["what about you?", "how about you?"]}
+      ],
+      "sentences": [
+        {"es": "Hola, buenos días.", "en": "Hello, good morning.", "focus": "días", "accept_en": ["Hi, good morning."]},
+        {"es": "¿Cómo estás?", "en": "How are you?", "focus": "estás", "accept_en": ["How are you doing?"]},
+        {"es": "Bien, gracias. ¿Y tú?", "en": "Well, thanks. And you?", "focus": "gracias", "accept_en": ["Good, thanks. And you?", "Fine, thank you. And you?", "Good, thank you. What about you?"]},
+        {"es": "Muy bien, gracias.", "en": "Very well, thank you.", "focus": "Muy", "accept_en": ["Very good, thanks.", "Very well, thanks."]},
+        {"es": "Buenas tardes, Ana.", "en": "Good afternoon, Ana.", "focus": "tardes", "accept_en": ["Good evening, Ana."]},
+        {"es": "Buenas noches, Carlos.", "en": "Good evening, Carlos.", "focus": "noches", "accept_en": ["Good night, Carlos."]},
+        {"es": "Más o menos, ¿y tú?", "en": "So-so, and you?", "focus": "menos", "accept_en": ["More or less, and you?", "Not bad, and you?"]},
+        {"es": "Hola, Ana. ¿Cómo estás?", "en": "Hi, Ana. How are you?", "focus": "Hola", "accept_en": ["Hello, Ana. How are you?"]},
+        {"es": "Mal, gracias.", "en": "Not well, thanks.", "focus": "Mal", "accept_en": ["Bad, thanks.", "Not good, thank you."]}
+      ]
+    },
+    {
+      "id": "es-u01-l2",
+      "title": "Goodbyes and manners",
+      "notes": "**Adiós** is a full goodbye; most people say **hasta luego** (see you later) even if they won't see you again today. **Hasta mañana** is 'see you tomorrow', and **nos vemos** is a relaxed 'see you'. In much of Latin America friends say **chao** (from Italian 'ciao').\nManners: **por favor** (please), **gracias** / **muchas gracias** (thank you very much). The reply is **de nada** (it's nothing = you're welcome).\n**Perdón** gets someone's attention or says sorry for a bump; **lo siento** (literally 'I feel it') is for real regret.",
+      "items": [
+        {"es": "adiós", "en": "goodbye", "kind": "word", "accept_en": ["bye"]},
+        {"es": "hasta luego", "en": "see you later", "kind": "phrase", "accept_en": ["see you", "bye", "later"]},
+        {"es": "hasta mañana", "en": "see you tomorrow", "kind": "phrase", "accept_en": ["until tomorrow"]},
+        {"es": "nos vemos", "en": "see you", "kind": "phrase", "accept_en": ["see you later", "see ya"]},
+        {"es": "chao", "en": "bye", "kind": "word", "accept": ["chau"], "accept_en": ["ciao", "see ya"], "note": "Informal. Argentina writes it 'chau'."},
+        {"es": "por favor", "en": "please", "kind": "phrase"},
+        {"es": "muchas gracias", "en": "thank you very much", "kind": "phrase", "accept_en": ["thanks a lot", "many thanks", "thank you so much"]},
+        {"es": "de nada", "en": "you're welcome", "kind": "phrase", "accept_en": ["no problem", "not at all", "don't mention it", "it's nothing"]},
+        {"es": "perdón", "en": "excuse me", "kind": "word", "accept_en": ["sorry", "pardon", "pardon me"]},
+        {"es": "lo siento", "en": "I'm sorry", "kind": "phrase", "accept_en": ["sorry", "I am sorry"]},
+        {"es": "sí", "en": "yes", "kind": "word", "note": "With an accent: 'si' without one means 'if'."},
+        {"es": "no", "en": "no", "kind": "word", "accept_en": ["not"]}
+      ],
+      "sentences": [
+        {"es": "Adiós, Ana. Hasta mañana.", "en": "Goodbye, Ana. See you tomorrow.", "focus": "mañana", "accept_en": ["Bye, Ana. See you tomorrow."]},
+        {"es": "Hasta luego, Carlos.", "en": "See you later, Carlos.", "focus": "luego", "accept_en": ["See you, Carlos.", "Bye, Carlos."]},
+        {"es": "Muchas gracias, Ana.", "en": "Thank you very much, Ana.", "focus": "Muchas", "accept_en": ["Thanks a lot, Ana.", "Many thanks, Ana."]},
+        {"es": "De nada, Carlos.", "en": "You're welcome, Carlos.", "focus": "nada", "accept_en": ["No problem, Carlos."]},
+        {"es": "Sí, por favor.", "en": "Yes, please.", "focus": "favor"},
+        {"es": "No, gracias.", "en": "No, thank you.", "focus": "No", "accept_en": ["No, thanks."]},
+        {"es": "Perdón, Ana.", "en": "Excuse me, Ana.", "focus": "Perdón", "accept_en": ["Sorry, Ana.", "Pardon me, Ana."]},
+        {"es": "Lo siento, Carlos.", "en": "I'm sorry, Carlos.", "focus": "siento", "accept_en": ["Sorry, Carlos."]},
+        {"es": "Chao, nos vemos.", "en": "Bye, see you.", "focus": "vemos", "accept_en": ["Bye, see you later.", "Ciao, see you."]},
+        {"es": "Bien, gracias. Hasta luego.", "en": "Fine, thanks. See you later.", "focus": "Hasta", "accept_en": ["Good, thanks. See you later.", "Well, thank you. See you."]}
+      ]
+    },
+    {
+      "id": "es-u01-l3",
+      "title": "What's your name?",
+      "notes": "To give your name, say **me llamo** + name: literally 'I call myself'. **Soy Ana** (I'm Ana) works too.\nTo ask a friend or someone your age: **¿Cómo te llamas?** To ask politely (an older person, at work, a stranger): **¿Cómo se llama usted?** - **usted** is the formal 'you'; unit 2 says more.\nOn meeting: **mucho gusto** (a pleasure), or **encantado** if you're a man and **encantada** if you're a woman - the word describes you, so it matches you. The reply: **igualmente** (likewise).",
+      "items": [
+        {"es": "me llamo", "en": "my name is", "kind": "phrase", "accept_en": ["I'm called", "I call myself"]},
+        {"es": "¿cómo te llamas?", "en": "what's your name?", "kind": "phrase", "accept_en": ["what is your name?"], "note": "Informal: a friend, a child, someone your age."},
+        {"es": "¿cómo se llama usted?", "en": "what's your name? (formal)", "kind": "phrase", "accept_en": ["what is your name?", "what's your name?"], "note": "Polite: a stranger, an older person."},
+        {"es": "soy", "en": "I am", "kind": "phrase", "accept_en": ["I'm"]},
+        {"es": "mucho gusto", "en": "nice to meet you", "kind": "phrase", "accept_en": ["pleased to meet you", "a pleasure"]},
+        {"es": "encantado", "en": "pleased to meet you (said by a man)", "kind": "word", "accept_en": ["pleased to meet you", "nice to meet you", "delighted"]},
+        {"es": "encantada", "en": "pleased to meet you (said by a woman)", "kind": "word", "accept_en": ["pleased to meet you", "nice to meet you", "delighted"]},
+        {"es": "igualmente", "en": "likewise", "kind": "word", "accept_en": ["you too", "same here", "same to you"]},
+        {"es": "usted", "en": "you (formal)", "kind": "word", "accept_en": ["you"]}
+      ],
+      "sentences": [
+        {"es": "Hola, me llamo Ana.", "en": "Hello, my name is Ana.", "focus": "llamo", "accept_en": ["Hi, my name is Ana.", "Hi, I'm Ana.", "Hello, I'm called Ana."]},
+        {"es": "¿Cómo te llamas?", "en": "What's your name?", "focus": "llamas", "accept_en": ["What is your name?"]},
+        {"es": "Me llamo Carlos. ¿Y tú?", "en": "My name is Carlos. And you?", "focus": "Me", "accept_en": ["I'm Carlos. And you?", "My name's Carlos. And you?"]},
+        {"es": "Soy Ana, mucho gusto.", "en": "I'm Ana, nice to meet you.", "focus": "gusto", "accept_en": ["I'm Ana, pleased to meet you."]},
+        {"es": "Encantado, Ana.", "en": "Pleased to meet you, Ana.", "focus": "Encantado", "accept_en": ["Nice to meet you, Ana."]},
+        {"es": "Encantada. Igualmente.", "en": "Pleased to meet you. Likewise.", "focus": "Igualmente", "accept_en": ["Nice to meet you. Likewise.", "Nice to meet you. You too."]},
+        {"es": "¿Cómo se llama usted?", "en": "What's your name?", "focus": "usted", "accept_en": ["What is your name?"]},
+        {"es": "Buenos días, me llamo Carlos.", "en": "Good morning, my name is Carlos.", "focus": "Buenos", "accept_en": ["Good morning, I'm Carlos."]},
+        {"es": "Soy Carlos. ¿Cómo te llamas?", "en": "I'm Carlos. What's your name?", "focus": "Soy", "accept_en": ["I'm Carlos. What is your name?"]}
+      ]
+    },
+    {
+      "id": "es-u01-l4",
+      "title": "Where are you from?",
+      "notes": "**¿De dónde eres?** means 'where are you from?' - literally 'from where are you?'. Spanish puts the little word **de** (from, of) first; it can't be left at the end the way English does.\nAnswer with **soy de** + place: **Soy de Australia.** The polite question is **¿De dónde es usted?**\nCountry names are capitalised as in English, but most have a Spanish shape: **Inglaterra** (England), **Estados Unidos** (the United States), **Nueva Zelanda** (New Zealand). City names usually stay as they are: Soy de Brisbane.",
+      "items": [
+        {"es": "¿de dónde eres?", "en": "where are you from?", "kind": "phrase", "accept_en": ["where are you from"]},
+        {"es": "¿de dónde es usted?", "en": "where are you from? (formal)", "kind": "phrase", "accept_en": ["where are you from?"]},
+        {"es": "soy de", "en": "I'm from", "kind": "phrase", "accept_en": ["I am from"]},
+        {"es": "de", "en": "from", "kind": "word", "accept_en": ["of"]},
+        {"es": "¿y usted?", "en": "and you? (formal)", "kind": "phrase", "accept_en": ["and you?", "what about you?"]},
+        {"es": "Australia", "en": "Australia", "kind": "word"},
+        {"es": "España", "en": "Spain", "kind": "word"},
+        {"es": "México", "en": "Mexico", "kind": "word", "note": "The x sounds like an English h: 'ME-hee-ko'."},
+        {"es": "Estados Unidos", "en": "the United States", "kind": "phrase", "accept_en": ["United States", "the USA", "USA", "America"]},
+        {"es": "Inglaterra", "en": "England", "kind": "word"},
+        {"es": "Nueva Zelanda", "en": "New Zealand", "kind": "phrase"}
+      ],
+      "sentences": [
+        {"es": "¿De dónde eres?", "en": "Where are you from?", "focus": "dónde"},
+        {"es": "Soy de Australia.", "en": "I'm from Australia.", "focus": "de", "accept_en": ["I am from Australia."]},
+        {"es": "¿De dónde es usted?", "en": "Where are you from?", "focus": "es"},
+        {"es": "Soy de España. ¿Y usted?", "en": "I'm from Spain. And you?", "focus": "España", "accept_en": ["I am from Spain. And you?", "I'm from Spain. What about you?"]},
+        {"es": "Hola, me llamo Carlos y soy de México.", "en": "Hi, my name is Carlos and I'm from Mexico.", "focus": "México", "accept_en": ["Hello, my name is Carlos and I'm from Mexico.", "Hi, I'm Carlos and I'm from Mexico."]},
+        {"es": "Soy de Nueva Zelanda, ¿y tú?", "en": "I'm from New Zealand, and you?", "focus": "Nueva", "accept_en": ["I'm from New Zealand, what about you?"]},
+        {"es": "Mucho gusto. Soy de Estados Unidos.", "en": "Nice to meet you. I'm from the United States.", "focus": "Estados", "accept_en": ["Pleased to meet you. I'm from the United States.", "Nice to meet you. I'm from the USA."]},
+        {"es": "Soy de Inglaterra.", "en": "I'm from England.", "focus": "Inglaterra", "accept_en": ["I am from England."]},
+        {"es": "Soy de Brisbane, Australia.", "en": "I'm from Brisbane, Australia.", "focus": "Australia", "accept_en": ["I am from Brisbane, Australia."]}
+      ]
+    }
+  ]
+}

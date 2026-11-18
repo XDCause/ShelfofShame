@@ -1,0 +1,134 @@
+{
+  "unit": 7,
+  "title": "La familia",
+  "cefr": "A1",
+  "goal": "Talk about your family: who they are, their ages and what they're like, with tener and my / your / his / our.",
+  "lessons": [
+    {
+      "id": "es-u07-l1",
+      "title": "My family",
+      "notes": "Family words come in pairs: **-o** for the man, **-a** for the woman - **el hermano** (brother), **la hermana** (sister); **el hijo** (son), **la hija** (daughter).\nThe masculine plural covers a mixed group, which is very handy:\n**los hermanos** = brothers, or brothers and sisters (siblings)\n**los hijos** = sons, or children\n**los padres** = fathers, or (usually) parents\nSo **Tengo dos hermanos** can mean two brothers, or a brother and a sister. **El bebé** is masculine even for a baby girl.",
+      "items": [
+        {"es": "la familia", "en": "the family", "kind": "word", "gender": "f", "accept_en": ["family"]},
+        {"es": "el padre", "en": "the father", "kind": "word", "gender": "m", "accept": ["el papá"], "accept_en": ["the dad", "father", "dad"]},
+        {"es": "la madre", "en": "the mother", "kind": "word", "gender": "f", "accept": ["la mamá"], "accept_en": ["the mum", "the mom", "mother", "mum"]},
+        {"es": "los padres", "en": "the parents", "kind": "word", "gender": "m", "accept_en": ["parents", "the fathers"]},
+        {"es": "el hermano", "en": "the brother", "kind": "word", "gender": "m", "accept_en": ["brother"]},
+        {"es": "la hermana", "en": "the sister", "kind": "word", "gender": "f", "accept_en": ["sister"]},
+        {"es": "el hijo", "en": "the son", "kind": "word", "gender": "m", "accept_en": ["son"]},
+        {"es": "la hija", "en": "the daughter", "kind": "word", "gender": "f", "accept_en": ["daughter"]},
+        {"es": "los hijos", "en": "the children", "kind": "word", "gender": "m", "accept_en": ["children", "the kids", "the sons", "kids"], "note": "Your own children (sons and daughters)."},
+        {"es": "el esposo", "en": "the husband", "kind": "word", "gender": "m", "accept": ["el marido"], "accept_en": ["husband"]},
+        {"es": "la esposa", "en": "the wife", "kind": "word", "gender": "f", "accept": ["la mujer"], "accept_en": ["wife"]},
+        {"es": "el bebé", "en": "the baby", "kind": "word", "gender": "m", "accept_en": ["baby"]}
+      ],
+      "sentences": [
+        {"es": "Mi familia es grande.", "en": "My family is big.", "focus": "familia", "accept_en": ["My family is large."]},
+        {"es": "Tengo dos hermanos.", "en": "I have two brothers.", "focus": "hermanos", "accept_en": ["I have two siblings.", "I've got two brothers.", "I have a brother and a sister."]},
+        {"es": "Mi madre es de España.", "en": "My mother is from Spain.", "focus": "madre", "accept_en": ["My mum is from Spain.", "My mom is from Spain."]},
+        {"es": "Mi hermana es muy simpática.", "en": "My sister is very nice.", "focus": "hermana", "accept_en": ["My sister is very friendly."]},
+        {"es": "Tu hijo es muy alto.", "en": "Your son is very tall.", "focus": "hijo"},
+        {"es": "Mi esposa está en la casa.", "en": "My wife is in the house.", "focus": "esposa", "accept_en": ["My wife is at home."]},
+        {"es": "La hija de Ana tiene tres años.", "en": "Ana's daughter is three years old.", "focus": "hija", "accept_en": ["Ana's daughter is three."]},
+        {"es": "Los padres de Carlos están en México.", "en": "Carlos's parents are in Mexico.", "focus": "padres"},
+        {"es": "El bebé está en la cama.", "en": "The baby is in bed.", "focus": "bebé", "accept_en": ["The baby is in the bed.", "The baby is on the bed."]},
+        {"es": "Mi esposo es australiano.", "en": "My husband is Australian.", "focus": "esposo"},
+        {"es": "Mi padre es serio pero divertido.", "en": "My father is serious but fun.", "focus": "padre", "accept_en": ["My dad is serious but funny."]},
+        {"es": "¿Tienes hijos?", "en": "Do you have children?", "focus": "hijos", "accept_en": ["Do you have kids?", "Have you got children?"]}
+      ]
+    },
+    {
+      "id": "es-u07-l2",
+      "title": "Grandparents, cousins and tener",
+      "notes": "The whole of **tener** (to have):\n**yo** tengo · **tú** tienes · **él / ella / usted** tiene · **nosotros** tenemos · **ellos / ustedes** tienen\n(Spain: vosotros **tenéis**.)\nNotice the e in the stem becomes **ie** in most forms - you'll meet this 'boot' pattern again in unit 15.\nOlder and younger brothers or sisters: **el hermano mayor** (older brother), **la hermana menor** (younger sister). Mayor and menor don't change for gender.\n**El novio / la novia** is a boyfriend / girlfriend, and also a groom / bride.",
+      "items": [
+        {"es": "el abuelo", "en": "the grandfather", "kind": "word", "gender": "m", "accept_en": ["grandfather", "the grandpa", "grandad"]},
+        {"es": "la abuela", "en": "the grandmother", "kind": "word", "gender": "f", "accept_en": ["grandmother", "the grandma", "the nan"]},
+        {"es": "los abuelos", "en": "the grandparents", "kind": "word", "gender": "m", "accept_en": ["grandparents"]},
+        {"es": "el tío", "en": "the uncle", "kind": "word", "gender": "m", "accept_en": ["uncle"]},
+        {"es": "la tía", "en": "the aunt", "kind": "word", "gender": "f", "accept_en": ["aunt", "the auntie"]},
+        {"es": "el primo", "en": "the cousin (male)", "kind": "word", "gender": "m", "accept_en": ["the cousin", "cousin"]},
+        {"es": "la prima", "en": "the cousin (female)", "kind": "word", "gender": "f", "accept_en": ["the cousin", "cousin"]},
+        {"es": "el novio", "en": "the boyfriend", "kind": "word", "gender": "m", "accept_en": ["boyfriend", "the groom", "the fiancé"]},
+        {"es": "la novia", "en": "the girlfriend", "kind": "word", "gender": "f", "accept_en": ["girlfriend", "the bride", "the fiancée"]},
+        {"es": "menor", "en": "younger", "kind": "word"},
+        {"es": "tenemos", "en": "we have", "kind": "phrase", "accept_en": ["we've got"]},
+        {"es": "tienen", "en": "they have / you (plural) have", "kind": "phrase", "accept_en": ["they have", "you have", "they've got"]}
+      ],
+      "sentences": [
+        {"es": "Tengo un hermano mayor y una hermana menor.", "en": "I have an older brother and a younger sister.", "focus": "menor", "accept_en": ["I've got an older brother and a younger sister."]},
+        {"es": "Nosotros tenemos dos hijos.", "en": "We have two children.", "focus": "tenemos", "accept_en": ["We have two kids.", "We've got two children."]},
+        {"es": "Ellos tienen un perro y un gato.", "en": "They have a dog and a cat.", "focus": "tienen", "accept_en": ["They've got a dog and a cat."]},
+        {"es": "Mi abuela es muy divertida.", "en": "My grandmother is very funny.", "focus": "abuela", "accept_en": ["My grandma is a lot of fun.", "My nan is very funny."]},
+        {"es": "Mi abuelo tiene un carro viejo.", "en": "My grandfather has an old car.", "focus": "abuelo", "accept_en": ["My grandpa has an old car."]},
+        {"es": "Mi primo está en Australia.", "en": "My cousin is in Australia.", "focus": "primo"},
+        {"es": "¿Tienes novio?", "en": "Do you have a boyfriend?", "focus": "novio", "accept_en": ["Have you got a boyfriend?"]},
+        {"es": "La novia de Carlos es colombiana.", "en": "Carlos's girlfriend is Colombian.", "focus": "novia"},
+        {"es": "Mi tía es profesora.", "en": "My aunt is a teacher.", "focus": "tía"},
+        {"es": "Los abuelos de Ana son de Colombia.", "en": "Ana's grandparents are from Colombia.", "focus": "abuelos"},
+        {"es": "Mi prima tiene veinte años.", "en": "My cousin is twenty.", "focus": "prima", "accept_en": ["My cousin is twenty years old."]},
+        {"es": "El tío de Carlos es simpático.", "en": "Carlos's uncle is nice.", "focus": "tío", "accept_en": ["Carlos's uncle is friendly."]}
+      ]
+    },
+    {
+      "id": "es-u07-l3",
+      "title": "My, your, his, our",
+      "notes": "Possessives match the **thing owned**, not the owner:\n**mi** casa → **mis** casas (my) · **tu** hermano → **tus** hermanos (your)\n**su** casa → **sus** casas (his, her, its, their, your-formal)\n**nuestro** hijo, **nuestra** hija, **nuestros** hijos, **nuestras** hijas (our)\nSo 'our house' is **nuestra casa** even if two men own it - casa is feminine.\n**Su** has many owners; if it's unclear, say **la casa de Ana** (Ana's house). Spain also has vuestro / vuestra (your, of vosotros).",
+      "items": [
+        {"es": "mis", "en": "my (plural)", "kind": "word", "accept_en": ["my"]},
+        {"es": "tus", "en": "your (plural)", "kind": "word", "accept_en": ["your"]},
+        {"es": "su", "en": "his / her / their / your (formal)", "kind": "word", "accept_en": ["his", "her", "their", "its", "your"]},
+        {"es": "sus", "en": "his / her / their / your (plural things)", "kind": "word", "accept_en": ["his", "her", "their", "its", "your"]},
+        {"es": "nuestro", "en": "our", "kind": "word"},
+        {"es": "nuestra", "en": "our (feminine)", "kind": "word", "accept_en": ["our"]},
+        {"es": "nuestros", "en": "our (masculine plural)", "kind": "word", "accept_en": ["our"]},
+        {"es": "nuestras", "en": "our (feminine plural)", "kind": "word", "accept_en": ["our"]},
+        {"es": "el nombre", "en": "the name", "kind": "word", "gender": "m", "accept_en": ["name", "the first name"]},
+        {"es": "el apellido", "en": "the surname", "kind": "word", "gender": "m", "accept_en": ["the last name", "the family name", "surname"]}
+      ],
+      "sentences": [
+        {"es": "Mis padres son de Inglaterra.", "en": "My parents are from England.", "focus": "Mis"},
+        {"es": "¿Dónde están tus hermanos?", "en": "Where are your brothers?", "focus": "tus", "accept_en": ["Where are your siblings?", "Where are your brothers and sisters?"]},
+        {"es": "Su casa es muy bonita.", "en": "Her house is very pretty.", "focus": "Su", "accept_en": ["His house is very nice.", "Their house is very beautiful.", "Your house is very pretty."]},
+        {"es": "Sus hijos son muy simpáticos.", "en": "Her children are very nice.", "focus": "Sus", "accept_en": ["His children are very nice.", "Their kids are very friendly.", "Your children are very nice."]},
+        {"es": "Nuestra casa está cerca de la playa.", "en": "Our house is near the beach.", "focus": "Nuestra", "accept_en": ["Our house is close to the beach."]},
+        {"es": "Nuestros abuelos están en México.", "en": "Our grandparents are in Mexico.", "focus": "Nuestros"},
+        {"es": "¿Cuál es tu nombre?", "en": "What's your name?", "focus": "nombre", "accept_en": ["What is your name?"]},
+        {"es": "Mi apellido es García.", "en": "My surname is García.", "focus": "apellido", "accept_en": ["My last name is García."]},
+        {"es": "Nuestras hijas son estudiantes.", "en": "Our daughters are students.", "focus": "Nuestras"},
+        {"es": "Tus llaves están en la mesa.", "en": "Your keys are on the table.", "focus": "llaves"},
+        {"es": "Nuestro perro es muy viejo.", "en": "Our dog is very old.", "focus": "Nuestro"}
+      ]
+    },
+    {
+      "id": "es-u07-l4",
+      "title": "Talking about your family",
+      "notes": "Being married or single: Latin Americans usually say **estoy casado / casada** (I'm married), seeing it as a state; **soy casado** is heard too, and both are fine. The same goes for **soltero** (single) and **divorciado**.\nAn only child is **hijo único** or **hija única**: **Soy hija única** - no 'un' or 'una', just like jobs.\n**¿Cómo se llama?** asks what someone's (or a pet's) name is: **¿Cómo se llama tu perro?** - **Se llama Max.**\n**Juntos / juntas** = together, and it matches the group.",
+      "items": [
+        {"es": "casado", "en": "married", "kind": "word"},
+        {"es": "soltero", "en": "single", "kind": "word", "accept_en": ["unmarried"]},
+        {"es": "divorciado", "en": "divorced", "kind": "word"},
+        {"es": "el hijo único", "en": "the only child (boy)", "kind": "word", "gender": "m", "accept_en": ["the only child", "only child", "the only son"]},
+        {"es": "la hija única", "en": "the only child (girl)", "kind": "word", "gender": "f", "accept_en": ["the only child", "only child", "the only daughter"]},
+        {"es": "¿tienes hermanos?", "en": "do you have any brothers or sisters?", "kind": "phrase", "accept_en": ["do you have siblings?", "do you have brothers?", "have you got any brothers or sisters?"]},
+        {"es": "la mascota", "en": "the pet", "kind": "word", "gender": "f", "accept_en": ["pet"]},
+        {"es": "¿cómo se llama?", "en": "what's his / her name?", "kind": "phrase", "accept_en": ["what's his name?", "what's her name?", "what is it called?", "what's its name?"]},
+        {"es": "se llama", "en": "his / her name is", "kind": "phrase", "accept_en": ["his name is", "her name is", "it's called", "its name is"]},
+        {"es": "juntos", "en": "together", "kind": "word"}
+      ],
+      "sentences": [
+        {"es": "¿Tienes hermanos?", "en": "Do you have any brothers or sisters?", "focus": "Tienes", "accept_en": ["Do you have siblings?", "Have you got any brothers or sisters?"]},
+        {"es": "No, soy hija única.", "en": "No, I'm an only child.", "focus": "única", "accept_en": ["No, I am an only child."]},
+        {"es": "Ana está casada y tiene dos hijos.", "en": "Ana is married and has two children.", "focus": "casada", "accept": ["Ana es casada y tiene dos hijos."], "accept_en": ["Ana is married and has two kids."]},
+        {"es": "Carlos está soltero.", "en": "Carlos is single.", "focus": "soltero", "accept": ["Carlos es soltero."]},
+        {"es": "Mis padres están divorciados.", "en": "My parents are divorced.", "focus": "divorciados"},
+        {"es": "¿Tienes mascota? Sí, tengo un perro.", "en": "Do you have a pet? Yes, I have a dog.", "focus": "mascota", "accept_en": ["Have you got a pet? Yes, I've got a dog."]},
+        {"es": "¿Cómo se llama tu perro?", "en": "What's your dog's name?", "focus": "llama", "accept_en": ["What is your dog called?", "What is your dog's name?"]},
+        {"es": "Se llama Max.", "en": "His name is Max.", "focus": "Se", "accept_en": ["He's called Max.", "Its name is Max.", "It's called Max."]},
+        {"es": "Mis hermanos y yo estamos juntos hoy.", "en": "My brothers and I are together today.", "focus": "juntos", "accept_en": ["My siblings and I are together today."]},
+        {"es": "Nuestra mascota es un gato negro.", "en": "Our pet is a black cat.", "focus": "gato"},
+        {"es": "Carlos es hijo único.", "en": "Carlos is an only child.", "focus": "único"}
+      ]
+    }
+  ]
+}

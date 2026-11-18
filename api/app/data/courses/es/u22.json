@@ -1,0 +1,119 @@
+{
+  "unit": 22,
+  "title": "El cuerpo y la salud",
+  "cefr": "A2",
+  "goal": "Name parts of the body, say what hurts, see a doctor and say what you have to do.",
+  "lessons": [
+    {
+      "id": "es-u22-l1",
+      "title": "The body",
+      "notes": "Body words, each with its article. As you saw with **me lavo las manos**, Spanish uses **el / la** with body parts where English says \"my\": **Levanta el brazo.** = Raise your arm.\nTwo words for the ear: **la oreja** is the outside part, **el oído** is the inside (and hearing).\nWatch the gender traps: **la mano** (f) and **el pie** (m), **la espalda** (back, f).\nPlural of **el pie** is **los pies**; of **la nariz**, **las narices** (z -> c before -es, like lápiz -> lápices).",
+      "items": [
+        {"es": "el cuerpo", "en": "the body", "kind": "word", "gender": "m"},
+        {"es": "la cabeza", "en": "the head", "kind": "word", "gender": "f"},
+        {"es": "el brazo", "en": "the arm", "kind": "word", "gender": "m"},
+        {"es": "la pierna", "en": "the leg", "kind": "word", "gender": "f"},
+        {"es": "el pie", "en": "the foot", "kind": "word", "gender": "m", "note": "Plural: los pies."},
+        {"es": "la espalda", "en": "the back", "kind": "word", "gender": "f"},
+        {"es": "el estómago", "en": "the stomach", "kind": "word", "gender": "m", "accept_en": ["the tummy"]},
+        {"es": "la garganta", "en": "the throat", "kind": "word", "gender": "f"},
+        {"es": "los ojos", "en": "the eyes", "kind": "word", "gender": "m"},
+        {"es": "la boca", "en": "the mouth", "kind": "word", "gender": "f"},
+        {"es": "la nariz", "en": "the nose", "kind": "word", "gender": "f"},
+        {"es": "el oído", "en": "the ear (inner)", "kind": "word", "gender": "m", "accept": ["la oreja"], "accept_en": ["the ear", "the inner ear", "hearing"]}
+      ],
+      "sentences": [
+        {"es": "Mi hermano tiene los ojos azules.", "en": "My brother has blue eyes.", "focus": "ojos"},
+        {"es": "Carlos tiene los brazos muy largos.", "en": "Carlos has very long arms.", "focus": "brazos", "accept_en": ["Carlos has really long arms.", "Carlos's arms are very long."]},
+        {"es": "El niño tiene una pierna en el sofá.", "en": "The boy has one leg on the sofa.", "focus": "pierna", "accept_en": ["The child has a leg on the sofa.", "The boy has a leg on the couch."]},
+        {"es": "Me lavo la cabeza por la noche.", "en": "I wash my hair at night.", "focus": "cabeza", "accept_en": ["I wash my head at night.", "I wash my hair in the evening."]},
+        {"es": "Tengo los pies muy fríos.", "en": "My feet are very cold.", "focus": "pies", "accept_en": ["I have very cold feet.", "My feet are really cold."]},
+        {"es": "El gato duerme en mi espalda.", "en": "The cat sleeps on my back.", "focus": "espalda"},
+        {"es": "El bebé abre la boca para comer.", "en": "The baby opens his mouth to eat.", "focus": "boca", "accept_en": ["The baby opens her mouth to eat.", "The baby opens its mouth to eat."]},
+        {"es": "Mi bebé tiene la nariz de su papá.", "en": "My baby has his dad's nose.", "focus": "nariz", "accept_en": ["My baby has her dad's nose.", "My baby has its father's nose."]},
+        {"es": "El cuerpo necesita agua.", "en": "The body needs water.", "focus": "cuerpo", "accept_en": ["Your body needs water."]}
+      ]
+    },
+    {
+      "id": "es-u22-l2",
+      "title": "It hurts",
+      "notes": "**doler** (to hurt) works exactly like **gustar**: the part that hurts is the subject, the person is **me / te / le / nos / les**.\n**Me duele la cabeza.** = My head hurts / I have a headache.\n**Me duelen los pies.** = My feet hurt (plural -> **duelen**).\n**¿Qué te duele?** = What hurts? / Where does it hurt?\nIt's o -> ue: **duele**. Past: **me dolía** (it was hurting) or **me dolió** (it hurt, once).\nOther ways to say you're unwell use **tener** or **estar**: **tengo fiebre** (I have a temperature), **tengo tos** (a cough), **estoy enfermo** (I'm sick), **estoy resfriado** (I have a cold).",
+      "items": [
+        {"es": "doler", "en": "to hurt", "kind": "verb", "accept_en": ["to ache"], "note": "Works like gustar: me duele, me duelen."},
+        {"es": "me duele la cabeza", "en": "I have a headache", "kind": "phrase", "accept_en": ["my head hurts", "my head aches"]},
+        {"es": "me duelen", "en": "they hurt (me)", "kind": "phrase", "accept_en": ["my ... hurt", "they hurt"]},
+        {"es": "¿qué te duele?", "en": "what hurts?", "kind": "phrase", "accept_en": ["where does it hurt?", "what's hurting?"]},
+        {"es": "la fiebre", "en": "the fever", "kind": "word", "gender": "f", "accept_en": ["the temperature", "a temperature"]},
+        {"es": "la tos", "en": "the cough", "kind": "word", "gender": "f"},
+        {"es": "el resfriado", "en": "the cold", "kind": "word", "gender": "m", "accept": ["el resfrío", "el catarro"], "accept_en": ["a cold"]},
+        {"es": "la gripe", "en": "the flu", "kind": "word", "gender": "f", "accept": ["la gripa"], "accept_en": ["flu", "influenza"]},
+        {"es": "mejor", "en": "better", "kind": "word"}
+      ],
+      "sentences": [
+        {"es": "Me duele mucho la cabeza.", "en": "I have a bad headache.", "focus": "duele", "accept_en": ["My head hurts a lot.", "My head really hurts.", "I've got a bad headache."]},
+        {"es": "¿Qué te duele?", "en": "What hurts?", "focus": "duele", "accept_en": ["Where does it hurt?", "What's hurting?"]},
+        {"es": "Me duelen las piernas después de correr.", "en": "My legs hurt after running.", "focus": "duelen", "accept_en": ["My legs ache after running.", "My legs hurt after I run."]},
+        {"es": "A mi hijo le duele el estómago.", "en": "My son has a stomach ache.", "focus": "estómago", "accept_en": ["My son's stomach hurts.", "My son has a tummy ache."]},
+        {"es": "Ayer me dolía la garganta.", "en": "Yesterday my throat was sore.", "focus": "garganta", "accept_en": ["Yesterday I had a sore throat.", "My throat hurt yesterday.", "Yesterday my throat was hurting."]},
+        {"es": "Estoy enfermo, tengo fiebre.", "en": "I'm sick, I have a temperature.", "focus": "fiebre", "accept_en": ["I'm ill, I have a fever.", "I'm sick, I've got a temperature."]},
+        {"es": "Mi hija tiene tos y un resfriado.", "en": "My daughter has a cough and a cold.", "focus": "tos", "accept_en": ["My daughter's got a cough and a cold."]},
+        {"es": "Toda la familia tuvo gripe.", "en": "The whole family had the flu.", "focus": "gripe", "accept_en": ["The whole family had flu.", "All the family had the flu."]},
+        {"es": "Hoy me siento mejor, gracias.", "en": "I feel better today, thanks.", "focus": "mejor", "accept_en": ["Today I feel better, thank you.", "I'm feeling better today, thanks."]},
+        {"es": "A Ana le duele el oído.", "en": "Ana has an earache.", "focus": "oído", "accept_en": ["Ana's ear hurts.", "Ana has earache."]}
+      ]
+    },
+    {
+      "id": "es-u22-l3",
+      "title": "At the doctor's",
+      "notes": "At the doctor's you'll hear and use:\n**la cita** (the appointment) · **la receta** (the prescription - it also means recipe!) · **la pastilla** (the tablet) · **el medicamento** (the medicine) · **la farmacia**\n**tomar** is the verb for medicine: **tomar una pastilla**.\n**descansar** = to rest.\n**¿Desde cuándo?** = Since when? / How long? Answer with **desde** + a time: **desde el lunes**, **desde ayer**.\nA doctor usually speaks to you as **usted**: **¿Cómo se siente?** (How do you feel?) **¿Qué le duele?** (What hurts?)",
+      "items": [
+        {"es": "la cita", "en": "the appointment", "kind": "word", "gender": "f", "accept_en": ["the date"]},
+        {"es": "la receta", "en": "the prescription", "kind": "word", "gender": "f", "accept_en": ["the recipe"]},
+        {"es": "la pastilla", "en": "the tablet", "kind": "word", "gender": "f", "accept_en": ["the pill"]},
+        {"es": "el medicamento", "en": "the medicine", "kind": "word", "gender": "m", "accept": ["la medicina"], "accept_en": ["the medication", "the drug"]},
+        {"es": "¿desde cuándo?", "en": "since when?", "kind": "phrase", "accept_en": ["how long?", "for how long?"]},
+        {"es": "desde", "en": "since", "kind": "word", "accept_en": ["from"]},
+        {"es": "¿cómo se siente?", "en": "how do you feel?", "kind": "phrase", "accept_en": ["how are you feeling?"]}
+      ],
+      "sentences": [
+        {"es": "Tengo una cita con el médico a las tres.", "en": "I have a doctor's appointment at three.", "focus": "cita", "accept_en": ["I have an appointment with the doctor at three.", "I've got a doctor's appointment at three."]},
+        {"es": "¿Cómo se siente hoy, señora?", "en": "How do you feel today, madam?", "focus": "siente", "accept_en": ["How are you feeling today, madam?", "How do you feel today?"]},
+        {"es": "¿Desde cuándo tiene fiebre?", "en": "How long have you had a temperature?", "focus": "cuándo", "accept_en": ["Since when have you had a fever?", "How long have you had a fever?"]},
+        {"es": "Tengo tos desde el lunes.", "en": "I've had a cough since Monday.", "focus": "desde", "accept_en": ["I have had a cough since Monday."]},
+        {"es": "El médico me escribió una receta.", "en": "The doctor wrote me a prescription.", "focus": "receta"},
+        {"es": "Voy a la farmacia por el medicamento.", "en": "I'm going to the chemist for the medicine.", "focus": "farmacia", "accept_en": ["I'm going to the pharmacy for the medicine.", "I'm going to the chemist to get the medicine."]},
+        {"es": "Tomo una pastilla cada ocho horas.", "en": "I take one tablet every eight hours.", "focus": "pastilla", "accept_en": ["I take a tablet every eight hours.", "I take one pill every eight hours."]},
+        {"es": "Necesita descansar dos o tres días.", "en": "You need to rest for two or three days.", "focus": "descansar", "accept_en": ["You need to rest two or three days.", "He needs to rest for two or three days.", "She needs to rest for two or three days."]},
+        {"es": "¿Tiene un medicamento para la tos?", "en": "Do you have a medicine for a cough?", "focus": "medicamento", "accept_en": ["Do you have any cough medicine?", "Have you got something for a cough?"]}
+      ]
+    },
+    {
+      "id": "es-u22-l4",
+      "title": "I have to rest",
+      "notes": "**tener que** + infinitive = to have to, must. Conjugate **tener**, keep the next verb whole:\n**Tengo que descansar.** = I have to rest.\n**¿Tienes que trabajar mañana?** = Do you have to work tomorrow?\n**hay que** + infinitive is the general \"you have to / one must\", with no person: **Hay que beber mucha agua.** = You need to drink lots of water.\nIn the past, use the imperfect for an ongoing obligation and the preterite when you actually did it: **Tenía que estudiar** (I was supposed to study) / **Tuve que ir al médico** (I had to go - and I went).\nA kind wish: **¡Que te mejores!** = Get well soon!",
+      "items": [
+        {"es": "tener que", "en": "to have to", "kind": "phrase", "accept_en": ["must"]},
+        {"es": "tengo que", "en": "I have to", "kind": "phrase", "accept_en": ["I must", "I've got to"]},
+        {"es": "hay que", "en": "you have to", "kind": "phrase", "accept_en": ["one must", "you need to", "it's necessary to"]},
+        {"es": "tuve que", "en": "I had to", "kind": "phrase"},
+        {"es": "¡que te mejores!", "en": "get well soon!", "kind": "phrase", "accept": ["¡que se mejore!"], "accept_en": ["I hope you get better!", "feel better!"]},
+        {"es": "la salud", "en": "the health", "kind": "word", "gender": "f", "accept_en": ["health"]},
+        {"es": "sano", "en": "healthy", "kind": "word"},
+        {"es": "hacer ejercicio", "en": "to exercise", "kind": "phrase", "accept_en": ["to do exercise", "to work out"]},
+        {"es": "cuidarse", "en": "to look after yourself", "kind": "verb", "accept_en": ["to take care of yourself", "to look after oneself"]}
+      ],
+      "sentences": [
+        {"es": "Tengo que descansar mucho.", "en": "I have to rest a lot.", "focus": "Tengo", "accept_en": ["I must rest a lot.", "I need to rest a lot."]},
+        {"es": "¿Tienes que trabajar mañana?", "en": "Do you have to work tomorrow?", "focus": "Tienes"},
+        {"es": "Hay que beber mucha agua.", "en": "You have to drink lots of water.", "focus": "Hay", "accept_en": ["You need to drink a lot of water.", "One must drink plenty of water."]},
+        {"es": "Ayer tuve que ir al médico.", "en": "Yesterday I had to go to the doctor.", "focus": "tuve", "accept_en": ["I had to go to the doctor yesterday.", "Yesterday I had to see the doctor."]},
+        {"es": "Estás enfermo. ¡Que te mejores!", "en": "You're sick. Get well soon!", "focus": "mejores", "accept_en": ["You're ill. Get well soon!", "You're sick. I hope you get better!"]},
+        {"es": "Para tener buena salud, hay que dormir bien.", "en": "To be healthy, you have to sleep well.", "focus": "salud", "accept_en": ["To have good health, you need to sleep well."]},
+        {"es": "Mi abuela tiene ochenta años y está muy sana.", "en": "My grandmother is eighty and very healthy.", "focus": "sana", "accept_en": ["My grandma is eighty and she's very healthy."]},
+        {"es": "Hago ejercicio tres veces a la semana.", "en": "I exercise three times a week.", "focus": "ejercicio", "accept_en": ["I do exercise three times a week.", "I work out three times a week."]},
+        {"es": "Mi abuela se cuida mucho.", "en": "My grandmother looks after herself well.", "focus": "cuida", "accept_en": ["My grandma takes good care of herself.", "My grandmother looks after herself a lot."]},
+        {"es": "Tenía que estudiar, pero estaba muy cansado.", "en": "I was supposed to study, but I was very tired.", "focus": "Tenía", "accept_en": ["I had to study, but I was very tired.", "I needed to study, but I was really tired."]}
+      ]
+    }
+  ]
+}

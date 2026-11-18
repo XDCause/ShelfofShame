@@ -1,0 +1,118 @@
+{
+  "unit": 29,
+  "title": "Por favor, ayúdame",
+  "cefr": "A2",
+  "goal": "Give and follow instructions: commands for tú and usted, directions and recipes.",
+  "lessons": [
+    {
+      "id": "es-u29-l1",
+      "title": "Tú commands",
+      "notes": "To tell a friend to do something, the **tú** command is easy: it's the same as the **él / ella** present form.\n**habla** (speak) · **come** (eat) · **escribe** (write) · **cierra** (close - stem changes stay)\nEight common verbs have short forms worth memorising:\n**ven** (come) · **ten** (have) · **pon** (put) · **sal** (go out) · **haz** (do, make) · **di** (say) · **ve** (go) · **sé** (be)\nAdd **por favor** to soften it, or turn it into a question: **¿Me ayudas?** is gentler than **ayúdame**.\nIn Spain, the plural for friends is **vosotros**: **hablad, comed** - in Latin America just use **ustedes** (next lesson).",
+      "items": [
+        {"es": "mira", "en": "look", "kind": "phrase", "accept_en": ["look!", "watch"]},
+        {"es": "escucha", "en": "listen", "kind": "phrase", "accept_en": ["listen!"]},
+        {"es": "espera", "en": "wait", "kind": "phrase", "accept_en": ["wait!", "hang on"]},
+        {"es": "ven", "en": "come", "kind": "phrase", "accept_en": ["come here", "come on"]},
+        {"es": "pon", "en": "put", "kind": "phrase", "accept_en": ["put on", "set"]},
+        {"es": "haz", "en": "do", "kind": "phrase", "accept_en": ["make"]},
+        {"es": "di", "en": "say", "kind": "phrase", "accept_en": ["tell"]},
+        {"es": "sal", "en": "go out", "kind": "phrase", "accept_en": ["leave", "get out"], "note": "Also la sal, the salt."},
+        {"es": "ten cuidado", "en": "be careful", "kind": "phrase", "accept_en": ["take care", "watch out"]}
+      ],
+      "sentences": [
+        {"es": "¡Mira! Está lloviendo.", "en": "Look! It's raining.", "focus": "Mira"},
+        {"es": "Escucha esta canción, es buenísima.", "en": "Listen to this song, it's really good.", "focus": "Escucha", "accept_en": ["Listen to this song, it's great."]},
+        {"es": "Espera un momento, por favor.", "en": "Wait a moment, please.", "focus": "Espera", "accept_en": ["Please wait a moment.", "Hang on a minute, please."]},
+        {"es": "Cierra la ventana, hace frío.", "en": "Close the window, it's cold.", "focus": "Cierra", "accept_en": ["Shut the window, it's cold."]},
+        {"es": "Ven aquí, quiero mostrarte algo.", "en": "Come here, I want to show you something.", "focus": "Ven"},
+        {"es": "Pon los vasos en la mesa.", "en": "Put the glasses on the table.", "focus": "Pon", "accept_en": ["Set the glasses on the table."]},
+        {"es": "Haz la tarea antes de cenar.", "en": "Do your homework before dinner.", "focus": "Haz", "accept_en": ["Do the homework before dinner.", "Do your homework before having dinner."]},
+        {"es": "Ten cuidado con la sartén.", "en": "Be careful with the frying pan.", "focus": "cuidado", "accept_en": ["Careful with the pan.", "Be careful with the pan."]},
+        {"es": "Sal temprano, hay mucho tráfico.", "en": "Leave early, there's a lot of traffic.", "focus": "Sal", "accept_en": ["Go out early, there's lots of traffic.", "Leave early, there's heavy traffic."]},
+        {"es": "Di la verdad.", "en": "Tell the truth.", "focus": "Di", "accept_en": ["Say the truth."]}
+      ]
+    },
+    {
+      "id": "es-u29-l2",
+      "title": "Usted commands and directions",
+      "notes": "For **usted** (and **ustedes**), commands swap the vowel: **-ar** verbs take **-e**, **-er / -ir** verbs take **-a**. Start from the **yo** present and drop the -o:\n**hablo -> hable** · **como -> coma** · **escribo -> escriba**\n**tengo -> tenga** · **hago -> haga** · **vengo -> venga** · **pongo -> ponga**\nFor **ustedes**, add **-n**: **hablen, coman**.\nSpelling keeps the sound: **doblar -> doble**, **cruzar -> cruce**, **seguir -> siga**.\nYou'll hear these from strangers giving directions:\n**Siga todo recto, doble a la izquierda y cruce la calle.**",
+      "items": [
+        {"es": "siga", "en": "keep going", "kind": "phrase", "accept_en": ["continue", "follow", "go on"]},
+        {"es": "seguir", "en": "to keep going", "kind": "verb", "accept_en": ["to continue", "to follow"], "note": "e -> i: sigo, sigue. Usted: siga."},
+        {"es": "doble a la derecha", "en": "turn right", "kind": "phrase", "accept": ["gire a la derecha", "dobla a la derecha"], "accept_en": ["turn to the right"]},
+        {"es": "doblar", "en": "to turn", "kind": "verb", "accept": ["girar"], "note": "Spain: girar."},
+        {"es": "cruce", "en": "cross", "kind": "phrase", "accept_en": ["cross!"]},
+        {"es": "cruzar", "en": "to cross", "kind": "verb"},
+        {"es": "el semáforo", "en": "the traffic lights", "kind": "word", "gender": "m", "accept_en": ["the traffic light", "the lights"]},
+        {"es": "tome", "en": "take", "kind": "phrase", "accept_en": ["have"]},
+        {"es": "pase", "en": "come in", "kind": "phrase", "accept_en": ["go ahead", "after you", "come through"], "note": "Pase, por favor = Come in / After you."}
+      ],
+      "sentences": [
+        {"es": "Siga todo recto hasta el semáforo.", "en": "Keep going straight on to the traffic lights.", "focus": "Siga", "accept_en": ["Go straight on until the traffic lights.", "Continue straight ahead to the lights."]},
+        {"es": "Doble a la derecha en la esquina.", "en": "Turn right at the corner.", "focus": "esquina", "accept_en": ["Turn to the right at the corner."]},
+        {"es": "Cruce la calle y el banco está a la izquierda.", "en": "Cross the street and the bank is on the left.", "focus": "Cruce", "accept_en": ["Cross the road and the bank is on the left."]},
+        {"es": "En el semáforo, doble a la izquierda.", "en": "At the traffic lights, turn left.", "focus": "semáforo", "accept_en": ["Turn left at the lights.", "At the lights, turn left."]},
+        {"es": "Tome el autobús número veinte.", "en": "Take bus number twenty.", "focus": "Tome", "accept_en": ["Take the number twenty bus."]},
+        {"es": "Pase, por favor. Siéntese.", "en": "Come in, please. Have a seat.", "focus": "Pase", "accept_en": ["Please come in. Sit down.", "Come in, please. Take a seat."]},
+        {"es": "Hable más despacio, por favor.", "en": "Speak more slowly, please.", "focus": "Hable", "accept_en": ["Please speak more slowly."]},
+        {"es": "Tengan cuidado con los carros.", "en": "Be careful of the cars.", "focus": "Tengan", "accept_en": ["Be careful with the cars.", "Watch out for the cars."]},
+        {"es": "Coma menos sal y haga ejercicio.", "en": "Eat less salt and do some exercise.", "focus": "haga", "accept_en": ["Eat less salt and exercise.", "Eat less salt and do exercise."]}
+      ]
+    },
+    {
+      "id": "es-u29-l3",
+      "title": "Don't!",
+      "notes": "Negative **tú** commands use a different form: take the **usted** command and add **-s**:\n**hable -> no hables** · **coma -> no comas** · **escriba -> no escribas**\n**haga -> no hagas** · **venga -> no vengas** · **ponga -> no pongas** · **tenga -> no tengas**\nTwo you'll hear constantly: **no te preocupes** (don't worry) and **no vayas** (don't go, from ir).\nFor **usted**, just put **no** in front: **No hable.** · **No se preocupe.**\nSo the vowel swap (-ar -> e, -er / -ir -> a) is the key to all commands except positive tú.",
+      "items": [
+        {"es": "no hables", "en": "don't speak", "kind": "phrase", "accept_en": ["don't talk"]},
+        {"es": "no comas", "en": "don't eat", "kind": "phrase"},
+        {"es": "no hagas", "en": "don't do", "kind": "phrase", "accept_en": ["don't make"]},
+        {"es": "no vayas", "en": "don't go", "kind": "phrase"},
+        {"es": "no te preocupes", "en": "don't worry", "kind": "phrase", "accept": ["no se preocupe"]},
+        {"es": "preocuparse", "en": "to worry", "kind": "verb"},
+        {"es": "no toques", "en": "don't touch", "kind": "phrase"},
+        {"es": "olvidar", "en": "to forget", "kind": "verb", "note": "no olvides = don't forget."}
+      ],
+      "sentences": [
+        {"es": "No hables tan rápido, por favor.", "en": "Don't speak so fast, please.", "focus": "hables", "accept_en": ["Please don't talk so fast.", "Don't speak so quickly, please."]},
+        {"es": "No comas eso, está muy salado.", "en": "Don't eat that, it's very salty.", "focus": "comas", "accept_en": ["Don't eat that, it's really salty."]},
+        {"es": "No hagas ruido, el bebé está durmiendo.", "en": "Don't make noise, the baby is sleeping.", "focus": "hagas", "accept_en": ["Don't make any noise, the baby's asleep.", "Don't make a noise, the baby is sleeping."]},
+        {"es": "No vayas solo de noche.", "en": "Don't go alone at night.", "focus": "vayas", "accept_en": ["Don't go on your own at night."]},
+        {"es": "No te preocupes, todo está bien.", "en": "Don't worry, everything is fine.", "focus": "preocupes", "accept_en": ["Don't worry, everything's OK.", "Don't worry, it's all fine."]},
+        {"es": "No se preocupe, señora.", "en": "Don't worry, madam.", "focus": "preocupe"},
+        {"es": "No toques el horno, está caliente.", "en": "Don't touch the oven, it's hot.", "focus": "toques"},
+        {"es": "No olvides el pasaporte.", "en": "Don't forget your passport.", "focus": "olvides", "accept_en": ["Don't forget the passport."]},
+        {"es": "Mi hijo toca la guitarra.", "en": "My son plays the guitar.", "focus": "toca"},
+        {"es": "Sigue todo recto y no cruces la calle.", "en": "Keep going straight on and don't cross the street.", "focus": "cruces", "accept_en": ["Go straight on and don't cross the road.", "Keep going straight and don't cross the street."]}
+      ]
+    },
+    {
+      "id": "es-u29-l4",
+      "title": "Help me! Commands with pronouns",
+      "notes": "With **positive** commands, pronouns are **attached to the end**, and an accent keeps the stress where it was:\n**ayuda + me -> ayúdame** (help me) · **dime** (tell me) · **llámame** (call me)\nReflexive verbs too: **siéntate** (sit down) · **levántate** (get up) · **cálmate** (calm down)\nTwo pronouns, same order as before: **dámelo** (give it to me).\nWith **negative** commands, pronouns go **in front**, as usual:\n**ayúdame** -> **no me ayudes** · **siéntate** -> **no te sientes** · **dímelo** -> **no me lo digas**\nFor **usted**: **ayúdeme**, **siéntese**, **dígame** (also how many people answer the phone).",
+      "items": [
+        {"es": "ayúdame", "en": "help me", "kind": "phrase", "accept": ["ayúdeme"]},
+        {"es": "dime", "en": "tell me", "kind": "phrase", "accept": ["dígame"]},
+        {"es": "llámame", "en": "call me", "kind": "phrase", "accept": ["llámeme"], "accept_en": ["ring me", "phone me"]},
+        {"es": "siéntate", "en": "sit down", "kind": "phrase", "accept": ["siéntese"], "accept_en": ["have a seat", "take a seat"]},
+        {"es": "sentarse", "en": "to sit down", "kind": "verb", "note": "e -> ie: me siento (same as I feel!)."},
+        {"es": "levántate", "en": "get up", "kind": "phrase", "accept": ["levántese"], "accept_en": ["stand up"]},
+        {"es": "dámelo", "en": "give it to me", "kind": "phrase", "accept": ["dámela"]},
+        {"es": "no me lo digas", "en": "don't tell me", "kind": "phrase", "accept_en": ["don't say it to me", "you don't say"], "note": "Also a reaction: \"No way!\""},
+        {"es": "cálmate", "en": "calm down", "kind": "phrase", "accept": ["cálmese"]}
+      ],
+      "sentences": [
+        {"es": "¡Ayúdame con las maletas, por favor!", "en": "Help me with the suitcases, please!", "focus": "Ayúdame", "accept_en": ["Please help me with the suitcases!", "Help me with the bags, please!"]},
+        {"es": "Dime la verdad.", "en": "Tell me the truth.", "focus": "Dime"},
+        {"es": "Llámame mañana por la mañana.", "en": "Call me tomorrow morning.", "focus": "Llámame", "accept_en": ["Ring me tomorrow morning.", "Phone me tomorrow morning."]},
+        {"es": "Siéntate aquí, a mi lado.", "en": "Sit here, next to me.", "focus": "Siéntate", "accept_en": ["Sit down here, next to me.", "Sit here beside me."]},
+        {"es": "¡Levántate, ya son las ocho!", "en": "Get up, it's already eight o'clock!", "focus": "Levántate", "accept_en": ["Get up, it's eight already!", "Get up, it's already eight!"]},
+        {"es": "Es mi celular. Dámelo, por favor.", "en": "It's my phone. Give it to me, please.", "focus": "Dámelo", "accept_en": ["It's my mobile. Give it to me, please."]},
+        {"es": "No me lo digas, ya lo sé.", "en": "Don't tell me, I already know.", "focus": "digas", "accept_en": ["Don't tell me, I know already."]},
+        {"es": "Cálmate, no es un problema grande.", "en": "Calm down, it's not a big problem.", "focus": "Cálmate", "accept_en": ["Calm down, it isn't a big problem."]},
+        {"es": "Buenos días, señora. Siéntese, por favor.", "en": "Good morning, madam. Please sit down.", "focus": "Siéntese", "accept_en": ["Good morning, madam. Have a seat, please.", "Good morning. Please take a seat."]},
+        {"es": "No te sientes en esa silla, está rota.", "en": "Don't sit on that chair, it's broken.", "focus": "sientes", "accept_en": ["Don't sit in that chair, it's broken."]}
+      ]
+    }
+  ]
+}

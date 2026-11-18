@@ -14,11 +14,11 @@ export const KIND_ICON = {
   page: JournalIcon, model: PlaneIcon, supply: BoxIcon, game: DiceIcon, volleyball: BallIcon, gear: ShoeIcon, videogame: GamepadIcon,
   chess: ChessIcon, book: BookIcon, goal: TargetIcon, hike: BootIcon,
   planting: SproutIcon, gcontainer: SproutIcon, gspace: SproutIcon, shoot: CrosshairIcon, trip: SuitcaseIcon, record: VinylIcon, sudoku: SudokuIcon,
-  golfround: GolfIcon, golfpractice: GolfIcon, langstudy: LanguageIcon, langreview: LanguageIcon,
+  golfround: GolfIcon, golfpractice: GolfIcon, langstudy: LanguageIcon, langreview: LanguageIcon, langlesson: LanguageIcon,
 }
 export const KIND_NAME = {
   model: 'Kit', supply: 'Supply', page: 'Journal', game: 'Board game', volleyball: 'Volleyball', gear: 'Gear', videogame: 'Video game',
   chess: 'Chess', book: 'Book', goal: 'Goal', hike: 'Hike',
   planting: 'Plant', gcontainer: 'Pot', gspace: 'Garden', shoot: 'Shooting', trip: 'Trip', record: 'Record', sudoku: 'Sudoku',
-  golfround: 'Round', golfpractice: 'Practice', langstudy: 'Language', langreview: 'Cards',
+  golfround: 'Round', golfpractice: 'Practice', langstudy: 'Language', langreview: 'Cards', langlesson: 'Lesson',
 }

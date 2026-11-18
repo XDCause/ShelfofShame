@@ -1,0 +1,136 @@
+{
+  "unit": 21,
+  "title": "Contar una historia",
+  "cefr": "A2",
+  "goal": "Tell a short story, choosing between the preterite and the imperfect.",
+  "lessons": [
+    {
+      "id": "es-u21-l1",
+      "title": "The scene and the event",
+      "notes": "A story needs both past tenses, and each has a job:\n**Imperfect** = the **scene**: what was going on, what things were like, the background. It's the film set.\n**Preterite** = the **events**: what happened next, one step at a time. It's the action.\n**Estaba en casa cuando sonó el teléfono.** = I was at home when the phone rang.\n\"Was at home\" is the scene (imperfect); \"rang\" interrupts it (preterite).\nRules of thumb:\n- Could you say \"was ...-ing\" or \"used to\"? -> **imperfect**\n- Is it a single completed thing, with a start or end you can point to? -> **preterite**\n- **de repente** (suddenly) is almost always followed by the preterite.\n**Hacía sol cuando salimos.** = It was sunny when we went out.",
+      "items": [
+        {"es": "estaba", "en": "I was", "kind": "phrase", "accept_en": ["he was", "she was", "it was", "I was being"]},
+        {"es": "cuando", "en": "when", "kind": "word"},
+        {"es": "de repente", "en": "suddenly", "kind": "phrase", "accept": ["de pronto"], "accept_en": ["all of a sudden"]},
+        {"es": "sonar", "en": "to ring", "kind": "verb", "accept_en": ["to sound"], "note": "o -> ue: suena. Preterite: sonó."},
+        {"es": "sonó", "en": "it rang", "kind": "phrase", "accept_en": ["rang", "it sounded", "it went off"]},
+        {"es": "entrar", "en": "to come in", "kind": "verb", "accept_en": ["to go in", "to enter"], "note": "entrar en / entrar a + place."},
+        {"es": "hacía sol", "en": "it was sunny", "kind": "phrase"},
+        {"es": "llovía", "en": "it was raining", "kind": "phrase", "accept_en": ["it rained", "it used to rain"]}
+      ],
+      "sentences": [
+        {"es": "Estaba en casa cuando sonó el teléfono.", "en": "I was at home when the phone rang.", "focus": "sonó"},
+        {"es": "Llovía cuando salí del trabajo.", "en": "It was raining when I left work.", "focus": "Llovía", "accept_en": ["It was raining when I left the office."]},
+        {"es": "Hacía sol y fuimos a la playa.", "en": "It was sunny and we went to the beach.", "focus": "sol"},
+        {"es": "De repente, un perro entró en la cocina.", "en": "Suddenly a dog came into the kitchen.", "focus": "repente", "accept_en": ["Suddenly, a dog came into the kitchen.", "All of a sudden a dog came into the kitchen.", "Suddenly a dog went into the kitchen."]},
+        {"es": "Mi hermana estaba triste cuando llegué.", "en": "My sister was sad when I arrived.", "focus": "estaba", "accept_en": ["My sister was sad when I got there.", "My sister was sad when I got home."]},
+        {"es": "Cuando entré, todos estaban en la sala.", "en": "When I came in, everyone was in the living room.", "focus": "entré", "accept_en": ["When I went in, everyone was in the living room.", "When I came in, they were all in the lounge room."]},
+        {"es": "El teléfono sonó a las tres de la mañana.", "en": "The phone rang at three in the morning.", "focus": "teléfono"},
+        {"es": "Alguien abrió la puerta de repente.", "en": "Someone suddenly opened the door.", "focus": "puerta", "accept_en": ["Suddenly someone opened the door.", "Somebody opened the door all of a sudden."]}
+      ]
+    },
+    {
+      "id": "es-u21-l2",
+      "title": "Setting the scene",
+      "notes": "Descriptions in the past - time, weather, place, people, feelings, age - go in the **imperfect**:\n**Era de noche.** (It was night.) · **Eran las once.** · **Había mucha gente.** (There were a lot of people.) · **Estaba nervioso.** · **Tenía veinte años.**\n**la gente** (people) is **singular** in Spanish: **la gente es simpática**.\n**parecer** = to seem / look: **parecía cansado** (he looked tired).\n**llevar** in the imperfect describes what someone was wearing: **Llevaba un abrigo negro.**\nPut a few of these together and you've painted the picture before anything happens.",
+      "items": [
+        {"es": "era de noche", "en": "it was night", "kind": "phrase", "accept_en": ["it was dark", "it was night-time"]},
+        {"es": "la gente", "en": "people", "kind": "word", "gender": "f", "accept_en": ["the people"], "note": "Singular: la gente es..."},
+        {"es": "había mucha gente", "en": "there were a lot of people", "kind": "phrase", "accept_en": ["there were lots of people", "there were many people", "it was crowded"]},
+        {"es": "parecer", "en": "to seem", "kind": "verb", "accept_en": ["to look"], "note": "parezco, pareces, parece..."},
+        {"es": "parecía", "en": "he / she seemed", "kind": "phrase", "accept_en": ["he seemed", "she seemed", "it seemed", "he looked", "she looked"]},
+        {"es": "llevaba", "en": "he / she was wearing", "kind": "phrase", "accept_en": ["he was wearing", "she was wearing", "I was wearing", "he wore", "she wore"]},
+        {"es": "la plaza", "en": "the square", "kind": "word", "gender": "f", "accept_en": ["the town square", "the plaza"]}
+      ],
+      "sentences": [
+        {"es": "Era de noche y hacía mucho frío.", "en": "It was night and it was very cold.", "focus": "noche", "accept_en": ["It was dark and very cold.", "It was night-time and it was really cold."]},
+        {"es": "En la plaza había mucha gente.", "en": "There were a lot of people in the square.", "focus": "gente", "accept_en": ["In the square there were lots of people.", "There were many people in the square."]},
+        {"es": "El hombre parecía muy nervioso.", "en": "The man seemed very nervous.", "focus": "parecía", "accept_en": ["The man looked very nervous.", "The man seemed really nervous."]},
+        {"es": "La mujer llevaba un vestido negro.", "en": "The woman was wearing a black dress.", "focus": "llevaba", "accept_en": ["The woman wore a black dress."]},
+        {"es": "El pueblo era pequeño y tranquilo.", "en": "The town was small and quiet.", "focus": "tranquilo", "accept_en": ["The village was small and quiet.", "The town was small and peaceful."]},
+        {"es": "Tenía veinte años y vivía en Lima.", "en": "I was twenty and I lived in Lima.", "focus": "Tenía", "accept_en": ["I was twenty years old and lived in Lima.", "I was twenty and was living in Lima."]},
+        {"es": "Eran las once y todos estaban cansados.", "en": "It was eleven and everyone was tired.", "focus": "cansados", "accept_en": ["It was eleven o'clock and everyone was tired.", "It was eleven and they were all tired."]},
+        {"es": "La gente parece muy simpática aquí.", "en": "The people seem very nice here.", "focus": "parece", "accept_en": ["People seem really nice here.", "People here seem very friendly."]}
+      ]
+    },
+    {
+      "id": "es-u21-l3",
+      "title": "I was doing it when...",
+      "notes": "To stress that something was **in progress**, use **estar** in the imperfect + the **-ing form** (the gerund):\n-ar -> **-ando**: hablando, cocinando\n-er / -ir -> **-iendo**: comiendo, saliendo\nA few change: **leyendo** (reading), **durmiendo** (sleeping, o -> u), **diciendo** (saying).\n**Estaba leyendo cuando llegaste.** = I was reading when you arrived.\nThis is the classic interruption: the long action in **estaba + -ando / -iendo**, the short one in the preterite.\nThe same form works in the present: **Estoy cocinando.** = I'm cooking (right now).",
+      "items": [
+        {"es": "estaba leyendo", "en": "I was reading", "kind": "phrase", "accept_en": ["he was reading", "she was reading"]},
+        {"es": "estaba durmiendo", "en": "I was sleeping", "kind": "phrase", "accept_en": ["I was asleep", "he was sleeping", "she was sleeping"]},
+        {"es": "estábamos comiendo", "en": "we were eating", "kind": "phrase", "accept_en": ["we were having lunch", "we were having dinner"]},
+        {"es": "estaban jugando", "en": "they were playing", "kind": "phrase", "accept_en": ["you were playing"]},
+        {"es": "estoy cocinando", "en": "I'm cooking", "kind": "phrase", "accept_en": ["I am cooking"]},
+        {"es": "el ruido", "en": "the noise", "kind": "word", "gender": "m"},
+        {"es": "la llamada", "en": "the call", "kind": "word", "gender": "f", "accept_en": ["the phone call"]},
+        {"es": "oír", "en": "to hear", "kind": "verb", "note": "Preterite: oí, oíste, oyó."}
+      ],
+      "sentences": [
+        {"es": "Estaba leyendo cuando llegaste.", "en": "I was reading when you arrived.", "focus": "leyendo", "accept_en": ["I was reading when you got here.", "I was reading when you got home."]},
+        {"es": "Estaba durmiendo cuando sonó el despertador.", "en": "I was sleeping when the alarm went off.", "focus": "durmiendo", "accept_en": ["I was asleep when the alarm clock rang.", "I was sleeping when the alarm clock went off."]},
+        {"es": "Estábamos comiendo cuando oímos un ruido.", "en": "We were eating when we heard a noise.", "focus": "ruido", "accept_en": ["We were having lunch when we heard a noise.", "We were eating when we heard a sound."]},
+        {"es": "Los niños estaban jugando en el jardín.", "en": "The children were playing in the garden.", "focus": "jugando", "accept_en": ["The kids were playing in the garden.", "The children were playing in the yard."]},
+        {"es": "Ahora no puedo, estoy cocinando.", "en": "I can't right now, I'm cooking.", "focus": "cocinando", "accept_en": ["I can't now, I'm cooking."]},
+        {"es": "¿Qué estabas haciendo a las diez?", "en": "What were you doing at ten?", "focus": "haciendo", "accept_en": ["What were you doing at ten o'clock?"]},
+        {"es": "Mi papá estaba trabajando cuando tuve la llamada.", "en": "My dad was working when I got the call.", "focus": "llamada", "accept_en": ["My dad was working when I had the call.", "My father was working when I got the phone call."]},
+        {"es": "¿Oíste ese ruido?", "en": "Did you hear that noise?", "focus": "Oíste"},
+        {"es": "El bebé duerme muy bien.", "en": "The baby sleeps very well.", "focus": "duerme"}
+      ]
+    },
+    {
+      "id": "es-u21-l4",
+      "title": "Once upon a time",
+      "notes": "Linking words carry a story along:\n**un día** (one day) · **al principio** (at first) · **entonces** (then, so) · **luego / después** · **por eso** (that's why) · **al final** (in the end)\n**contar** (o -> ue) = to tell (a story) and also to count: **Te cuento una historia.**\nA tiny story, with the tenses marked:\n**Un día estaba** (imp.) **en el parque. Hacía** (imp.) **calor. De repente vi** (pret.) **a un amigo. Al final comimos** (pret.) **juntos.**\nNotice the shape: background first in the imperfect, then the chain of events in the preterite.",
+      "items": [
+        {"es": "un día", "en": "one day", "kind": "phrase"},
+        {"es": "al principio", "en": "at first", "kind": "phrase", "accept_en": ["at the beginning", "in the beginning"]},
+        {"es": "entonces", "en": "then", "kind": "word", "accept_en": ["so"]},
+        {"es": "por eso", "en": "that's why", "kind": "phrase", "accept_en": ["so", "therefore", "for that reason"]},
+        {"es": "al final", "en": "in the end", "kind": "phrase", "accept_en": ["finally", "at the end"]},
+        {"es": "contar", "en": "to tell", "kind": "verb", "accept_en": ["to count"], "note": "o -> ue: cuento, cuentas."},
+        {"es": "la historia", "en": "the story", "kind": "word", "gender": "f", "accept_en": ["the history"]},
+        {"es": "perder", "en": "to lose", "kind": "verb", "accept_en": ["to miss"], "note": "e -> ie: pierdo. Also to miss a bus or plane."}
+      ],
+      "sentences": [
+        {"es": "Te cuento una historia.", "en": "I'll tell you a story.", "focus": "cuento", "accept_en": ["Let me tell you a story.", "I tell you a story."]},
+        {"es": "Un día estaba en el parque con mi perro.", "en": "One day I was in the park with my dog.", "focus": "día", "accept_en": ["One day I was at the park with my dog."]},
+        {"es": "Al principio no entendía nada.", "en": "At first I didn't understand anything.", "focus": "principio", "accept_en": ["At first I understood nothing.", "In the beginning I didn't understand anything."]},
+        {"es": "Perdí las llaves y por eso llegué tarde.", "en": "I lost the keys and that's why I arrived late.", "focus": "eso", "accept_en": ["I lost my keys, so I was late.", "I lost the keys and that's why I was late.", "I lost my keys and that's why I got there late."]},
+        {"es": "Estaba cansado, entonces me acosté.", "en": "I was tired, so I went to bed.", "focus": "entonces", "accept_en": ["I was tired, so then I went to bed."]},
+        {"es": "Al final comimos juntos en un restaurante.", "en": "In the end we ate together at a restaurant.", "focus": "final", "accept_en": ["In the end we ate together in a restaurant.", "Finally we had a meal together at a restaurant."]},
+        {"es": "Mi abuelo contaba historias muy divertidas.", "en": "My grandfather used to tell very funny stories.", "focus": "historias", "accept_en": ["My grandad told really funny stories.", "My grandfather used to tell very fun stories."]},
+        {"es": "¿Qué pasó al final?", "en": "What happened in the end?", "focus": "pasó", "accept_en": ["What happened at the end?"]},
+        {"es": "Fuimos juntos al concierto.", "en": "We went to the concert together.", "focus": "juntos"}
+      ]
+    },
+    {
+      "id": "es-u21-l5",
+      "title": "Knew or found out?",
+      "notes": "A few verbs change meaning between the two tenses, because the preterite marks the **moment it started**:\n**conocía** = I knew (someone, a place) · **conocí** = I **met** (for the first time)\n**sabía** = I knew (a fact) · **supe** = I **found out**\n**quería** = I wanted · **no quise / no quiso** = I / he **refused**\n**podía** = I could (in general) · **pude** = I **managed to**\n**Conocí a mi esposa en 2015.** = I met my wife in 2015.\n**Sabía la verdad.** = I knew the truth.\nRemember the little **a** before people: **conocí a Luis**.",
+      "items": [
+        {"es": "conocer", "en": "to know (a person, a place)", "kind": "verb", "accept_en": ["to meet", "to know", "to get to know"], "note": "conozco, conoces... Preterite: conocí = I met."},
+        {"es": "conocí", "en": "I met", "kind": "phrase", "accept_en": ["I got to know", "I first met"]},
+        {"es": "conocía", "en": "I knew", "kind": "phrase", "accept_en": ["I used to know", "I was familiar with", "he knew", "she knew"]},
+        {"es": "saber", "en": "to know (a fact)", "kind": "verb", "accept_en": ["to know", "to know how to"], "note": "sé, sabes, sabe... Preterite: supe."},
+        {"es": "supe", "en": "I found out", "kind": "phrase", "accept_en": ["I learned", "I learnt", "I discovered"]},
+        {"es": "sabía", "en": "I knew", "kind": "phrase", "accept_en": ["he knew", "she knew", "I used to know"]},
+        {"es": "no quise", "en": "I refused", "kind": "phrase", "accept_en": ["I didn't want to", "I wouldn't"]},
+        {"es": "la verdad", "en": "the truth", "kind": "word", "gender": "f"},
+        {"es": "la noticia", "en": "the news", "kind": "word", "gender": "f", "accept_en": ["the piece of news", "news"], "note": "One piece of news; las noticias = the news (on TV)."}
+      ],
+      "sentences": [
+        {"es": "Conocí a mi esposa en una fiesta.", "en": "I met my wife at a party.", "focus": "Conocí"},
+        {"es": "No conocía a nadie en la ciudad.", "en": "I didn't know anyone in the city.", "focus": "conocía", "accept_en": ["I knew nobody in the city.", "I didn't know anybody in the city."]},
+        {"es": "Ayer supe la noticia.", "en": "I found out the news yesterday.", "focus": "supe", "accept_en": ["Yesterday I found out the news.", "Yesterday I heard the news."]},
+        {"es": "Sabía la verdad, pero no dije nada.", "en": "I knew the truth, but I didn't say anything.", "focus": "Sabía", "accept_en": ["I knew the truth but said nothing.", "I knew the truth, but I said nothing."]},
+        {"es": "Mi hijo no quiso comer.", "en": "My son refused to eat.", "focus": "quiso", "accept_en": ["My son wouldn't eat.", "My son didn't want to eat."]},
+        {"es": "¿Dónde conociste a tu novio?", "en": "Where did you meet your boyfriend?", "focus": "conociste"},
+        {"es": "¿Sabes la verdad?", "en": "Do you know the truth?", "focus": "verdad"},
+        {"es": "No quise ir, pero al final fui.", "en": "I refused to go, but in the end I went.", "focus": "quise", "accept_en": ["I didn't want to go, but in the end I went."]},
+        {"es": "¿Conoces Buenos Aires?", "en": "Have you been to Buenos Aires?", "focus": "Conoces", "accept_en": ["Do you know Buenos Aires?"]}
+      ]
+    }
+  ]
+}

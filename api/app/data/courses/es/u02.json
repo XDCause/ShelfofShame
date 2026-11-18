@@ -1,0 +1,121 @@
+{
+  "unit": 2,
+  "title": "Tú y yo",
+  "cefr": "A1",
+  "goal": "Talk about who people are and where they're from, using ser, and choose between tú and usted.",
+  "lessons": [
+    {
+      "id": "es-u02-l1",
+      "title": "I, you, he, she",
+      "notes": "**Ser** means 'to be' for who or what someone is. Its forms change with the person:\n**yo** soy (I am) · **tú** eres (you are) · **él / ella / usted** es (he / she is, you are - formal)\n**Usted** is the polite 'you', but it takes the same verb form as él and ella - originally it meant 'your grace', a third person.\nBecause the verb already shows who's talking, Spanish often drops the pronoun: **Soy de Australia** is more natural than 'Yo soy de Australia'. Keep the pronoun for contrast or clarity: **Él es Carlos y ella es Ana.**",
+      "items": [
+        {"es": "yo", "en": "I", "kind": "word"},
+        {"es": "tú", "en": "you (informal)", "kind": "word", "accept_en": ["you"], "note": "With an accent: 'tu' without one means 'your'."},
+        {"es": "él", "en": "he", "kind": "word", "note": "With an accent: 'el' without one means 'the'."},
+        {"es": "ella", "en": "she", "kind": "word"},
+        {"es": "ser", "en": "to be (who or what someone is)", "kind": "verb", "accept_en": ["to be"]},
+        {"es": "eres", "en": "you are (informal)", "kind": "phrase", "accept_en": ["you are", "you're"]},
+        {"es": "es", "en": "he is / she is / you are (formal)", "kind": "phrase", "accept_en": ["he is", "she is", "it is", "is"]},
+        {"es": "¿quién?", "en": "who?", "kind": "word"}
+      ],
+      "sentences": [
+        {"es": "Yo soy Ana.", "en": "I am Ana.", "focus": "Yo", "accept_en": ["I'm Ana."]},
+        {"es": "Tú eres Carlos.", "en": "You are Carlos.", "focus": "eres", "accept_en": ["You're Carlos."]},
+        {"es": "Él es Carlos y ella es Ana.", "en": "He is Carlos and she is Ana.", "focus": "ella", "accept_en": ["He's Carlos and she's Ana."]},
+        {"es": "Usted es de México.", "en": "You are from Mexico.", "focus": "Usted", "accept_en": ["You're from Mexico."]},
+        {"es": "¿Quién es él?", "en": "Who is he?", "focus": "Quién", "accept_en": ["Who's he?", "Who is that?"]},
+        {"es": "¿Quién es ella? Es Ana.", "en": "Who is she? It's Ana.", "focus": "es", "accept_en": ["Who is she? She's Ana.", "Who's she? It's Ana."]},
+        {"es": "Yo soy de Australia, ¿y tú?", "en": "I'm from Australia, and you?", "focus": "soy", "accept_en": ["I am from Australia, and you?", "I'm from Australia, what about you?"]},
+        {"es": "Ella es de España.", "en": "She is from Spain.", "focus": "Ella", "accept_en": ["She's from Spain."]},
+        {"es": "Tú eres de Nueva Zelanda.", "en": "You are from New Zealand.", "focus": "Tú", "accept_en": ["You're from New Zealand."]}
+      ]
+    },
+    {
+      "id": "es-u02-l2",
+      "title": "We and they",
+      "notes": "The plural of ser:\n**nosotros / nosotras** somos (we are) · **ustedes** son (you all are) · **ellos / ellas** son (they are)\nThe **-as** forms are for groups of only women; any mixed group uses **-os**: Ana y Carlos = **ellos**.\nIn Latin America **ustedes** is the only plural 'you', friends or strangers. In Spain friends get **vosotros / vosotras sois** (you all are), and ustedes is kept for formal plural - you'll hear it there but you don't need to use it.\nNouns too: **el amigo** (male friend), **la amiga** (female friend), **los amigos** (friends).",
+      "items": [
+        {"es": "nosotros", "en": "we", "kind": "word", "note": "nosotras = we (all women)"},
+        {"es": "nosotras", "en": "we (all women)", "kind": "word", "accept_en": ["we"]},
+        {"es": "ustedes", "en": "you (plural)", "kind": "word", "accept_en": ["you all", "you", "you guys"], "note": "Spain uses 'vosotros' between friends."},
+        {"es": "ellos", "en": "they", "kind": "word", "note": "Men, or a mixed group."},
+        {"es": "ellas", "en": "they (all women)", "kind": "word", "accept_en": ["they"]},
+        {"es": "somos", "en": "we are", "kind": "phrase", "accept_en": ["we're"]},
+        {"es": "son", "en": "they are / you (plural) are", "kind": "phrase", "accept_en": ["they are", "you are", "they're", "are"]},
+        {"es": "el amigo", "en": "the friend (male)", "kind": "word", "gender": "m", "accept_en": ["the friend", "friend"]},
+        {"es": "la amiga", "en": "the friend (female)", "kind": "word", "gender": "f", "accept_en": ["the friend", "friend"]},
+        {"es": "los amigos", "en": "the friends", "kind": "word", "gender": "m", "accept_en": ["friends"]}
+      ],
+      "sentences": [
+        {"es": "Nosotros somos de Australia.", "en": "We are from Australia.", "focus": "somos", "accept_en": ["We're from Australia."]},
+        {"es": "Ellos son de México.", "en": "They are from Mexico.", "focus": "Ellos", "accept_en": ["They're from Mexico."]},
+        {"es": "Ellas son de España.", "en": "They are from Spain.", "focus": "Ellas", "accept_en": ["They're from Spain."]},
+        {"es": "¿Ustedes son de Inglaterra?", "en": "Are you from England?", "focus": "Ustedes", "accept_en": ["Are you all from England?", "Are you guys from England?"]},
+        {"es": "Ana y Carlos son amigos.", "en": "Ana and Carlos are friends.", "focus": "son"},
+        {"es": "Carlos es el amigo de Ana.", "en": "Carlos is Ana's friend.", "focus": "amigo", "accept_en": ["Carlos is the friend of Ana."]},
+        {"es": "Nosotras somos de Nueva Zelanda.", "en": "We are from New Zealand.", "focus": "Nosotras", "accept_en": ["We're from New Zealand."]},
+        {"es": "¿Quién es ella? Es la amiga de Carlos.", "en": "Who is she? She's Carlos's friend.", "focus": "amiga", "accept_en": ["Who is she? She is Carlos's friend.", "Who's she? She's a friend of Carlos."]},
+        {"es": "Ellos son los amigos de Ana.", "en": "They are Ana's friends.", "focus": "amigos", "accept_en": ["They're Ana's friends.", "They are the friends of Ana."]}
+      ]
+    },
+    {
+      "id": "es-u02-l3",
+      "title": "Nationalities",
+      "notes": "Nationalities describe a person, so they match the person: a man is **mexicano**, a woman **mexicana**. The pattern: **-o** for a man, **-a** for a woman.\nWords ending in a consonant add **-a** for a woman: **español → española**, **inglés → inglesa** (the accent goes when the word grows). Words ending in **-e** stay the same: **estadounidense**.\nUnlike English, nationalities take no capital letter: **Soy australiano.** To say 'not', put **no** before the verb: **No soy inglés.**",
+      "items": [
+        {"es": "australiano", "en": "Australian (man)", "kind": "word", "accept_en": ["Australian"]},
+        {"es": "australiana", "en": "Australian (woman)", "kind": "word", "accept_en": ["Australian"]},
+        {"es": "mexicano", "en": "Mexican (man)", "kind": "word", "accept_en": ["Mexican"]},
+        {"es": "mexicana", "en": "Mexican (woman)", "kind": "word", "accept_en": ["Mexican"]},
+        {"es": "español", "en": "Spanish (man)", "kind": "word", "accept_en": ["Spanish", "Spaniard"]},
+        {"es": "española", "en": "Spanish (woman)", "kind": "word", "accept_en": ["Spanish", "Spaniard"]},
+        {"es": "inglés", "en": "English (man)", "kind": "word", "accept_en": ["English", "Englishman"]},
+        {"es": "inglesa", "en": "English (woman)", "kind": "word", "accept_en": ["English", "Englishwoman"]},
+        {"es": "estadounidense", "en": "American", "kind": "word", "accept_en": ["from the United States", "US"], "note": "Same for a man or a woman."},
+        {"es": "colombiano", "en": "Colombian (man)", "kind": "word", "accept_en": ["Colombian"]},
+        {"es": "colombiana", "en": "Colombian (woman)", "kind": "word", "accept_en": ["Colombian"]}
+      ],
+      "sentences": [
+        {"es": "Soy australiano.", "en": "I'm Australian.", "focus": "australiano", "accept_en": ["I am Australian."]},
+        {"es": "Yo soy australiana, ¿y tú?", "en": "I'm Australian, and you?", "focus": "australiana", "accept_en": ["I am Australian, and you?", "I'm Australian, what about you?"]},
+        {"es": "Carlos es mexicano.", "en": "Carlos is Mexican.", "focus": "mexicano"},
+        {"es": "Ella no es inglesa, es australiana.", "en": "She isn't English, she's Australian.", "focus": "inglesa", "accept_en": ["She is not English, she is Australian.", "She's not English, she's Australian."]},
+        {"es": "¿Usted es español?", "en": "Are you Spanish?", "focus": "español", "accept_en": ["Are you a Spaniard?"]},
+        {"es": "Ella es española, de Madrid.", "en": "She's Spanish, from Madrid.", "focus": "española", "accept_en": ["She is Spanish, from Madrid."]},
+        {"es": "Él es estadounidense.", "en": "He's American.", "focus": "estadounidense", "accept_en": ["He is American.", "He's from the United States."]},
+        {"es": "Ana es colombiana.", "en": "Ana is Colombian.", "focus": "colombiana"},
+        {"es": "No soy inglés, soy australiano.", "en": "I'm not English, I'm Australian.", "focus": "inglés", "accept_en": ["I am not English, I am Australian."]},
+        {"es": "Tú eres mexicana, ¿no?", "en": "You're Mexican, aren't you?", "focus": "mexicana", "accept_en": ["You are Mexican, right?", "You're Mexican, right?"]},
+        {"es": "Carlos es colombiano y Ana es mexicana.", "en": "Carlos is Colombian and Ana is Mexican.", "focus": "colombiano"}
+      ]
+    },
+    {
+      "id": "es-u02-l4",
+      "title": "Tú or usted?",
+      "notes": "Spanish has two ways to say 'you'. **Tú** is for friends, family, children and people your age in relaxed settings. **Usted** is for strangers, older people, customers and anyone you'd call 'sir' or 'madam'. When unsure, start with usted; people will tell you **puedes tutearme** ('you can use tú with me') if they want tú.\nWith usted the verb changes too: **¿Cómo estás?** (tú) becomes **¿Cómo está usted?**\nTitles: **señor** (Mr, sir), **señora** (Mrs, madam), **señorita** (Miss - for young women; sounds dated in some places). **Él es el profesor**, but 'I'm a student' is just **Soy estudiante** - no word for 'a' with jobs.",
+      "items": [
+        {"es": "el señor", "en": "the man / Mr / sir", "kind": "word", "gender": "m", "accept_en": ["sir", "Mr", "the gentleman", "the man"]},
+        {"es": "la señora", "en": "the lady / Mrs / madam", "kind": "word", "gender": "f", "accept_en": ["madam", "Mrs", "the lady", "the woman", "Ms"]},
+        {"es": "la señorita", "en": "the young lady / Miss", "kind": "word", "gender": "f", "accept_en": ["Miss", "the young lady", "Ms"]},
+        {"es": "¿cómo está usted?", "en": "how are you? (formal)", "kind": "phrase", "accept_en": ["how are you?"]},
+        {"es": "el profesor", "en": "the teacher (male)", "kind": "word", "gender": "m", "accept_en": ["the teacher", "teacher", "the professor"]},
+        {"es": "la profesora", "en": "the teacher (female)", "kind": "word", "gender": "f", "accept_en": ["the teacher", "teacher", "the professor"]},
+        {"es": "el estudiante", "en": "the student (male)", "kind": "word", "gender": "m", "accept_en": ["the student", "student"]},
+        {"es": "la estudiante", "en": "the student (female)", "kind": "word", "gender": "f", "accept_en": ["the student", "student"]},
+        {"es": "también", "en": "also", "kind": "word", "accept_en": ["too", "as well"]}
+      ],
+      "sentences": [
+        {"es": "Buenos días, señora. ¿Cómo está usted?", "en": "Good morning, madam. How are you?", "focus": "está", "accept_en": ["Good morning. How are you?", "Good morning, ma'am. How are you?"]},
+        {"es": "Muy bien, gracias, señor.", "en": "Very well, thank you, sir.", "focus": "señor", "accept_en": ["Very well, thanks, sir."]},
+        {"es": "La profesora es de México.", "en": "The teacher is from Mexico.", "focus": "profesora"},
+        {"es": "Él es el profesor.", "en": "He is the teacher.", "focus": "profesor", "accept_en": ["He's the teacher."]},
+        {"es": "Yo soy estudiante.", "en": "I'm a student.", "focus": "estudiante", "accept_en": ["I am a student."]},
+        {"es": "Ana es estudiante también.", "en": "Ana is a student too.", "focus": "también", "accept_en": ["Ana is also a student.", "Ana is a student as well."]},
+        {"es": "Yo también soy de Australia.", "en": "I'm from Australia too.", "focus": "también", "accept_en": ["I am also from Australia.", "I'm also from Australia."]},
+        {"es": "Buenas tardes, señorita.", "en": "Good afternoon, miss.", "focus": "señorita", "accept_en": ["Good evening, miss."]},
+        {"es": "Ella es la estudiante de Inglaterra.", "en": "She is the student from England.", "focus": "estudiante", "accept_en": ["She's the student from England."]},
+        {"es": "Señora, ¿de dónde es usted?", "en": "Where are you from, madam?", "focus": "Señora", "accept_en": ["Madam, where are you from?", "Where are you from?"]}
+      ]
+    }
+  ]
+}
