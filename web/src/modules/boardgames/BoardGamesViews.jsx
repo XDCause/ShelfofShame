@@ -57,6 +57,7 @@ export function GamesView() {
         <button type="button" className="secondary" onClick={() => openPanel('play')}>Log a play</button>
         <button type="button" className="secondary" onClick={() => openPanel('boardgame', { id: null })}>+ Add game</button>
         <button type="button" className="secondary" aria-expanded={whatOpen} onClick={() => setWhatOpen(!whatOpen)}>🎲 What to play?</button>
+        <button type="button" className="secondary shs-open" onClick={() => openPanel('shelfshare')}>Share my shelf</button>
       </div>
       {whatOpen && <WhatToPlay games={games} onClose={() => setWhatOpen(false)} />}
       <div className="chip-rows">

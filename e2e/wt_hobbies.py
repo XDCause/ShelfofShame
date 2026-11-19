@@ -183,6 +183,40 @@ def board_games(page):
     shot(page, "d34_journal_play", full=False)
 
 
+@step("Board games: Share my shelf - the owned games as one web page file (the game added in board_games is in it; no prices)")
+def board_game_share(page):
+    go(page, "Board games")
+    page.get_by_role("button", name="Share my shelf").click()
+    d = drawer(page)
+    expect(d.get_by_text(re.compile(r"\d+ games? on the shelf")).first).to_be_visible(timeout=15000)
+    d.get_by_label("Title").fill(f"Shelf {MARK}")
+    d.get_by_role("button", name="Make the file").click()
+    link = d.get_by_role("link", name="Download")
+    expect(link).to_be_visible(timeout=60000)                                   # (photos are shrunk first)
+    with page.expect_download() as got:
+        link.click()
+    path = got.value.path()
+    html = open(path, encoding="utf-8").read()
+    assert got.value.suggested_filename.startswith("board-games-"), got.value.suggested_filename
+    assert f"<h1>Shelf {MARK}</h1>" in html and f"Catan {MARK}" in html, html[:500]
+    assert "price_paid" not in html and "<script src" not in html                    # nothing private, nothing fetched
+    shot(page, "d34_share_shelf", full=False)
+    # the file as the person you send it to sees it: opened from disk, its own filters working, no errors
+    seen = page.context.new_page()
+    errors = []
+    seen.on("pageerror", lambda e: errors.append(str(e)))
+    seen.set_content(html)                                                            # (a file:// address is refused in the test browser)
+    expect(seen.locator("h1")).to_have_text(f"Shelf {MARK}")
+    seen.get_by_label("Search").fill(f"catan {MARK}")
+    expect(seen.locator("#games > li:not([hidden])")).to_have_count(1)
+    expect(seen.locator("#n")).to_contain_text("1 of")
+    seen.get_by_label("Search").fill("")
+    shot(seen, "d35_shelf_file", full=False)
+    seen.close()
+    assert not errors, errors
+    page.keyboard.press("Escape")
+    expect(page.locator("aside.drawer")).to_have_count(0)
+
 @step("Video games: the dashboard (or connecting Steam) and the games list")
 def video_games(page):
     go(page, "Video games")

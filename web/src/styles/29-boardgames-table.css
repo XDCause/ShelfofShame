@@ -148,3 +148,15 @@
   .bgt-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .bgt-actions > button { white-space: normal; min-width: 0; padding-left: 10px; padding-right: 10px; }
 }
+
+/* Share my shelf (ShelfShare.jsx): the options, then the made file. On a phone the fifth action button
+   (Share my shelf) takes the whole last row of the 2 x 2 grid above. */
+@media (max-width: 700px) { .bgt-actions > .shs-open { grid-column: 1 / -1; } }
+.shs-form { display: flex; flex-direction: column; gap: 12px; }
+.shs-choice { display: flex; flex-wrap: wrap; gap: 6px; }
+.shs-checks { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.shs-checks legend { font-size: 0.85rem; color: var(--muted); margin-bottom: 4px; padding: 0; }
+.shs-check { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+.shs-check input { width: 20px; height: 20px; flex: none; }
+.shs-done { display: flex; flex-direction: column; gap: 8px; }
+.shs-done p { margin: 0; }

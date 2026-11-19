@@ -1305,3 +1305,14 @@ database pool (3z) and the first check-overs (3zt, 3zw). Search both before chan
    Location was blocked app-wide: the Permissions-Policy header (the 2026-10-21 health check: geolocation=()) stopped golf's GPS,
    scuba's "near me" and a catch's position on the phone - the browser just said no. Now geolocation=(self); the
    walk-through's console check caught it.
+
+5zp. **Board games: Share my shelf** (2026-11-19, the user: "is there a way to share my list of owned games with someone
+   or on a page view?"). The app stays home network + Tailscale only, behind the sign-in - so no public link (that would
+   mean port-forwarding or Funnel, ruled out) and no signed-out guest page. Instead Games > Share my shelf makes ONE
+   web page file in the browser (modules/boardgames/shelfFile.js, ShelfShare.jsx) to send by message, email or a Drive
+   link: the owned games (or the wishlist, "Games I'd like"), expansions on their game, photos shrunk to small JPEGs
+   inside the file, search and "players / how long" filters and sorting by a small script inside it - the cards are plain
+   HTML, so they still show where scripts are blocked. Opt-in: plays, ratings, BoardGameGeek links, games on loan.
+   Never in it: prices, notes, shops, dates bought. On a phone, Share... hands the file to Messages / WhatsApp / email.
+   No preview inside the app: a blob page opened from it runs under the app's CSP, which blocks the file's own script.
+   No API change (the games list and photos the page already reads).

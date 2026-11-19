@@ -9,6 +9,7 @@ const GamePanel = part(() => import('./GamePanel.jsx'))
 const PlayPanel = part(() => import('./GamePanel.jsx'), 'PlayPanel')
 const LivePlayPanel = part(() => import('./LivePlay.jsx'))
 const PlayersView = part(() => import('./PlayersView.jsx'), 'PlayersView')
+const ShelfSharePanel = part(() => import('./ShelfShare.jsx'), 'ShelfSharePanel')
 
 // Board games: your collection and every time you played. Pages live at /boardgames/<path>.
 // Plays show on the calendar; "played @Catan" in the journal offers to log one. "Start a play" (LivePlay.jsx) times
@@ -24,7 +25,7 @@ export default {
   home: { Tiles: BoardGamesTiles },
   actions: [{ label: 'Start a play', Icon: TimerIcon, run: (app) => app.openPanel('liveplay') },
     { label: 'Log a play', Icon: TrophyIcon, run: (app) => app.openPanel('play') }],
-  panels: { boardgame: GamePanel, play: PlayPanel, liveplay: LivePlayPanel },
+  panels: { boardgame: GamePanel, play: PlayPanel, liveplay: LivePlayPanel, shelfshare: ShelfSharePanel },
   pages: [
     { path: 'games', label: 'Games', Icon: DiceIcon, render: () => <GamesView /> },
     { path: 'plays', label: 'Plays', Icon: TrophyIcon, render: () => <PlaysView /> },
